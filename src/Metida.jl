@@ -8,7 +8,10 @@ using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables
 
 import Base:show
 
+export covstr, VC
+
 include("abstracttype.jl")
+include("varstruct.jl")
 include("linearalgebra.jl")
 include("lmm.jl")
 
