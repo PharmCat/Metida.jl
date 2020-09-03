@@ -4,7 +4,7 @@
 __precompile__()
 module Metida
 
-using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables
+using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables, ForwardDiff
 
 import Base:show
 
@@ -13,6 +13,10 @@ export covstr, VC
 include("abstracttype.jl")
 include("varstruct.jl")
 include("linearalgebra.jl")
+include("covmat.jl")
+include("matderiv.jl")
+include("reml.jl")
+include("ml.jl")
 include("lmm.jl")
 
 #include(".jl")
