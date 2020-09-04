@@ -11,6 +11,7 @@ import Base:show
 export covstr, VC
 
 include("abstracttype.jl")
+include("utils.jl")
 include("varstruct.jl")
 include("linearalgebra.jl")
 include("covmat.jl")

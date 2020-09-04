@@ -6,21 +6,20 @@
 function reml(yv, Zv, p, Xv, θvec, β)
     n = length(yv)
     N = sum(length.(yv))
-    G = gmat(θvec[3], θvec[4], θvec[5])
+    G = gmat(θvec[3:5])
     c  = (N-p)*log(2π)
     θ1 = 0
     θ2 = 0
     θ3 = 0
     iV   = nothing
-    θ2m  = zeros(p,p)
+    θ2m  = zeros(eltype(θvec), p, p)
     for i = 1:n
         R   = rmat([θvec[1], θvec[2]], Zv[i])
-        V   = cov(G, R, Zv[i])
+        V   = vmat(G, R, Zv[i])
         iV  = inv(V)
         θ1  += logdet(V)
-        θ2m = θ2m .+ Xv[i]'*iV *Xv[i]
-        r    = yv[i] .- Xv[i]*β
-        θ3  += r'*iV*r
+        mulαtβαinc!(θ2m, Xv[i], iV)
+        θ3  += mulθ₃(yv[i], Xv[i], β, iV)
     end
     θ2       = logdet(θ2m)
     return   -(θ1 + θ2 + θ3 + c)
@@ -40,20 +39,20 @@ function reml_grad(yv, Zv, p, Xv, θvec, β)
     θ2m   = zeros(p,p)
     H     = zeros(p, p)
     for i = 1:n
-        H += Xv[i]'*inv(vmat(rmat(θvec[1:2], Zv[i]), G, Zv[i]))*Xv[i]
+        mulαtβαinc!(H, Xv[i], inv(vmat(G, rmat(θvec[1:2], Zv[i]), Zv[i])))
+        #H .+= Xv[i]'*inv(vmat(G, rmat(θvec[1:2], Zv[i]), Zv[i]))*Xv[i]
     end
     iH = inv(H)
     for i = 1:n
-        vmatdvec = x -> vmat(rmat(x[1:2], Zv[i]), gmat(x[3:end]), Zv[i])[:]
-        V   = vmat(rmat(θvec[1:2], Zv[i]), G, Zv[i])
+        V   = vmat(G, rmat(θvec[1:2], Zv[i]), Zv[i])
         iV  = inv(V)
         r   = yv[i] .- Xv[i]*β
-        jV  = gradvmat(V, vmatdvec, θvec, cache2)
+        jV  = covmat_grad(vmat, Zv[i], θvec)
         for j = 1:length(θvec)
 
-            Aj        = iV * jV[j] *iV
+            Aj        = iV * jV[:,:,j] * iV
 
-            θ1[j]  += tr(iV * jV[j])
+            θ1[j]  += tr(iV * jV[:,:,j])
 
             θ2[j]  -= tr(iH * Xv[i]' *Aj * Xv[i])
 
@@ -113,5 +112,5 @@ function reml_hessian(yv, Zv, p, Xv, θvec, β)
 
     end
 
-    return - (θ1 .+ θ2 .+ θ3) 
+    return - (θ1 .+ θ2 .+ θ3)
 end

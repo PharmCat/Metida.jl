@@ -7,6 +7,7 @@ struct LMM{T} <: MetidaModel
     mf::ModelFrame
     mm::ModelMatrix
     covstr::CovStructure
+    Z
     function LMM(model, data; contrasts=Dict{Symbol,Any}(), subject = nothing,  random = nothing, repeated = nothing)
         mf = ModelFrame(model, data; contrasts = contrasts)
         mm = ModelMatrix(mf)
@@ -17,7 +18,16 @@ struct LMM{T} <: MetidaModel
             repeated = VarEffect()
         end
         covstr = CovStructure(random, repeated)
-        new{eltype(mm.m)}(model, mf, mm, covstr)
+
+        terms  = get_term_vec(covstr)
+        tdict  = Dict{Symbol, AbstractContrasts}()
+        filltdict(terms, tdict)
+        rschema = apply_schema(terms,
+            schema(data, tdict)
+            )
+        Z   = modelcols(rschema, data)
+
+        new{eltype(mm.m)}(model, mf, mm, covstr, Z)
     end
 end
 
