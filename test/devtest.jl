@@ -34,3 +34,5 @@ Metida.covmat_grad(Metida.vmat, Zv[1], θ)
 
 
 Metida.reml_grad(yv, Zv, p, Xv, θ, β)
+@btime Metida.reml_grad($yv, $Zv, $p, $Xv, $θ, $β)
+@btime ForwardDiff.gradient($(x -> Metida.reml(yv, Zv, p, Xv, x, β)), $θ)

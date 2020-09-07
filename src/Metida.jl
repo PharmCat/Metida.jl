@@ -4,7 +4,7 @@
 __precompile__()
 module Metida
 
-using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables, ForwardDiff
+using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables, ForwardDiff, BlockDiagonals, BlockArrays
 
 import Base:show
 

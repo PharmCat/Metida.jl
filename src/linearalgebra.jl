@@ -8,19 +8,20 @@ function mulαβαtc(A, B, C)
     c  = zeros(eltype(B), q)
     mx = zeros(eltype(B), p, p)
     for i = 1:p
-        c .= 0
+        fill!(c, zero(eltype(c)))
         @simd for n = 1:q
             @simd for m = 1:q
                 @inbounds c[n] +=  A[i, m] * B[n, m]
             end
         end
-        @simd for n = 1:p
+        @simd for n = i:p
             @simd for m = 1:q
                  @inbounds mx[i, n] += A[n, m] * c[m]
             end
+            @inbounds mx[i, n] += C[i, n]
         end
     end
-    mx .+= C
+    Symmetric(mx)
 end
 
 #-------------------------------------------------------------------------------
@@ -32,7 +33,7 @@ function mulαtβαinc!(θ, A, B)
     p = size(A, 2)
     c = zeros(eltype(B), q)
     for i = 1:p
-        c .= 0
+        fill!(c, zero(eltype(c)))
         @inbounds for n = 1:q, m = 1:q
             c[n] += B[m, n] * A[m, i]
         end
@@ -40,26 +41,63 @@ function mulαtβαinc!(θ, A, B)
             θ[i, n] += A[m, n] * c[m]
         end
     end
-    #θ
+end
+"""
+A' * B * A -> θ
+"""
+function mulαtβα!(θ, A, B)
+    q = size(B, 1)
+    p = size(A, 2)
+    c = zeros(eltype(B), q)
+    fill!(θ, zero(eltype(θ)))
+    for i = 1:p
+        fill!(c, zero(eltype(c)))
+        @inbounds for n = 1:q, m = 1:q
+            c[n] += B[m, n] * A[m, i]
+        end
+        @inbounds for n = 1:p, m = 1:q
+            θ[i, n] += A[m, n] * c[m]
+        end
+    end
+    θ
 end
 
+
 """
-A * B * A -> C
+A * B * A -> θ
 """
-function mulαβαc!(C, A, B)
+function mulαβαc!(θ, A, B)
+    q = size(B, 1)
+    p = size(A, 2)
+    c = zeros(eltype(B), q)
+    fill!(θ, zero(eltype(θ)))
+    for i = 1:p
+        fill!(c, zero(eltype(c)))
+        @inbounds for n = 1:q, m = 1:q
+            c[n] += B[m, n] * A[i, m]
+        end
+        @inbounds for n = 1:p, m = 1:q
+            θ[i, n] += A[m, n] * c[m]
+        end
+    end
+    θ
 end
 
 """
 tr(A * B)
 """
 function trmulαβ(A, B)
+    c = 0
+    @inbounds for n = 1:size(A,1), m = 1:size(B, 1)
+        c += A[n,m] * B[m, n]
+    end
+    c
 end
 """
 tr(H * A' * B * A)
 """
 function trmulhαtβα(H, A, B)
 end
-
 
 
 """
