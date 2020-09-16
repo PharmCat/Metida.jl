@@ -25,6 +25,32 @@ function reml(yv, Zv, p, Xv, θvec, β)
     return   -(θ1 + θ2 + θ3 + c)
 end
 
+function reml_sweep(yv, Zv, p, Xv, θvec, β)
+    n = length(yv)
+    N = sum(length.(yv))
+    G = gmat(θvec[3:5])
+    c  = (N-p)*log(2π)
+    θ1 = 0.0
+    θ2 = 0.0
+    θ3 = 0.0
+    θ2m  = zeros(eltype(θvec), p, p)
+
+    for i = 1:n
+        q = length(yv[i])
+        r = mulr(yv[i], Xv[i], β)
+        R   = rmat([θvec[1], θvec[2]], Zv[i])
+        Vp  = mulαβαtc2(Zv[i], G, R, r)
+        V = view(Vp, 1:q, 1:q)
+        θ1  += logdet(V)
+        sweep!(Vp, 1:q)
+        iV  = Symmetric(-Vp[1:q, 1:q])
+        mulαtβαinc!(θ2m, Xv[i], iV)
+        θ3  += -Vp[end, end]
+    end
+    θ2       = logdet(θ2m)
+    return   -(θ1 + θ2 + θ3 + c)
+end
+
 """
     2 log Restricted Maximum Likelihood gradient vector
 """

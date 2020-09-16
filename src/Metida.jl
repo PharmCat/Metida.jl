@@ -4,13 +4,17 @@
 __precompile__()
 module Metida
 
-using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables, ForwardDiff, BlockDiagonals, BlockArrays
+using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables, ForwardDiff, BlockDiagonals, BlockArrays#, SweepOperator
+
+import LinearAlgebra:checksquare
+
 
 import Base:show
 
 export covstr, VC
 
 include("abstracttype.jl")
+include("sweep.jl")
 include("utils.jl")
 include("varstruct.jl")
 include("linearalgebra.jl")
@@ -19,6 +23,8 @@ include("matderiv.jl")
 include("reml.jl")
 include("ml.jl")
 include("lmm.jl")
+
+
 
 #include(".jl")
 end # module
