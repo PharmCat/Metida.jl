@@ -17,6 +17,7 @@ struct LMM{T} <: MetidaModel
         if repeated === nothing
             repeated = VarEffect()
         end
+        if !isa(random, Vector) random = [random] end
         covstr = CovStructure(random, repeated, data)
 
         #z      = get_z_matrix(data, covstr)

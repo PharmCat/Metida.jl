@@ -7,9 +7,10 @@ categorical!(df, :sequence);
 categorical!(df, :formulation);
 
 lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
-random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH), Metida.VarEffect(Metida.@covstr(period), Metida.VC)], 
+random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH), Metida.VarEffect(Metida.@covstr(period+sequence), Metida.VC)],
 )
 
+Metida.gmat_blockdiag([1,2,3,4,5,6,7,8,9], lmm.covstr) 
 
 lmm.covstr.random[1].model
 
@@ -62,3 +63,22 @@ R   = Diagonal([0.1, 04, 0.3, 0.9])
 V   =  Z*G*Z'+R
 r   = [1.0 , 2.0 , 3.0 , 4.0]
 sV  = [V r; r' r'r]
+
+
+function gmat(θ::Vector{T}, zn) where T
+    mx = Matrix{T}(undef, zn, zn)
+    for m = 1:zn
+        mx[m, m] = θ[m]
+    end
+    if zn > 1
+        for m = 1:zn - 1
+            for n = m + 1:zn
+                mx[m, n] = mx[m, m] * mx[n, n] * θ[end]
+            end
+        end
+    end
+    for m = 1:zn
+        mx[m, m] = mx[m, m]*mx[m, m]
+    end
+    Symmetric(mx)
+end

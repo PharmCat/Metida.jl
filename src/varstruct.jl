@@ -33,16 +33,16 @@ CSH = HeterogeneousCompoundSymmetry
 #Z   = modelcols(rschema, df)
 #reduce(hcat, Z)
 
-struct VarEffect
+struct VarEffect{T <: AbstractCovarianceType}
     model
-    covtype::AbstractCovarianceType
+    covtype::T
     coding::Dict{Symbol, AbstractContrasts}
-    function VarEffect(model, covtype, coding)
+    function VarEffect(model, covtype::T, coding) where T <: AbstractCovarianceType
         if coding === nothing && model !== nothing
             coding = Dict{Symbol, AbstractContrasts}()
             fill_coding_dict(model, coding)
         end
-        new(model, covtype, coding)
+        new{T}(model, covtype, coding)
     end
     function VarEffect(model; coding = nothing)
         VarEffect(model, VarianceComponents(), coding)
@@ -55,42 +55,93 @@ struct VarEffect
     end
 end
 
-struct CovStructure{T <: Union{VarEffect, Vector{VarEffect}}} <: AbstractCovarianceStructure
-    random::T
+struct CovStructure <: AbstractCovarianceStructure
+    random::Vector{VarEffect}
     repeated::VarEffect
     z
     q
     t
-    function CovStructure(random::Vector{VarEffect}, repeated, data)
-        q       = Vector{Int}(undef, length(random))
+    tr
+    function CovStructure(random, repeated, data)
+        q       = Vector{Int}(undef, length(random) + 1)
         t       = Vector{Int}(undef, length(random) + 1)
+        tr      = Vector{UnitRange}(undef, length(random) + 1)
         rschema = apply_schema(random[1].model, schema(data, random[1].coding))
-        z       = modelcols(rschema, data)
+        if schemalength(rschema) == 1 z = modelcols(rschema, data) else z = reduce(hcat, modelcols(rschema, data)) end
         q[1]    = size(z, 2)
         t[1]    = random[1].covtype.f(q[1])
+        tr[1]   = UnitRange(1, t[1])
         if length(random) > 1
-            for i = 1:length(random)
+            for i = 2:length(random)
                 rschema = apply_schema(random[i].model, schema(data, random[i].coding))
-                ztemp   = modelcols(rschema, data)
+                if schemalength(rschema) == 1 ztemp = modelcols(rschema, data) else ztemp = reduce(hcat, modelcols(rschema, data)) end
                 q[i]    = size(ztemp, 2)
                 t[i]    = random[i].covtype.f(q[i])
                 z       = hcat(z, ztemp)
+                tr[i]   = UnitRange(sum(t[1:i-1]) + 1, sum(t[1:i-1])+t[i])
             end
         end
         if repeated.model !== nothing
             rschema = apply_schema(repeated.model, schema(data, repeated.coding))
-            rz      = modelcols(rschema, data)
-            rzn     = size(rz, 2)
+            if schemalength(rschema) == 1 rz = modelcols(rschema, data) else rz = reduce(hcat, modelcols(rschema, data)) end
+            q[end]     = size(rz, 2)
         else
-            rz      = nothing
-            rzn     = 0
+            rz         = nothing
+            q[end]     = 0
         end
-        t[end]      = repeated.covtype.f(rzn)
-        new{typeof(random)}(random, repeated, z, q, t)
+        t[end]      = repeated.covtype.f(q[end])
+        tr[end]     = UnitRange(sum(t[1:end-1]) + 1, sum(t[1:end-1]) + t[end])
+        new(random, repeated, z, q, t, tr)
     end
 end
 
+function schemalength(s)
+    if isa(s, Tuple)
+        return length(s)
+    else
+        return 1
+    end
+end
 
+function gmat(θ::Vector{T}, zn, ve::VarEffect{VarianceComponents})::AbstractMatrix{T} where T
+    Diagonal(θ)
+end
+
+function gmat(θ::Vector{T}, zn, ve::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
+    I(n)*θ[1]
+end
+
+function gmat(θ::Vector{T}, zn, ve::VarEffect{HeterogeneousCompoundSymmetry})::AbstractMatrix{T} where T
+    mx = Matrix{T}(undef, zn, zn)
+    for m = 1:zn
+        mx[m, m] = θ[m]
+    end
+    if zn > 1
+        for m = 1:zn - 1
+            for n = m + 1:zn
+                mx[m, n] = mx[m, m] * mx[n, n] * θ[end]
+            end
+        end
+    end
+    for m = 1:zn
+        mx[m, m] = mx[m, m] * mx[m, m]
+    end
+    Symmetric(mx)
+end
+
+function gmat_blockdiag(θ::Vector{T}, covstr) where T
+    vm = Vector{Matrix{T}}(undef, length(covstr.random))
+    for i = 1:length(covstr.random)
+        vm[i] = gmat(θ[covstr.tr[i]], covstr.q[i], covstr.random[i])
+    end
+    BlockDiagonal(vm)
+end
+
+function rmat()
+end
+
+function vmat(g, rz)
+end
 #=
 function get_z_matrix(data, covstr::CovStructure{Vector{VarEffect}})
     rschema = apply_schema(covstr.random[1].model, schema(data, covstr.random[1].coding))
@@ -103,8 +154,8 @@ function get_z_matrix(data, covstr::CovStructure{Vector{VarEffect}})
     end
     Z
 end
-=#
-function get_z_matrix(data, covstr::CovStructure{VarEffect})
+
+function get_z_matrix(data, covstr::CovStructure)
     rschema = apply_schema(covstr.random.model, schema(data, covstr.random.coding))
     Z       = modelcols(rschema, data)
 end
@@ -113,9 +164,10 @@ function gmat(covstr::CovStructure)
 
 end
 
-function get_term_vec(covstr::CovStructure{VarEffect})
+function get_term_vec(covstr::CovStructure)
     covstr.random.model
 end
+=#
 
 function fill_coding_dict(t::T, d::Dict) where T <: AbstractTerm
     d[t.sym] = StatsModels.FullDummyCoding()
