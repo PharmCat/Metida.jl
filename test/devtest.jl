@@ -7,8 +7,11 @@ categorical!(df, :sequence);
 categorical!(df, :formulation);
 
 lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
-random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH)
+random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH), Metida.VarEffect(Metida.@covstr(period), Metida.VC)], 
 )
+
+
+lmm.covstr.random[1].model
 
 Xv, Zv, yv = Metida.subjblocks(df, :subject, lmm.mm.m, lmm.Z, lmm.mf.data[lmm.model.lhs.sym])
 
