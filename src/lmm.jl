@@ -7,6 +7,8 @@ struct LMM{T} <: MetidaModel
     mf::ModelFrame
     mm::ModelMatrix
     covstr::CovStructure
+    data::LMMData
+    rankx::Int
 
     function LMM(model, data; contrasts=Dict{Symbol,Any}(), subject = nothing,  random = nothing, repeated = nothing)
         mf = ModelFrame(model, data; contrasts = contrasts)
@@ -19,19 +21,13 @@ struct LMM{T} <: MetidaModel
         end
         if !isa(random, Vector) random = [random] end
         covstr = CovStructure(random, repeated, data)
-
-        #z      = get_z_matrix(data, covstr)
-
-        #terms  = get_term_vec(covstr)
-        #tdict  = Dict{Symbol, AbstractContrasts}()
-        #filltdict(terms, tdict)
-        #rschema = apply_schema(terms,
-        #    schema(data, tdict)
-        #    )
-        #Z   = modelcols(rschema, data)
-
-        #new{eltype(mm.m)}(model, mf, mm, covstr, Z)
-        new{eltype(mm.m)}(model, mf, mm, covstr)
+        if isa(subject, Symbol)
+            xa, za, rza, ya = subjblocks(data, subject, mm.m, covstr.z, mf.data[mf.f.lhs.sym], covstr.rz)
+            lmmdata = LMMData(xa, za, rza, ya)
+        else
+            lmmdata = LMMData([mm.m], [covstr.z], [size(mm.m, 1)], [mf.data[mf.f.lhs.sym]])
+        end
+        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, rank(mm.m))
     end
 end
 

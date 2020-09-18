@@ -8,7 +8,7 @@ using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables, ForwardDiff,
 
 import LinearAlgebra:checksquare
 
-
+import StatsBase: fit, fit!
 import Base:show
 
 export covstr, VC
@@ -22,7 +22,9 @@ include("covmat.jl")
 include("matderiv.jl")
 include("reml.jl")
 include("ml.jl")
+include("lmmdata.jl")
 include("lmm.jl")
+include("fit.jl")
 
 
 

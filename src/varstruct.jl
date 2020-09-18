@@ -59,6 +59,7 @@ struct CovStructure <: AbstractCovarianceStructure
     random::Vector{VarEffect}
     repeated::VarEffect
     z
+    rz
     q
     t
     tr
@@ -91,7 +92,7 @@ struct CovStructure <: AbstractCovarianceStructure
         end
         t[end]      = repeated.covtype.f(q[end])
         tr[end]     = UnitRange(sum(t[1:end-1]) + 1, sum(t[1:end-1]) + t[end])
-        new(random, repeated, z, q, t, tr)
+        new(random, repeated, z, rz, q, t, tr)
     end
 end
 
@@ -104,11 +105,11 @@ function schemalength(s)
 end
 
 function gmat(θ::Vector{T}, zn, ve::VarEffect{VarianceComponents})::AbstractMatrix{T} where T
-    Diagonal(θ)
+    Diagonal(θ .^ 2)
 end
 
 function gmat(θ::Vector{T}, zn, ve::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
-    I(n)*θ[1]
+    I(zn)*(θ[1] ^ 2)
 end
 
 function gmat(θ::Vector{T}, zn, ve::VarEffect{HeterogeneousCompoundSymmetry})::AbstractMatrix{T} where T
@@ -137,7 +138,11 @@ function gmat_blockdiag(θ::Vector{T}, covstr) where T
     BlockDiagonal(vm)
 end
 
-function rmat()
+function rmat(θ::Vector{T}, rz, ve::VarEffect{VarianceComponents}) where T
+    Diagonal(rz* (θ .^ 2))
+end
+function rmat(θ::Vector{T}, rzn, ve::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
+    I(rzn)*(θ[1] ^ 2)
 end
 
 function vmat(g, rz)

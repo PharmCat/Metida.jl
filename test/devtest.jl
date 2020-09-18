@@ -9,12 +9,23 @@ categorical!(df, :formulation);
 lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
 random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH), Metida.VarEffect(Metida.@covstr(period+sequence), Metida.VC)],
 )
+#fieldnames(ContinuousTerm)
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH), Metida.VarEffect(Metida.@covstr(period+sequence), Metida.VC)],
+subject = :subject)
 
-Metida.gmat_blockdiag([1,2,3,4,5,6,7,8,9], lmm.covstr) 
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH)],
+repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
+subject = :subject)
+
+Metida.fit!(lmm)
+
+Metida.gmat_blockdiag([1,2,3,4,5,6,7,8,9], lmm.covstr)
 
 lmm.covstr.random[1].model
 
-Xv, Zv, yv = Metida.subjblocks(df, :subject, lmm.mm.m, lmm.Z, lmm.mf.data[lmm.model.lhs.sym])
+#Xv, Zv, yv = Metida.subjblocks(df, :subject, lmm.mm.m, lmm.Z, lmm.mf.data[lmm.model.lhs.sym])
 
 qrd = qr(lmm.mm.m, Val(false))
 β = inv(qrd.R)*qrd.Q'*lmm.mf.data[lmm.model.lhs.sym]
@@ -22,7 +33,11 @@ p = rank(lmm.mm.m)
 θ = [0.2, 0.3, 0.4, 0.5, 0.1]
 reml  = Metida.reml(yv, Zv, p, Xv, θ, β)
 #-27.838887604599993
-reml2 = Metida.reml_sweep(yv, Zv, p, Xv, θ, β)
+reml2 = Metida.reml_sweep2(lmm.data.yv, lmm.data.zv, lmm.rankx, lmm.data.xv, β, θ)
+
+G = Metida.gmat_blockdiag(θ, lmm.covstr)
+G2 = Metida.gmat(θ[3:5])
+
 
 grad = ForwardDiff.gradient(x -> Metida.reml(yv, Zv, p, Xv, x, β), θ)
 #=

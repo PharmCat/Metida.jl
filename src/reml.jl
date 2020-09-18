@@ -25,20 +25,48 @@ function reml(yv, Zv, p, Xv, θvec, β)
     return   -(θ1 + θ2 + θ3 + c)
 end
 
-function reml_sweep(yv, Zv, p, Xv, θvec, β)
+function reml_sweep(lmm, yv, Zv, p, Xv, β, θ)
     n = length(yv)
     N = sum(length.(yv))
-    G = gmat(θvec[3:5])
+    #G = gmat(θ[3:5])
+    G = gmat_blockdiag(θ, lmm.covstr)
     c  = (N-p)*log(2π)
-    θ1 = 0.0
-    θ2 = 0.0
-    θ3 = 0.0
-    θ2m  = zeros(eltype(θvec), p, p)
+    θ1 = zero(eltype(θ))
+    θ2 = zero(eltype(θ))
+    θ3 = zero(eltype(θ))
+    θ2m  = zeros(eltype(θ), p, p)
 
     for i = 1:n
         q = length(yv[i])
         r = mulr(yv[i], Xv[i], β)
-        R   = rmat([θvec[1], θvec[2]], Zv[i])
+        #R   = rmat([θ[1], θ[2]], Zv[i])
+        R   = rmat(θ[lmm.covstr.tr[end]], lmm.data.zrv[i], lmm.covstr.repeated)
+        Vp  = mulαβαtc2(Zv[i], G, R, r)
+        V = view(Vp, 1:q, 1:q)
+        θ1  += logdet(V)
+        sweep!(Vp, 1:q)
+        iV  = Symmetric(-Vp[1:q, 1:q])
+        mulαtβαinc!(θ2m, Xv[i], iV)
+        θ3  += -Vp[end, end]
+    end
+    θ2       = logdet(θ2m)
+    return   -(θ1 + θ2 + θ3 + c)
+end
+
+function reml_sweep2(yv, Zv, p, Xv, β, θ)
+    n = length(yv)
+    N = sum(length.(yv))
+    G = gmat(θ[3:5])
+    c  = (N-p)*log(2π)
+    θ1 = zero(eltype(θ))
+    θ2 = zero(eltype(θ))
+    θ3 = zero(eltype(θ))
+    θ2m  = zeros(eltype(θ), p, p)
+
+    for i = 1:n
+        q = length(yv[i])
+        r = mulr(yv[i], Xv[i], β)
+        R   = rmat([θ[1], θ[2]], Zv[i])
         Vp  = mulαβαtc2(Zv[i], G, R, r)
         V = view(Vp, 1:q, 1:q)
         θ1  += logdet(V)
