@@ -1,4 +1,4 @@
-using DataFrames, CSV, StatsModels, LinearAlgebra, ForwardDiff, BenchmarkTools
+using DataFrames, CSV, StatsModels, LinearAlgebra, ForwardDiff, BenchmarkTools, ForwardDiff, Optim
 path    = dirname(@__FILE__)
 df      = CSV.File(path*"/csv/df0.csv") |> DataFrame
 categorical!(df, :subject);
@@ -97,3 +97,39 @@ function gmat(θ::Vector{T}, zn) where T
     end
     Symmetric(mx)
 end
+
+
+
+
+
+function funcx(x)
+    x[1]^2 + 3*x[2]^2 * x[3]^2
+end
+
+func2x = x -> funcx(x)
+
+ForwardDiff.gradient(funcx, [1,2,3])
+ForwardDiff.hessian(funcx, [1,2,3])
+
+function fgh!(F,G,H,x)
+
+  val = func2x(x)
+
+  if G != nothing
+      G .= ForwardDiff.gradient(funcx, x)
+  end
+  if H != nothing
+      H .= ForwardDiff.hessian(funcx, x)
+  end
+  if F != nothing
+    return val
+  end
+  nothing
+end
+
+optoptions = Optim.Options(g_tol = 1e-12,
+    allow_f_increases = true)
+
+opt = Optim.optimize(Optim.only_fgh!(fgh!), [3., 3., 3.], Optim.Newton(), optoptions)
+
+opt = Optim.optimize( funcx, [3., 3., 3.], Optim.LBFGS(), optoptions)

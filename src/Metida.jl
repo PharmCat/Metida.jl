@@ -5,6 +5,7 @@ __precompile__()
 module Metida
 
 using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables, ForwardDiff, BlockDiagonals, BlockArrays#, SweepOperator
+using Optim
 
 import LinearAlgebra:checksquare
 
@@ -24,6 +25,7 @@ include("reml.jl")
 include("ml.jl")
 include("lmmdata.jl")
 include("lmm.jl")
+include("optfgh.jl")
 include("fit.jl")
 
 
