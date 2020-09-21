@@ -25,15 +25,19 @@ Metida.gmat_blockdiag([1,2,3,4,5,6,7,8,9], lmm.covstr)
 
 lmm.covstr.random[1].model
 
-#Xv, Zv, yv = Metida.subjblocks(df, :subject, lmm.mm.m, lmm.Z, lmm.mf.data[lmm.model.lhs.sym])
-
+Xv, Zv, rza, yv = Metida.subjblocks(df, :subject, lmm.mm.m, lmm.covstr.z, lmm.mf.data[lmm.mf.f.lhs.sym], lmm.covstr.rz)
 qrd = qr(lmm.mm.m, Val(false))
 β = inv(qrd.R)*qrd.Q'*lmm.mf.data[lmm.model.lhs.sym]
 p = rank(lmm.mm.m)
 θ = [0.2, 0.3, 0.4, 0.5, 0.1]
 reml  = Metida.reml(yv, Zv, p, Xv, θ, β)
 #-27.838887604599993
-reml2 = Metida.reml_sweep2(lmm.data.yv, lmm.data.zv, lmm.rankx, lmm.data.xv, β, θ)
+
+reml2 = Metida.reml_sweep(lmm, β, θ)
+
+β2 = [1.6785714285714297, -0.1708333333333335, 0.007670709793349051, -0.057142857142857356, 0.1435197663971236, -0.0791666666666675]
+reml3 = Metida.reml2b(lmm, θ)
+reml4 = Metida.reml_sweep(lmm, β2, θ)
 
 G = Metida.gmat_blockdiag(θ, lmm.covstr)
 G2 = Metida.gmat(θ[3:5])
@@ -133,3 +137,11 @@ optoptions = Optim.Options(g_tol = 1e-12,
 opt = Optim.optimize(Optim.only_fgh!(fgh!), [3., 3., 3.], Optim.Newton(), optoptions)
 
 opt = Optim.optimize( funcx, [3., 3., 3.], Optim.LBFGS(), optoptions)
+
+Z = [1 0; 1 0; 0 1; 0 1]
+G = [1 0.2; 0.2 0.9]
+R = [1 0 0 0; 0 1 0 0; 0 0 .5 0; 0 0 0 .5]
+X = [1 0 0; 1 1 1; 1 0 1; 1 0 1]
+x = [1, 2, 3, 6]
+
+Metida.mulαβαtc2(Z, G, R, X)

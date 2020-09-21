@@ -23,7 +23,7 @@ function mulαβαtc(A, B, C)
     end
     Symmetric(mx)
 end
-function mulαβαtc2(A, B, C, r)
+function mulαβαtc2(A, B, C, r::Vector)
     q  = size(B, 1)
     p  = size(A, 1)
     c  = zeros(eltype(B), q)
@@ -44,6 +44,29 @@ function mulαβαtc2(A, B, C, r)
         mx[end, i] = r[i]
         mx[i, end] = r[i]
     end
+    mx
+end
+function mulαβαtc3(A, B, C, X)
+    q  = size(B, 1)
+    p  = size(A, 1)
+    c  = zeros(eltype(B), q)
+    mx = zeros(eltype(B), p + size(X, 2), p + size(X, 2))
+    for i = 1:p
+        fill!(c, zero(eltype(c)))
+        @simd for n = 1:q
+            @simd for m = 1:q
+                c[n] +=  A[i, m] * B[n, m]
+            end
+        end
+        @simd for n = 1:p
+            @simd for m = 1:q
+                 mx[i, n] += A[n, m] * c[m]
+            end
+            mx[i, n] += C[i, n]
+        end
+    end
+    mx[1:p, p+1:end] = X
+    mx[p+1:end, 1:p] = X'
     mx
 end
 #-------------------------------------------------------------------------------

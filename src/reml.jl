@@ -1,7 +1,7 @@
 #reml.jl
 
 """
-    2 log Restricted Maximum Likelihood
+    -2 log Restricted Maximum Likelihood
 """
 function reml(yv, Zv, p, Xv, θvec, β)
     n = length(yv)
@@ -25,34 +25,79 @@ function reml(yv, Zv, p, Xv, θvec, β)
     return   -(θ1 + θ2 + θ3 + c)
 end
 
-function reml_sweep(lmm, yv, Zv, p, Xv, β, θ)
-    n = length(yv)
-    N = sum(length.(yv))
-    #G = gmat(θ[3:5])
+function reml_sweep(lmm, β, θ)
+    n = length(lmm.data.yv)
+    N = sum(length.(lmm.data.yv))
     G = gmat_blockdiag(θ, lmm.covstr)
-    c  = (N-p)*log(2π)
-    θ1 = zero(eltype(θ))
-    θ2 = zero(eltype(θ))
-    θ3 = zero(eltype(θ))
-    θ2m  = zeros(eltype(θ), p, p)
-
+    c  = (N-lmm.rankx)*log(2π)
+    θ₁ = zero(eltype(θ))
+    θ₂ = zero(eltype(θ))
+    θ₃ = zero(eltype(θ))
+    θ2m  = zeros(eltype(θ), lmm.rankx, lmm.rankx)
     for i = 1:n
-        q = length(yv[i])
-        r = mulr(yv[i], Xv[i], β)
-        #R   = rmat([θ[1], θ[2]], Zv[i])
+        q   = length(lmm.data.yv[i])
+        r   = mulr(lmm.data.yv[i], lmm.data.xv[i], β)
         R   = rmat(θ[lmm.covstr.tr[end]], lmm.data.zrv[i], lmm.covstr.repeated)
-        Vp  = mulαβαtc2(Zv[i], G, R, r)
-        V = view(Vp, 1:q, 1:q)
-        θ1  += logdet(V)
+        Vp  = mulαβαtc2(lmm.data.zv[i], G, R, r)
+        V   = view(Vp, 1:q, 1:q)
+        θ₁  += logdet(V)
         sweep!(Vp, 1:q)
         iV  = Symmetric(-Vp[1:q, 1:q])
-        mulαtβαinc!(θ2m, Xv[i], iV)
-        θ3  += -Vp[end, end]
+        mulαtβαinc!(θ2m, lmm.data.xv[i], iV)
+        θ₃  += -Vp[end, end]
     end
-    θ2       = logdet(θ2m)
-    return   -(θ1 + θ2 + θ3 + c)
+    θ₂       = logdet(θ2m)
+    return   -(θ₁ + θ₂ + θ₃ + c)
 end
 
+"""
+    -2 log Restricted Maximum Likelihood; β calculation inside
+"""
+
+function reml2b(lmm, θ::Vector{T}) where T
+    n  = length(lmm.data.yv)
+    N  = sum(length.(lmm.data.yv))
+    G  = gmat_blockdiag(θ, lmm.covstr)
+    c  = (N-lmm.rankx)*log(2π)
+    #---------------------------------------------------------------------------
+    V⁻¹       = Vector{Matrix{T}}(undef, n)
+                                                    # Vector log determinant of V matrix
+    θ₁        = zero(T)
+    θ₂        = zeros(promote_type(eltype(first(lmm.data.yv)), T), lmm.rankx, lmm.rankx)
+    θ₃        = zero(T)
+    βm        = zeros(promote_type(eltype(first(lmm.data.yv)), T), lmm.rankx)
+    β         = zeros(promote_type(eltype(first(lmm.data.yv)), T), lmm.rankx)
+
+    for i = 1:n
+        q   = length(lmm.data.yv[i])
+        r   = mulr(lmm.data.yv[i], lmm.data.xv[i], β)
+        R   = rmat(θ[lmm.covstr.tr[end]], lmm.data.zrv[i], lmm.covstr.repeated)
+        Vp  = mulαβαtc3(lmm.data.zv[i], G, R, lmm.data.xv[i])
+        V   = view(Vp, 1:q, 1:q)
+        θ₁  += logdet(V)
+        sweep!(Vp, 1:q)
+        V⁻¹[i] = Symmetric(-Vp[1:q, 1:q])
+
+        #-----------------------------------------------------------------------
+        θ₂ += Vp[1:q, q + 1:end]' * lmm.data.xv[i]
+        βm += Vp[1:q, q + 1:end]' * lmm.data.yv[i]
+        #mulθβinc!(θ₂, βm, data.Xv[i], V⁻¹[i], data.yv[i], first(data.mem.svec))
+        #-----------------------------------------------------------------------
+    end
+
+    mul!(β, inv(θ₂), βm)
+
+    for i = 1:n
+        r    =  lmm.data.yv[i] - lmm.data.xv[i] * β
+        θ₃  += r' * V⁻¹[i] * r
+        #@inbounds θ₃  += mulθ₃(data.yv[i], data.Xv[i], β, V⁻¹[i])
+    end
+
+    return   θ₁ + logdet(θ₂) + θ₃ + c,  β, θ₂
+end
+
+
+#=
 function reml_sweep2(yv, Zv, p, Xv, β, θ)
     n = length(yv)
     N = sum(length.(yv))
@@ -78,6 +123,21 @@ function reml_sweep2(yv, Zv, p, Xv, β, θ)
     θ2       = logdet(θ2m)
     return   -(θ1 + θ2 + θ3 + c)
 end
+=#
+
+
+
+
+
+
+
+
+
+################################################################################
+
+
+################################################################################
+
 
 """
     2 log Restricted Maximum Likelihood gradient vector

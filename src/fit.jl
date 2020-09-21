@@ -10,7 +10,7 @@ function fit!(lmm::LMM)
   0.14416666666666722,
  -0.0791666666666665]
     θ = sqrt.([0.4, 0.5, 0.1 ^ 2, 0.2, 0.3, 2., 1., 1., 1., 1.])
-    mlf = x -> reml_sweep(lmm, lmm.data.yv, lmm.data.zv, lmm.rankx, lmm.data.xv, β, x)
+    mlf = x -> reml_sweep(lmm, β, x)
 
 
 
