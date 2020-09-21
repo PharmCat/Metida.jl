@@ -19,7 +19,7 @@ random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH)],
 repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
 subject = :subject)
 
-Metida.fit!(lmm)
+lmmr = Metida.fit!(lmm)
 
 Metida.gmat_blockdiag([1,2,3,4,5,6,7,8,9], lmm.covstr)
 
@@ -32,12 +32,16 @@ p = rank(lmm.mm.m)
 θ = [0.2, 0.3, 0.4, 0.5, 0.1]
 reml  = Metida.reml(yv, Zv, p, Xv, θ, β)
 #-27.838887604599993
-
+θ = sqrt.([0.4, 0.5, 0.1 ^ 2, 0.2, 0.3])
 reml2 = Metida.reml_sweep(lmm, β, θ)
 
 β2 = [1.6785714285714297, -0.1708333333333335, 0.007670709793349051, -0.057142857142857356, 0.1435197663971236, -0.0791666666666675]
-reml3 = Metida.reml2b(lmm, θ)
-reml4 = Metida.reml_sweep(lmm, β2, θ)
+reml3 = Metida.reml_sweep_β(lmm, θ)
+reml4 = Metida.reml_sweep(lmm, reml3[2], θ)
+
+grad1 = ForwardDiff.gradient(x -> Metida.reml_sweep(lmm, reml3[2], x), θ)
+hf = x -> Metida.reml_sweep(lmm, reml3[2], x)
+hess1 = ForwardDiff.hessian(hf, θ)
 
 G = Metida.gmat_blockdiag(θ, lmm.covstr)
 G2 = Metida.gmat(θ[3:5])
@@ -51,10 +55,10 @@ grad = ForwardDiff.gradient(x -> Metida.reml(yv, Zv, p, Xv, x, β), θ)
  -3.6012790991017023
   1.5443845439051467
 =#
-grad = ForwardDiff.gradient(x -> Metida.reml_sweep(yv, Zv, p, Xv, x, β), θ)
+grad = ForwardDiff.gradient(x -> Metida.reml_sweep(lmm, β, x), θ)
 
 
-hess = ForwardDiff.hessian(x -> Metida.reml(yv, Zv, p, Xv, x, β), θ)
+hess = ForwardDiff.hessian(x -> Metida.reml_sweep(lmm, β, x), θ)
 
 
 Metida.covmat_grad(Metida.vmat, Zv[1], θ)

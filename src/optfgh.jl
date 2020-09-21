@@ -1,18 +1,21 @@
 # optfgh.jl
 
 
-function fgh!(F,G,H,x)
+function fgh!(F, G, H, x; remlβcalc::Function, remlcalc::Function)
 
-  val = func2x(x)
+
+  reml, β, c = remlβcalc(x)
+
+  remlcalcd = x -> remlcalc(β, x)
 
   if G != nothing
-      G .= ForwardDiff.gradient(funcx, x)
+      G .= ForwardDiff.gradient(remlcalcd, x)
   end
   if H != nothing
-      H .= ForwardDiff.hessian(funcx, x)
+      H .= ForwardDiff.hessian(remlcalcd, x)
   end
   if F != nothing
-    return val
+    return reml
   end
   nothing
 end

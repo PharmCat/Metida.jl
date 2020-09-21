@@ -72,3 +72,35 @@ function initvar(y::Vector, X::Matrix{T}) where T
     r    = y - X * b
     sum(x -> x * x, r)/(length(r) - size(X, 2)), β
 end
+
+################################################################################
+#                        VAR LINK
+################################################################################
+
+function vlink(σ::T) where T <: Real
+    exp(σ)
+end
+function vlinkr(σ::T) where T <: Real
+    log(σ)
+end
+
+function rholinkpsigmoid(ρ::T) where T <: Real
+    return 1.0/(1.0 + exp(ρ))
+end
+function rholinkpsigmoidr(ρ::T) where T <: Real
+    return log(1.0/ρ - 1.0)
+end
+
+function rholinksigmoid(ρ::T, m) where T <: Real
+    return ρ/sqrt(1.0 + ρ^2)
+end
+function rholinksigmoidr(ρ::T, m) where T <: Real
+    return sign(ρ)*sqrt(ρ^2/(1.0 - ρ^2))
+end
+
+function rholinksigmoid2(ρ::T, m) where T <: Real
+    return atan(ρ)/pi*2.0
+end
+function rholinksigmoid2r(ρ::T, m) where T <: Real
+    return tan(ρ*pi/2.0)
+end

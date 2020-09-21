@@ -5,24 +5,30 @@ end
 
 struct VarianceComponents <: AbstractCovarianceType
     f
+    v
+    rho
     function VarianceComponents()
-        new(x -> x)
+        new(x -> x, x -> x, x -> 0)
     end
 end
 VC = VarianceComponents
 
 struct ScaledIdentity <: AbstractCovarianceType
     f
+    v
+    rho
     function ScaledIdentity()
-        new(x -> 1)
+        new(x -> 1, x -> 1, x -> 0)
     end
 end
 SI = ScaledIdentity
 
 struct HeterogeneousCompoundSymmetry <: AbstractCovarianceType
     f
+    v
+    rho
     function HeterogeneousCompoundSymmetry()
-        new(x -> x + 1)
+        new(x -> x + 1, x -> x, x -> 1)
     end
 end
 CSH = HeterogeneousCompoundSymmetry
@@ -58,15 +64,18 @@ end
 struct CovStructure <: AbstractCovarianceStructure
     random::Vector{VarEffect}
     repeated::VarEffect
-    z
-    rz
-    q
-    t
-    tr
+    z::Matrix                                         #Z matrix
+    rz::Matrix
+    q::Vector{Int}
+    t::Vector{Int}
+    tr::Vector{UnitRange}
+    tl::Int
+    vl::Vector{Function}
     function CovStructure(random, repeated, data)
         q       = Vector{Int}(undef, length(random) + 1)
         t       = Vector{Int}(undef, length(random) + 1)
         tr      = Vector{UnitRange}(undef, length(random) + 1)
+
         rschema = apply_schema(random[1].model, schema(data, random[1].coding))
         if schemalength(rschema) == 1 z = modelcols(rschema, data) else z = reduce(hcat, modelcols(rschema, data)) end
         q[1]    = size(z, 2)
@@ -92,7 +101,32 @@ struct CovStructure <: AbstractCovarianceStructure
         end
         t[end]      = repeated.covtype.f(q[end])
         tr[end]     = UnitRange(sum(t[1:end-1]) + 1, sum(t[1:end-1]) + t[end])
-        new(random, repeated, z, rz, q, t, tr)
+        tl  = sum(t)
+        vl  = Vector{Function}(undef, tl)
+        vln = 1
+        for i = 1:length(random)
+            for i2 = 1:random[i].covtype.v(q[i])
+                vl[vln] = vlink
+                vln +=1
+            end
+            if random[i].covtype.rho(q[i]) > 0
+                for i2 = 1:random[i].covtype.rho(q[i])
+                    vl[vln] = rholinkpsigmoid
+                    vln +=1
+                end
+            end
+        end
+        for i2 = 1:repeated.covtype.v(q[end])
+            vl[vln] = vlink
+            vln +=1
+        end
+        if repeated.covtype.rho(q[end]) > 0
+            for i2 = 1:repeated.covtype.rho(q[end])
+                vl[vln] = rholinkpsigmoid
+                vln +=1
+            end
+        end
+        new(random, repeated, z, rz, q, t, tr, tl, vl)
     end
 end
 

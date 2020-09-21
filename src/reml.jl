@@ -54,7 +54,7 @@ end
     -2 log Restricted Maximum Likelihood; β calculation inside
 """
 
-function reml2b(lmm, θ::Vector{T}) where T
+function reml_sweep_β(lmm, θ::Vector{T}) where T
     n  = length(lmm.data.yv)
     N  = sum(length.(lmm.data.yv))
     G  = gmat_blockdiag(θ, lmm.covstr)
@@ -79,7 +79,8 @@ function reml2b(lmm, θ::Vector{T}) where T
         V⁻¹[i] = Symmetric(-Vp[1:q, 1:q])
 
         #-----------------------------------------------------------------------
-        θ₂ += Vp[1:q, q + 1:end]' * lmm.data.xv[i]
+        #θ₂ += Vp[1:q, q + 1:end]' * lmm.data.xv[i]
+        θ₂ -= Symmetric(Vp[q + 1:end, q + 1:end])
         βm += Vp[1:q, q + 1:end]' * lmm.data.yv[i]
         #mulθβinc!(θ₂, βm, data.Xv[i], V⁻¹[i], data.yv[i], first(data.mem.svec))
         #-----------------------------------------------------------------------
@@ -88,9 +89,9 @@ function reml2b(lmm, θ::Vector{T}) where T
     mul!(β, inv(θ₂), βm)
 
     for i = 1:n
-        r    =  lmm.data.yv[i] - lmm.data.xv[i] * β
-        θ₃  += r' * V⁻¹[i] * r
-        #@inbounds θ₃  += mulθ₃(data.yv[i], data.Xv[i], β, V⁻¹[i])
+        #r    =  lmm.data.yv[i] - lmm.data.xv[i] * β
+        #θ₃  += r' * V⁻¹[i] * r
+        @inbounds θ₃  += mulθ₃(lmm.data.yv[i], lmm.data.xv[i], β, V⁻¹[i])
     end
 
     return   θ₁ + logdet(θ₂) + θ₃ + c,  β, θ₂
