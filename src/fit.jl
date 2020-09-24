@@ -3,39 +3,27 @@
 
 function fit!(lmm::LMM)
 
-    #=
-    β   = [1.6099999999999992,
- -0.17083333333333264,
-  0.14416666666666683,
-  0.08000000000000033,
-  0.14416666666666722,
- -0.0791666666666665]
- =#
-    θ = sqrt.([0.4, 0.5, 0.1 ^ 2, 0.2, 0.3])
-    #mlf = x -> reml_sweep(lmm, β, x)
+    θ = sqrt.([0.2075570458620876, 0.13517107978180684, 1.0, 0.02064464030301768, 0.04229496217886127])
+    #Make varlink function
 
-    remlβcalc = x     -> reml_sweep_β(lmm, x)
-    remlcalc  = (x,y) -> reml_sweep(lmm, x, y)
+    fv  = varlinkvec(lmm.covstr.ct)
+    fvr = varlinkrvec(lmm.covstr.ct)
 
-    remlfunc!(a,b,c,d) = fgh!(a, b, c, d; remlβcalc = remlβcalc, remlcalc = remlcalc)
+    #remlfunc!(a,b,c,d) = Metida.fgh!(a, b, c, d; remlβcalc = x -> remlβcalc(Metida.varlinkvecapply!(x, fv)), remlcalc = (x,y) -> Metida.reml_sweep(lmm, x, Metida.varlinkvecapply!(y, fv)))
 
     optmethod  = Optim.Newton()
-
     optoptions = Optim.Options(g_tol = 1e-12,
-        iterations = 10,
+        iterations = 200,
         store_trace = true,
-        show_trace = false)
+        show_trace = false,
+        allow_f_increases = true)
 
+    θ = rand(lmm.covstr.tl)
 
+    #Optim.optimize(Optim.only_fgh!(remlfunc!), θ, optmethod, optoptions)
 
-    #Optim.optimize(Optim.only_fgh!(fgh!), [0., 0.], optmethod, optoptions)
-
-    #mlf(θ)
-
-    GRAD = zeros(Float64, 5)
-    H    = zeros(Float64, 5, 5)
-    f    = remlfunc!(true, GRAD, H, θ)
-
-    (f, GRAD, H)
+    remlβoptim = x -> reml_sweep_β(lmm, varlinkvecapply!(x, fv))[1]
+    td      = TwiceDifferentiable(remlβoptim, θ; autodiff = :forward)
+    Optim.optimize(td, θ, optmethod, optoptions)
 
 end

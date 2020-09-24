@@ -66,7 +66,7 @@ end
 """
 Variance estimate via OLS and QR decomposition.
 """
-function initvar(y::Vector, X::Matrix{T}) where T
+@inline function initvar(y::Vector, X::Matrix{T}) where T
     qrx  = qr(X)
     β    = inv(qrx.R) * qrx.Q' * y
     r    = y - X * b
@@ -77,30 +77,57 @@ end
 #                        VAR LINK
 ################################################################################
 
-function vlink(σ::T) where T <: Real
+@inline function vlink(σ::T) where T <: Real
     exp(σ)
 end
-function vlinkr(σ::T) where T <: Real
+@inline function vlinkr(σ::T) where T <: Real
     log(σ)
 end
 
-function rholinkpsigmoid(ρ::T) where T <: Real
+@inline function rholinkpsigmoid(ρ::T) where T <: Real
     return 1.0/(1.0 + exp(ρ))
 end
-function rholinkpsigmoidr(ρ::T) where T <: Real
+@inline function rholinkpsigmoidr(ρ::T) where T <: Real
     return log(1.0/ρ - 1.0)
 end
 
-function rholinksigmoid(ρ::T, m) where T <: Real
+@inline function rholinksigmoid(ρ::T, m) where T <: Real
     return ρ/sqrt(1.0 + ρ^2)
 end
-function rholinksigmoidr(ρ::T, m) where T <: Real
+@inline function rholinksigmoidr(ρ::T, m) where T <: Real
     return sign(ρ)*sqrt(ρ^2/(1.0 - ρ^2))
 end
 
-function rholinksigmoid2(ρ::T, m) where T <: Real
+@inline function rholinksigmoid2(ρ::T, m) where T <: Real
     return atan(ρ)/pi*2.0
 end
-function rholinksigmoid2r(ρ::T, m) where T <: Real
+@inline function rholinksigmoid2r(ρ::T, m) where T <: Real
     return tan(ρ*pi/2.0)
 end
+
+################################################################################
+
+@inline function varlinkvec(v)
+    fv = Vector{Function}(undef, length(v))
+    for i = 1:length(v)
+        if v[i] == :var fv[i] = vlink else fv[i] = rholinkpsigmoid end
+    end
+    fv
+end
+@inline function varlinkrvec(v)
+    fv = Vector{Function}(undef, length(v))
+    for i = 1:length(v)
+        if v[i] == :var fv[i] = vlinkr else fv[i] = rholinkpsigmoidr end
+    end
+    fv
+end
+
+@inline function varlinkvecapply!(v, f)
+    rv = similar(v)
+    for i = 1:length(v)
+        rv[i] = f[i](v[i])
+    end
+    rv
+end
+
+################################################################################

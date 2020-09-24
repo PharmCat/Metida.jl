@@ -2,7 +2,7 @@
 """
 A * B * A' + C
 """
-function mulαβαtc(A, B, C)
+@inline function mulαβαtc(A, B, C)
     q  = size(B, 1)
     p  = size(A, 1)
     c  = zeros(eltype(B), q)
@@ -23,7 +23,7 @@ function mulαβαtc(A, B, C)
     end
     Symmetric(mx)
 end
-function mulαβαtc2(A, B, C, r::Vector)
+@inline function mulαβαtc2(A, B, C, r::Vector)
     q  = size(B, 1)
     p  = size(A, 1)
     c  = zeros(eltype(B), q)
@@ -46,7 +46,7 @@ function mulαβαtc2(A, B, C, r::Vector)
     end
     mx
 end
-function mulαβαtc3(A, B, C, X)
+@inline function mulαβαtc3(A, B, C, X)
     q  = size(B, 1)
     p  = size(A, 1)
     c  = zeros(eltype(B), q)
@@ -55,14 +55,14 @@ function mulαβαtc3(A, B, C, X)
         fill!(c, zero(eltype(c)))
         @simd for n = 1:q
             @simd for m = 1:q
-                c[n] +=  A[i, m] * B[n, m]
+                @inbounds c[n] +=  A[i, m] * B[n, m]
             end
         end
         @simd for n = 1:p
             @simd for m = 1:q
-                 mx[i, n] += A[n, m] * c[m]
+                 @inbounds mx[i, n] += A[n, m] * c[m]
             end
-            mx[i, n] += C[i, n]
+            @inbounds mx[i, n] += C[i, n]
         end
     end
     mx[1:p, p+1:end] = X
@@ -73,7 +73,7 @@ end
 """
 A' * B * A -> + θ
 """
-function mulαtβαinc!(θ, A, B)
+@inline function mulαtβαinc!(θ, A, B)
     q = size(B, 1)
     p = size(A, 2)
     c = zeros(eltype(B), q)
@@ -90,7 +90,7 @@ end
 """
 A' * B * A -> θ
 """
-function mulαtβα!(θ, A, B)
+@inline function mulαtβα!(θ, A, B)
     q = size(B, 1)
     p = size(A, 2)
     c = zeros(eltype(B), q)
@@ -111,7 +111,7 @@ end
 """
 A * B * A -> θ
 """
-function mulαβαc!(θ, A, B)
+@inline function mulαβαc!(θ, A, B)
     q = size(B, 1)
     p = size(A, 2)
     c = zeros(eltype(B), q)
@@ -131,7 +131,7 @@ end
 """
 tr(A * B)
 """
-function trmulαβ(A, B)
+@inline function trmulαβ(A, B)
     c = 0
     @inbounds for n = 1:size(A,1), m = 1:size(B, 1)
         c += A[n,m] * B[m, n]
@@ -148,7 +148,7 @@ end
 """
 (y - X * β)' * V * (y - X * β)
 """
-function mulθ₃(y::AbstractVector, X::AbstractMatrix, β::AbstractVector, V::AbstractMatrix)
+@inline function mulθ₃(y::AbstractVector, X::AbstractMatrix, β::AbstractVector, V::AbstractMatrix)
     q = size(V, 1)
     p = size(X, 2)
     θ = 0
@@ -169,7 +169,7 @@ end
 """
 (y - X * β)
 """
-function mulr!(v::AbstractVector, y::AbstractVector, X::AbstractMatrix, β::AbstractVector)
+@inline function mulr!(v::AbstractVector, y::AbstractVector, X::AbstractMatrix, β::AbstractVector)
     fill!(v, zero(eltype(v)))
     q = length(y)
     p = size(X, 2)
@@ -181,7 +181,7 @@ function mulr!(v::AbstractVector, y::AbstractVector, X::AbstractMatrix, β::Abst
     end
     return v
 end
-function mulr(y::AbstractVector, X::AbstractMatrix, β::AbstractVector)
+@inline function mulr(y::AbstractVector, X::AbstractMatrix, β::AbstractVector)
     v = zeros(eltype(β), length(y))
     q = length(y)
     p = size(X, 2)

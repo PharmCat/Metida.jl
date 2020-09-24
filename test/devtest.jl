@@ -10,16 +10,32 @@ lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
 random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH), Metida.VarEffect(Metida.@covstr(period+sequence), Metida.VC)],
 )
 #fieldnames(ContinuousTerm)
+
 lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
 random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH), Metida.VarEffect(Metida.@covstr(period+sequence), Metida.VC)],
 subject = :subject)
 
 lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
-random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH)],
+random = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
+subject = :subject)
+
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
 repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
 subject = :subject)
 
 lmmr = Metida.fit!(lmm)
+
+
+
+v   = copy(Optim.minimizer(lmmr))
+Optim.minimum(lmmr)
+rvf = varlinkvec(lmm.covstr.ct)
+varlinkvecapply!(v, rvf)
+
+be = ReplicateBE.rbe!(df0, dvar = :var, subject = :subject, formulation = :formulation, period = :period, sequence = :sequence, g_tol = 1e-10);
+
+
 
 Metida.gmat_blockdiag([1,2,3,4,5,6,7,8,9], lmm.covstr)
 
@@ -29,17 +45,22 @@ Xv, Zv, rza, yv = Metida.subjblocks(df, :subject, lmm.mm.m, lmm.covstr.z, lmm.mf
 qrd = qr(lmm.mm.m, Val(false))
 β = inv(qrd.R)*qrd.Q'*lmm.mf.data[lmm.model.lhs.sym]
 p = rank(lmm.mm.m)
-θ = [0.2, 0.3, 0.4, 0.5, 0.1]
+θ = [0.2075570458620876, 0.13517107978180684, 1.0, 0.02064464030301768, 0.04229496217886127]
 reml  = Metida.reml(yv, Zv, p, Xv, θ, β)
 #-27.838887604599993
-θ = sqrt.([0.4, 0.5, 0.1 ^ 2, 0.2, 0.3])
+θ = sqrt.(θ)
 reml2 = Metida.reml_sweep(lmm, β, θ)
 
-β2 = [1.6785714285714297, -0.1708333333333335, 0.007670709793349051, -0.057142857142857356, 0.1435197663971236, -0.0791666666666675]
+β2 = [1.57749286231184, -0.1708333333333329, 0.19598442938454544, 0.14501427537631795, 0.1573631793251061, -0.07916666666666648]
+reml2 = Metida.reml_sweep(lmm, β2, θ)
+
 reml3 = Metida.reml_sweep_β(lmm, θ)
+
+
 reml4 = Metida.reml_sweep(lmm, reml3[2], θ)
 
 grad1 = ForwardDiff.gradient(x -> Metida.reml_sweep(lmm, reml3[2], x), θ)
+grad2 = ForwardDiff.gradient(x -> Metida.reml_sweep_β(lmm, x)[1], θ)
 hf = x -> Metida.reml_sweep(lmm, reml3[2], x)
 hess1 = ForwardDiff.hessian(hf, θ)
 
@@ -149,3 +170,55 @@ X = [1 0 0; 1 1 1; 1 0 1; 1 0 1]
 x = [1, 2, 3, 6]
 
 Metida.mulαβαtc2(Z, G, R, X)
+
+
+vl = [:var, :rho, :var]
+
+vf = varlinkvec(vl)
+
+ar = [1.,10.,3.]
+
+varlinkvecapply!(ar, vf)
+
+
+fv  = Metida.varlinkvec(lmm.covstr.ct)
+fvr = Metida.varlinkrvec(lmm.covstr.ct)
+θ = [0.2075570458620876, 0.13517107978180684, 0.99999, 0.02064464030301768, 0.04229496217886127]
+θ = sqrt.(θ)
+θ2 = Metida.varlinkvecapply!(θ, fvr)
+#varlinkvecapply!(θ, fv)
+
+
+remlfunc!(a,b,c,d) = Metida.fgh!(a, b, c, d; remlβcalc = x -> remlβcalc(Metida.varlinkvecapply!(x, fv)), remlcalc = (x,y) -> Metida.reml_sweep(lmm, x, Metida.varlinkvecapply!(y, fv)))
+#remlfunc!(a,b,c,d) = Metida.fgh!(a, b, c, d; remlβcalc = remlβcalc, remlcalc = remlcalc)
+
+b = Metida.reml_sweep_β(lmm, θ )[2]
+grad2 = ForwardDiff.gradient(x -> remlβcalc(x)[1], θ)
+grad2 = ForwardDiff.gradient(x -> Metida.reml_sweep_β(lmm, x)[1], θ)
+
+grad2 = ForwardDiff.gradient(x -> remlβcalc(Metida.varlinkvecapply!(x, fv))[1], θ2)
+
+grad2 = ForwardDiff.gradient(x -> remlcalc(b, x), θ)
+
+GRAD = zeros(Float64, 5)
+H    = zeros(Float64, 5, 5)
+f    = remlfunc!(true, GRAD, H, θ2)
+
+f    = remlfunc!(true, GRAD, H, Metida.varlinkvecapply!(a, fv))
+
+optmethod  = Optim.Newton()
+
+optoptions = Optim.Options(g_tol = 1e-12,
+    iterations = 300,
+    store_trace = true,
+    show_trace = false,
+    allow_f_increases = true)
+
+θ2 = rand(5)
+O1 = Optim.optimize(Optim.only_fgh!(remlfunc!), θ2, optmethod, optoptions)
+
+
+remlβcalc2 = x -> Metida.reml_sweep_β(lmm, Metida.varlinkvecapply!(x, fv))[1]
+#θ = rand(5)
+td      = TwiceDifferentiable(remlβcalc2, θ2; autodiff = :forward)
+O2 = Optim.optimize(td, θ2, optmethod, optoptions)

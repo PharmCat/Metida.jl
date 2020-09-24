@@ -34,7 +34,7 @@ function reml_sweep(lmm, β, θ)
     θ₂ = zero(eltype(θ))
     θ₃ = zero(eltype(θ))
     θ2m  = zeros(eltype(θ), lmm.rankx, lmm.rankx)
-    for i = 1:n
+    @inbounds for i = 1:n
         q   = length(lmm.data.yv[i])
         r   = mulr(lmm.data.yv[i], lmm.data.xv[i], β)
         R   = rmat(θ[lmm.covstr.tr[end]], lmm.data.zrv[i], lmm.covstr.repeated)
@@ -68,7 +68,7 @@ function reml_sweep_β(lmm, θ::Vector{T}) where T
     βm        = zeros(promote_type(eltype(first(lmm.data.yv)), T), lmm.rankx)
     β         = zeros(promote_type(eltype(first(lmm.data.yv)), T), lmm.rankx)
 
-    for i = 1:n
+    @inbounds for i = 1:n
         q   = length(lmm.data.yv[i])
         r   = mulr(lmm.data.yv[i], lmm.data.xv[i], β)
         R   = rmat(θ[lmm.covstr.tr[end]], lmm.data.zrv[i], lmm.covstr.repeated)
