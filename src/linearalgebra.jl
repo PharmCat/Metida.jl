@@ -106,8 +106,6 @@ A' * B * A -> θ
     end
     θ
 end
-
-
 """
 A * B * A -> θ
 """
@@ -127,7 +125,6 @@ A * B * A -> θ
     end
     θ
 end
-
 """
 tr(A * B)
 """
@@ -143,15 +140,13 @@ tr(H * A' * B * A)
 """
 function trmulhαtβα(H, A, B)
 end
-
-
 """
 (y - X * β)' * V * (y - X * β)
 """
-@inline function mulθ₃(y::AbstractVector, X::AbstractMatrix, β::AbstractVector, V::AbstractMatrix)
+@inline function mulθ₃(y::AbstractVector, X::AbstractMatrix, β::AbstractVector, V::AbstractMatrix{T})::T where T
     q = size(V, 1)
     p = size(X, 2)
-    θ = 0
+    θ = zero(T)
     c = zeros(eltype(V), q)
     @simd for n = 1:q
         @simd for m = 1:p
@@ -165,7 +160,6 @@ end
     end
     return θ
 end
-
 """
 (y - X * β)
 """
@@ -193,6 +187,22 @@ end
     end
     return v
 end
+"""
+A' * B  -> + θ
+"""
+@inline function mulαtβinc!(θ, A::AbstractMatrix, B::AbstractVector)
+    if size(A, 1) != length(B) throw(DimensionMismatch("size(A, 1) should be equal length(B)")) end
+    q = size(A, 1)
+    p = size(A, 2)
+    @simd for n = 1:p
+        @simd for m = 1:q
+            @inbounds θ[n] += B[m] * A[m, n]
+        end
+    end
+    θ
+end
+
+
 #=
 d = 0.4
 akk = [1.0 2.0 4.0 ; 6.0 1.0 3.0; 3 4  5]

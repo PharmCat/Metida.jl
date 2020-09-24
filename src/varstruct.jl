@@ -40,7 +40,7 @@ CSH = HeterogeneousCompoundSymmetry()
 #reduce(hcat, Z)
 
 struct VarEffect{T <: AbstractCovarianceType}
-    model
+    model::Union{Tuple{Vararg{AbstractTerm}}, Nothing}
     covtype::T
     coding::Dict{Symbol, AbstractContrasts}
     function VarEffect(model, covtype::T, coding) where T <: AbstractCovarianceType
@@ -48,6 +48,7 @@ struct VarEffect{T <: AbstractCovarianceType}
             coding = Dict{Symbol, AbstractContrasts}()
             fill_coding_dict(model, coding)
         end
+        if isa(model, AbstractTerm) model = tuple(model) end
         new{T}(model, covtype, coding)
     end
     function VarEffect(model; coding = nothing)
@@ -67,11 +68,11 @@ end
 struct CovStructure <: AbstractCovarianceStructure
     random::Vector{VarEffect}
     repeated::VarEffect
-    z::Matrix                                         #Z matrix
+    z::Matrix                                        #Z matrix
     rz::Union{Matrix, Nothing}
     q::Vector{Int}
     t::Vector{Int}
-    tr::Vector{UnitRange}
+    tr::Vector{UnitRange{Int}}
     tl::Int
     ct::Vector{Symbol}
     function CovStructure(random, repeated, data)
@@ -80,7 +81,8 @@ struct CovStructure <: AbstractCovarianceStructure
         tr      = Vector{UnitRange}(undef, length(random) + 1)
 
         rschema = apply_schema(random[1].model, schema(data, random[1].coding))
-        if schemalength(rschema) == 1 z = modelcols(rschema, data) else z = reduce(hcat, modelcols(rschema, data)) end
+        #if schemalength(rschema) == 1 z = modelcols(rschema, data) else z = reduce(hcat, modelcols(rschema, data)) end
+        z = reduce(hcat, modelcols(rschema, data))
         q[1]    = size(z, 2)
         t[1]    = random[1].covtype.f(q[1])
         tr[1]   = UnitRange(1, t[1])
@@ -96,7 +98,8 @@ struct CovStructure <: AbstractCovarianceStructure
         end
         if repeated.model !== nothing
             rschema = apply_schema(repeated.model, schema(data, repeated.coding))
-            if schemalength(rschema) == 1 rz = modelcols(rschema, data) else rz = reduce(hcat, modelcols(rschema, data)) end
+            #if schemalength(rschema) == 1 rz = modelcols(rschema, data) else rz = reduce(hcat, modelcols(rschema, data)) end
+            rz = reduce(hcat, modelcols(rschema, data))
             q[end]     = size(rz, 2)
         else
             rz         = nothing
@@ -175,13 +178,27 @@ end
     BlockDiagonal(vm)
 end
 
-@inline function rmat(θ::Vector{T}, rz, ve::VarEffect{VarianceComponents}) where T
-    Diagonal(rz * (θ .^ 2))
-end
-@inline function rmat(θ::Vector{T}, rzn, ve::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
-    I(rzn) * (θ[1] ^ 2)
+
+################################################################################
+
+function rmatbase(lmm, q, i, θ)
+    rmat(θ, lmm.data.zrv[i], q, lmm.covstr.repeated)
 end
 
+@inline function rmat(θ::Vector{T}, rz, rn, ve::VarEffect{VarianceComponents}) where T
+    Diagonal(rz * (θ .^ 2))
+end
+@inline function rmat(θ::Vector{T}, rz, rn, ve::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
+    I(rn) * (θ[1] ^ 2)
+end
+#=
+@inline function rmat(θ::Vector{T}, rz, rn, ve::VarianceComponents) where T
+    Diagonal(rz * (θ .^ 2))
+end
+@inline function rmat(θ::Vector{T}, rz, rn, ve::ScaledIdentity)::AbstractMatrix{T} where T
+    I(rn) * (θ[1] ^ 2)
+end
+=#
 
 #=
 function get_z_matrix(data, covstr::CovStructure{Vector{VarEffect}})

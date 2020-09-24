@@ -1,4 +1,5 @@
 using DataFrames, CSV, StatsModels, LinearAlgebra, ForwardDiff, BenchmarkTools, ForwardDiff, Optim
+using NLopt
 path    = dirname(@__FILE__)
 df      = CSV.File(path*"/csv/df0.csv") |> DataFrame
 categorical!(df, :subject);
@@ -222,3 +223,26 @@ remlβcalc2 = x -> Metida.reml_sweep_β(lmm, Metida.varlinkvecapply!(x, fv))[1]
 #θ = rand(5)
 td      = TwiceDifferentiable(remlβcalc2, θ2; autodiff = :forward)
 O2 = Optim.optimize(td, θ2, optmethod, optoptions)
+
+res = bboptimize(remlβcalc2; SearchRange = (-60., 60.0), NumDimensions = 5)
+
+a = [0, 0, 0, 0]
+A = [1 2 3 4; 1 2 3 3; 9 8 2 1; 1 2 1 2; 1 2 1 2]
+B = [1, 2, 9, 1 , 2]
+mulαtβinc!(a, A, B)
+
+
+
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
+repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
+subject = :subject)
+
+lmmr = Metida.fit!(lmm)
+
+@code_warntype mulαtβinc!(a, A, B)
+@code_warntype remlβcalc2(θ2)
+@code_warntype Metida.reml_sweep_β(lmm, Metida.varlinkvecapply!(θ2, fv))
+
+
+precompile(remlβcalc2, (Array{Float64,1}))

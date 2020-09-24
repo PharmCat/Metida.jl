@@ -1,40 +1,41 @@
 """
     Make X, Z matrices and vector y for each subject;
 """
-function subjblocks(df, sbj::Symbol, x::Matrix{T1}, z::Matrix{T2}, y::Vector{T3}, rz::T4) where {T1, T2, T3, T4 <: AbstractMatrix}
+function subjblocks(df, sbj::Symbol, x::Matrix{T}, z::Matrix{T}, y::Vector{T}, rz::Matrix{T}) where T
     u = unique(df[!, sbj])
-    v = findall(x -> x == u[1], df[!, sbj])
-    xv  = view(x, v, :)
-    zv  = view(z, v, :)
-    yv  = view(y, v)
-    rzv = view(rz, v, :)
-    xa  = Vector{typeof(xv)}(undef, length(u))
-    za  = Vector{typeof(zv)}(undef, length(u))
-    ya  = Vector{typeof(yv)}(undef, length(u))
-    rza = Vector{typeof(rzv)}(undef, length(u))
-    xa[1] = xv
-    za[1] = zv
-    ya[1] = yv
-    rza[1] = rzv
+    #v = findall(x -> x == u[1], df[!, sbj])
+    #xv  = Matrix(view(x, v, :))
+    #zv  = Matrix(view(z, v, :))
+    #yv  = Vector(view(y, v))
+    #rzv = Matrix(view(rz, v, :))
+    xa  = Vector{Matrix{T}}(undef, length(u))
+    za  = Vector{Matrix{T}}(undef, length(u))
+    ya  = Vector{Vector{T}}(undef, length(u))
+    rza = Vector{Matrix{T}}(undef, length(u))
+    #xa[1] = xv
+    #za[1] = zv
+    #ya[1] = yv
+    #rza[1] = rzv
     #=
     xa  = Vector{SubArray{T1, 2, Matrix{T1}, Tuple{Array{Int64,1}, Base.Slice{Base.OneTo{Int64}}},false}}(undef, length(u))
     za  = Vector{SubArray{T2, 2, Matrix{T2}, Tuple{Array{Int64,1}, Base.Slice{Base.OneTo{Int64}}},false}}(undef, length(u))
     ya  = Vector{SubArray{T3, 1, Vector{T3}, Tuple{Array{Int64,1}},false}}(undef, length(u))
     rza = Vector{SubArray{T4, 2, Matrix{T4}, Tuple{Array{Int64,1}, Base.Slice{Base.OneTo{Int64}}},false}}(undef, length(u))
     =#
-    if length(u) > 1
-        @inbounds @simd for i = 2:length(u)
-            v = findall(x->x==u[i], df[!, sbj])
-            xa[i] = view(x, v, :)
-            za[i] = view(z, v, :)
-            ya[i] = view(y, v)
-            rza[i] = view(rz, v, :)
+    #if length(u) > 1
+        @inbounds @simd for i = 1:length(u)
+            v = findall(x -> x == u[i], df[!, sbj])
+            xa[i] = Matrix(view(x, v, :))
+            za[i] = Matrix(view(z, v, :))
+            ya[i] = Vector(view(y, v))
+            rza[i] = Matrix(view(rz, v, :))
         end
-    end
+    #end
     return xa, za, rza, ya
 end
-function subjblocks(df, sbj::Symbol, x::Matrix{T1}, z::Matrix{T2}, y::Vector{T3}, rz::Nothing) where {T1, T2, T3}
+function subjblocks(df, sbj::Symbol, x::Matrix{T}, z::Matrix{T}, y::Vector{T}, rz::Nothing) where T
     u = unique(df[!, sbj])
+#=
     v = findall(x -> x == u[1], df[!, sbj])
     xv  = view(x, v, :)
     zv  = view(z, v, :)
@@ -47,19 +48,24 @@ function subjblocks(df, sbj::Symbol, x::Matrix{T1}, z::Matrix{T2}, y::Vector{T3}
     za[1] = zv
     ya[1] = yv
     rza[1] = length(ya[1])
+    =#
+    xa  = Vector{Matrix{T}}(undef, length(u))
+    za  = Vector{Matrix{T}}(undef, length(u))
+    ya  = Vector{Vector{T}}(undef, length(u))
+    rza = Vector{Matrix{T}}(undef, length(u))
     #xa  = Vector{SubArray{T1, 2, Matrix{T1}, Tuple{Array{Int64,1}, Base.Slice{Base.OneTo{Int64}}},false}}(undef, length(u))
     #za  = Vector{SubArray{T2, 2, Matrix{T2}, Tuple{Array{Int64,1}, Base.Slice{Base.OneTo{Int64}}},false}}(undef, length(u))
     #ya  = Vector{SubArray{T3, 1, Vector{T3}, Tuple{Array{Int64,1}},false}}(undef, length(u))
     #rza = Vector{Int}(undef, length(u))
-    if length(u) > 1
-        @inbounds @simd for i = 2:length(u)
-            v = findall(x->x==u[i], df[!, sbj])
-            xa[i]  = view(x, v, :)
-            za[i]  = view(z, v, :)
-            ya[i]  = view(y, v)
-            rza[i] = length(ya[i])
+    #if length(u) > 1
+        @inbounds @simd for i = 1:length(u)
+            v = findall(x -> x == u[i], df[!, sbj])
+            xa[i]  = Matrix(view(x, v, :))
+            za[i]  = Matrix(view(z, v, :))
+            ya[i]  = Vector(view(y, v))
+            rza[i] = Matrix{T}(undef, 0, 0)
         end
-    end
+    #end
     return xa, za, rza, ya
 end
 
