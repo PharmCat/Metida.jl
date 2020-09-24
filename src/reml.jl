@@ -79,30 +79,23 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
     @inbounds for i = 1:n
         q   = length(lmm.data.yv[i])
         R   = rmatbase(lmm, q, i, θ[lmm.covstr.tr[end]])
-        #R   = rmat(θ[lmm.covstr.tr[end]], lmm.data.zrv[i], q, lmm.covstr.repeated)
         Vp  = mulαβαtc3(lmm.data.zv[i], G, R, lmm.data.xv[i])
         V   = view(Vp, 1:q, 1:q)
         θ₁  += logdet(V)
         sweep!(Vp, 1:q)
         V⁻¹[i] = Symmetric(-Vp[1:q, 1:q])
-
         #-----------------------------------------------------------------------
-        #θ₂ += Vp[1:q, q + 1:end]' * lmm.data.xv[i]
         θ₂ -= Symmetric(Vp[q + 1:end, q + 1:end])
-        #βm += Vp[1:q, q + 1:end]' * lmm.data.yv[i]
         mulαtβinc!(βm, Vp[1:q, q + 1:end], lmm.data.yv[i])
         #mulθβinc!(θ₂, βm, data.Xv[i], V⁻¹[i], data.yv[i], first(data.mem.svec))
         #-----------------------------------------------------------------------
     end
-
     mul!(β, inv(θ₂), βm)
-
     for i = 1:n
         #r    =  lmm.data.yv[i] - lmm.data.xv[i] * β
         #θ₃  += r' * V⁻¹[i] * r
         @inbounds θ₃  += mulθ₃(lmm.data.yv[i], lmm.data.xv[i], β, V⁻¹[i])
     end
-
     return   θ₁ + logdet(θ₂) + θ₃ + c,  β, θ₂
 end
 

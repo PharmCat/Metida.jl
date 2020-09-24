@@ -181,11 +181,11 @@ end
 
 ################################################################################
 
-function rmatbase(lmm, q, i, θ)
+function rmatbase(lmm, q, i, θ::AbstractVector{T})::Matrix{T} where T
     rmat(θ, lmm.data.zrv[i], q, lmm.covstr.repeated)
 end
 
-@inline function rmat(θ::Vector{T}, rz, rn, ve::VarEffect{VarianceComponents}) where T
+@inline function rmat(θ::Vector{T}, rz, rn, ve::VarEffect{VarianceComponents})::AbstractMatrix{T} where T
     Diagonal(rz * (θ .^ 2))
 end
 @inline function rmat(θ::Vector{T}, rz, rn, ve::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
