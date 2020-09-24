@@ -122,12 +122,18 @@ end
     fv
 end
 
-@inline function varlinkvecapply!(v, f)
+@inline function varlinkvecapply(v, f)
     rv = similar(v)
     for i = 1:length(v)
         rv[i] = f[i](v[i])
     end
     rv
+end
+@inline function varlinkvecapply!(v, f)
+    for i = 1:length(v)
+        v[i] = f[i](v[i])
+    end
+    v
 end
 
 ################################################################################

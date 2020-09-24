@@ -23,6 +23,7 @@ function fit!(lmm::LMM)
     #Optim.optimize(Optim.only_fgh!(remlfunc!), θ, optmethod, optoptions)
 
     remlβoptim = x -> reml_sweep_β(lmm, varlinkvecapply!(x, fv))[1]
+    #remlβoptim = x -> reml_sweep_β(lmm, x -> varlinkvecapply!(x, fv), x)[1]
     td      = TwiceDifferentiable(remlβoptim, θ; autodiff = :forward)
     Optim.optimize(td, θ, optmethod, optoptions)
 

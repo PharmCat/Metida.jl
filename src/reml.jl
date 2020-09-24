@@ -25,7 +25,7 @@ function reml(yv, Zv, p, Xv, θvec, β)
     return   -(θ1 + θ2 + θ3 + c)
 end
 
-function reml_sweep(lmm, β, θ)
+function reml_sweep(lmm, β, θ::Vector{T})::T where T <: Number
     n = length(lmm.data.yv)
     N = sum(length.(lmm.data.yv))
     G = gmat_blockdiag(θ, lmm.covstr)
@@ -53,8 +53,12 @@ end
 """
     -2 log Restricted Maximum Likelihood; β calculation inside
 """
+function reml_sweep_β(lmm, f::Function, θ::Vector{T}) where T <: Number
+    f(θ)
+    reml_sweep_β(lmm, θ)
+end
 
-function reml_sweep_β(lmm, θ::Vector{T}) where T
+function reml_sweep_β(lmm, θ::Vector{T})::Tuple where T <: Number
     n  = length(lmm.data.yv)
     N  = sum(length.(lmm.data.yv))
     G  = gmat_blockdiag(θ, lmm.covstr)

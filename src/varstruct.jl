@@ -176,10 +176,10 @@ end
 end
 
 @inline function rmat(θ::Vector{T}, rz, ve::VarEffect{VarianceComponents}) where T
-    Diagonal(rz* (θ .^ 2))
+    Diagonal(rz * (θ .^ 2))
 end
 @inline function rmat(θ::Vector{T}, rzn, ve::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
-    I(rzn)*(θ[1] ^ 2)
+    I(rzn) * (θ[1] ^ 2)
 end
 
 
