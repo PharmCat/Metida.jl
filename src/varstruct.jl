@@ -2,13 +2,33 @@ macro covstr(ex)
     return :(@formula(nothing ~ $ex).rhs)
 end
 
+function ffx(x::T)::T where T
+    x
+end
+function ffxzero(x::T)::T where T
+    zero(T)
+end
+function ffxone(x::T)::T where T
+    one(T)
+end
+function ffxpone(x::T)::T where T
+    x + one(T)
+end
+function ffxmone(x::T)::T where T
+    x - one(T)
+end
+function ff2xmone(x::T)::T where T
+    2x - one(T)
+end
+
+################################################################################
 
 struct VarianceComponents <: AbstractCovarianceType
     f::Function
     v::Function
     rho::Function
     function VarianceComponents()
-        new(x -> x, x -> x, x -> 0)
+        new(ffx, ffx, ffxzero)
     end
 end
 VC = VarianceComponents()
@@ -18,7 +38,7 @@ struct ScaledIdentity <: AbstractCovarianceType
     v::Function
     rho::Function
     function ScaledIdentity()
-        new(x -> 1, x -> 1, x -> 0)
+        new(ffxone, ffxone, ffxzero)
     end
 end
 SI = ScaledIdentity()
@@ -28,7 +48,7 @@ struct HeterogeneousCompoundSymmetry <: AbstractCovarianceType
     v::Function
     rho::Function
     function HeterogeneousCompoundSymmetry()
-        new(x -> x + 1, x -> x, x -> 1)
+        new(ffxpone, ffx, ffxone)
     end
 end
 CSH = HeterogeneousCompoundSymmetry()
@@ -38,7 +58,7 @@ struct AutoregressiveFirstOrder <: AbstractCovarianceType
     v::Function
     rho::Function
     function AutoregressiveFirstOrder()
-        new(x -> 1, x -> 1, x -> 1)
+        new(x -> 2, ffxone, ffxone)
     end
 end
 ARFO = AutoregressiveFirstOrder()
@@ -48,7 +68,7 @@ struct HeterogeneousAutoregressive <: AbstractCovarianceType
     v::Function
     rho::Function
     function HeterogeneousAutoregressive()
-        new(x -> x, x -> 1, x -> 1)
+        new(ffx, ffxone, ffxone)
     end
 end
 ARH = HeterogeneousAutoregressive()
@@ -58,7 +78,7 @@ struct Toepiz <: AbstractCovarianceType
     v::Function
     rho::Function
     function Toepiz()
-        new(x -> x, x -> 1, x -> x - 1)
+        new(ffx, ffxone, ffxmone)
     end
 end
 TOEP = Toepiz()
@@ -68,7 +88,7 @@ struct HeterogeneousToepiz <: AbstractCovarianceType
     v::Function
     rho::Function
     function HeterogeneousToepiz()
-        new(x -> 2*x - 1, x -> x, x -> x - 1)
+        new(ff2xmone, ffx, ffxmone)
     end
 end
 TOEPH = HeterogeneousToepiz()
@@ -79,7 +99,7 @@ struct BandToepiz <: AbstractCovarianceType
     rho::Function
     n::Int
     function BandToepiz(n)
-        new(x -> x, x -> 1, x -> x - 1, n)
+        new(ffx, ffxone, ffxmone, n)
     end
 end
 TOEPB = BandToepiz(1)
@@ -141,7 +161,7 @@ struct CovStructure <: AbstractCovarianceStructure
 
         rschema = apply_schema(random[1].model, schema(data, random[1].coding))
         #if schemalength(rschema) == 1 z = modelcols(rschema, data) else z = reduce(hcat, modelcols(rschema, data)) end
-        z = reduce(hcat, modelcols(rschema, data))
+        z       = reduce(hcat, modelcols(rschema, data))
         q[1]    = size(z, 2)
         t[1]    = random[1].covtype.f(q[1])
         tr[1]   = UnitRange(1, t[1])
@@ -204,15 +224,15 @@ end
     end
 end
 
-@inline function gmat(θ::Vector{T}, zn, ve::VarEffect{VarianceComponents})::AbstractMatrix{T} where T
+@inline function gmat(θ::Vector{T}, zn, @nospecialize ve::VarEffect{VarianceComponents})::AbstractMatrix{T} where T
     Diagonal(θ .^ 2)
 end
 
-@inline function gmat(θ::Vector{T}, zn, ve::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
+@inline function gmat(θ::Vector{T}, zn, @nospecialize ve::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
     I(zn)*(θ[1] ^ 2)
 end
 
-@inline function gmat(θ::Vector{T}, zn, ve::VarEffect{HeterogeneousCompoundSymmetry})::AbstractMatrix{T} where T
+@inline function gmat(θ::Vector{T}, zn, @nospecialize ve::VarEffect{HeterogeneousCompoundSymmetry})::AbstractMatrix{T} where T
     mx = Matrix{T}(undef, zn, zn)
     for m = 1:zn
         @inbounds mx[m, m] = θ[m]
@@ -245,10 +265,10 @@ function rmatbase(lmm, q, i, θ::AbstractVector{T})::Matrix{T} where T
     rmat(θ, lmm.data.zrv[i], q, lmm.covstr.repeated)
 end
 
-@inline function rmat(θ::Vector{T}, rz, rn, ve::VarEffect{VarianceComponents})::AbstractMatrix{T} where T
+@inline function rmat(θ::Vector{T}, rz, rn, @nospecialize ve::VarEffect{VarianceComponents})::AbstractMatrix{T} where T
     Diagonal(rz * (θ .^ 2))
 end
-@inline function rmat(θ::Vector{T}, rz, rn, ve::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
+@inline function rmat(θ::Vector{T}, rz, rn, @nospecialize ve::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
     I(rn) * (θ[1] ^ 2)
 end
 #=
