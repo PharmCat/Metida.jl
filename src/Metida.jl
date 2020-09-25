@@ -13,7 +13,7 @@ import LinearAlgebra:checksquare
 import StatsBase: fit, fit!
 import Base:show
 
-export covstr, VC
+export @covstr, VC, VarianceComponents, CSH, HeterogeneousCompoundSymmetry, SI, ScaledIdentity, fit!, LMM, VarEffect
 
 include("abstracttype.jl")
 include("sweep.jl")
