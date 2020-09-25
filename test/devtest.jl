@@ -1,6 +1,8 @@
 using DataFrames, CSV, StatsModels, LinearAlgebra, ForwardDiff, BenchmarkTools, ForwardDiff, Optim
-using NLopt
+#using NLopt
+using SnoopCompile
 path    = dirname(@__FILE__)
+cd(path)
 df      = CSV.File(path*"/csv/df0.csv") |> DataFrame
 categorical!(df, :subject);
 categorical!(df, :period);
@@ -17,7 +19,34 @@ random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH), Metida.VarE
 subject = :subject)
 
 lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH), Metida.VarEffect(Metida.@covstr(period), Metida.VC)],
+)
+
+
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
 random = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
+subject = :subject)
+
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = Metida.VarEffect(Metida.@covstr(formulation), Metida.SI),
+repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
+subject = :subject)
+
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = Metida.VarEffect(Metida.@covstr(subject), Metida.SI),
+repeated = Metida.VarEffect(Metida.@covstr(subject), Metida.SI))
+
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = Metida.VarEffect(Metida.@covstr(subject), Metida.SI),
+repeated = Metida.VarEffect(Metida.SI))
+
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = [Metida.VarEffect(Metida.@covstr(period), Metida.SI), Metida.VarEffect(Metida.@covstr(formulation), Metida.SI)],
+repeated = Metida.VarEffect(Metida.SI))
+
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
+repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
 subject = :subject)
 
 lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
@@ -26,7 +55,7 @@ repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
 subject = :subject)
 
 lmmr = Metida.fit!(lmm)
-
+Optim.minimum(lmmr)
 
 
 v   = copy(Optim.minimizer(lmmr))
@@ -246,3 +275,8 @@ lmmr = Metida.fit!(lmm)
 
 
 precompile(remlβcalc2, (Array{Float64,1}))
+
+inf_timing = @snoopi Metida.fit!(lmm)
+
+pc = SnoopCompile.parcel(inf_timing)
+SnoopCompile.write("precompile.jl", pc)

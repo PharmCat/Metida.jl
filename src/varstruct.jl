@@ -4,9 +4,9 @@ end
 
 
 struct VarianceComponents <: AbstractCovarianceType
-    f
-    v
-    rho
+    f::Function
+    v::Function
+    rho::Function
     function VarianceComponents()
         new(x -> x, x -> x, x -> 0)
     end
@@ -14,9 +14,9 @@ end
 VC = VarianceComponents()
 
 struct ScaledIdentity <: AbstractCovarianceType
-    f
-    v
-    rho
+    f::Function
+    v::Function
+    rho::Function
     function ScaledIdentity()
         new(x -> 1, x -> 1, x -> 0)
     end
@@ -24,14 +24,68 @@ end
 SI = ScaledIdentity()
 
 struct HeterogeneousCompoundSymmetry <: AbstractCovarianceType
-    f
-    v
-    rho
+    f::Function
+    v::Function
+    rho::Function
     function HeterogeneousCompoundSymmetry()
         new(x -> x + 1, x -> x, x -> 1)
     end
 end
 CSH = HeterogeneousCompoundSymmetry()
+
+struct AutoregressiveFirstOrder <: AbstractCovarianceType
+    f::Function
+    v::Function
+    rho::Function
+    function AutoregressiveFirstOrder()
+        new(x -> 1, x -> 1, x -> 1)
+    end
+end
+ARFO = AutoregressiveFirstOrder()
+
+struct HeterogeneousAutoregressive <: AbstractCovarianceType
+    f::Function
+    v::Function
+    rho::Function
+    function HeterogeneousAutoregressive()
+        new(x -> x, x -> 1, x -> 1)
+    end
+end
+ARH = HeterogeneousAutoregressive()
+
+struct Toepiz <: AbstractCovarianceType
+    f::Function
+    v::Function
+    rho::Function
+    function Toepiz()
+        new(x -> x, x -> 1, x -> x - 1)
+    end
+end
+TOEP = Toepiz()
+
+struct HeterogeneousToepiz <: AbstractCovarianceType
+    f::Function
+    v::Function
+    rho::Function
+    function HeterogeneousToepiz()
+        new(x -> 2*x - 1, x -> x, x -> x - 1)
+    end
+end
+TOEPH = HeterogeneousToepiz()
+
+struct BandToepiz <: AbstractCovarianceType
+    f::Function
+    v::Function
+    rho::Function
+    n::Int
+    function BandToepiz(n)
+        new(x -> x, x -> 1, x -> x - 1, n)
+    end
+end
+TOEPB = BandToepiz(1)
+
+
+
 
 #schema(df6)
 #rschema = apply_schema(Term(formulation), schema(df, Dict(formulation => StatsModels.FullDummyCoding())))
@@ -47,12 +101,17 @@ struct VarEffect{T <: AbstractCovarianceType}
         if coding === nothing && model !== nothing
             coding = Dict{Symbol, AbstractContrasts}()
             fill_coding_dict(model, coding)
+        elseif coding === nothing && model === nothing
+            coding = Dict{Symbol, AbstractContrasts}()
         end
         if isa(model, AbstractTerm) model = tuple(model) end
         new{T}(model, covtype, coding)
     end
     function VarEffect(model; coding = nothing)
         VarEffect(model, VarianceComponents(), coding)
+    end
+    function VarEffect(covtype::T; coding = nothing) where T <: AbstractCovarianceType
+        VarEffect(nothing, covtype, coding)
     end
     function VarEffect()
         VarEffect(nothing, ScaledIdentity(), Dict{Symbol, AbstractContrasts}())
@@ -89,7 +148,8 @@ struct CovStructure <: AbstractCovarianceStructure
         if length(random) > 1
             for i = 2:length(random)
                 rschema = apply_schema(random[i].model, schema(data, random[i].coding))
-                if schemalength(rschema) == 1 ztemp = modelcols(rschema, data) else ztemp = reduce(hcat, modelcols(rschema, data)) end
+                #if schemalength(rschema) == 1 ztemp = modelcols(rschema, data) else ztemp = reduce(hcat, modelcols(rschema, data)) end
+                ztemp = reduce(hcat, modelcols(rschema, data))
                 q[i]    = size(ztemp, 2)
                 t[i]    = random[i].covtype.f(q[i])
                 z       = hcat(z, ztemp)
