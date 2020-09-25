@@ -1,4 +1,5 @@
 src/temp.jl
+test/precompile/
 examples/
 docs/build/
 docs/img/

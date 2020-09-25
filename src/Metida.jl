@@ -38,5 +38,11 @@ function __init__()
     #G  = gmat([0.5, 0.4], 2, ve)
 end
 
+function _precompile_()
+    ccall(:jl_generating_output, Cint, ()) == 1 || return nothing
+    Base.precompile(Tuple{Type{VarEffect},Term,VarianceComponents})
+    Base.precompile(Tuple{typeof(fit!),LMM{Float64}})
+end
+_precompile_()
 #include(".jl")
 end # module

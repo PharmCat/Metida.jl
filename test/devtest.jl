@@ -277,6 +277,15 @@ lmmr = Metida.fit!(lmm)
 precompile(remlβcalc2, (Array{Float64,1}))
 
 inf_timing = @snoopi Metida.fit!(lmm)
-
+inf_timing = @snoopi tmin=0.01 include("test.jl")
 pc = SnoopCompile.parcel(inf_timing)
-SnoopCompile.write("precompile.jl", pc)
+SnoopCompile.write("precompile", pc)
+
+
+SnoopCompile.@snoopc "$path/precompile/metida_compiles.log" begin
+    using Metida, Pkg
+    include(joinpath(dirname(dirname(pathof(Metida))), "test", "test.jl"))
+end
+data = SnoopCompile.read("/precompile/metida_compiles.log")
+pc = SnoopCompile.parcel(reverse!(data[2]))
+SnoopCompile.write("/precompile", pc)
