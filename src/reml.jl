@@ -29,7 +29,7 @@ function reml_sweep(lmm, β, θ::Vector{T})::T where T <: Number
     n = length(lmm.data.yv)
     N = sum(length.(lmm.data.yv))
     G = gmat_blockdiag(θ, lmm.covstr)
-    c  = (N-lmm.rankx)*log(2π)
+    c  = (N - lmm.rankx)*log(2π)
     θ₁ = zero(eltype(θ))
     θ₂ = zero(eltype(θ))
     θ₃ = zero(eltype(θ))
@@ -42,7 +42,7 @@ function reml_sweep(lmm, β, θ::Vector{T})::T where T <: Number
         V   = view(Vp, 1:q, 1:q)
         θ₁  += logdet(V)
         sweep!(Vp, 1:q)
-        iV  = Symmetric(-Vp[1:q, 1:q])
+        iV  = Symmetric(utriaply!(x -> -x, Vp[1:q, 1:q]))
         mulαtβαinc!(θ2m, lmm.data.xv[i], iV)
         θ₃  += -Vp[end, end]
     end
@@ -83,58 +83,21 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
         V   = view(Vp, 1:q, 1:q)
         θ₁  += logdet(V)
         sweep!(Vp, 1:q)
-        V⁻¹[i] = Symmetric(-Vp[1:q, 1:q])
+        V⁻¹[i] = Symmetric(utriaply!(x -> -x, Vp[1:q, 1:q]))
         #-----------------------------------------------------------------------
-        θ₂ -= Symmetric(Vp[q + 1:end, q + 1:end])
+        θ₂ .-= Symmetric(Vp[q + 1:end, q + 1:end])
         mulαtβinc!(βm, Vp[1:q, q + 1:end], lmm.data.yv[i])
         #mulθβinc!(θ₂, βm, data.Xv[i], V⁻¹[i], data.yv[i], first(data.mem.svec))
         #-----------------------------------------------------------------------
     end
     mul!(β, inv(θ₂), βm)
-    for i = 1:n
+    @simd for i = 1:n
         #r    =  lmm.data.yv[i] - lmm.data.xv[i] * β
         #θ₃  += r' * V⁻¹[i] * r
         @inbounds θ₃  += mulθ₃(lmm.data.yv[i], lmm.data.xv[i], β, V⁻¹[i])
     end
     return   θ₁ + logdet(θ₂) + θ₃ + c,  β, θ₂
 end
-
-
-#=
-function reml_sweep2(yv, Zv, p, Xv, β, θ)
-    n = length(yv)
-    N = sum(length.(yv))
-    G = gmat(θ[3:5])
-    c  = (N-p)*log(2π)
-    θ1 = zero(eltype(θ))
-    θ2 = zero(eltype(θ))
-    θ3 = zero(eltype(θ))
-    θ2m  = zeros(eltype(θ), p, p)
-
-    for i = 1:n
-        q = length(yv[i])
-        r = mulr(yv[i], Xv[i], β)
-        R   = rmat([θ[1], θ[2]], Zv[i])
-        Vp  = mulαβαtc2(Zv[i], G, R, r)
-        V = view(Vp, 1:q, 1:q)
-        θ1  += logdet(V)
-        sweep!(Vp, 1:q)
-        iV  = Symmetric(-Vp[1:q, 1:q])
-        mulαtβαinc!(θ2m, Xv[i], iV)
-        θ3  += -Vp[end, end]
-    end
-    θ2       = logdet(θ2m)
-    return   -(θ1 + θ2 + θ3 + c)
-end
-=#
-
-
-
-
-
-
-
-
 
 ################################################################################
 

@@ -202,6 +202,18 @@ A' * B  -> + θ
     θ
 end
 
+################################################################################
+
+function utriaply!(f, m)
+    if size(m, 1) != size(m, 2) error() end
+    @simd for p = 1:size(m, 1)
+        @simd for q = p:size(m, 2)
+            @inbounds m[p, q] = f(m[p, q])
+        end
+    end
+    m
+end
+
 
 #=
 d = 0.4
