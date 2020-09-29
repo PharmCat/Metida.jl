@@ -271,6 +271,20 @@ end
 @inline function rmat(θ::Vector{T}, rz, rn, @nospecialize ve::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
     I(rn) * (θ[1] ^ 2)
 end
+@inline function rmat(θ::Vector{T}, rz, rn, @nospecialize ve::VarEffect{HeterogeneousCompoundSymmetry})::AbstractMatrix{T} where T #???
+    mx   = Matrix(Diagonal(rz * (θ[1:end-1])))
+    if rn > 1
+        for m = 1:rn - 1
+            for n = m + 1:rn
+                @inbounds mx[m, n] = mx[m, m] * mx[n, n] * θ[end]
+            end
+        end
+    end
+    for m = 1:rn
+        @inbounds mx[m, m] = mx[m, m] * mx[m, m]
+    end
+    Symmetric(mx)
+end
 #=
 @inline function rmat(θ::Vector{T}, rz, rn, ve::VarianceComponents) where T
     Diagonal(rz * (θ .^ 2))

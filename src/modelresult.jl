@@ -5,4 +5,6 @@ struct ModelResult
     theta
     reml
     beta
+    h
+    c
 end

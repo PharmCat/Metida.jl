@@ -36,6 +36,10 @@ function fit!(lmm::LMM)
 
     #
     remlv, β, iC = reml_sweep_β(lmm, θ)
-    O
-    ModelResult(O, θ, remlv, β)
+
+    h            = ForwardDiff.hessian(x -> reml_sweep_β(lmm, x)[1], θ)
+
+    c            = pinv(iC)
+
+    ModelResult(O, θ, remlv, β, h, c)
 end
