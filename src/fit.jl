@@ -40,6 +40,7 @@ function fit!(lmm::LMM)
     lmm.result.h            = ForwardDiff.hessian(x -> reml_sweep_β(lmm, x)[1], lmm.result.theta)
 
     lmm.result.c            = pinv(iC)
-    lmm.result.se           = diag(lmm.result.c) 
+    lmm.result.se           = diag(lmm.result.c)
+    lmm.result.fit          = true
     lmm
 end

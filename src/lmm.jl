@@ -33,6 +33,23 @@ struct LMM{T} <: MetidaModel
 end
 
 
+
 function Base.show(io::IO, lmm::LMM)
     println(io, "Linear Mixed Model: ", lmm.model)
+    for i = 1:length(lmm.covstr.random)
+        println(io, "Random $i: ")
+        println(io, "   Model: $(lmm.covstr.random[i].model === nothing ? "nothing" : lmm.covstr.random[i].model)")
+        println(io, "   Type: $(nameof(typeof(lmm.covstr.random[i].covtype))) ($(lmm.covstr.t[i]))")
+        println(io, "   Coefnames: $(coefnames(lmm.covstr.schema[i]))")
+    end
+    println(io, "Repeated: ")
+    println(io, "   Model: $(lmm.covstr.repeated.model === nothing ? "nothing" : lmm.covstr.repeated.model)")
+    println(io, "   Type: $(nameof(typeof(lmm.covstr.repeated.covtype))) ($(lmm.covstr.t[end]))")
+    println(io, "   Coefnames: $(coefnames(lmm.covstr.schema[end]))")
+    if lmm.result.fit
+        print("Status: ")
+        Optim.converged(lmm.result.optim) ? printstyled(io, "converged \n"; color = :green) : printstyled(io, "not converged \n"; color = :red)
+    else
+        println(io, "Not fitted.")
+    end
 end

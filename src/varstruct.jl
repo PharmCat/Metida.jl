@@ -147,6 +147,7 @@ end
 struct CovStructure <: AbstractCovarianceStructure
     random::Vector{VarEffect}
     repeated::VarEffect
+    schema::Vector{Tuple}
     z::Matrix                                        #Z matrix
     rz::Union{Matrix, Nothing}
     q::Vector{Int}
@@ -158,18 +159,20 @@ struct CovStructure <: AbstractCovarianceStructure
         q       = Vector{Int}(undef, length(random) + 1)
         t       = Vector{Int}(undef, length(random) + 1)
         tr      = Vector{UnitRange}(undef, length(random) + 1)
-
-        rschema = apply_schema(random[1].model, schema(data, random[1].coding))
+        schema  = Vector{Tuple}(undef, length(random) + 1)
+        rschema = apply_schema(random[1].model, StatsModels.schema(data, random[1].coding))
         #if schemalength(rschema) == 1 z = modelcols(rschema, data) else z = reduce(hcat, modelcols(rschema, data)) end
         z       = reduce(hcat, modelcols(rschema, data))
+        schema[1] = rschema
         q[1]    = size(z, 2)
         t[1]    = random[1].covtype.f(q[1])
         tr[1]   = UnitRange(1, t[1])
         if length(random) > 1
             for i = 2:length(random)
-                rschema = apply_schema(random[i].model, schema(data, random[i].coding))
+                rschema = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
                 #if schemalength(rschema) == 1 ztemp = modelcols(rschema, data) else ztemp = reduce(hcat, modelcols(rschema, data)) end
                 ztemp = reduce(hcat, modelcols(rschema, data))
+                schema[i] = rschema
                 q[i]    = size(ztemp, 2)
                 t[i]    = random[i].covtype.f(q[i])
                 z       = hcat(z, ztemp)
@@ -177,12 +180,14 @@ struct CovStructure <: AbstractCovarianceStructure
             end
         end
         if repeated.model !== nothing
-            rschema = apply_schema(repeated.model, schema(data, repeated.coding))
+            rschema = apply_schema(repeated.model, StatsModels.schema(data, repeated.coding))
             #if schemalength(rschema) == 1 rz = modelcols(rschema, data) else rz = reduce(hcat, modelcols(rschema, data)) end
             rz = reduce(hcat, modelcols(rschema, data))
+            schema[end] = rschema
             q[end]     = size(rz, 2)
         else
             rz         = nothing
+            schema[end]  = tuple(0)
             q[end]     = 0
         end
         t[end]      = repeated.covtype.f(q[end])
@@ -212,7 +217,7 @@ struct CovStructure <: AbstractCovarianceStructure
                 ctn +=1
             end
         end
-        new(random, repeated, z, rz, q, t, tr, tl, ct)
+        new(random, repeated, schema, z, rz, q, t, tr, tl, ct)
     end
 end
 

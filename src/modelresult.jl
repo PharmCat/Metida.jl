@@ -1,6 +1,7 @@
 #modelresult.jl
 
 mutable struct ModelResult
+    fit::Bool
     optim
     theta
     reml
@@ -8,14 +9,16 @@ mutable struct ModelResult
     h
     c
     se
-    function ModelResult(optim,
+    function ModelResult(
+    optim,
     theta,
     reml,
     beta,
     h,
     c,
     se)
-        new(optim,
+        new(true,
+        optim,
         theta,
         reml,
         beta,
@@ -24,6 +27,6 @@ mutable struct ModelResult
         se)
     end
     function ModelResult()
-        new(nothing, nothing, nothing, nothing, nothing, nothing, nothing)
+        new(false, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
     end
 end
