@@ -30,16 +30,16 @@ function fit!(lmm::LMM)
     #Twice differentiable object
     td = TwiceDifferentiable(x -> reml_sweep_β(lmm, varlinkvecapply!(x, fv))[1], θ; autodiff = :forward)
 
-    O            = Optim.optimize(td, θ, optmethod, optoptions)
+    lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
 
-    θ            = varlinkvecapply!(deepcopy(Optim.minimizer(O)), fv)
+    lmm.result.theta            = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), fv)
 
     #
-    remlv, β, iC = reml_sweep_β(lmm, θ)
+    lmm.result.reml, lmm.result.beta, iC = reml_sweep_β(lmm, lmm.result.theta)
 
-    h            = ForwardDiff.hessian(x -> reml_sweep_β(lmm, x)[1], θ)
+    lmm.result.h            = ForwardDiff.hessian(x -> reml_sweep_β(lmm, x)[1], lmm.result.theta)
 
-    c            = pinv(iC)
-
-    ModelResult(O, θ, remlv, β, h, c)
+    lmm.result.c            = pinv(iC)
+    lmm.result.se           = diag(lmm.result.c) 
+    lmm
 end

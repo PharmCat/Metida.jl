@@ -9,6 +9,7 @@ struct LMM{T} <: MetidaModel
     covstr::CovStructure
     data::LMMData{T}
     rankx::Int
+    result::ModelResult
 
     function LMM(model, data; contrasts=Dict{Symbol,Any}(), subject = nothing,  random = nothing, repeated = nothing)
         mf = ModelFrame(model, data; contrasts = contrasts)
@@ -27,7 +28,7 @@ struct LMM{T} <: MetidaModel
         else
             lmmdata = LMMData([mm.m], [covstr.z], [Matrix{eltype(mm.m)}(undef,0,0)], [mf.data[mf.f.lhs.sym]])
         end
-        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, rank(mm.m))
+        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, rank(mm.m), ModelResult())
     end
 end
 
