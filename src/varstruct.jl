@@ -22,37 +22,86 @@ function ff2xmone(x::T)::T where T
 end
 
 ################################################################################
-
+@inline function gmat_vc(θ::Vector{T}, zn)::Matrix{T} where T
+    Diagonal(θ .^ 2)
+end
+@inline function rmat_vc(θ::Vector{T}, rz, rn)::Matrix{T} where T
+    Diagonal(rz * (θ .^ 2))
+end
 struct VarianceComponents <: AbstractCovarianceType
     f::Function
     v::Function
     rho::Function
+    gmatf::Function
+    rmatf::Function
     function VarianceComponents()
-        new(ffx, ffx, ffxzero)
+        new(ffx, ffx, ffxzero, gmat_vc, rmat_vc)
     end
 end
 VC = VarianceComponents()
 
+@inline function gmat_si(θ::Vector{T}, zn)::Matrix{T} where T
+    I(zn)*(θ[1] ^ 2)
+end
+@inline function rmat_si(θ::Vector{T}, rz, rn)::Matrix{T} where T
+    I(rn) * (θ[1] ^ 2)
+end
 struct ScaledIdentity <: AbstractCovarianceType
     f::Function
     v::Function
     rho::Function
+    gmatf::Function
+    rmatf::Function
     function ScaledIdentity()
-        new(ffxone, ffxone, ffxzero)
+        new(ffxone, ffxone, ffxzero, gmat_si, rmat_si)
     end
 end
 SI = ScaledIdentity()
 
+@inline function gmat_csh(θ::Vector{T}, zn)::Matrix{T} where T
+    mx = Matrix{T}(undef, zn, zn)
+    for m = 1:zn
+        @inbounds mx[m, m] = θ[m]
+    end
+    if zn > 1
+        for m = 1:zn - 1
+            for n = m + 1:zn
+                @inbounds mx[m, n] = mx[m, m] * mx[n, n] * θ[end]
+            end
+        end
+    end
+    for m = 1:zn
+        @inbounds mx[m, m] = mx[m, m] * mx[m, m]
+    end
+    Symmetric(mx)
+end
+@inline function rmat_csh(θ::Vector{T}, rz, rn)::Matrix{T} where T #???
+    mx   = Matrix(Diagonal(rz * (θ[1:end-1])))
+    if rn > 1
+        for m = 1:rn - 1
+            for n = m + 1:rn
+                @inbounds mx[m, n] = mx[m, m] * mx[n, n] * θ[end]
+            end
+        end
+    end
+    for m = 1:rn
+        @inbounds mx[m, m] = mx[m, m] * mx[m, m]
+    end
+    Symmetric(mx)
+end
 struct HeterogeneousCompoundSymmetry <: AbstractCovarianceType
     f::Function
     v::Function
     rho::Function
+    gmatf::Function
+    rmatf::Function
     function HeterogeneousCompoundSymmetry()
-        new(ffxpone, ffx, ffxone)
+        new(ffxpone, ffx, ffxone, gmat_csh, rmat_csh)
     end
 end
 CSH = HeterogeneousCompoundSymmetry()
 
+#=
 struct AutoregressiveFirstOrder <: AbstractCovarianceType
     f::Function
     v::Function
@@ -103,6 +152,7 @@ struct BandToepiz <: AbstractCovarianceType
     end
 end
 TOEPB = BandToepiz(1)
+=#
 
 
 
@@ -113,10 +163,12 @@ TOEPB = BandToepiz(1)
 #Z   = modelcols(rschema, df)
 #reduce(hcat, Z)
 
-struct VarEffect{T <: AbstractCovarianceType}
+struct VarEffect
     model::Union{Tuple{Vararg{AbstractTerm}}, Nothing}
-    covtype::T
+    covtype::AbstractCovarianceType
     coding::Dict{Symbol, AbstractContrasts}
+    gmatf::Function
+    rmatf::Function
     function VarEffect(model, covtype::T, coding) where T <: AbstractCovarianceType
         if coding === nothing && model !== nothing
             coding = Dict{Symbol, AbstractContrasts}()
@@ -125,7 +177,7 @@ struct VarEffect{T <: AbstractCovarianceType}
             coding = Dict{Symbol, AbstractContrasts}()
         end
         if isa(model, AbstractTerm) model = tuple(model) end
-        new{T}(model, covtype, coding)
+        new(model, covtype, coding, covtype.gmatf, covtype.rmatf)
     end
     function VarEffect(model; coding = nothing)
         VarEffect(model, VarianceComponents(), coding)
@@ -224,36 +276,10 @@ end
     end
 end
 
-@inline function gmat(θ::Vector{T}, zn, @nospecialize ve::VarEffect{VarianceComponents})::AbstractMatrix{T} where T
-    Diagonal(θ .^ 2)
-end
-
-@inline function gmat(θ::Vector{T}, zn, @nospecialize ve::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
-    I(zn)*(θ[1] ^ 2)
-end
-
-@inline function gmat(θ::Vector{T}, zn, @nospecialize ve::VarEffect{HeterogeneousCompoundSymmetry})::AbstractMatrix{T} where T
-    mx = Matrix{T}(undef, zn, zn)
-    for m = 1:zn
-        @inbounds mx[m, m] = θ[m]
-    end
-    if zn > 1
-        for m = 1:zn - 1
-            for n = m + 1:zn
-                @inbounds mx[m, n] = mx[m, m] * mx[n, n] * θ[end]
-            end
-        end
-    end
-    for m = 1:zn
-        @inbounds mx[m, m] = mx[m, m] * mx[m, m]
-    end
-    Symmetric(mx)
-end
-
 @inline function gmat_blockdiag(θ::Vector{T}, covstr) where T
     vm = Vector{Matrix{T}}(undef, length(covstr.random))
     for i = 1:length(covstr.random)
-        vm[i] = gmat(θ[covstr.tr[i]], covstr.q[i], covstr.random[i])
+        vm[i] = covstr.random[i].gmatf(θ[covstr.tr[i]], covstr.q[i])
     end
     BlockDiagonal(vm)
 end
@@ -265,12 +291,7 @@ function rmatbase(lmm, q, i, θ::AbstractVector{T})::Matrix{T} where T
     rmat(θ, lmm.data.zrv[i], q, lmm.covstr.repeated)
 end
 
-@inline function rmat(θ::Vector{T}, rz, rn, @nospecialize ve::VarEffect{VarianceComponents})::AbstractMatrix{T} where T
-    Diagonal(rz * (θ .^ 2))
-end
-@inline function rmat(θ::Vector{T}, rz, rn, @nospecialize ve::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
-    I(rn) * (θ[1] ^ 2)
-end
+
 #=
 @inline function rmat(θ::Vector{T}, rz, rn, ve::VarianceComponents) where T
     Diagonal(rz * (θ .^ 2))

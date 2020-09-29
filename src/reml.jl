@@ -37,7 +37,8 @@ function reml_sweep(lmm, β, θ::Vector{T})::T where T <: Number
     @inbounds for i = 1:n
         q   = length(lmm.data.yv[i])
         r   = mulr(lmm.data.yv[i], lmm.data.xv[i], β)
-        R   = rmat(θ[lmm.covstr.tr[end]], lmm.data.zrv[i], q, lmm.covstr.repeated)
+        R   = lmm.covstr.repeated.rmatf(θ[lmm.covstr.tr[end]], lmm.data.zrv[i], q)
+        #R   = rmat(θ[lmm.covstr.tr[end]], lmm.data.zrv[i], q, lmm.covstr.repeated)
         Vp  = mulαβαtc2(lmm.data.zv[i], G, R, r)
         V   = view(Vp, 1:q, 1:q)
         θ₁  += logdet(V)
@@ -75,10 +76,11 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
     local q::Int
     local R::Matrix{T}
     local Vp::Matrix{T}
-
+    
     @inbounds for i = 1:n
         q   = length(lmm.data.yv[i])
-        R   = rmatbase(lmm, q, i, θ[lmm.covstr.tr[end]])
+        R   = lmm.covstr.repeated.rmatf(θ[lmm.covstr.tr[end]], lmm.data.zrv[i], q)
+        #R   = rmatbase(lmm, q, i, θ[lmm.covstr.tr[end]])
         Vp  = mulαβαtc3(lmm.data.zv[i], G, R, lmm.data.xv[i])
         V   = view(Vp, 1:q, 1:q)
         θ₁  += logdet(V)
