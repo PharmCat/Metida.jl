@@ -187,9 +187,9 @@ struct CovStructure <: AbstractCovarianceStructure
             schema[end] = rschema
             q[end]     = size(rz, 2)
         else
-            rz         = nothing
+            rz           = Matrix{eltype(z)}(undef, 0, 0)
             schema[end]  = tuple(0)
-            q[end]     = 0
+            q[end]       = 0
         end
         t[end]      = repeated.covtype.f(q[end])
         tr[end]     = UnitRange(sum(t[1:end-1]) + 1, sum(t[1:end-1]) + t[end])
@@ -335,9 +335,18 @@ end
 @inline function fill_coding_dict(t::T, d::Dict) where T <: AbstractTerm
     d[t.sym] = StatsModels.FullDummyCoding()
 end
+@inline function fill_coding_dict(t::T, d::Dict) where T <: InteractionTerm
+    for i in t.terms
+        d[i.sym] = StatsModels.FullDummyCoding()
+    end
+end
 @inline function fill_coding_dict(t::T, d::Dict) where T <: Tuple
     for i in t
-        d[i.sym] = StatsModels.FullDummyCoding()
+        if isa(i, Term)
+            d[i.sym] = StatsModels.FullDummyCoding()
+        else
+            fill_coding_dict(i, d)
+        end
     end
 end
 #-------------------------------------------------------------------------------

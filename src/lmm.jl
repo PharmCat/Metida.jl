@@ -23,10 +23,10 @@ struct LMM{T} <: MetidaModel
         if !isa(random, Vector) random = [random] end
         covstr = CovStructure(random, repeated, data)
         if isa(subject, Symbol)
-            xa, za, rza, ya = subjblocks(data, subject, mm.m, covstr.z, mf.data[mf.f.lhs.sym], covstr.rz)
+            xa, za, rza, ya = subjblocks(data, subject, mm.m, covstr.z, mf.data[mf.f.lhs.sym], covstr.repeated.model === nothing ? nothing : covstr.rz)
             lmmdata = LMMData(xa, za, rza, ya)
         else
-            lmmdata = LMMData([mm.m], [covstr.z], [Matrix{eltype(mm.m)}(undef,0,0)], [mf.data[mf.f.lhs.sym]])
+            lmmdata = LMMData([mm.m], [covstr.z], [covstr.rz], [mf.data[mf.f.lhs.sym]])
         end
         new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, rank(mm.m), ModelResult())
     end
@@ -45,7 +45,7 @@ function Base.show(io::IO, lmm::LMM)
     println(io, "Repeated: ")
     println(io, "   Model: $(lmm.covstr.repeated.model === nothing ? "nothing" : lmm.covstr.repeated.model)")
     println(io, "   Type: $(nameof(typeof(lmm.covstr.repeated.covtype))) ($(lmm.covstr.t[end]))")
-    println(io, "   Coefnames: $(coefnames(lmm.covstr.schema[end]))")
+    println(io, "   Coefnames: $(lmm.covstr.repeated.model === nothing ? "-" : coefnames(lmm.covstr.schema[end]))")
     println(io, "")
     if lmm.result.fit
         print(io, "Status: ")
