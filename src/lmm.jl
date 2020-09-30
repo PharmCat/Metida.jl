@@ -46,9 +46,35 @@ function Base.show(io::IO, lmm::LMM)
     println(io, "   Model: $(lmm.covstr.repeated.model === nothing ? "nothing" : lmm.covstr.repeated.model)")
     println(io, "   Type: $(nameof(typeof(lmm.covstr.repeated.covtype))) ($(lmm.covstr.t[end]))")
     println(io, "   Coefnames: $(coefnames(lmm.covstr.schema[end]))")
+    println(io, "")
     if lmm.result.fit
-        print("Status: ")
+        print(io, "Status: ")
         Optim.converged(lmm.result.optim) ? printstyled(io, "converged \n"; color = :green) : printstyled(io, "not converged \n"; color = :red)
+        println(io, "")
+        println(io, "   -2 logREML: ", round(lmm.result.reml, sigdigits = 6))
+        println(io, "")
+        println(io, "   Fixed effects:")
+        println(io, "")
+        #chl = '─'
+        mx  = hcat(coefnames(lmm.mf), round.(lmm.result.beta, sigdigits = 6), round.(lmm.result.se, sigdigits = 6))
+        mx  = vcat(["Name" "Estimate" "SE"], mx)
+        printmatrix(io, mx)
+        println(io, "")
+        println(io, "Random effects:")
+        println(io, "")
+        println(io, "   θ vector: ", round.(lmm.result.theta, sigdigits = 6))
+        println(io, "")
+
+        mx = hcat(Matrix{Any}(undef, lmm.covstr.tl, 1), lmm.covstr.rcnames, lmm.covstr.ct, round.(lmm.result.theta, sigdigits = 6))
+
+        for i = 1:length(lmm.covstr.random)
+            view(mx, lmm.covstr.tr[i], 1) .= "Random $i"
+        end
+        view(mx, lmm.covstr.tr[end], 1) .= "Repeated"
+        for i = 1:lmm.covstr.tl
+            if mx[i, 3] == :var mx[i, 4] = round.(mx[i, 4]^2, sigdigits = 6) end
+        end
+        printmatrix(io, mx)
     else
         println(io, "Not fitted.")
     end

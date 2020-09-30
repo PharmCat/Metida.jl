@@ -1,4 +1,6 @@
 #sweep.jl
+#Based on https://github.com/joshday/SweepOperator.jl
+#Thanks to @joshday and @Hua-Zhou
 
 function nsyrk!(alpha, A, C)
     q = size(C, 1)

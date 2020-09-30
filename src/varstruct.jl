@@ -148,6 +148,7 @@ struct CovStructure <: AbstractCovarianceStructure
     random::Vector{VarEffect}
     repeated::VarEffect
     schema::Vector{Tuple}
+    rcnames::Vector{String}
     z::Matrix                                        #Z matrix
     rz::Union{Matrix, Nothing}
     q::Vector{Int}
@@ -194,6 +195,7 @@ struct CovStructure <: AbstractCovarianceStructure
         tr[end]     = UnitRange(sum(t[1:end-1]) + 1, sum(t[1:end-1]) + t[end])
         tl  = sum(t)
         ct  = Vector{Symbol}(undef, tl)
+        rcnames = Vector{String}(undef, tl)
         ctn = 1
         for i = 1:length(random)
             for i2 = 1:random[i].covtype.v(q[i])
@@ -206,6 +208,7 @@ struct CovStructure <: AbstractCovarianceStructure
                     ctn +=1
                 end
             end
+            view(rcnames, tr[i]) .= rcoefnames(schema[i], t[i], random[i])
         end
         for i2 = 1:repeated.covtype.v(q[end])
             ct[ctn] = :var
@@ -217,7 +220,10 @@ struct CovStructure <: AbstractCovarianceStructure
                 ctn +=1
             end
         end
-        new(random, repeated, schema, z, rz, q, t, tr, tl, ct)
+
+        view(rcnames, tr[end]) .= rcoefnames(schema[end], t[end], repeated)
+
+        new(random, repeated, schema, rcnames, z, rz, q, t, tr, tl, ct)
     end
 end
 
