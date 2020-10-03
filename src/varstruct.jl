@@ -154,8 +154,8 @@ struct CovStructure <: AbstractCovarianceStructure
     q::Vector{Int}
     t::Vector{Int}
     tr::Vector{UnitRange{Int}}
-    tl::Int
-    ct::Vector{Symbol}
+    tl::Int                                                                     #Parameter count
+    ct::Vector{Symbol}                                                          #Parameter type :var / :rho
     function CovStructure(random, repeated, data)
         q       = Vector{Int}(undef, length(random) + 1)
         t       = Vector{Int}(undef, length(random) + 1)

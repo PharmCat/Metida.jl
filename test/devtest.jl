@@ -57,6 +57,17 @@ subject = :subject)
 lmmr = Metida.fit!(lmm)
 Optim.minimum(lmmr)
 
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = [Metida.VarEffect(Metida.@covstr(period), Metida.VC), Metida.VarEffect(Metida.@covstr(formulation), Metida.VC)],
+)
+
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
+subject = :subject)
+
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC))
+
 
 v   = copy(Optim.minimizer(lmmr))
 Optim.minimum(lmmr)
@@ -286,6 +297,6 @@ SnoopCompile.@snoopc "$path/precompile/metida_compiles.log" begin
     using Metida, Pkg
     include(joinpath(dirname(dirname(pathof(Metida))), "test", "test.jl"))
 end
-data = SnoopCompile.read("/precompile/metida_compiles.log")
+data = SnoopCompile.read("$path/precompile/metida_compiles.log")
 pc = SnoopCompile.parcel(reverse!(data[2]))
-SnoopCompile.write("/precompile", pc)
+SnoopCompile.write("$path/precompile", pc)

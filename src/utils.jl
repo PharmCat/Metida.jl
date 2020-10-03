@@ -38,7 +38,7 @@ Variance estimate via OLS and QR decomposition.
 @inline function initvar(y::Vector, X::Matrix{T}) where T
     qrx  = qr(X)
     β    = inv(qrx.R) * qrx.Q' * y
-    r    = y - X * b
+    r    = y .- X * β
     sum(x -> x * x, r)/(length(r) - size(X, 2)), β
 end
 
