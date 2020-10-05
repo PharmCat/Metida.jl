@@ -150,52 +150,6 @@ r   = [1.0 , 2.0 , 3.0 , 4.0]
 sV  = [V r; r' r'r]
 
 
-function gmat(θ::Vector{T}, zn) where T
-    mx = Matrix{T}(undef, zn, zn)
-    for m = 1:zn
-        mx[m, m] = θ[m]
-    end
-    if zn > 1
-        for m = 1:zn - 1
-            for n = m + 1:zn
-                mx[m, n] = mx[m, m] * mx[n, n] * θ[end]
-            end
-        end
-    end
-    for m = 1:zn
-        mx[m, m] = mx[m, m]*mx[m, m]
-    end
-    Symmetric(mx)
-end
-
-
-
-
-
-function funcx(x)
-    x[1]^2 + 3*x[2]^2 * x[3]^2
-end
-
-func2x = x -> funcx(x)
-
-ForwardDiff.gradient(funcx, [1,2,3])
-ForwardDiff.hessian(funcx, [1,2,3])
-
-function fgh!(F,G,H,x)
-
-  val = func2x(x)
-
-  if G != nothing
-      G .= ForwardDiff.gradient(funcx, x)
-  end
-  if H != nothing
-      H .= ForwardDiff.hessian(funcx, x)
-  end
-  if F != nothing
-    return val
-  end
-  nothing
-end
 
 optoptions = Optim.Options(g_tol = 1e-12,
     allow_f_increases = true)
@@ -230,11 +184,9 @@ fvr = Metida.varlinkrvec(lmm.covstr.ct)
 #varlinkvecapply!(θ, fv)
 
 
-remlfunc!(a,b,c,d) = Metida.fgh!(a, b, c, d; remlβcalc = x -> remlβcalc(Metida.varlinkvecapply!(x, fv)), remlcalc = (x,y) -> Metida.reml_sweep(lmm, x, Metida.varlinkvecapply!(y, fv)))
-#remlfunc!(a,b,c,d) = Metida.fgh!(a, b, c, d; remlβcalc = remlβcalc, remlcalc = remlcalc)
-
 b = Metida.reml_sweep_β(lmm, θ )[2]
 grad2 = ForwardDiff.gradient(x -> remlβcalc(x)[1], θ)
+
 grad2 = ForwardDiff.gradient(x -> Metida.reml_sweep_β(lmm, x)[1], θ)
 
 grad2 = ForwardDiff.gradient(x -> remlβcalc(Metida.varlinkvecapply!(x, fv))[1], θ2)
@@ -282,8 +234,8 @@ lmmr = Metida.fit!(lmm)
 
 @code_warntype mulαtβinc!(a, A, B)
 @code_warntype remlβcalc2(θ2)
-@code_warntype Metida.reml_sweep_β(lmm, Metida.varlinkvecapply!(θ2, fv))
-
+@code_warntype Metida.reml_sweep_β(lmm, lmm.result.theta)
+@code_typed Metida.reml_sweep_β(lmm, lmm.result.theta)
 
 precompile(remlβcalc2, (Array{Float64,1}))
 

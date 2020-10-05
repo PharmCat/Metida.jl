@@ -24,41 +24,45 @@ end
 ################################################################################
 
 struct VarianceComponents <: AbstractCovarianceType
+    s::Symbol
     f::Function
     v::Function
     rho::Function
     function VarianceComponents()
-        new(ffx, ffx, ffxzero)
+        new(:VC, ffx, ffx, ffxzero)
     end
 end
 VC = VarianceComponents()
 
 struct ScaledIdentity <: AbstractCovarianceType
+    s::Symbol
     f::Function
     v::Function
     rho::Function
     function ScaledIdentity()
-        new(ffxone, ffxone, ffxzero)
+        new(:SI, ffxone, ffxone, ffxzero)
     end
 end
 SI = ScaledIdentity()
 
 struct HeterogeneousCompoundSymmetry <: AbstractCovarianceType
+    s::Symbol
     f::Function
     v::Function
     rho::Function
     function HeterogeneousCompoundSymmetry()
-        new(ffxpone, ffx, ffxone)
+        new(:CSH, ffxpone, ffx, ffxone)
     end
 end
 CSH = HeterogeneousCompoundSymmetry()
 
 struct AutoregressiveFirstOrder <: AbstractCovarianceType
+    s::Symbol
     f::Function
     v::Function
     rho::Function
     function AutoregressiveFirstOrder()
-        new(x -> 2, ffxone, ffxone)
+        new(:ARFO, x -> 2, ffxone, ffxone)
     end
 end
 ARFO = AutoregressiveFirstOrder()
@@ -147,6 +151,7 @@ end
 struct CovStructure <: AbstractCovarianceStructure
     random::Vector{VarEffect}
     repeated::VarEffect
+    ves::Vector{Symbol}
     schema::Vector{Tuple}
     rcnames::Vector{String}
     z::Matrix                                        #Z matrix
@@ -157,6 +162,7 @@ struct CovStructure <: AbstractCovarianceStructure
     tl::Int                                                                     #Parameter count
     ct::Vector{Symbol}                                                          #Parameter type :var / :rho
     function CovStructure(random, repeated, data)
+        ves     = Vector{Symbol}(undef, length(random) + 1)
         q       = Vector{Int}(undef, length(random) + 1)
         t       = Vector{Int}(undef, length(random) + 1)
         tr      = Vector{UnitRange}(undef, length(random) + 1)
@@ -165,6 +171,7 @@ struct CovStructure <: AbstractCovarianceStructure
         #if schemalength(rschema) == 1 z = modelcols(rschema, data) else z = reduce(hcat, modelcols(rschema, data)) end
         z       = reduce(hcat, modelcols(rschema, data))
         schema[1] = rschema
+        ves[1]  = random[1].covtype.s
         q[1]    = size(z, 2)
         t[1]    = random[1].covtype.f(q[1])
         tr[1]   = UnitRange(1, t[1])
@@ -174,6 +181,7 @@ struct CovStructure <: AbstractCovarianceStructure
                 #if schemalength(rschema) == 1 ztemp = modelcols(rschema, data) else ztemp = reduce(hcat, modelcols(rschema, data)) end
                 ztemp = reduce(hcat, modelcols(rschema, data))
                 schema[i] = rschema
+                ves[i]  = random[i].covtype.s
                 q[i]    = size(ztemp, 2)
                 t[i]    = random[i].covtype.f(q[i])
                 z       = hcat(z, ztemp)
@@ -191,6 +199,7 @@ struct CovStructure <: AbstractCovarianceStructure
             schema[end]  = tuple(0)
             q[end]       = 0
         end
+        ves[end]    = repeated.covtype.s
         t[end]      = repeated.covtype.f(q[end])
         tr[end]     = UnitRange(sum(t[1:end-1]) + 1, sum(t[1:end-1]) + t[end])
         tl  = sum(t)
@@ -223,7 +232,7 @@ struct CovStructure <: AbstractCovarianceStructure
 
         view(rcnames, tr[end]) .= rcoefnames(schema[end], t[end], repeated)
 
-        new(random, repeated, schema, rcnames, z, rz, q, t, tr, tl, ct)
+        new(random, repeated, ves, schema, rcnames, z, rz, q, t, tr, tl, ct)
     end
 end
 
@@ -235,15 +244,15 @@ end
     end
 end
 
-@inline function gmat(θ::Vector{T}, zn, @nospecialize ve::VarEffect{VarianceComponents})::AbstractMatrix{T} where T
+@inline function gmat(θ::Vector{T}, zn, ::VarEffect{VarianceComponents})::AbstractMatrix{T} where T
     Diagonal(θ .^ 2)
 end
 
-@inline function gmat(θ::Vector{T}, zn, @nospecialize ve::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
+@inline function gmat(θ::Vector{T}, zn, ::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
     I(zn)*(θ[1] ^ 2)
 end
 
-@inline function gmat(θ::Vector{T}, zn, @nospecialize ve::VarEffect{HeterogeneousCompoundSymmetry})::AbstractMatrix{T} where T
+@inline function gmat(θ::Vector{T}, zn, ::VarEffect{HeterogeneousCompoundSymmetry})::AbstractMatrix{T} where T
     mx = Matrix{T}(undef, zn, zn)
     for m = 1:zn
         @inbounds mx[m, m] = θ[m]
@@ -276,13 +285,13 @@ function rmatbase(lmm, q, i, θ::AbstractVector{T})::Matrix{T} where T
     rmat(θ, lmm.data.zrv[i], q, lmm.covstr.repeated)
 end
 
-@inline function rmat(θ::Vector{T}, rz, rn, @nospecialize ve::VarEffect{VarianceComponents})::AbstractMatrix{T} where T
+@inline function rmat(θ::Vector{T}, rz, rn, ::Val{:VC})::Matrix{T} where T
     Diagonal(rz * (θ .^ 2))
 end
-@inline function rmat(θ::Vector{T}, rz, rn, @nospecialize ve::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
+@inline function rmat(θ::Vector{T}, rz, rn, ::Val{:SI})::Matrix{T} where T
     I(rn) * (θ[1] ^ 2)
 end
-@inline function rmat(θ::Vector{T}, rz, rn, @nospecialize ve::VarEffect{HeterogeneousCompoundSymmetry})::AbstractMatrix{T} where T #???
+@inline function rmat(θ::Vector{T}, rz, rn,  ::Val{:CSH})::Matrix{T} where T #???
     mx   = Matrix(Diagonal(rz * (θ[1:end-1])))
     if rn > 1
         for m = 1:rn - 1
