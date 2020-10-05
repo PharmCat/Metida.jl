@@ -22,3 +22,10 @@ after_success:
   - julia -e 'using Pkg; cd(Pkg.dir("Metida")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
   # push coverage results to Codecov
   - julia -e 'using Pkg; cd(Pkg.dir("Metida")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+
+jobs:
+  allow_failures:
+    - os:
+        - osx
+    - julia:
+        - 1.0
