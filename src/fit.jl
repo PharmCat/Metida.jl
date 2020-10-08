@@ -32,7 +32,7 @@ function fit!(lmm::LMM{T}) where T
     #Theta (θ) vector
     lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), fv)
     #Hessian
-    lmm.result.h            = ForwardDiff.hessian(x -> reml_sweep_β(lmm, x)[1], lmm.result.theta)
+    lmm.result.h      = ForwardDiff.hessian(x -> reml_sweep_β(lmm, x)[1], lmm.result.theta)
     #SVD decomposition
     hsvd = svd(lmm.result.h)
     for i = 1:length(lmm.result.theta)
@@ -40,7 +40,9 @@ function fit!(lmm::LMM{T}) where T
     end
     rhsvd = hsvd.U * Diagonal(hsvd.S) * hsvd.Vt
     for i = 1:length(lmm.result.theta)
-        if rhsvd[i,i] < 1E-10 lmm.result.theta[i] = 0 end
+        if rhsvd[i,i] < 1E-10
+            if lmm.covstr.ct[i] == :var lmm.result.theta[i] = 0 end
+        end
     end
     #-2 LogREML, β, iC
     lmm.result.reml, lmm.result.beta, iC = reml_sweep_β(lmm, lmm.result.theta)

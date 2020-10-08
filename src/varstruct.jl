@@ -56,6 +56,18 @@ struct HeterogeneousCompoundSymmetry <: AbstractCovarianceType
 end
 CSH = HeterogeneousCompoundSymmetry()
 
+struct Autoregressive <: AbstractCovarianceType
+    s::Symbol
+    f::Function
+    v::Function
+    rho::Function
+    function Autoregressive()
+        new(:AR, x -> 2, ffxone, ffxone)
+    end
+end
+AR = Autoregressive()
+
+
 struct AutoregressiveFirstOrder <: AbstractCovarianceType
     s::Symbol
     f::Function
@@ -68,11 +80,12 @@ end
 ARFO = AutoregressiveFirstOrder()
 
 struct HeterogeneousAutoregressive <: AbstractCovarianceType
+    s::Symbol
     f::Function
     v::Function
     rho::Function
     function HeterogeneousAutoregressive()
-        new(ffx, ffxone, ffxone)
+        new(:ARH, ffxpone, ffx, ffxone)
     end
 end
 ARH = HeterogeneousAutoregressive()
@@ -154,8 +167,8 @@ struct CovStructure <: AbstractCovarianceStructure
     ves::Vector{Symbol}
     schema::Vector{Tuple}
     rcnames::Vector{String}
-    z::Matrix                                        #Z matrix
-    rz::Union{Matrix, Nothing}
+    z::Matrix                                                                   #Z matrix
+    rz::Matrix
     q::Vector{Int}
     t::Vector{Int}
     tr::Vector{UnitRange{Int}}
@@ -244,15 +257,43 @@ end
     end
 end
 
-@inline function gmat(θ::Vector{T}, zn, ::VarEffect{VarianceComponents})::AbstractMatrix{T} where T
+@inline function gmat(θ::Vector{T}, zn, ::Val{:VC}) where T
     Diagonal(θ .^ 2)
 end
 
-@inline function gmat(θ::Vector{T}, zn, ::VarEffect{ScaledIdentity})::AbstractMatrix{T} where T
+@inline function gmat(θ::Vector{T}, zn, ::Val{:SI}) where T
     I(zn)*(θ[1] ^ 2)
 end
-
-@inline function gmat(θ::Vector{T}, zn, ::VarEffect{HeterogeneousCompoundSymmetry})::AbstractMatrix{T} where T
+@inline function gmat(θ::Vector{T}, zn, ::Val{:AR}) where T
+    mx  = Matrix{T}(undef, zn, zn)
+    mx .= θ[1] ^ 2
+    if zn > 1
+        for m = 1:zn - 1
+            for n = m + 1:zn
+                @inbounds mx[m, n] = mx[m, m] * θ[2] ^ (n - m)
+            end
+        end
+    end
+    Symmetric(mx)
+end
+@inline function gmat(θ::Vector{T}, zn, ::Val{:ARH}) where T
+    mx  = Matrix{T}(undef, zn, zn)
+    for m = 1:zn
+        @inbounds mx[m, m] = θ[m]
+    end
+    if zn > 1
+        for m = 1:zn - 1
+            for n = m + 1:zn
+                @inbounds mx[m, n] = mx[m, m] * mx[n, n] * θ[end] ^ (n - m)
+            end
+        end
+    end
+    for m = 1:zn
+        @inbounds mx[m, m] = mx[m, m] * mx[m, m]
+    end
+    Symmetric(mx)
+end
+@inline function gmat(θ::Vector{T}, zn, ::Val{:CSH}) where T
     mx = Matrix{T}(undef, zn, zn)
     for m = 1:zn
         @inbounds mx[m, m] = θ[m]
@@ -271,9 +312,9 @@ end
 end
 
 @inline function gmat_blockdiag(θ::Vector{T}, covstr) where T
-    vm = Vector{Matrix{T}}(undef, length(covstr.random))
+    vm = Vector{Matrix{T}}(undef, length(covstr.ves) - 1)
     for i = 1:length(covstr.random)
-        vm[i] = gmat(θ[covstr.tr[i]], covstr.q[i], covstr.random[i])
+        vm[i] = gmat(θ[covstr.tr[i]], covstr.q[i], Val{covstr.ves[i]}()) #covstr.random[i])
     end
     BlockDiagonal(vm)
 end
@@ -281,17 +322,43 @@ end
 
 ################################################################################
 
-function rmatbase(lmm, q, i, θ::AbstractVector{T})::Matrix{T} where T
+function rmatbase(lmm, q, i, θ::AbstractVector{T}) where T
     rmat(θ, lmm.data.zrv[i], q, lmm.covstr.repeated)
 end
 
-@inline function rmat(θ::Vector{T}, rz, rn, ::Val{:VC})::Matrix{T} where T
+@inline function rmat(θ::Vector{T}, rz, rn, ::Val{:VC}) where T
     Diagonal(rz * (θ .^ 2))
 end
-@inline function rmat(θ::Vector{T}, rz, rn, ::Val{:SI})::Matrix{T} where T
+@inline function rmat(θ::Vector{T}, rz, rn, ::Val{:SI}) where T
     I(rn) * (θ[1] ^ 2)
 end
-@inline function rmat(θ::Vector{T}, rz, rn,  ::Val{:CSH})::Matrix{T} where T #???
+@inline function rmat(θ::Vector{T}, rz, rn, ::Val{:AR}) where T
+    mx  = Matrix{T}(undef, rn, rn)
+    mx .= θ[1] ^ 2
+    if rn > 1
+        for m = 1:rn - 1
+            for n = m + 1:rn
+                @inbounds mx[m, n] = mx[m, m] * θ[2] ^ (n - m)
+            end
+        end
+    end
+    Symmetric(mx)
+end
+@inline function rmat(θ::Vector{T}, rz, rn, ::Val{:ARH}) where T
+    mx   = Matrix(Diagonal(rz * (θ[1:end-1])))
+    if rn > 1
+        for m = 1:rn - 1
+            for n = m + 1:rn
+                @inbounds mx[m, n] = mx[m, m] * mx[n, n] * θ[end] ^ (n - m)
+            end
+        end
+    end
+    for m = 1:rn
+        @inbounds mx[m, m] = mx[m, m] * mx[m, m]
+    end
+    Symmetric(mx)
+end
+@inline function rmat(θ::Vector{T}, rz, rn,  ::Val{:CSH}) where T #???
     mx   = Matrix(Diagonal(rz * (θ[1:end-1])))
     if rn > 1
         for m = 1:rn - 1
@@ -332,10 +399,6 @@ function get_z_matrix(data, covstr::CovStructure)
     Z       = modelcols(rschema, data)
 end
 
-function gmat(covstr::CovStructure)
-
-end
-
 function get_term_vec(covstr::CovStructure)
     covstr.random.model
 end
@@ -365,10 +428,7 @@ end
 """
     G matrix
 """
-@inline function gmat(σ::AbstractVector)::AbstractMatrix
-    cov = sqrt(σ[1] * σ[2]) * σ[3]
-    return Symmetric([σ[1] cov; cov σ[2]])
-end
+
 
 
 """

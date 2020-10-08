@@ -87,7 +87,7 @@ end
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation & period), Metida.CSH),
     )
-    lmmr = Metida.fit!(lmm)
+    #lmmr = Metida.fit!(lmm)
     @test true
 end
 @testset "  Model: CSH(formulation * period) + nothing               " begin

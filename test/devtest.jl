@@ -223,7 +223,9 @@ A = [1 2 3 4; 1 2 3 3; 9 8 2 1; 1 2 1 2; 1 2 1 2]
 B = [1, 2, 9, 1 , 2]
 mulαtβinc!(a, A, B)
 
-
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = Metida.VarEffect(Metida.@covstr(formulation), Metida.ARH),
+repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.SI))
 
 lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
 random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
