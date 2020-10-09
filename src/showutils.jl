@@ -28,11 +28,11 @@ function printmatrix(io::IO, m::Matrix)
     end
 end
 
-function rcoefnames(s, t, ve::VarEffect{T}) where T <: AbstractCovarianceType
+function rcoefnames(s, t, ::Val)
     v = Vector{String}(undef, t)
     v .= "─"
 end
-function rcoefnames(s, t, ve::VarEffect{T}) where T <: HeterogeneousCompoundSymmetry
+function rcoefnames(s, t, ::Val{:CSH})
     cn = coefnames(s)
     l  = length(cn)
     v  = Vector{String}(undef, t)
@@ -40,9 +40,9 @@ function rcoefnames(s, t, ve::VarEffect{T}) where T <: HeterogeneousCompoundSymm
     v[end] = "Rho"
     v
 end
-function rcoefnames(s, t, ve::VarEffect{T}) where T <: ScaledIdentity
+function rcoefnames(s, t, ::Val{:SI}) 
     ["Var"]
 end
-function rcoefnames(s, t, ve::VarEffect{T}) where T <: VarianceComponents
+function rcoefnames(s, t, ::Val{:VC})
     string.(coefnames(s))
 end

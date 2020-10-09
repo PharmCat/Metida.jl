@@ -23,73 +23,42 @@ end
 
 ################################################################################
 
-struct VarianceComponents <: AbstractCovarianceType
+struct CovarianceType <: AbstractCovarianceType
     s::Symbol
     f::Function
     v::Function
     rho::Function
-    function VarianceComponents()
-        new(:VC, ffx, ffx, ffxzero)
-    end
 end
-VC = VarianceComponents()
 
-struct ScaledIdentity <: AbstractCovarianceType
-    s::Symbol
-    f::Function
-    v::Function
-    rho::Function
-    function ScaledIdentity()
-        new(:SI, ffxone, ffxone, ffxzero)
-    end
+function VarianceComponents()
+    CovarianceType(:VC, ffx, ffx, ffxzero)
 end
-SI = ScaledIdentity()
+const VC = CovarianceType(:VC, ffx, ffx, ffxzero)
 
-struct HeterogeneousCompoundSymmetry <: AbstractCovarianceType
-    s::Symbol
-    f::Function
-    v::Function
-    rho::Function
-    function HeterogeneousCompoundSymmetry()
-        new(:CSH, ffxpone, ffx, ffxone)
-    end
+function ScaledIdentity()
+    CovarianceType(:SI, ffxone, ffxone, ffxzero)
 end
-CSH = HeterogeneousCompoundSymmetry()
 
-struct Autoregressive <: AbstractCovarianceType
-    s::Symbol
-    f::Function
-    v::Function
-    rho::Function
-    function Autoregressive()
-        new(:AR, x -> 2, ffxone, ffxone)
-    end
+const SI = CovarianceType(:SI, ffxone, ffxone, ffxzero)
+
+function HeterogeneousCompoundSymmetry()
+    CovarianceType(:CSH, ffxpone, ffx, ffxone)
 end
-AR = Autoregressive()
+const CSH = CovarianceType(:CSH, ffxpone, ffx, ffxone)
 
 
-struct AutoregressiveFirstOrder <: AbstractCovarianceType
-    s::Symbol
-    f::Function
-    v::Function
-    rho::Function
-    function AutoregressiveFirstOrder()
-        new(:ARFO, x -> 2, ffxone, ffxone)
-    end
+function Autoregressive()
+    CovarianceType(:AR, x -> 2, ffxone, ffxone)
 end
-ARFO = AutoregressiveFirstOrder()
+const AR = CovarianceType(:AR, x -> 2, ffxone, ffxone)
 
-struct HeterogeneousAutoregressive <: AbstractCovarianceType
-    s::Symbol
-    f::Function
-    v::Function
-    rho::Function
-    function HeterogeneousAutoregressive()
-        new(:ARH, ffxpone, ffx, ffxone)
-    end
+
+function HeterogeneousAutoregressive()
+    CovarianceType(:ARH, ffxpone, ffx, ffxone)
 end
-ARH = HeterogeneousAutoregressive()
+const ARH = CovarianceType(:ARH, ffxpone, ffx, ffxone)
 
+#=
 struct Toepiz <: AbstractCovarianceType
     f::Function
     v::Function
@@ -120,19 +89,11 @@ struct BandToepiz <: AbstractCovarianceType
     end
 end
 TOEPB = BandToepiz(1)
+=#
 
-
-
-
-#schema(df6)
-#rschema = apply_schema(Term(formulation), schema(df, Dict(formulation => StatsModels.FullDummyCoding())))
-#apply_schema(Term(formulation), shema1)
-#Z   = modelcols(rschema, df)
-#reduce(hcat, Z)
-
-struct VarEffect{T <: AbstractCovarianceType}
+struct VarEffect
     model::Union{Tuple{Vararg{AbstractTerm}}, Nothing}
-    covtype::T
+    covtype::CovarianceType
     coding::Dict{Symbol, AbstractContrasts}
     function VarEffect(model, covtype::T, coding) where T <: AbstractCovarianceType
         if coding === nothing && model !== nothing
@@ -142,19 +103,16 @@ struct VarEffect{T <: AbstractCovarianceType}
             coding = Dict{Symbol, AbstractContrasts}()
         end
         if isa(model, AbstractTerm) model = tuple(model) end
-        new{T}(model, covtype, coding)
+        new(model, covtype, coding)
     end
     function VarEffect(model; coding = nothing)
-        VarEffect(model, VarianceComponents(), coding)
+        VarEffect(model, VC, coding)
     end
     function VarEffect(covtype::T; coding = nothing) where T <: AbstractCovarianceType
         VarEffect(nothing, covtype, coding)
     end
     function VarEffect()
-        VarEffect(nothing, ScaledIdentity(), Dict{Symbol, AbstractContrasts}())
-    end
-    function VarEffect(model, covtype::Type; coding = nothing)
-        VarEffect(model, covtype(), coding)
+        VarEffect(nothing, SI, Dict{Symbol, AbstractContrasts}())
     end
     function VarEffect(model, covtype::T; coding = nothing) where T <: AbstractCovarianceType
         VarEffect(model, covtype, coding)
@@ -230,7 +188,7 @@ struct CovStructure <: AbstractCovarianceStructure
                     ctn +=1
                 end
             end
-            view(rcnames, tr[i]) .= rcoefnames(schema[i], t[i], random[i])
+            view(rcnames, tr[i]) .= rcoefnames(schema[i], t[i], Val{random[i].covtype.s}())
         end
         for i2 = 1:repeated.covtype.v(q[end])
             ct[ctn] = :var
@@ -243,7 +201,7 @@ struct CovStructure <: AbstractCovarianceStructure
             end
         end
 
-        view(rcnames, tr[end]) .= rcoefnames(schema[end], t[end], repeated)
+        view(rcnames, tr[end]) .= rcoefnames(schema[end], t[end], Val{repeated.covtype.s}())
 
         new(random, repeated, ves, schema, rcnames, z, rz, q, t, tr, tl, ct)
     end
@@ -257,14 +215,17 @@ end
     end
 end
 
-@inline function gmat(θ::Vector{T}, zn, ::Val{:VC}) where T
-    Diagonal(θ .^ 2)
+function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:SI}) where T
+    Matrix{T}(I(zn)*(θ[1] ^ 2))
+    #I(zn)*(θ[1] ^ 2)
 end
 
-@inline function gmat(θ::Vector{T}, zn, ::Val{:SI}) where T
-    I(zn)*(θ[1] ^ 2)
+function gmat(θ::Vector{T}, ::Int, ::CovarianceType, ::Val{:VC}) where T
+    Matrix{T}(Diagonal(θ .^ 2))
+    #Diagonal(θ .^ 2)
 end
-@inline function gmat(θ::Vector{T}, zn, ::Val{:AR}) where T
+
+function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:AR}) where T
     mx  = Matrix{T}(undef, zn, zn)
     mx .= θ[1] ^ 2
     if zn > 1
@@ -274,9 +235,10 @@ end
             end
         end
     end
-    Symmetric(mx)
+    Matrix{T}(Symmetric(mx))
+    #Symmetric(mx)
 end
-@inline function gmat(θ::Vector{T}, zn, ::Val{:ARH}) where T
+function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:ARH}) where T
     mx  = Matrix{T}(undef, zn, zn)
     for m = 1:zn
         @inbounds mx[m, m] = θ[m]
@@ -291,9 +253,10 @@ end
     for m = 1:zn
         @inbounds mx[m, m] = mx[m, m] * mx[m, m]
     end
-    Symmetric(mx)
+    Matrix{T}(Symmetric(mx))
+    #Symmetric(mx)
 end
-@inline function gmat(θ::Vector{T}, zn, ::Val{:CSH}) where T
+function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:CSH}) where T
     mx = Matrix{T}(undef, zn, zn)
     for m = 1:zn
         @inbounds mx[m, m] = θ[m]
@@ -308,13 +271,14 @@ end
     for m = 1:zn
         @inbounds mx[m, m] = mx[m, m] * mx[m, m]
     end
-    Symmetric(mx)
+    Matrix{T}(Symmetric(mx))
+    #Symmetric(mx)
 end
 
-@inline function gmat_blockdiag(θ::Vector{T}, covstr) where T
-    vm = Vector{Matrix{T}}(undef, length(covstr.ves) - 1)
+function gmat_blockdiag(θ::Vector{T}, covstr) where T
+    vm = Vector{AbstractMatrix{T}}(undef, length(covstr.ves) - 1)
     for i = 1:length(covstr.random)
-        vm[i] = gmat(θ[covstr.tr[i]], covstr.q[i], Val{covstr.ves[i]}()) #covstr.random[i])
+        vm[i] = gmat(θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype, Val{covstr.random[i].covtype.s}()) #covstr.random[i])
     end
     BlockDiagonal(vm)
 end
@@ -326,13 +290,13 @@ function rmatbase(lmm, q, i, θ::AbstractVector{T}) where T
     rmat(θ, lmm.data.zrv[i], q, lmm.covstr.repeated)
 end
 
-@inline function rmat(θ::Vector{T}, rz, rn, ::Val{:VC}) where T
+@inline function rmat(θ::Vector{T}, rz, rn, ct, ::Val{:VC}) where T
     Diagonal(rz * (θ .^ 2))
 end
-@inline function rmat(θ::Vector{T}, rz, rn, ::Val{:SI}) where T
+@inline function rmat(θ::Vector{T}, rz, rn, ct, ::Val{:SI}) where T
     I(rn) * (θ[1] ^ 2)
 end
-@inline function rmat(θ::Vector{T}, rz, rn, ::Val{:AR}) where T
+@inline function rmat(θ::Vector{T}, rz, rn, ct, ::Val{:AR}) where T
     mx  = Matrix{T}(undef, rn, rn)
     mx .= θ[1] ^ 2
     if rn > 1
@@ -344,7 +308,7 @@ end
     end
     Symmetric(mx)
 end
-@inline function rmat(θ::Vector{T}, rz, rn, ::Val{:ARH}) where T
+@inline function rmat(θ::Vector{T}, rz, rn, ct, ::Val{:ARH}) where T
     mx   = Matrix(Diagonal(rz * (θ[1:end-1])))
     if rn > 1
         for m = 1:rn - 1
@@ -358,7 +322,7 @@ end
     end
     Symmetric(mx)
 end
-@inline function rmat(θ::Vector{T}, rz, rn,  ::Val{:CSH}) where T #???
+@inline function rmat(θ::Vector{T}, rz, rn,  ct, ::Val{:CSH}) where T #???
     mx   = Matrix(Diagonal(rz * (θ[1:end-1])))
     if rn > 1
         for m = 1:rn - 1
@@ -372,14 +336,6 @@ end
     end
     Symmetric(mx)
 end
-#=
-@inline function rmat(θ::Vector{T}, rz, rn, ve::VarianceComponents) where T
-    Diagonal(rz * (θ .^ 2))
-end
-@inline function rmat(θ::Vector{T}, rz, rn, ve::ScaledIdentity)::AbstractMatrix{T} where T
-    I(rn) * (θ[1] ^ 2)
-end
-=#
 
 #=
 function get_z_matrix(data, covstr::CovStructure{Vector{VarEffect}})

@@ -239,6 +239,9 @@ lmmr = Metida.fit!(lmm)
 @code_warntype Metida.reml_sweep_β(lmm, lmm.result.theta)
 @code_typed Metida.reml_sweep_β(lmm, lmm.result.theta)
 
+@code_warntype Metida.gmat_blockdiag(lmm.result.theta, lmm.covstr)
+@code_typed Metida.gmat_blockdiag(lmm.result.theta, lmm.covstr)
+
 precompile(remlβcalc2, (Array{Float64,1}))
 
 inf_timing = @snoopi Metida.fit!(lmm)
