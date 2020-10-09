@@ -61,7 +61,7 @@ end
 function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{T}} where T <: Number where T2 <: Number
     n::Int        = length(lmm.data.yv)
     N::Int        = sum(length.(lmm.data.yv))
-    G             = gmat_blockdiag(θ, lmm.covstr)
+    G             = gmat_blockdiag2(θ, lmm.covstr)
     c::Float64    = (N - lmm.rankx)*log(2π)
     #---------------------------------------------------------------------------
     V⁻¹           = Vector{Matrix{T}}(undef, n)

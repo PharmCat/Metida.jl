@@ -282,7 +282,17 @@ function gmat_blockdiag(θ::Vector{T}, covstr) where T
     end
     BlockDiagonal(vm)
 end
+function gmat_blockdiag2(θ::Vector{T}, covstr) where T
+    q = size(covstr.z, 2)
+    mx = zeros(T, q, q)
 
+    for i = 1:length(covstr.random)
+        s = 1 + sum(covstr.q[1:i]) - covstr.q[i]
+        e = sum(covstr.q[1:i])
+        mx[s:e, s:e] .= gmat(θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype, Val{covstr.random[i].covtype.s}())
+    end
+    mx
+end
 
 ################################################################################
 
