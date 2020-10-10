@@ -219,10 +219,23 @@ function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:SI}) where T
     Matrix{T}(I(zn)*(θ[1] ^ 2))
     #I(zn)*(θ[1] ^ 2)
 end
+function gmat!(mx, θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:SI}) where T
+    val = θ[1] ^ 2
+    for i = 1:size(mx, 1)
+        mx[i, i] = val
+    end
+    nothing
+end
 
 function gmat(θ::Vector{T}, ::Int, ::CovarianceType, ::Val{:VC}) where T
     Matrix{T}(Diagonal(θ .^ 2))
     #Diagonal(θ .^ 2)
+end
+function gmat!(mx, θ::Vector{T}, ::Int, ::CovarianceType, ::Val{:VC}) where T
+    for i = 1:size(mx, 1)
+        mx[i, i] = θ[i]
+    end
+    nothing
 end
 
 function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:AR}) where T
@@ -238,6 +251,20 @@ function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:AR}) where T
     Matrix{T}(Symmetric(mx))
     #Symmetric(mx)
 end
+function gmat!(mx, θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:AR}) where T
+    mx .= θ[1] ^ 2
+    if zn > 1
+        for m = 1:zn - 1
+            for n = m + 1:zn
+                @inbounds mx[m, n] = mx[m, m] * θ[2] ^ (n - m)
+                @inbounds mx[n, m] = mx[m, n]
+            end
+        end
+    end
+    nothing
+end
+
+
 function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:ARH}) where T
     mx  = Matrix{T}(undef, zn, zn)
     for m = 1:zn
@@ -256,6 +283,25 @@ function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:ARH}) where T
     Matrix{T}(Symmetric(mx))
     #Symmetric(mx)
 end
+function gmat!(mx, θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:ARH}) where T
+    for m = 1:zn
+        @inbounds mx[m, m] = θ[m]
+    end
+    if zn > 1
+        for m = 1:zn - 1
+            for n = m + 1:zn
+                @inbounds mx[m, n] = mx[m, m] * mx[n, n] * θ[end] ^ (n - m)
+                @inbounds mx[n, m] = mx[m, n]
+            end
+        end
+    end
+    for m = 1:zn
+        @inbounds mx[m, m] = mx[m, m] * mx[m, m]
+    end
+    nothing
+end
+
+
 function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:CSH}) where T
     mx = Matrix{T}(undef, zn, zn)
     for m = 1:zn
@@ -274,6 +320,23 @@ function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:CSH}) where T
     Matrix{T}(Symmetric(mx))
     #Symmetric(mx)
 end
+function gmat!(mx, θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:CSH}) where T
+    for m = 1:zn
+        @inbounds mx[m, m] = θ[m]
+    end
+    if zn > 1
+        for m = 1:zn - 1
+            for n = m + 1:zn
+                @inbounds mx[m, n] = mx[m, m] * mx[n, n] * θ[end]
+                @inbounds mx[n, m] = mx[m, n]
+            end
+        end
+    end
+    for m = 1:zn
+        @inbounds mx[m, m] = mx[m, m] * mx[m, m]
+    end
+    nothing
+end
 
 function gmat_blockdiag(θ::Vector{T}, covstr) where T
     vm = Vector{AbstractMatrix{T}}(undef, length(covstr.ves) - 1)
@@ -289,7 +352,8 @@ function gmat_blockdiag2(θ::Vector{T}, covstr) where T
     for i = 1:length(covstr.random)
         s = 1 + sum(covstr.q[1:i]) - covstr.q[i]
         e = sum(covstr.q[1:i])
-        mx[s:e, s:e] .= gmat(θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype, Val{covstr.random[i].covtype.s}())
+        #mx[s:e, s:e] .= gmat(θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype, Val{covstr.random[i].covtype.s}())
+        gmat!(view(mx,s:e, s:e), θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype, Val{covstr.random[i].covtype.s}())
     end
     mx
 end
@@ -369,8 +433,12 @@ function get_term_vec(covstr::CovStructure)
     covstr.random.model
 end
 =#
-
-@inline function fill_coding_dict(t::T, d::Dict) where T <: AbstractTerm
+@inline function fill_coding_dict(t::T, d::Dict) where T <: ConstantTerm
+end
+@inline function fill_coding_dict(t::T, d::Dict) where T <: Term
+    d[t.sym] = StatsModels.FullDummyCoding()
+end
+@inline function fill_coding_dict(t::T, d::Dict) where T <: CategoricalTerm
     d[t.sym] = StatsModels.FullDummyCoding()
 end
 @inline function fill_coding_dict(t::T, d::Dict) where T <: InteractionTerm
