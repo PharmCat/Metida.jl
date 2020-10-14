@@ -1,5 +1,5 @@
 using DataFrames, CSV, StatsModels, LinearAlgebra, ForwardDiff, BenchmarkTools, ForwardDiff, Optim
-#using NLopt
+using NLopt
 using SnoopCompile
 path    = dirname(@__FILE__)
 cd(path)
@@ -131,24 +131,6 @@ Metida.reml_grad(yv, Zv, p, Xv, θ, β)
 @btime ForwardDiff.gradient($(x -> Metida.reml(yv, Zv, p, Xv, x, β)), $θ)
 
 
-#=
-y = [1,2,3,4,3]
-X = [1 0 0 0;
-     1 1 0 0;
-     1 0 1 0;
-     1 1 0 1;
-     1 1 1 1]
-β = [0.5, 0.7, 1.5, 0.1]
-v = zeros(5)
-y - X*β == Metida.mulr!(v, y, X, β)
-=#
-Z   = [1 0; 1 0; 0 1; 0 1]
-G   = [1 0.5; 0.5 2]
-R   = Diagonal([0.1, 04, 0.3, 0.9])
-V   =  Z*G*Z'+R
-r   = [1.0 , 2.0 , 3.0 , 4.0]
-sV  = [V r; r' r'r]
-
 
 
 optoptions = Optim.Options(g_tol = 1e-12,
@@ -224,10 +206,10 @@ B = [1, 2, 9, 1 , 2]
 mulαtβinc!(a, A, B)
 
 lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
-random = Metida.VarEffect(Metida.@covstr(formulation), Metida.ARH),
+random = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
 repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.SI))
 
-lmm = Metida.LMM(@formula(var~sequence+period+formulation), df6;
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
 random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH)],
 repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
 subject = :subject)
@@ -239,7 +221,10 @@ lmmr = Metida.fit!(lmm)
 @code_warntype Metida.reml_sweep_β(lmm, lmm.result.theta)
 @code_typed Metida.reml_sweep_β(lmm, lmm.result.theta)
 
-@code_warntype Metida.gmat_blockdiag(lmm.result.theta, lmm.covstr)
+
+#! Metida.reml_sweep(lmm, lmm.result.beta, lmm.result.theta)
+
+@code_warntype Metida.gmat_blockdiag2(lmm.result.theta, lmm.covstr)
 @code_typed Metida.gmat_blockdiag(lmm.result.theta, lmm.covstr)
 
 precompile(remlβcalc2, (Array{Float64,1}))
@@ -257,3 +242,31 @@ end
 data = SnoopCompile.read("$path/precompile/metida_compiles.log")
 pc = SnoopCompile.parcel(reverse!(data[2]))
 SnoopCompile.write("$path/precompile", pc)
+
+
+
+################################################################################
+opt = NLopt.Opt(:LN_BOBYQA, 5)
+NLopt.ftol_rel!(opt, 1.0e-10)
+NLopt.ftol_abs!(opt, 1.0e-10)
+NLopt.xtol_rel!(opt, 1.0e-10)
+NLopt.xtol_abs!(opt, 1.0e-10)
+NLopt.initial_step!(opt, [0.0005, 0.0005, 0.0005, 0.0005, 0.0005])
+fv  = Metida.varlinkvec(lmm.covstr.ct)
+init = deepcopy( lmm.result.optim.initial_x)
+obj = (x,y) -> Metida.reml_sweep_β(lmm, Metida.varlinkvecapply!(x, fv))[1]
+NLopt.min_objective!(opt, obj)
+function fx(opt, i)
+    init = deepcopy(i)
+    NLopt.optimize!(opt, init)
+end
+@benchmark fx($opt, $init)
+################################################################################
+#:LN_BOBYQA
+#:LN_NEWUOA
+#:LN_NEWUOA_BOUND
+#:LN_PRAXIS
+#:LN_NELDERMEAD
+#:LN_SBPLX
+#:LN_COBYLA
+################################################################################

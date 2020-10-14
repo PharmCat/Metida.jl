@@ -119,14 +119,14 @@ struct VarEffect
     end
 end
 
-struct CovStructure <: AbstractCovarianceStructure
+struct CovStructure{T} <: AbstractCovarianceStructure
     random::Vector{VarEffect}
     repeated::VarEffect
     ves::Vector{Symbol}
     schema::Vector{Tuple}
     rcnames::Vector{String}
-    z::Matrix                                                                   #Z matrix
-    rz::Matrix
+    z::Matrix{T}                                                                   #Z matrix
+    rz::Matrix{T}
     q::Vector{Int}
     t::Vector{Int}
     tr::Vector{UnitRange{Int}}
@@ -203,7 +203,7 @@ struct CovStructure <: AbstractCovarianceStructure
 
         view(rcnames, tr[end]) .= rcoefnames(schema[end], t[end], Val{repeated.covtype.s}())
 
-        new(random, repeated, ves, schema, rcnames, z, rz, q, t, tr, tl, ct)
+        new{eltype(z)}(random, repeated, ves, schema, rcnames, z, rz, q, t, tr, tl, ct)
     end
 end
 
@@ -219,7 +219,7 @@ function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:SI}) where T
     Matrix{T}(I(zn)*(θ[1] ^ 2))
     #I(zn)*(θ[1] ^ 2)
 end
-function gmat!(mx, θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:SI}) where T
+function gmat_si!(mx, θ::Vector{T}, zn::Int, ::CovarianceType) where T
     val = θ[1] ^ 2
     for i = 1:size(mx, 1)
         mx[i, i] = val
@@ -231,7 +231,7 @@ function gmat(θ::Vector{T}, ::Int, ::CovarianceType, ::Val{:VC}) where T
     Matrix{T}(Diagonal(θ .^ 2))
     #Diagonal(θ .^ 2)
 end
-function gmat!(mx, θ::Vector{T}, ::Int, ::CovarianceType, ::Val{:VC}) where T
+function gmat_vc!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     for i = 1:size(mx, 1)
         mx[i, i] = θ[i]
     end
@@ -251,7 +251,7 @@ function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:AR}) where T
     Matrix{T}(Symmetric(mx))
     #Symmetric(mx)
 end
-function gmat!(mx, θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:AR}) where T
+function gmat_ar!(mx, θ::Vector{T}, zn::Int, ::CovarianceType) where T
     mx .= θ[1] ^ 2
     if zn > 1
         for m = 1:zn - 1
@@ -283,8 +283,8 @@ function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:ARH}) where T
     Matrix{T}(Symmetric(mx))
     #Symmetric(mx)
 end
-function gmat!(mx, θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:ARH}) where T
-    for m = 1:zn
+function gmat_arh!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
+    for m = 1:size(mx, 1)
         @inbounds mx[m, m] = θ[m]
     end
     if zn > 1
@@ -320,24 +320,25 @@ function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:CSH}) where T
     Matrix{T}(Symmetric(mx))
     #Symmetric(mx)
 end
-function gmat!(mx, θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:CSH}) where T
-    for m = 1:zn
+function gmat_csh!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
+    s = size(mx, 1)
+    for m = 1:s
         @inbounds mx[m, m] = θ[m]
     end
-    if zn > 1
-        for m = 1:zn - 1
-            for n = m + 1:zn
+    if s > 1
+        for m = 1:s - 1
+            for n = m + 1:s
                 @inbounds mx[m, n] = mx[m, m] * mx[n, n] * θ[end]
                 @inbounds mx[n, m] = mx[m, n]
             end
         end
     end
-    for m = 1:zn
+    for m = 1:s
         @inbounds mx[m, m] = mx[m, m] * mx[m, m]
     end
     nothing
 end
-
+#=
 function gmat_blockdiag(θ::Vector{T}, covstr) where T
     vm = Vector{AbstractMatrix{T}}(undef, length(covstr.ves) - 1)
     for i = 1:length(covstr.random)
@@ -345,31 +346,61 @@ function gmat_blockdiag(θ::Vector{T}, covstr) where T
     end
     BlockDiagonal(vm)
 end
-function gmat_blockdiag2(θ::Vector{T}, covstr) where T
+=#
+function gmat_base(θ::Vector{T}, covstr) where T
     q = size(covstr.z, 2)
     mx = zeros(T, q, q)
-
     for i = 1:length(covstr.random)
         s = 1 + sum(covstr.q[1:i]) - covstr.q[i]
         e = sum(covstr.q[1:i])
         #mx[s:e, s:e] .= gmat(θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype, Val{covstr.random[i].covtype.s}())
-        gmat!(view(mx,s:e, s:e), θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype, Val{covstr.random[i].covtype.s}())
+        if covstr.random[i].covtype.s == :SI
+            gmat_si!(view(mx,s:e, s:e), θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
+        elseif covstr.random[i].covtype.s == :VC
+            gmat_vc!(view(mx,s:e, s:e), θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
+        elseif covstr.random[i].covtype.s == :AR
+            gmat_ar!(view(mx,s:e, s:e), θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
+        elseif covstr.random[i].covtype.s == :ARH
+            gmat_arh!(view(mx,s:e, s:e), θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
+        elseif covstr.random[i].covtype.s == :CSH
+            gmat_csh!(view(mx,s:e, s:e), θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
+        else
+            throw(ErrorException("Unknown covariance structure: $(covstr.random[i].covtype.s), n = $(i)"))
+        end
+        #gmat!(view(mx,s:e, s:e), θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype, Val{covstr.random[i].covtype.s}())
     end
     mx
 end
 
 ################################################################################
 
-function rmatbase(lmm, q, i, θ::AbstractVector{T}) where T
-    rmat(θ, lmm.data.zrv[i], q, lmm.covstr.repeated)
+function rmat_basep!(mx, θ::AbstractVector{T}, covstr) where T
+
+end
+
+@inline function rmat(θ::Vector{T}, rz, rn, ct, ::Val{:SI}) where T
+    I(rn) * (θ[1] ^ 2)
+end
+@inline function rmatp_si!(mx, θ::Vector{T}, ::Matrix, ::Int, ::CovarianceType) where T
+    θsq = θ[1]*θ[1]
+    for i = 1:size(mx, 1)
+            mx[i, i] += θsq
+    end
+    nothing
 end
 
 @inline function rmat(θ::Vector{T}, rz, rn, ct, ::Val{:VC}) where T
     Diagonal(rz * (θ .^ 2))
 end
-@inline function rmat(θ::Vector{T}, rz, rn, ct, ::Val{:SI}) where T
-    I(rn) * (θ[1] ^ 2)
+@inline function rmatp_vc!(mx, θ::Vector{T}, rz, ::Int, ::CovarianceType) where T
+    for i = 1:size(mx, 1)
+        for c = 1:length(θ)
+            mx[i, i] += θ[c]*θ[c]*rz[i, c]
+        end
+    end
+    nothing
 end
+
 @inline function rmat(θ::Vector{T}, rz, rn, ct, ::Val{:AR}) where T
     mx  = Matrix{T}(undef, rn, rn)
     mx .= θ[1] ^ 2
