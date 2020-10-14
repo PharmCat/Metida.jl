@@ -6,7 +6,7 @@ struct LMM{T} <: MetidaModel
     model::FormulaTerm
     mf::ModelFrame
     mm::ModelMatrix
-    covstr::CovStructure
+    covstr::CovStructure{T}
     data::LMMData{T}
     rankx::Int
     result::ModelResult
