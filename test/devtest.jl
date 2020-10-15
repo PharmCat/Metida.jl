@@ -1,6 +1,7 @@
 using DataFrames, CSV, StatsModels, LinearAlgebra, ForwardDiff, BenchmarkTools, ForwardDiff, Optim
 using NLopt
 using SnoopCompile
+using LineSearches
 path    = dirname(@__FILE__)
 cd(path)
 df      = CSV.File(path*"/csv/df0.csv") |> DataFrame
@@ -215,22 +216,24 @@ repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
 subject = :subject)
 
 lmmr = Metida.fit!(lmm)
+ @benchmark Metida.fit!(lmm)
 
 @code_warntype mulαtβinc!(a, A, B)
 @code_warntype remlβcalc2(θ2)
 @code_warntype Metida.reml_sweep_β(lmm, lmm.result.theta)
 @code_typed Metida.reml_sweep_β(lmm, lmm.result.theta)
 
-
+V = [1 2 3 4; 1 2 3 3; 9 8 2 1; 1 2 1 2]
+@code_warntype Metida.rmat_basep!(V, lmm.result.theta[lmm.covstr.tr[end]], lmm.data.zrv[1], lmm.covstr)
 #! Metida.reml_sweep(lmm, lmm.result.beta, lmm.result.theta)
 
-@code_warntype Metida.gmat_blockdiag2(lmm.result.theta, lmm.covstr)
-@code_typed Metida.gmat_blockdiag(lmm.result.theta, lmm.covstr)
+@code_warntype Metida.gmat_base(lmm.result.theta, lmm.covstr)
+@code_typed Metida.gmat_base(lmm.result.theta, lmm.covstr)
 
 precompile(remlβcalc2, (Array{Float64,1}))
 
 inf_timing = @snoopi Metida.fit!(lmm)
-inf_timing = @snoopi tmin=0.01 include("test.jl")
+inf_timing = @snoopi tmin=0.001 include("test.jl")
 pc = SnoopCompile.parcel(inf_timing)
 SnoopCompile.write("precompile", pc)
 
@@ -251,7 +254,7 @@ NLopt.ftol_rel!(opt, 1.0e-10)
 NLopt.ftol_abs!(opt, 1.0e-10)
 NLopt.xtol_rel!(opt, 1.0e-10)
 NLopt.xtol_abs!(opt, 1.0e-10)
-NLopt.initial_step!(opt, [0.0005, 0.0005, 0.0005, 0.0005, 0.0005])
+NLopt.initial_step!(opt, [0.005, 0.005, 0.005, 0.005, 0.005])
 fv  = Metida.varlinkvec(lmm.covstr.ct)
 init = deepcopy( lmm.result.optim.initial_x)
 obj = (x,y) -> Metida.reml_sweep_β(lmm, Metida.varlinkvecapply!(x, fv))[1]
@@ -270,3 +273,13 @@ end
 #:LN_SBPLX
 #:LN_COBYLA
 ################################################################################
+optmethod  = Optim.Newton()
+
+optoptions = Optim.Options(g_tol = 1e-12,
+    iterations = 300,
+    store_trace = true,
+    show_trace = true,
+    allow_f_increases = true)
+objopt = x -> Metida.reml_sweep_β(lmm, Metida.varlinkvecapply!(x, fv))[1]
+
+O = Optim.optimize(objopt, deepcopy(lmm.result.optim.initial_x), Optim.Newton(); autodiff = :forward)

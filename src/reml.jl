@@ -61,7 +61,7 @@ end
 function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{T}} where T <: Number where T2 <: Number
     n::Int        = length(lmm.data.yv)
     N::Int        = sum(length.(lmm.data.yv))
-    G             = gmat_base(θ, lmm.covstr)
+    G::Matrix{T}  = gmat_base(θ, lmm.covstr)
     c::Float64    = (N - lmm.rankx)*log(2π)
     #---------------------------------------------------------------------------
     V⁻¹           = Vector{Matrix{T}}(undef, n)
@@ -73,22 +73,22 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
     β::Vector{T}  = zeros(promote_type(T2, T), lmm.rankx)
 
     local q::Int
+    local qswm::Int
     local R::Matrix{T}
     local Vp::Matrix{T}
 
     @inbounds for i = 1:n
         q   = length(lmm.data.yv[i])
-        #R   = rmatbase(lmm, q, i, θ[lmm.covstr.tr[end]])
-        R   = rmat(θ[lmm.covstr.tr[end]], lmm.data.zrv[i], q, lmm.covstr.repeated.covtype, Val{lmm.covstr.repeated.covtype.s}())
-        Vp  = mulαβαtc3(lmm.data.zv[i], G, R, lmm.data.xv[i])
+        Vp  = mulαβαt3(lmm.data.zv[i], G, lmm.data.xv[i])
         V   = view(Vp, 1:q, 1:q)
+        rmat_basep!(V, θ[lmm.covstr.tr[end]], lmm.data.zrv[i], lmm.covstr)
         θ₁  += logdet(V)
         sweep!(Vp, 1:q)
         V⁻¹[i] = Symmetric(utriaply!(x -> -x, Vp[1:q, 1:q]))
         #-----------------------------------------------------------------------
-        θ₂ .-= Symmetric(Vp[q + 1:end, q + 1:end])
-        mulαtβinc!(βm, Vp[1:q, q + 1:end], lmm.data.yv[i])
-        #mulθβinc!(θ₂, βm, data.Xv[i], V⁻¹[i], data.yv[i], first(data.mem.svec))
+        qswm = size(Vp, 1)
+        θ₂ .-= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
+        mulαtβinc!(βm, view(Vp, 1:q, q + 1:qswm), lmm.data.yv[i])
         #-----------------------------------------------------------------------
     end
     mul!(β, inv(θ₂), βm)

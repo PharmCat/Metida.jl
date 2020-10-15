@@ -34,23 +34,30 @@ function fit!(lmm::LMM{T}) where T
     #Hessian
     lmm.result.h      = ForwardDiff.hessian(x -> reml_sweep_β(lmm, x)[1], lmm.result.theta)
     #SVD decomposition
-    hsvd = svd(lmm.result.h)
-    for i = 1:length(lmm.result.theta)
-        if hsvd.S[i] < 1E-10 hsvd.S[i] = 0 end
-    end
-    rhsvd = hsvd.U * Diagonal(hsvd.S) * hsvd.Vt
-    for i = 1:length(lmm.result.theta)
-        if rhsvd[i,i] < 1E-10
-            if lmm.covstr.ct[i] == :var lmm.result.theta[i] = 0 end
+    try
+        hsvd = svd(lmm.result.h)
+        for i = 1:length(lmm.result.theta)
+            if hsvd.S[i] < 1E-10 hsvd.S[i] = 0 end
         end
+        rhsvd = hsvd.U * Diagonal(hsvd.S) * hsvd.Vt
+        for i = 1:length(lmm.result.theta)
+            if rhsvd[i,i] < 1E-10
+                if lmm.covstr.ct[i] == :var lmm.result.theta[i] = 0 end
+            end
+        end
+        #-2 LogREML, β, iC
+        lmm.result.reml, lmm.result.beta, iC = reml_sweep_β(lmm, lmm.result.theta)
+        #Variance-vovariance matrix of β
+        lmm.result.c            = pinv(iC)
+        #SE
+        lmm.result.se           = sqrt.(diag(lmm.result.c))
+        #Fit true
+        lmm.result.fit          = true
+    catch
+        #-2 LogREML, β, iC
+        lmm.result.reml, lmm.result.beta, iC = reml_sweep_β(lmm, lmm.result.theta)
+        #Fit false
+        lmm.result.fit          = false
     end
-    #-2 LogREML, β, iC
-    lmm.result.reml, lmm.result.beta, iC = reml_sweep_β(lmm, lmm.result.theta)
-    #Variance-vovariance matrix of β
-    lmm.result.c            = pinv(iC)
-    #SE
-    lmm.result.se           = sqrt.(diag(lmm.result.c))
-    #Fit true
-    lmm.result.fit          = true
     lmm
 end
