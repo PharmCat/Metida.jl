@@ -4,7 +4,7 @@
 __precompile__()
 module Metida
 
-using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables, ForwardDiff, BlockDiagonals, BlockArrays#, SweepOperator
+using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables, ForwardDiff#, BlockDiagonals, BlockArrays#, SweepOperator
 using Optim
 #using NLopt
 

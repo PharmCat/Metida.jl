@@ -76,6 +76,7 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
     local qswm::Int
     local R::Matrix{T}
     local Vp::Matrix{T}
+    local logdetθ₂::T
 
     @inbounds for i = 1:n
         q   = length(lmm.data.yv[i])
@@ -97,7 +98,12 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
         #θ₃  += r' * V⁻¹[i] * r
         @inbounds θ₃  += mulθ₃(lmm.data.yv[i], lmm.data.xv[i], β, V⁻¹[i])
     end
-    return   θ₁ + logdet(θ₂) + θ₃ + c,  β, θ₂
+    try
+        logdetθ₂ = logdet(θ₂)
+    catch
+        logdetθ₂ = -Inf
+    end
+    return   θ₁ + logdetθ₂ + θ₃ + c,  β, θ₂
 end
 
 ################################################################################
