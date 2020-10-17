@@ -19,16 +19,6 @@ after_success:
   - julia -e 'using Pkg; cd(Pkg.dir("Metida")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
 
 
-  include:
-    - stage: "Documentation"
-    julia: 1.0
-    os: linux
-    script:
-          - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
-                                                 Pkg.instantiate()'
-          - julia --project=docs/ docs/make.jl
-    after_success: skip
-
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - travis_wait 30 julia --project -e 'using Pkg; Pkg.build(); Pkg.test(; coverage=true)'
