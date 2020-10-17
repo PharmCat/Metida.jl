@@ -4,6 +4,7 @@ os:
   - osx
 julia:
   - 1
+  - 1.0
 branches:
   only:
   - master
@@ -18,6 +19,18 @@ after_success:
   # push coverage results to Codecov
   - julia -e 'using Pkg; cd(Pkg.dir("Metida")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
 
+jobs:
+  allow_failures:
+    - julia: 1.0
+  include:
+    - stage: "Documentation"
+      julia: 1.0
+      os: linux
+      script:
+        - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
+                                               Pkg.instantiate()'
+        - julia --project=docs/ docs/make.jl
+      after_success: skip
 
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
