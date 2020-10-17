@@ -1,6 +1,10 @@
 # fit.jl
 
+"""
+    fit!(lmm::LMM{T}) where T
 
+    Fit model.
+"""
 function fit!(lmm::LMM{T}) where T
 
     #Make varlink function

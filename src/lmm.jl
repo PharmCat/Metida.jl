@@ -1,7 +1,11 @@
 #lmm.jl
 
 #Metida.LMM(@formula(var ~ formulation + period), df6)
+"""
+    LMM{T} <: MetidaModel
 
+    Linear-mixed model.
+"""
 struct LMM{T} <: MetidaModel
     model::FormulaTerm
     mf::ModelFrame
