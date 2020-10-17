@@ -2,23 +2,18 @@ language: julia
 os:
   - linux
   - osx
-
 julia:
   - 1
-
-
 branches:
   only:
   - master
-
 notifications:
   email: false
-
 git:
   depth: 99999999
 
 after_success:
-  # push coverage results to Coveralls 
+  # push coverage results to Coveralls
   - julia -e 'using Pkg; cd(Pkg.dir("Metida")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
   # push coverage results to Codecov
   - julia -e 'using Pkg; cd(Pkg.dir("Metida")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
@@ -28,15 +23,15 @@ jobs:
     - os:
         - osx
 
-    include:
-      - stage: "Documentation"
-        julia: 1.0
-        os: linux
-        script:
+  include:
+    - stage: "Documentation"
+    julia: 1.0
+    os: linux
+    script:
           - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
                                                  Pkg.instantiate()'
           - julia --project=docs/ docs/make.jl
-        after_success: skip
+    after_success: skip
 
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
