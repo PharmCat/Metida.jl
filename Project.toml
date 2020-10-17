@@ -1,7 +1,7 @@
 authors = ["Vladimir Arnautov <mail@pharmcat.net>"]
 name = "Metida"
 uuid = "a1dec852-9fe5-11e9-361f-8d9fde67cfa2"
-version = "0.1.4"
+version = "0.1.5"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
