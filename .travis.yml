@@ -5,10 +5,7 @@ os:
 
 julia:
   - 1
-  - 1.1
-  - 1.2
-  - 1.3
-  - 1.4
+
 
 branches:
   only:
@@ -21,7 +18,7 @@ git:
   depth: 99999999
 
 after_success:
-  # push coverage results to Coveralls Pkg.test("ClinicalTrialUtilities"; coverage = true);
+  # push coverage results to Coveralls 
   - julia -e 'using Pkg; cd(Pkg.dir("Metida")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
   # push coverage results to Codecov
   - julia -e 'using Pkg; cd(Pkg.dir("Metida")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
@@ -30,11 +27,16 @@ jobs:
   allow_failures:
     - os:
         - osx
-    - julia:
-        - 1.1
-        - 1.2
-        - 1.3
-        - 1.4
+
+    include:
+      - stage: "Documentation"
+        julia: 1.0
+        os: linux
+        script:
+          - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
+                                                 Pkg.instantiate()'
+          - julia --project=docs/ docs/make.jl
+        after_success: skip
 
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
