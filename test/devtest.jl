@@ -69,6 +69,11 @@ random = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
 repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.SI))
 
 lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = Metida.VarEffect(Metida.@covstr(subject), Metida.ARH),
+repeated = Metida.VarEffect(Metida.@covstr(subject), Metida.VC))
+
+
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
 random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH)],
 repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
 subject = :subject)

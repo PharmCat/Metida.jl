@@ -1,30 +1,8 @@
 #reml.jl
 
 """
-    -2 log Restricted Maximum Likelihood
+    -2 log Restricted Maximum Likelihood;
 """
-function reml(yv, Zv, p, Xv, θvec, β)
-    n = length(yv)
-    N = sum(length.(yv))
-    G = gmat(θvec[3:5])
-    c  = (N-p)*log(2π)
-    θ1 = 0
-    θ2 = 0
-    θ3 = 0
-    iV   = nothing
-    θ2m  = zeros(eltype(θvec), p, p)
-    for i = 1:n
-        R   = rmat([θvec[1], θvec[2]], Zv[i])
-        V   = vmat(G, R, Zv[i])
-        iV  = inv(V)
-        θ1  += logdet(V)
-        mulαtβαinc!(θ2m, Xv[i], iV)
-        θ3  += mulθ₃(yv[i], Xv[i], β, iV)
-    end
-    θ2       = logdet(θ2m)
-    return   -(θ1 + θ2 + θ3 + c)
-end
-
 function reml_sweep(lmm, β, θ::Vector{T})::T where T <: Number
     n  = length(lmm.data.yv)
     N  = sum(length.(lmm.data.yv))
@@ -57,7 +35,9 @@ function reml_sweep_β(lmm, f::Function, θ::Vector{T}) where T <: Number
     f(θ)
     reml_sweep_β(lmm, θ)
 end
-
+"""
+    -2 log Restricted Maximum Likelihood; β calculation inside
+"""
 function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{T}} where T <: Number where T2 <: Number
     n::Int        = length(lmm.data.yv)
     N::Int        = sum(length.(lmm.data.yv))
@@ -111,11 +91,10 @@ end
 
 ################################################################################
 
-
+#=
 """
     2 log Restricted Maximum Likelihood gradient vector
 """
-
 function reml_grad(yv, Zv, p, Xv, θvec, β)
     n     = length(yv)
     G     = gmat(θvec[3:5])
@@ -205,9 +184,7 @@ function reml_hessian(yv, Zv, p, Xv, θvec, β)
     end
     return - (θ1 .+ θ2 .+ θ3)
 end
-
 ################################################################################
-
 function reml_grad2(yv, Zv, p, Xv, θvec, β)
     n     = length(yv)
     for i = 1:n
@@ -218,3 +195,4 @@ function reml_grad3(yv, Zv, p, Xv, θvec, β)
     n     = length(yv)
     covmat_grad2(vmatvec, Zv, θvec)
 end
+=#

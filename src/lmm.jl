@@ -1,6 +1,5 @@
 #lmm.jl
 
-#Metida.LMM(@formula(var ~ formulation + period), df6)
 """
     LMM{T} <: MetidaModel
 
@@ -35,7 +34,7 @@ struct LMM{T} <: MetidaModel
         new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, rank(mm.m), ModelResult())
     end
 end
-
+################################################################################
 
 
 function Base.show(io::IO, lmm::LMM)

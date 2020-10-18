@@ -10,6 +10,8 @@ include("testdata.jl")
     random = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
     )
     lmmr = Metida.fit!(lmm)
+    io = IOBuffer();
+    Base.show(io, lmmr)
     @test true
 end
 @testset "  Model: SI + nothing                                      " begin
