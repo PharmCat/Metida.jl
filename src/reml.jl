@@ -67,10 +67,10 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
     V⁻¹           = Vector{Matrix{T}}(undef, n)
     # Vector log determinant of V matrix
     θ₁::T         = zero(T)
-    θ₂::Matrix{T} = zeros(promote_type(T2, T), lmm.rankx, lmm.rankx)
+    θ₂::Matrix{T} = zeros(T, lmm.rankx, lmm.rankx)
     θ₃::T         = zero(T)
-    βm::Vector{T} = zeros(promote_type(T2, T), lmm.rankx)
-    β::Vector{T}  = zeros(promote_type(T2, T), lmm.rankx)
+    βm::Vector{T} = zeros(T, lmm.rankx)
+    β::Vector{T}  = zeros(T, lmm.rankx)
 
     local q::Int
     local qswm::Int
@@ -85,7 +85,7 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
         rmat_basep!(V, θ[lmm.covstr.tr[end]], lmm.data.zrv[i], lmm.covstr)
         θ₁  += logdet(V)
         sweep!(Vp, 1:q)
-        V⁻¹[i] = Symmetric(utriaply!(x -> -x, Vp[1:q, 1:q]))
+        V⁻¹[i] = Symmetric(utriaply!(x -> -x, V))
         #-----------------------------------------------------------------------
         qswm = size(Vp, 1)
         θ₂ .-= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
