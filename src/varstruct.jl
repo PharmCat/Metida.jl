@@ -66,7 +66,7 @@ struct VarEffect
     function VarEffect(model, covtype::T, coding) where T <: AbstractCovarianceType
         if coding === nothing && model !== nothing
             coding = Dict{Symbol, AbstractContrasts}()
-            fill_coding_dict(model, coding)
+            #fill_coding_dict(model, coding)
         elseif coding === nothing && model === nothing
             coding = Dict{Symbol, AbstractContrasts}()
         end
@@ -106,24 +106,34 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         t       = Vector{Int}(undef, length(random) + 1)
         tr      = Vector{UnitRange}(undef, length(random) + 1)
         schema  = Vector{Tuple}(undef, length(random) + 1)
-        rschema = apply_schema(random[1].model, StatsModels.schema(data, random[1].coding))
-        z       = reduce(hcat, modelcols(rschema, data))
-        schema[1] = rschema
-        q[1]    = size(z, 2)
-        t[1]    = random[1].covtype.f(q[1])
-        tr[1]   = UnitRange(1, t[1])
-        if length(random) > 1
-            for i = 2:length(random)
+        z       = Matrix{Float64}(undef, size(data, 1), 0)
+
+        #rschema = apply_schema(random[1].model, StatsModels.schema(data, random[1].coding))
+        #z       = reduce(hcat, modelcols(rschema, data))
+        #schema[1] = rschema
+        #q[1]    = size(z, 2)
+        #t[1]    = random[1].covtype.f(q[1])
+        #tr[1]   = UnitRange(1, t[1])
+        #if length(random) > 1
+            for i = 1:length(random)
+                if length(random[i].coding) == 0
+                    fill_coding_dict!(random[i].model, random[i].coding, data)
+                end
                 rschema = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
                 ztemp = reduce(hcat, modelcols(rschema, data))
                 schema[i] = rschema
                 q[i]    = size(ztemp, 2)
                 t[i]    = random[i].covtype.f(q[i])
                 z       = hcat(z, ztemp)
-                tr[i]   = UnitRange(sum(t[1:i-1]) + 1, sum(t[1:i-1])+t[i])
+                if i > 1
+                    tr[i]   = UnitRange(sum(t[1:i-1]) + 1, sum(t[1:i-1])+t[i])
+                else
+                    tr[1]   = UnitRange(1, t[1])
+                end
             end
-        end
+        #end
         if repeated.model !== nothing
+            fill_coding_dict!(repeated.model, repeated.coding, data)
             rschema = apply_schema(repeated.model, StatsModels.schema(data, repeated.coding))
             rz = reduce(hcat, modelcols(rschema, data))
             schema[end] = rschema
@@ -346,25 +356,35 @@ end
 #                            CONTRAST CODING
 ################################################################################
 
-@inline function fill_coding_dict(t::T, d::Dict) where T <: ConstantTerm
+ContinuousTerm
+
+@inline function fill_coding_dict!(t::T, d::Dict, data) where T <: ConstantTerm
 end
-@inline function fill_coding_dict(t::T, d::Dict) where T <: Term
-    d[t.sym] = StatsModels.FullDummyCoding()
-end
-@inline function fill_coding_dict(t::T, d::Dict) where T <: CategoricalTerm
-    d[t.sym] = StatsModels.FullDummyCoding()
-end
-@inline function fill_coding_dict(t::T, d::Dict) where T <: InteractionTerm
-    for i in t.terms
-        d[i.sym] = StatsModels.FullDummyCoding()
+@inline function fill_coding_dict!(t::T, d::Dict, data) where T <: Term
+    if typeof(data[!, t.sym]) <: CategoricalArray
+        d[t.sym] = StatsModels.FullDummyCoding()
     end
 end
-@inline function fill_coding_dict(t::T, d::Dict) where T <: Tuple
+@inline function fill_coding_dict!(t::T, d::Dict, data) where T <: CategoricalTerm
+    if typeof(data[!, t.sym])  <: CategoricalArray
+        d[t.sym] = StatsModels.FullDummyCoding()
+    end
+end
+@inline function fill_coding_dict!(t::T, d::Dict, data) where T <: InteractionTerm
+    for i in t.terms
+        if typeof(data[!, i.sym])  <: CategoricalArray
+            d[i.sym] = StatsModels.FullDummyCoding()
+        end
+    end
+end
+@inline function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple
     for i in t
         if isa(i, Term)
-            d[i.sym] = StatsModels.FullDummyCoding()
+            if typeof(data[!, i.sym]) <: CategoricalArray
+                d[i.sym] = StatsModels.FullDummyCoding()
+            end
         else
-            fill_coding_dict(i, d)
+            fill_coding_dict!(i, d, data)
         end
     end
 end

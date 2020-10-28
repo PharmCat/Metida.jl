@@ -63,7 +63,12 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
         Vp  = mulαβαt3(lmm.data.zv[i], G, lmm.data.xv[i])
         V   = view(Vp, 1:q, 1:q)
         rmat_basep!(V, θ[lmm.covstr.tr[end]], lmm.data.zrv[i], lmm.covstr)
-        θ₁  += logdet(V)
+        #θ₁  += logdet(V)
+        try
+            θ₁  += logdet(V)
+        catch
+            θ₁  += Inf
+        end
         sweep!(Vp, 1:q)
         V⁻¹[i] = Symmetric(utriaply!(x -> -x, V))
         #-----------------------------------------------------------------------
@@ -81,7 +86,7 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
     try
         logdetθ₂ = logdet(θ₂)
     catch
-        logdetθ₂ = -Inf
+        logdetθ₂ = Inf
     end
     return   θ₁ + logdetθ₂ + θ₃ + c,  β, θ₂
 end

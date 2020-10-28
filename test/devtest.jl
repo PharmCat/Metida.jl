@@ -10,6 +10,8 @@ categorical!(df, :period);
 categorical!(df, :sequence);
 categorical!(df, :formulation);
 
+df.rvar = rand(20)
+
 lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
 random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH), Metida.VarEffect(Metida.@covstr(period+sequence), Metida.VC)],
 )
@@ -75,6 +77,11 @@ repeated = Metida.VarEffect(Metida.@covstr(subject), Metida.VC))
 
 lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
 random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH)],
+repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
+subject = :subject)
+
+lmm = Metida.LMM(@formula(var~sequence+period+formulation+rvar), df;
+random = Metida.VarEffect(Metida.@covstr(rvar), Metida.VC),
 repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
 subject = :subject)
 
