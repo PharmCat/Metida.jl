@@ -4,6 +4,8 @@
 
 [![codecov](https://codecov.io/gh/PharmCat/Metida.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/PharmCat/Metida.jl)
 
+[![Build Status](https://travis-ci.com/PharmCat/Metida.jl.svg?branch=master)](https://travis-ci.com/PharmCat/Metida.jl)
+
 [![Latest docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://pharmcat.github.io/Metida.jl/dev/)
 
 Metida.jl is a experimental Julia package for fitting mixed-effects models with flexible covariance structure. At this moment package is in early development stage.
