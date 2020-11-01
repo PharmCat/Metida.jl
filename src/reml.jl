@@ -14,10 +14,10 @@ function reml_sweep(lmm, β, θ::Vector{T})::T where T <: Number
     θ2m  = zeros(eltype(θ), lmm.rankx, lmm.rankx)
     @inbounds for i = 1:n
         q   = length(lmm.data.yv[i])
-        r   = mulr(lmm.data.yv[i], lmm.data.xv[i], β)
-        R   = rmat(θ[lmm.covstr.tr[end]], lmm.data.zrv[i], q, lmm.covstr.repeated)
-        Vp  = mulαβαtc2(lmm.data.zv[i], G, R, r)
+        Vp  = mulαβαt3(lmm.data.zv[i], G, lmm.data.xv[i])
         V   = view(Vp, 1:q, 1:q)
+        rmat_basep!(V, θ[lmm.covstr.tr[end]], lmm.data.zrv[i], lmm.covstr)
+        
         θ₁  += logdet(V)
         sweep!(Vp, 1:q)
         iV  = Symmetric(utriaply!(x -> -x, Vp[1:q, 1:q]))

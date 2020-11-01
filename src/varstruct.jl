@@ -40,18 +40,27 @@ function ScaledIdentity()
     CovarianceType(:SI, ffxone, ffxone, ffxzero)
 end
 const SI = ScaledIdentity()
+
 function VarianceComponents()
     CovarianceType(:VC, ffx, ffx, ffxzero)
 end
 const VC = VarianceComponents()
+
 function Autoregressive()
     CovarianceType(:AR, x -> 2, ffxone, ffxone)
 end
 const AR = Autoregressive()
+
 function HeterogeneousAutoregressive()
     CovarianceType(:ARH, ffxpone, ffx, ffxone)
 end
 const ARH = HeterogeneousAutoregressive()
+
+function CompoundSymmetry()
+    CovarianceType(:CS, x -> 2, ffxzero, ffxzero)
+end
+const CS = CompoundSymmetry()
+
 function HeterogeneousCompoundSymmetry()
     CovarianceType(:CSH, ffxpone, ffx, ffxone)
 end
@@ -203,6 +212,8 @@ end
             gmat_arh!(view(mx,s:e, s:e), θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
         elseif covstr.random[i].covtype.s == :CSH
             gmat_csh!(view(mx,s:e, s:e), θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
+        elseif covstr.random[i].covtype.s == :CS
+            gmat_cs!(view(mx,s:e, s:e), θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
         else
             throw(ErrorException("Unknown covariance structure: $(covstr.random[i].covtype.s), n = $(i)"))
         end
@@ -210,20 +221,20 @@ end
     mx
 end
 ################################################################################
-@inline function gmat_si!(mx, θ::Vector{T}, zn::Int, ::CovarianceType) where T
+@noinline function gmat_si!(mx, θ::Vector{T}, zn::Int, ::CovarianceType) where T
     val = θ[1] ^ 2
     for i = 1:size(mx, 1)
         mx[i, i] = val
     end
     nothing
 end
-@inline function gmat_vc!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
+@noinline function gmat_vc!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     for i = 1:size(mx, 1)
         mx[i, i] = θ[i]
     end
     nothing
 end
-@inline function gmat_ar!(mx, θ::Vector{T}, zn::Int, ::CovarianceType) where T
+@noinline function gmat_ar!(mx, θ::Vector{T}, zn::Int, ::CovarianceType) where T
     mx .= θ[1] ^ 2
     if zn > 1
         for m = 1:zn - 1
@@ -235,7 +246,7 @@ end
     end
     nothing
 end
-@inline function gmat_arh!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
+@noinline function gmat_arh!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     s = size(mx, 1)
     for m = 1:s
         @inbounds mx[m, m] = θ[m]
@@ -253,7 +264,14 @@ end
     end
     nothing
 end
-@inline function gmat_csh!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
+@noinline function gmat_cs!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
+    mx .= θ[2]
+    for i = 1:size(mx, 1)
+        mx[i, i] = θ[1]*θ[1] + θ[2]*θ[2]
+    end
+    nothing
+end
+@noinline function gmat_csh!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     s = size(mx, 1)
     for m = 1:s
         @inbounds mx[m, m] = θ[m]
@@ -285,18 +303,20 @@ end
         rmatp_arh!(mx, θ, zrv, covstr.repeated.covtype)
     elseif covstr.repeated.covtype.s == :CSH
         rmatp_csh!(mx, θ, zrv, covstr.repeated.covtype)
+    elseif covstr.repeated.covtype.s == :CS
+        rmatp_cs!(mx, θ, zrv, covstr.repeated.covtype)
     else
         throw(ErrorException("Unknown covariance structure: $(covstr.repeated.covtype.s)"))
     end
 end
-@inline function rmatp_si!(mx, θ::Vector{T}, ::Matrix, ::CovarianceType) where T
+@noinline function rmatp_si!(mx, θ::Vector{T}, ::Matrix, ::CovarianceType) where T
     θsq = θ[1]*θ[1]
     for i = 1:size(mx, 1)
             mx[i, i] += θsq
     end
     nothing
 end
-@inline function rmatp_vc!(mx, θ::Vector{T}, rz,  ::CovarianceType) where T
+@noinline function rmatp_vc!(mx, θ::Vector{T}, rz,  ::CovarianceType) where T
     for i = 1:size(mx, 1)
         for c = 1:length(θ)
             mx[i, i] += θ[c]*θ[c]*rz[i, c]
@@ -304,7 +324,7 @@ end
     end
     nothing
 end
-@inline function rmatp_ar!(mx, θ::Vector{T}, rz, ::CovarianceType) where T
+@noinline function rmatp_ar!(mx, θ::Vector{T}, rz, ::CovarianceType) where T
     rn  = size(mx, 1)
     mx  = Matrix{T}(undef, rn, rn)
     de  = θ[1] ^ 2
@@ -322,13 +342,14 @@ end
     end
     nothing
 end
-@inline function rmatp_arh!(mx, θ::Vector{T}, rz, ::CovarianceType) where T
+@noinline function rmatp_arh!(mx, θ::Vector{T}, rz, ::CovarianceType) where T
     vec   = rz * (θ[1:end-1])
     rn    = size(mx, 1)
     if rn > 1
         for m = 1:rn - 1
             for n = m + 1:rn
                 @inbounds mx[m, n] += vec[m] * vec[n] * θ[end] ^ (n - m)
+                @inbounds mx[n, m] = mx[m, n]
             end
         end
     end
@@ -337,13 +358,29 @@ end
     end
     nothing
 end
-@inline function rmatp_csh!(mx, θ::Vector{T}, rz, ::CovarianceType) where T
+@noinline function rmatp_cs!(mx, θ::Vector{T}, ::Matrix,  ::CovarianceType) where T
+    rn    = size(mx, 1)
+    for i = 1:size(mx, 1)
+        mx[i, i] += θ[1]*θ[1] + θ[2]*θ[2]
+    end
+    if rn > 1
+        for m = 1:rn - 1
+            for n = m + 1:rn
+                @inbounds mx[m, n] += vec[m] * vec[n] * θ[end]
+                @inbounds mx[n, m] = mx[m, n]
+            end
+        end
+    end
+    nothing
+end
+@noinline function rmatp_csh!(mx, θ::Vector{T}, rz, ::CovarianceType) where T
     vec   = rz * (θ[1:end-1])
     rn    = size(mx, 1)
     if rn > 1
         for m = 1:rn - 1
             for n = m + 1:rn
                 @inbounds mx[m, n] += vec[m] * vec[n] * θ[end]
+                @inbounds mx[n, m] = mx[m, n]
             end
         end
     end
