@@ -12,7 +12,7 @@ include("testdata.jl")
     Metida.fit!(lmm)
 
     io = IOBuffer();
-    Base.show(io, lmmr)
+    Base.show(io, lmm)
     @test true
 end
 @testset "  Model: VC/subject + nothing                              " begin
@@ -35,7 +35,7 @@ end
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
     )
-    lmmr = Metida.fit!(lmm)
+    Metida.fit!(lmm)
     @test true
 end
 @testset "  Model: (VC(period) + VC(formulation)) + nothing          " begin
@@ -51,7 +51,7 @@ end
     random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
     repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
     )
-    lmmr = Metida.fit!(lmm)
+    Metida.fit!(lmm)
     @test true
 end
 @testset "  Model: CSH + CSH                                         " begin
@@ -59,7 +59,7 @@ end
     random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
     repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
     )
-    lmmr = Metida.fit!(lmm)
+    Metida.fit!(lmm)
     @test true
 end
 @testset "  Model: CSH/subject + nothing                             " begin
@@ -67,7 +67,7 @@ end
     random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
     subject = :subject
     )
-    lmmr = Metida.fit!(lmm)
+    Metida.fit!(lmm)
     @test true
 end
 @testset "  Model: CSH/subject + VC                                  " begin
@@ -96,7 +96,7 @@ end
     repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
     subject = :subject
     )
-    lmmr = Metida.fit!(lmm)
+    Metida.fit!(lmm)
     @test true
 end
 @testset "  Model: (CSH+VC) + nothing                                " begin
@@ -104,27 +104,27 @@ end
     random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
     Metida.VarEffect(Metida.@covstr(period), Metida.VC)],
     )
-    lmmr = Metida.fit!(lmm)
+    Metida.fit!(lmm)
     @test true
 end
 @testset "  Model: CSH(formulation + period) + nothing               " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation + period), Metida.CSH),
     )
-    lmmr = Metida.fit!(lmm)
+    Metida.fit!(lmm)
     @test true
 end
 @testset "  Model: CSH(formulation & period) + nothing               " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation & period), Metida.CSH),
     )
-    #lmmr = Metida.fit!(lmm)
+    #Metida.fit!(lmm)
     @test true
 end
 @testset "  Model: CSH(formulation * period) + nothing               " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation * period), Metida.CSH),
     )
-    #lmmr = Metida.fit!(lmm)
+    #Metida.fit!(lmm)
     @test true
 end
