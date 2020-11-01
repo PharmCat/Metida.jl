@@ -65,6 +65,15 @@ function HeterogeneousCompoundSymmetry()
     CovarianceType(:CSH, ffxpone, ffx, ffxone)
 end
 const CSH = HeterogeneousCompoundSymmetry()
+
+#TOE
+
+#TOEH
+
+#UNST
+
+#ARMA
+
 ################################################################################
 #                  EFFECT
 ################################################################################
