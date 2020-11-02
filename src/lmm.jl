@@ -59,8 +59,9 @@ function Base.show(io::IO, lmm::LMM)
         println(io, "   Fixed effects:")
         println(io, "")
         #chl = '─'
-        mx  = hcat(coefnames(lmm.mf), round.(lmm.result.beta, sigdigits = 6), round.(lmm.result.se, sigdigits = 6))
-        mx  = vcat(["Name" "Estimate" "SE"], mx)
+        z = lmm.result.beta ./ lmm.result.se
+        mx  = hcat(coefnames(lmm.mf), round.(lmm.result.beta, sigdigits = 6), round.(lmm.result.se, sigdigits = 6), round.(z, sigdigits = 6), round.(ccdf.(Chisq(1), abs2.(z)), sigdigits = 6))
+        mx  = vcat(["Name" "Estimate" "SE" "z" "Pr(>|z|)"], mx)
         printmatrix(io, mx)
         println(io, "")
         println(io, "Random effects:")
