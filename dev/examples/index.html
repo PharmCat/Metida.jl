@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Examples · Metida Documentation</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">Metida Documentation</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href>Examples</a><ul class="internal"><li><a class="tocitem" href="#Examples"><span>Examples</span></a></li></ul></li><li><a class="tocitem" href="../details/">Details</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Examples</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/PharmCat/Metida.jl/blob/master/docs/src/examples.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h2 id="Examples"><a class="docs-heading-anchor" href="#Examples">Examples</a><a id="Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Examples" title="Permalink"></a></h2><pre><code class="language-none">using Metida, StatsBase, StatsModels, CSV, DataFrames
+df = CSV.File(dirname(pathof(Metida))*&quot;\\..\\test\\csv\\df0.csv&quot;) |&gt; DataFrame
+
+# EXAMPLE 1
+################################################################################
+################################################################################
+################################################################################
+#=
+PROC MIXED data=df0;
+CLASSES subject sequence period formulation;
+MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
+RANDOM  formulation/TYPE=CSH SUB=subject G V;
+REPEATED/GRP=formulation SUB=subject R;
+RUN;
+
+REML: 10.06523862
+=#
+
+lmm = LMM(@formula(var ~ sequence + period + formulation), df;
+random   = VarEffect(@covstr(formulation), CSH),
+repeated = VarEffect(@covstr(formulation), VC),
+subject  = :subject)
+
+fit!(lmm)
+#=
+Linear Mixed Model: var ~ sequence + period + formulation
+Random 1:
+   Model: formulation
+   Type: HeterogeneousCompoundSymmetry (3)
+   Coefnames: [&quot;formulation: 1&quot;, &quot;formulation: 2&quot;]
+Repeated:
+   Model: formulation
+   Type: VarianceComponents (2)
+   Coefnames: [&quot;formulation: 1&quot;, &quot;formulation: 2&quot;]
+
+Status: converged
+
+   -2 logREML: 10.0652
+
+   Fixed effects:
+
+Name             Estimate     SE
+(Intercept)      1.57749      0.334543
+sequence: 2      -0.170833    0.384381
+period: 2        0.195984     0.117228
+period: 3        0.145014     0.109171
+period: 4        0.157363     0.117228
+formulation: 2   -0.0791667   0.0903709
+
+Random effects:
+
+   θ vector: [0.455584, 0.367656, 1.0, 0.143682, 0.205657]
+
+Random 1   formulation: 1   var   0.207557
+Random 1   formulation: 2   var   0.135171
+Random 1   Rho              rho   1.0
+Repeated   formulation: 1   var   0.0206445
+Repeated   formulation: 2   var   0.0422948
+=#
+
+# EXAMPLE 2
+################################################################################
+################################################################################
+################################################################################
+#=
+PROC MIXED data=df0;
+CLASSES subject sequence period formulation;
+MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
+RANDOM  formulation/TYPE=VC SUB=subject G V;
+REPEATED/GRP=formulation SUB=subject R;
+RUN;
+
+REML: 16.06148160
+=#
+
+lmm = LMM(
+    @formula(var ~ sequence + period + formulation), df;
+    random   = VarEffect(@covstr(formulation), SI),
+    repeated = VarEffect(@covstr(formulation), VC),
+    subject  = :subject,
+)
+fit!(lmm)
+#=
+Linear Mixed Model: var ~ sequence + period + formulation
+Random 1:
+   Model: formulation
+   Type: ScaledIdentity (1)
+   Coefnames: [&quot;formulation: 1&quot;, &quot;formulation: 2&quot;]
+Repeated:
+   Model: formulation
+   Type: VarianceComponents (2)
+   Coefnames: [&quot;formulation: 1&quot;, &quot;formulation: 2&quot;]
+
+Status: converged
+
+   -2 logREML: 16.0615
+
+   Fixed effects:
+
+Name             Estimate     SE
+(Intercept)      1.57212      0.305807
+sequence: 2      -0.170833    0.279555
+period: 2        0.204087     0.289957
+period: 3        0.155769     0.11308
+period: 4        0.160015     0.289957
+formulation: 2   -0.0791667   0.279555
+
+Random effects:
+
+   θ vector: [0.412436, 0.145184, 0.220819]
+
+Random 1   Var              var   0.170103
+Repeated   formulation: 1   var   0.0210784
+Repeated   formulation: 2   var   0.048761
+=#
+
+#EXAMPLE 3
+################################################################################
+################################################################################
+################################################################################
+#=
+PROC MIXED data=df0;
+CLASSES subject sequence period formulation;
+MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
+RANDOM  subject/TYPE=VC G V;
+RUN;
+
+REML: 10.86212458
+=#
+
+lmm = LMM(@formula(var ~ sequence + period + formulation), df;
+    random = VarEffect(@covstr(subject), SI)
+    )
+fit!(lmm)
+#=
+Linear Mixed Model: var ~ sequence + period + formulation
+Random 1:
+   Model: subject
+   Type: ScaledIdentity (1)
+   Coefnames: [&quot;subject: 1&quot;, &quot;subject: 2&quot;, &quot;subject: 3&quot;, &quot;subject: 4&quot;, &quot;subject: 5&quot;]
+Repeated:
+   Model: nothing
+   Type: ScaledIdentity (1)
+   Coefnames: -
+
+Status: converged
+
+   -2 logREML: 10.8621
+
+   Fixed effects:
+
+Name             Estimate     SE
+(Intercept)      1.61         0.309774
+sequence: 2      -0.170833    0.383959
+period: 2        0.144167     0.116706
+period: 3        0.08         0.115509
+period: 4        0.144167     0.116706
+formulation: 2   -0.0791667   0.0833617
+
+Random effects:
+
+   θ vector: [0.410574, 0.182636]
+
+Random 1   Var   var   0.168571
+Repeated   Var   var   0.0333559
+=#
+
+#EXAMPLE 4
+################################################################################
+################################################################################
+################################################################################
+#=
+PROC MIXED data=df0;
+CLASSES subject sequence period formulation;
+MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
+RANDOM  period/TYPE=VC G V;
+RANDOM  formulation/TYPE=VC G V;
+RUN;
+
+REML: 25.12948063
+=#
+lmm = LMM(
+    @formula(var ~ sequence + period + formulation), df;
+    random   = [VarEffect(@covstr(period), VC), VarEffect(@covstr(formulation), VC)]
+)
+fit!(lmm)
+
+#=
+Linear Mixed Model: var ~ sequence + period + formulation
+Random 1:
+   Model: period
+   Type: VarianceComponents (4)
+   Coefnames: [&quot;period: 1&quot;, &quot;period: 2&quot;, &quot;period: 3&quot;, &quot;period: 4&quot;]
+Random 2:
+   Model: formulation
+   Type: VarianceComponents (2)
+   Coefnames: [&quot;formulation: 1&quot;, &quot;formulation: 2&quot;]
+Repeated:
+   Model: nothing
+   Type: ScaledIdentity (1)
+   Coefnames: -
+
+Status: converged
+
+   -2 logREML: 25.1295
+
+   Fixed effects:
+
+Name             Estimate     SE
+(Intercept)      1.61         0.249491
+sequence: 2      -0.170833    0.192487
+period: 2        0.144167     0.269481
+period: 3        0.08         0.266717
+period: 4        0.144167     0.269481
+formulation: 2   -0.0791667   0.192487
+
+Random effects:
+
+   θ vector: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.421717]
+
+Random 1   period: 1        var   0.0
+Random 1   period: 2        var   0.0
+Random 1   period: 3        var   0.0
+Random 1   period: 4        var   0.0
+Random 2   formulation: 1   var   0.0
+Random 2   formulation: 2   var   0.0
+Repeated   Var              var   0.177845
+=#
+
+#EXAMPLE 5
+################################################################################
+################################################################################
+################################################################################
+#=
+PROC MIXED data=df0;
+CLASSES subject sequence period formulation;
+MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
+RANDOM  formulation/TYPE=UN(1) SUB=subject G V;
+RUN;
+
+REML: 16.24111264
+=#
+
+lmm = LMM(@formula(var ~ sequence + period + formulation), df;
+    random  = VarEffect(@covstr(formulation), VC),
+    subject = :subject)
+fit!(lmm)
+
+#=
+Linear Mixed Model: var ~ sequence + period + formulation
+Random 1:
+   Model: formulation
+   Type: VarianceComponents (2)
+   Coefnames: [&quot;formulation: 1&quot;, &quot;formulation: 2&quot;]
+Repeated:
+   Model: nothing
+   Type: ScaledIdentity (1)
+   Coefnames: -
+
+Status: converged
+
+   -2 logREML: 16.2411
+
+   Fixed effects:
+
+Name             Estimate     SE
+(Intercept)      1.61         0.334718
+sequence: 2      -0.170833    0.277378
+period: 2        0.144167     0.289463
+period: 3        0.08         0.117047
+period: 4        0.144167     0.289463
+formulation: 2   -0.0791667   0.277378
+
+Random effects:
+
+   θ vector: [0.447322, 0.367367, 0.185068]
+
+Random 1   formulation: 1   var   0.200097
+Random 1   formulation: 2   var   0.134959
+Repeated   Var              var   0.0342502
+=#
+
+#EXAMPLE 6
+################################################################################
+################################################################################
+################################################################################
+
+using MixedModels
+
+fm = @formula(var~sequence+period+formulation + (0+formulation|subject))
+mm = fit(MixedModel, fm, df, REML=true)
+
+#=
+Linear mixed model fit by REML
+ var ~ 1 + sequence + period + formulation + (0 + formulation | subject)
+ REML criterion at convergence: 10.314822479361407
+
+Variance components:
+             Column      Variance Std.Dev.   Corr.
+subject  formulation: 1  0.2027892 0.450321
+         formulation: 2  0.1383032 0.371891 +1.00
+Residual                 0.0316615 0.177937
+ Number of obs: 20; levels of grouping factors: 5
+
+  Fixed-effects parameters:
+───────────────────────────────────────────────────────
+                     Coef.  Std. Error      z  Pr(&gt;|z|)
+───────────────────────────────────────────────────────
+(Intercept)      1.61        0.335375    4.80    &lt;1e-5
+sequence: 2     -0.170833    0.383975   -0.44    0.6564
+period: 2        0.144167    0.119206    1.21    0.2265
+period: 3        0.08        0.112537    0.71    0.4772
+period: 4        0.144167    0.119206    1.21    0.2265
+formulation: 2  -0.0791667   0.0887562  -0.89    0.3724
+───────────────────────────────────────────────────────
+=#
+
+lmm = LMM(@formula(var~sequence+period+formulation), df;
+random = VarEffect(Metida.@covstr(formulation), CSH),
+repeated = VarEffect(Metida.@covstr(formulation), SI),
+subject = :subject)
+Metida.fit!(lmm)
+
+#=
+Linear Mixed Model: var ~ sequence + period + formulation
+Random 1:
+   Model: formulation
+   Type: CSH (3)
+   Coefnames: [&quot;formulation: 1&quot;, &quot;formulation: 2&quot;]
+Repeated:
+   Model: formulation
+   Type: SI (1)
+   Coefnames: [&quot;formulation: 1&quot;, &quot;formulation: 2&quot;]
+
+Status: converged
+
+   -2 logREML: 10.3148
+
+   Fixed effects:
+
+Name             Estimate     SE          z           Pr(&gt;|z|)
+(Intercept)      1.61         0.335376    4.80058     1.58204e-6
+sequence: 2      -0.170833    0.383976    -0.444906   0.656388
+period: 2        0.144167     0.119205    1.2094      0.226511
+period: 3        0.08         0.112537    0.710877    0.47716
+period: 4        0.144167     0.119205    1.2094      0.226511
+formulation: 2   -0.0791667   0.0887561   -0.891957   0.372416
+
+Random effects:
+
+   θ vector: [0.450323, 0.371893, 1.0, 0.177937]
+
+Random 1   formulation: 1   var   0.202791
+Random 1   formulation: 2   var   0.138304
+Random 1   Rho              rho   1.0
+Repeated   Var              var   0.0316616
+=#
+
+################################################################################
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../details/">Details »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 3 November 2020 17:25">Tuesday 3 November 2020</span>. Using Julia version 1.1.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
