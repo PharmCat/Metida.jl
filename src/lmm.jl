@@ -1,9 +1,21 @@
 #lmm.jl
 
 """
-    LMM{T} <: MetidaModel
+    LMM(model, data; contrasts=Dict{Symbol,Any}(), subject::Union{Nothing, Symbol} = nothing,  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
 
-    Linear-mixed model.
+Make Linear-Mixed Model object.
+
+`model`: is a fixed-effect model (`@formula`)
+
+`data`: tabular data
+
+`contrasts`: contrasts for fixed factors
+
+`random`: vector of random effects or single random effect
+
+`repeated`: is a repeated effect (only single)
+
+`subject`: is a block-diagonal factor
 """
 struct LMM{T} <: MetidaModel
     model::FormulaTerm
@@ -14,7 +26,7 @@ struct LMM{T} <: MetidaModel
     rankx::Int
     result::ModelResult
 
-    function LMM(model, data; contrasts=Dict{Symbol,Any}(), subject = nothing,  random = nothing, repeated = nothing)
+    function LMM(model, data; contrasts=Dict{Symbol,Any}(), subject::Union{Nothing, Symbol} = nothing,  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
         mf = ModelFrame(model, data; contrasts = contrasts)
         mm = ModelMatrix(mf)
         if random === nothing

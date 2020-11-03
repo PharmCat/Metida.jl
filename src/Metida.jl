@@ -10,7 +10,7 @@ using Optim
 
 import LinearAlgebra:checksquare
 
-import StatsBase: fit, fit!
+import StatsBase: fit, fit!, coef
 import Base:show
 
 export @formula, @covstr, VC, VarianceComponents, CSH, HeterogeneousCompoundSymmetry, SI, ScaledIdentity, fit!, LMM, VarEffect
@@ -28,6 +28,7 @@ include("reml.jl")
 include("ml.jl")
 include("fit.jl")
 include("showutils.jl")
+include("statsbase.jl")
 
 function __init__()
 

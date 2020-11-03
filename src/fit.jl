@@ -3,7 +3,7 @@
 """
     fit!(lmm::LMM{T}) where T
 
-    Fit model.
+Fit LMM model.
 """
 function fit!(lmm::LMM{T}) where T
 
