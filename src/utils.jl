@@ -31,6 +31,17 @@ function subjblocks(df, sbj::Symbol, x::Matrix{T}, z::Matrix{T}, y::Vector{T}, r
         end
     return xa, za, rza, ya
 end
+function subjblocks(df, sbj)
+    if isa(sbj, Symbol)
+        u = unique(df[!, sbj])
+        r = Vector{Vector{Int}}(undef, length(u))
+        @inbounds @simd for i = 1:length(u)
+            r[i] = findall(x -> x == u[i], df[!, sbj])
+        end
+        return r
+    end
+    Vector{Vector{Int}}(undef, 0)
+end
 
 """
 Variance estimate via OLS and QR decomposition.

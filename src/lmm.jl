@@ -37,12 +37,8 @@ struct LMM{T} <: MetidaModel
         end
         if !isa(random, Vector) random = [random] end
         covstr = CovStructure(random, repeated, data)
-        if isa(subject, Symbol)
-            xa, za, rza, ya = subjblocks(data, subject, mm.m, covstr.z, mf.data[mf.f.lhs.sym], covstr.repeated.model === nothing ? nothing : covstr.rz)
-            lmmdata = LMMData(xa, za, rza, ya)
-        else
-            lmmdata = LMMData([mm.m], [covstr.z], [covstr.rz], [mf.data[mf.f.lhs.sym]])
-        end
+        block  = subjblocks(data, subject)
+        lmmdata = LMMData(mm.m, covstr.z, covstr.rz, mf.data[mf.f.lhs.sym], block)
         new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, rank(mm.m), ModelResult())
     end
 end
