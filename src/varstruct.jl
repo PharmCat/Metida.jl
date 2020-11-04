@@ -139,16 +139,17 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                 if length(random[i].coding) == 0 && random[i].fulldummy
                     fill_coding_dict!(random[i].model, random[i].coding, data)
                 end
+
                 block[i]      = subjblocks(data, random[i].subj)
                 schema[i]     = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
                 q[i]          = length(schema[i][1].contrasts.levels)
-                
+
                 if isa(random[i].subj, Symbol)
                     random[i].coding[random[i].subj] = StatsModels.FullDummyCoding()
                     rs        = apply_schema(InteractionTerm((random[i].model, term(random[i].subj))), StatsModels.schema(data, random[i].coding))
                     zt        = modelcols(rs, data)
                 else
-                    zt        = reduce(hcat, modelcols(schema[1], data))
+                    zt        = reduce(hcat, modelcols(schema[i], data))
                 end
 
 
@@ -225,7 +226,7 @@ end
 #                       G MATRIX FUNCTIONS
 ################################################################################
 @inline function gmat_base(θ::Vector{T}, covstr) where T
-    q = size(covstr.z, 2)
+    q = sum(covstr.q[1:end-1])
 
     mx = zeros(T, q, q)
     for i = 1:length(covstr.random)
