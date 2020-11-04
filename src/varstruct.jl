@@ -77,20 +77,29 @@ const CSH = HeterogeneousCompoundSymmetry()
 ################################################################################
 #                  EFFECT
 ################################################################################
+"""
+    VarEffect(model, covtype::T, coding; fulldummy = true, subj = nothing) where T <: AbstractCovarianceType
+"""
 struct VarEffect
     model::Union{Tuple{Vararg{AbstractTerm}}, Nothing}
     covtype::CovarianceType
     coding::Dict{Symbol, AbstractContrasts}
-    function VarEffect(model, covtype::T, coding) where T <: AbstractCovarianceType
+    fulldummy::Bool
+    subj::Union{Symbol, Nothing}
+    function VarEffect(model, covtype::T, coding; fulldummy = true, subj = nothing) where T <: AbstractCovarianceType
         if coding === nothing && model !== nothing
             coding = Dict{Symbol, AbstractContrasts}()
-            #fill_coding_dict(model, coding)
         elseif coding === nothing && model === nothing
             coding = Dict{Symbol, AbstractContrasts}()
         end
         if isa(model, AbstractTerm) model = tuple(model) end
-        new(model, covtype, coding)
+        new(model, covtype, coding, fulldummy, subj)
     end
+    function VarEffect(model, covtype::T; coding = nothing, fulldummy = true, subj = nothing) where T <: AbstractCovarianceType
+        VarEffect(model, covtype, coding; fulldummy = fulldummy, subj = subj)
+    end
+
+
     function VarEffect(model; coding = nothing)
         VarEffect(model, VC, coding)
     end
@@ -99,9 +108,6 @@ struct VarEffect
     end
     function VarEffect()
         VarEffect(nothing, SI, Dict{Symbol, AbstractContrasts}())
-    end
-    function VarEffect(model, covtype::T; coding = nothing) where T <: AbstractCovarianceType
-        VarEffect(model, covtype, coding)
     end
 end
 ################################################################################
@@ -125,16 +131,8 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         tr      = Vector{UnitRange}(undef, length(random) + 1)
         schema  = Vector{Tuple}(undef, length(random) + 1)
         z       = Matrix{Float64}(undef, size(data, 1), 0)
-
-        #rschema = apply_schema(random[1].model, StatsModels.schema(data, random[1].coding))
-        #z       = reduce(hcat, modelcols(rschema, data))
-        #schema[1] = rschema
-        #q[1]    = size(z, 2)
-        #t[1]    = random[1].covtype.f(q[1])
-        #tr[1]   = UnitRange(1, t[1])
-        #if length(random) > 1
             for i = 1:length(random)
-                if length(random[i].coding) == 0
+                if length(random[i].coding) == 0 && random[i].fulldummy
                     fill_coding_dict!(random[i].model, random[i].coding, data)
                 end
                 rschema = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
@@ -149,9 +147,10 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                     tr[1]   = UnitRange(1, t[1])
                 end
             end
-        #end
         if repeated.model !== nothing
-            fill_coding_dict!(repeated.model, repeated.coding, data)
+            if length(repeated.coding) == 0 && repeated.fulldummy
+                fill_coding_dict!(repeated.model, repeated.coding, data)
+            end
             rschema = apply_schema(repeated.model, StatsModels.schema(data, repeated.coding))
             rz = reduce(hcat, modelcols(rschema, data))
             schema[end] = rschema

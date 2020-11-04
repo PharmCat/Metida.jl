@@ -81,7 +81,7 @@ repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
 subject = :subject)
 
 lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
-random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH)],
+random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
 repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.SI),
 subject = :subject)
 
@@ -94,6 +94,14 @@ Metida.fit!(lmm)
 
 @benchmark Metida.fit!(lmm)
 
+using MixedModels
 
-fm = @formula(var~sequence+period+formulation + (0+formulation|subject))
+fm = @formula(var ~ sequence+period+formulation + (0+formulation|subject))
+mm = fit(MixedModel, fm, df, REML=true)
+
+
+fm = @formula(var~sequence+period+formulation + (0+formulation|subject) + (1|period))
+mm = fit(MixedModel, fm, df, REML=true)
+
+fm = @formula(var ~ 1+rvar&formulation + (1|subject))
 mm = fit(MixedModel, fm, df, REML=true)
