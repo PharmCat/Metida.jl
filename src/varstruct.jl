@@ -57,7 +57,7 @@ end
 const ARH = HeterogeneousAutoregressive()
 
 function CompoundSymmetry()
-    CovarianceType(:CS, x -> 2, ffxzero, ffxzero)
+    CovarianceType(:CS, x -> 2, ffxone, ffxone)
 end
 const CS = CompoundSymmetry()
 
@@ -238,7 +238,7 @@ end
 end
 @noinline function gmat_vc!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     for i = 1:size(mx, 1)
-        mx[i, i] = θ[i]
+        mx[i, i] = θ[i] ^ 2
     end
     nothing
 end
@@ -273,9 +273,15 @@ end
     nothing
 end
 @noinline function gmat_cs!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
-    mx .= θ[2]
-    for i = 1:size(mx, 1)
-        mx[i, i] = θ[1]*θ[1] + θ[2]*θ[2]
+    s = size(mx, 1)
+    mx .= θ[1]^2
+    if s > 1
+        for m = 1:s - 1
+            for n = m + 1:s
+                @inbounds mx[m, n] = mx[m, m] * θ[2]
+                @inbounds mx[n, m] = mx[m, n]
+            end
+        end
     end
     nothing
 end
@@ -368,13 +374,15 @@ end
 end
 @noinline function rmatp_cs!(mx, θ::Vector{T}, ::AbstractMatrix,  ::CovarianceType) where T
     rn    = size(mx, 1)
+    θsq   =  θ[1]*θ[1]
+    θsqp  =  θsq*θ[2]
     for i = 1:size(mx, 1)
-        mx[i, i] += θ[1]*θ[1] + θ[2]*θ[2]
+        mx[i, i] += θsq
     end
     if rn > 1
         for m = 1:rn - 1
             for n = m + 1:rn
-                @inbounds mx[m, n] += vec[m] * vec[n] * θ[end]
+                @inbounds mx[m, n] += θsqp
                 @inbounds mx[n, m] = mx[m, n]
             end
         end

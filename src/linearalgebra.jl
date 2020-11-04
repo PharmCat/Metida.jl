@@ -23,6 +23,29 @@ A * B * A' + C
     end
     Symmetric(mx)
 end
+"""
+A * B * A'
+"""
+@inline function mulαβαt(A, B)
+    q  = size(B, 1)
+    p  = size(A, 1)
+    c  = zeros(eltype(B), q)
+    mx = zeros(eltype(B), p, p)
+    for i = 1:p
+        fill!(c, zero(eltype(c)))
+        @simd for n = 1:q
+            @simd for m = 1:q
+                @inbounds c[n] +=  A[i, m] * B[n, m]
+            end
+        end
+        @simd for n = i:p
+            @simd for m = 1:q
+                 @inbounds mx[i, n] += A[n, m] * c[m]
+            end
+        end
+    end
+    Symmetric(mx)
+end
 @inline function mulαβαtc2(A, B, C, r::Vector)
     q  = size(B, 1)
     p  = size(A, 1)
@@ -90,6 +113,30 @@ end
     mx[1:p, p+1:end] = X
     mx[p+1:end, 1:p] = X'
     mx
+end
+"""
+A' * B * A -> +θ
+A' * B * C -> +β
+"""
+function mulθβinc!(θ, β, A::AbstractMatrix, B::AbstractMatrix, C::AbstractVector)
+    q = size(B, 1)
+    p = size(A, 2)
+    c = Vector{eltype(θ)}(undef, q)
+    for i = 1:p
+        fill!(c, zero(eltype(θ)))
+        for n = 1:q
+            for m = 1:q
+                @inbounds c[n] += B[m, n] * A[m, i]
+            end
+            @inbounds β[i] += c[n] * C[n]
+        end
+        for n = 1:p
+            for m = 1:q
+                @inbounds θ[i, n] += A[m, n] * c[m]
+            end
+        end
+    end
+    θ, β
 end
 #-------------------------------------------------------------------------------
 """

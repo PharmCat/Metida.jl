@@ -13,8 +13,8 @@ function fit!(lmm::LMM{T}) where T
 
     #Optim options
     optmethod  = Optim.Newton()
-    optoptions = Optim.Options(g_tol = 1e-12,
-        iterations = 200,
+    optoptions = Optim.Options(g_tol = 1e-14,
+        iterations = 300,
         store_trace = true,
         show_trace = false,
         allow_f_increases = true)
@@ -22,9 +22,11 @@ function fit!(lmm::LMM{T}) where T
     #Initial variance
     initθ = initvar(lmm.mf.data[lmm.mf.f.lhs.sym], lmm.mm.m)[1]
     θ  = zeros(T, lmm.covstr.tl)
-    θ .= initθ / (length(lmm.covstr.random) + 1)
+    θ                      .= 1.01
+    θ[lmm.covstr.tr[end]]  .= initθ
+    #θ .= initθ / (length(lmm.covstr.random) + 1)
     for i = 1:length(θ)
-        if lmm.covstr.ct[i] == :rho θ[i] = 0.5 end
+        if lmm.covstr.ct[i] == :rho θ[i] = 0.0 end
     end
     varlinkvecapply!(θ, fvr)
     ############################################################################

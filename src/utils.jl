@@ -72,17 +72,17 @@ end
     return log(1.0/ρ - 1.0)
 end
 
-@inline function rholinksigmoid(ρ::T, m) where T <: Real
+@inline function rholinksigmoid(ρ::T) where T <: Real
     return ρ/sqrt(1.0 + ρ^2)
 end
-@inline function rholinksigmoidr(ρ::T, m) where T <: Real
+@inline function rholinksigmoidr(ρ::T) where T <: Real
     return sign(ρ)*sqrt(ρ^2/(1.0 - ρ^2))
 end
 
-@inline function rholinksigmoid2(ρ::T, m) where T <: Real
+@inline function rholinksigmoid2(ρ::T) where T <: Real
     return atan(ρ)/pi*2.0
 end
-@inline function rholinksigmoid2r(ρ::T, m) where T <: Real
+@inline function rholinksigmoid2r(ρ::T) where T <: Real
     return tan(ρ*pi/2.0)
 end
 
@@ -91,14 +91,14 @@ end
 @inline function varlinkvec(v)
     fv = Vector{Function}(undef, length(v))
     for i = 1:length(v)
-        if v[i] == :var fv[i] = vlink else fv[i] = rholinkpsigmoid end
+        if v[i] == :var fv[i] = vlink else fv[i] = rholinksigmoid end
     end
     fv
 end
 @inline function varlinkrvec(v)
     fv = Vector{Function}(undef, length(v))
     for i = 1:length(v)
-        if v[i] == :var fv[i] = vlinkr else fv[i] = rholinkpsigmoidr end
+        if v[i] == :var fv[i] = vlinkr else fv[i] = rholinksigmoidr end
     end
     fv
 end
@@ -118,3 +118,29 @@ end
 end
 
 ################################################################################
+
+function vmatr(lmm, i)
+    θ  = lmm.result.theta
+    G  = gmat_base(θ, lmm.covstr)
+    V  = mulαβαt(view(lmm.data.zv, lmm.data.block[i],:), G)
+    if length(lmm.data.zrv) > 0
+        rmat_basep!(V, θ[lmm.covstr.tr[end]], view(lmm.data.zrv, lmm.data.block[i],:), lmm.covstr)
+    else
+        rmat_basep!(V, θ[lmm.covstr.tr[end]], lmm.data.zrv, lmm.covstr)
+    end
+    V
+end
+
+function gmatr(lmm, i)
+    θ  = lmm.result.theta
+    gmat_base(θ, lmm.covstr)
+end
+
+################################################################################
+
+function m2logreml(lmm)
+    lmm.result.reml
+end
+function logreml(lmm)
+    -m2logreml(lmm)/2.
+end

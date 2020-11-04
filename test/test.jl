@@ -77,7 +77,7 @@ end
     subject = :subject
     )
     Metida.fit!(lmm)
-    @test lmm.result.reml ≈ 10.065238620469083 atol=1E-8
+    @test Metida.m2logreml(lmm) ≈ 10.065238989917216 atol=1E-8
 
 end
 @testset "  Model: SI/subject + VC                                   " begin
