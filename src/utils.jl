@@ -40,7 +40,9 @@ function subjblocks(df, sbj)
         end
         return r
     end
-    Vector{Vector{Int}}(undef, 0)
+    r = Vector{Vector{Int}}(undef, 1)
+    r[1] = collect(1:size(df, 1))
+    r
 end
 
 """

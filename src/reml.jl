@@ -60,7 +60,7 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
 
     @inbounds for i = 1:n
         q   = length(lmm.data.block[i])
-        Vp  = mulαβαt3(view(lmm.data.zv, lmm.data.block[i], :), G, view(lmm.data.xv, lmm.data.block[i], :))
+        Vp  = mulαβαt3(view(reduce(hcat, lmm.data.zv), lmm.data.block[i], :), G, view(lmm.data.xv, lmm.data.block[i], :))
         V   = view(Vp, 1:q, 1:q)
         rmat_basep!(V, θ[lmm.covstr.tr[end]], view(lmm.data.zrv, lmm.data.block[i], :), lmm.covstr)
         #θ₁  += logdet(V)
