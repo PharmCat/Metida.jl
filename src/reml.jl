@@ -17,7 +17,7 @@ function reml_sweep(lmm, β, θ::Vector{T})::T where T <: Number
         Vp  = mulαβαt3(lmm.data.zv[i], G, lmm.data.xv[i])
         V   = view(Vp, 1:q, 1:q)
         rmat_basep!(V, θ[lmm.covstr.tr[end]], lmm.data.zrv[i], lmm.covstr)
-        
+
         θ₁  += logdet(V)
         sweep!(Vp, 1:q)
         iV  = Symmetric(utriaply!(x -> -x, Vp[1:q, 1:q]))
@@ -39,8 +39,8 @@ end
     -2 log Restricted Maximum Likelihood; β calculation inside
 """
 function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{T}} where T <: Number where T2 <: Number
-    n::Int        = length(lmm.data.yv)
-    N::Int        = sum(length.(lmm.data.yv))
+    n::Int        = length(lmm.data.block)
+    N::Int        = length(lmm.data.yv)
     G::Matrix{T}  = gmat_base(θ, lmm.covstr)
     c::Float64    = (N - lmm.rankx)*log(2π)
     #---------------------------------------------------------------------------
@@ -59,10 +59,10 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
     local logdetθ₂::T
 
     @inbounds for i = 1:n
-        q   = length(lmm.data.yv[i])
-        Vp  = mulαβαt3(lmm.data.zv[i], G, lmm.data.xv[i])
+        q   = length(lmm.data.block[i])
+        Vp  = mulαβαt3(view(lmm.data.zv, lmm.data.block[i],:), G, view(lmm.data.xv, lmm.data.block[i],:))
         V   = view(Vp, 1:q, 1:q)
-        rmat_basep!(V, θ[lmm.covstr.tr[end]], lmm.data.zrv[i], lmm.covstr)
+        rmat_basep!(V, θ[lmm.covstr.tr[end]], view(lmm.data.zrv, lmm.data.block[i],:), lmm.covstr)
         #θ₁  += logdet(V)
         try
             θ₁  += logdet(V)
@@ -74,14 +74,14 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
         #-----------------------------------------------------------------------
         qswm = size(Vp, 1)
         θ₂ .-= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
-        mulαtβinc!(βm, view(Vp, 1:q, q + 1:qswm), lmm.data.yv[i])
+        mulαtβinc!(βm, view(Vp, 1:q, q + 1:qswm), view(lmm.data.yv, lmm.data.block[i]))
         #-----------------------------------------------------------------------
     end
     mul!(β, inv(θ₂), βm)
     @simd for i = 1:n
         #r    =  lmm.data.yv[i] - lmm.data.xv[i] * β
         #θ₃  += r' * V⁻¹[i] * r
-        @inbounds θ₃  += mulθ₃(lmm.data.yv[i], lmm.data.xv[i], β, V⁻¹[i])
+        @inbounds θ₃  += mulθ₃(view(lmm.data.yv, lmm.data.block[i]), view(lmm.data.xv, lmm.data.block[i],:), β, V⁻¹[i])
     end
     try
         logdetθ₂ = logdet(θ₂)

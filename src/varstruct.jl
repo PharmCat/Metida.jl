@@ -317,7 +317,7 @@ end
         throw(ErrorException("Unknown covariance structure: $(covstr.repeated.covtype.s)"))
     end
 end
-@noinline function rmatp_si!(mx, θ::Vector{T}, ::Matrix, ::CovarianceType) where T
+@noinline function rmatp_si!(mx, θ::Vector{T}, ::AbstractMatrix, ::CovarianceType) where T
     θsq = θ[1]*θ[1]
     for i = 1:size(mx, 1)
             mx[i, i] += θsq
@@ -366,7 +366,7 @@ end
     end
     nothing
 end
-@noinline function rmatp_cs!(mx, θ::Vector{T}, ::Matrix,  ::CovarianceType) where T
+@noinline function rmatp_cs!(mx, θ::Vector{T}, ::AbstractMatrix,  ::CovarianceType) where T
     rn    = size(mx, 1)
     for i = 1:size(mx, 1)
         mx[i, i] += θ[1]*θ[1] + θ[2]*θ[2]
