@@ -81,7 +81,7 @@ const CSH = HeterogeneousCompoundSymmetry()
     VarEffect(model, covtype::T, coding; fulldummy = true, subj = nothing) where T <: AbstractCovarianceType
 """
 struct VarEffect
-    model::Union{InteractionTerm, Nothing}
+    model::Union{Tuple{Vararg{AbstractTerm}}, Nothing}
     covtype::CovarianceType
     coding::Dict{Symbol, AbstractContrasts}
     fulldummy::Bool
@@ -92,9 +92,7 @@ struct VarEffect
         elseif coding === nothing && model === nothing
             coding = Dict{Symbol, AbstractContrasts}()
         end
-        #if isa(model, AbstractTerm)
-            if isa(subj, Symbol) model = InteractionTerm(tuple(model, term(subj))) else model = InteractionTerm(tuple(model)) end
-        #end
+        if isa(model, AbstractTerm) model = tuple(model) end
         new(model, covtype, coding, fulldummy, subj)
     end
     function VarEffect(model, covtype::T; coding = nothing, fulldummy = true, subj = nothing) where T <: AbstractCovarianceType
@@ -118,43 +116,57 @@ end
 struct CovStructure{T} <: AbstractCovarianceStructure
     random::Vector{VarEffect}                                                   #Random effects
     repeated::VarEffect                                                         #Repearted effects
-    schema::Vector
+    schema::Vector{Tuple}
     rcnames::Vector{String}
     block::Vector{Vector{Vector{Int}}}
-    z::Matrix{T}                                                                #Z matrix
-    rz::Matrix{T}                                                               #repeated effect parametrization matrix
+    z::Matrix{Float64}
+    zr::Vector{UnitRange{Int}}                                                            # Z matrix
+    rz::Matrix{T}                                                               # repeated effect parametrization matrix
     q::Vector{Int}                                                              # size 2 of z/rz matrix
     t::Vector{Int}                                                              # number of parametert in each effect
     tr::Vector{UnitRange{Int}}                                                  # range of each parameters in θ vector
     tl::Int                                                                     # θ Parameter count
-    ct::Vector{Symbol}                                                          #Parameter type :var / :rho
+    ct::Vector{Symbol}                                                          # Parameter type :var / :rho
     function CovStructure(random, repeated, data)
         q       = Vector{Int}(undef, length(random) + 1)
         t       = Vector{Int}(undef, length(random) + 1)
         tr      = Vector{UnitRange}(undef, length(random) + 1)
-        schema  = Vector{Any}(undef, length(random) + 1)
+        schema  = Vector{Tuple}(undef, length(random) + 1)
         z       = Matrix{Float64}(undef, size(data, 1), 0)
+        zr      = Vector{UnitRange}(undef, length(random))
         block   = Vector{Vector{Vector{Int}}}(undef, length(random))
             for i = 1:length(random)
                 if length(random[i].coding) == 0 && random[i].fulldummy
                     fill_coding_dict!(random[i].model, random[i].coding, data)
                 end
-                rschema   = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
-                ztemp     = modelcols(rschema, data)
-                schema[i] = rschema
-                q[i]      = size(ztemp, 2)
+
+                block[i]      = subjblocks(data, random[i].subj)
+                schema[i]     = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
+                q[i]          = length(schema[i][1].contrasts.levels)
+
+                if isa(random[i].subj, Symbol)
+                    random[i].coding[random[i].subj] = StatsModels.FullDummyCoding()
+                    rs        = apply_schema(InteractionTerm((random[i].model, term(random[i].subj))), StatsModels.schema(data, random[i].coding))
+                    zt        = modelcols(rs, data)
+                else
+                    zt        = reduce(hcat, modelcols(schema[i], data))
+                end
+
+
+
                 t[i]      = random[i].covtype.f(q[i])
-                z         = hcat(z, ztemp)
+                z         = hcat(z, zt)
                 if i > 1
                     tr[i]   = UnitRange(sum(t[1:i-1]) + 1, sum(t[1:i-1])+t[i])
                 else
                     tr[1]   = UnitRange(1, t[1])
                 end
-                if isa(random[i].subj, Symbol)
-                    block[i]  = subjblocks(data, random[i].subj)
+                if i > 1
+                    zr[i]   = UnitRange(sum(q[1:i-1]) + 1, sum(q[1:i-1])+q[i])
                 else
-                    block[i]  = data.block
+                    zr[1]   = UnitRange(1, q[1])
                 end
+
             end
         if repeated.model !== nothing
             if length(repeated.coding) == 0 && repeated.fulldummy
@@ -199,7 +211,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             end
         end
         view(rcnames, tr[end]) .= rcoefnames(schema[end], t[end], Val{repeated.covtype.s}())
-        new{eltype(z)}(random, repeated, schema, rcnames, block, z, rz, q, t, tr, tl, ct)
+        new{eltype(z)}(random, repeated, schema, rcnames, block, z, zr, rz, q, t, tr, tl, ct)
     end
 end
 ################################################################################
@@ -214,7 +226,8 @@ end
 #                       G MATRIX FUNCTIONS
 ################################################################################
 @inline function gmat_base(θ::Vector{T}, covstr) where T
-    q = size(covstr.z, 2)
+    q = sum(covstr.q[1:end-1])
+
     mx = zeros(T, q, q)
     for i = 1:length(covstr.random)
         s = 1 + sum(covstr.q[1:i]) - covstr.q[i]
