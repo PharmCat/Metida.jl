@@ -1,11 +1,12 @@
 
 
 struct LMMData{T}
-    xv::Vector{Matrix{T}}
-    zv::Vector{Matrix{T}}
-    zrv::Vector{Matrix{T}}
-    yv::Vector{Vector{T}}
-    function LMMData(xa::Vector{Matrix{T}}, za::Vector{Matrix{T}}, rza::Vector{Matrix{T}}, ya::Vector{Vector{T}}) where T
-        new{T}(xa, za, rza, ya)
+    xv::Matrix{T}
+    zv::Matrix{T}
+    zrv::Matrix{T}
+    yv::Vector{T}
+    block::Vector{Vector{Int}}
+    function LMMData(xa::Matrix{T}, za::Matrix{T}, rza::Matrix{T}, ya::Vector{T}, block) where T
+        new{T}(xa, za, rza, ya, block)
     end
 end
