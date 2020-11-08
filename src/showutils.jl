@@ -50,20 +50,3 @@ end
 function rcoefnames(s, t, ::Val{:VC})
     string.(coefnames(s))
 end
-
-function vmatr(lmm, i)
-    θ  = lmm.result.theta
-    G  = gmat_base(θ, lmm.covstr)
-    V  = mulαβαt(view(lmm.data.zv, lmm.data.block[i],:), G)
-    if length(lmm.data.zrv) > 0
-        rmat_basep!(V, θ[lmm.covstr.tr[end]], view(lmm.data.zrv, lmm.data.block[i],:), lmm.covstr)
-    else
-        rmat_basep!(V, θ[lmm.covstr.tr[end]], lmm.data.zrv, lmm.covstr)
-    end
-    V
-end
-
-function gmatr(lmm, i)
-    θ  = lmm.result.theta
-    gmat_base(θ, lmm.covstr)
-end

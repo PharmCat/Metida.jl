@@ -47,7 +47,7 @@ end
 """
 Variance estimate via OLS and QR decomposition.
 """
-@inline function initvar(y::Vector, X::Matrix{T}) where T
+function initvar(y::Vector, X::Matrix{T}) where T
     qrx  = qr(X)
     β    = inv(qrx.R) * qrx.Q' * y
     r    = y .- X * β
@@ -58,59 +58,58 @@ end
 #                        VAR LINK
 ################################################################################
 
-@inline function vlink(σ::T) where T <: Real
+function vlink(σ::T) where T <: Real
     exp(σ)
 end
-@inline function vlinkr(σ::T) where T <: Real
+function vlinkr(σ::T) where T <: Real
     log(σ)
 end
 
-@inline function rholinkpsigmoid(ρ::T) where T <: Real
+function rholinkpsigmoid(ρ::T) where T <: Real
     return 1.0/(1.0 + exp(ρ))
 end
-@inline function rholinkpsigmoidr(ρ::T) where T <: Real
+function rholinkpsigmoidr(ρ::T) where T <: Real
     return log(1.0/ρ - 1.0)
 end
 
-@inline function rholinksigmoid(ρ::T) where T <: Real
+function rholinksigmoid(ρ::T) where T <: Real
     return ρ/sqrt(1.0 + ρ^2)
 end
-@inline function rholinksigmoidr(ρ::T) where T <: Real
+function rholinksigmoidr(ρ::T) where T <: Real
     return sign(ρ)*sqrt(ρ^2/(1.0 - ρ^2))
 end
 
-@inline function rholinksigmoid2(ρ::T) where T <: Real
+function rholinksigmoid2(ρ::T) where T <: Real
     return atan(ρ)/pi*2.0
 end
-@inline function rholinksigmoid2r(ρ::T) where T <: Real
+function rholinksigmoid2r(ρ::T) where T <: Real
     return tan(ρ*pi/2.0)
 end
 
 ################################################################################
 
-@inline function varlinkvec(v)
+function varlinkvec(v)
     fv = Vector{Function}(undef, length(v))
     for i = 1:length(v)
         if v[i] == :var fv[i] = vlink else fv[i] = rholinksigmoid end
     end
     fv
 end
-@inline function varlinkrvec(v)
+function varlinkrvec(v)
     fv = Vector{Function}(undef, length(v))
     for i = 1:length(v)
         if v[i] == :var fv[i] = vlinkr else fv[i] = rholinksigmoidr end
     end
     fv
 end
-
-@inline function varlinkvecapply(v, f)
+function varlinkvecapply(v, f)
     rv = similar(v)
     for i = 1:length(v)
         rv[i] = f[i](v[i])
     end
     rv
 end
-@inline function varlinkvecapply!(v, f)
+function varlinkvecapply!(v, f)
     for i = 1:length(v)
         v[i] = f[i](v[i])
     end
