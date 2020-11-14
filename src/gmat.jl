@@ -31,9 +31,8 @@ function gmat_switch!(G, θ, covstr, i)
     G
 end
 ################################################################################
-function gmat_base_z(θ::Vector{T}, covstr) where T
+function gmat_base_z!(mx, θ::Vector{T}, covstr) where T
     q = sum(length.(covstr.block[1]))
-    mx = zeros(T, q, q)
     for r = 1:length(covstr.random)
         G = zeros(T, covstr.q[r], covstr.q[r])
         gmat_switch!(G, θ, covstr, r)

@@ -87,6 +87,7 @@ struct VarEffect
     fulldummy::Bool
     subj::Union{Symbol, Nothing}
     function VarEffect(model, covtype::T, coding; fulldummy = true, subj = nothing) where T <: AbstractCovarianceType
+        if isa(model, AbstractTerm) model = tuple(model) end
         if coding === nothing && model !== nothing
             coding = Dict{Symbol, AbstractContrasts}()
         elseif coding === nothing && model === nothing
@@ -104,10 +105,10 @@ struct VarEffect
         VarEffect(model, VC, coding)
     end
     function VarEffect(covtype::T; coding = nothing) where T <: AbstractCovarianceType
-        VarEffect(nothing, covtype, coding)
+        VarEffect(@covstr(1), covtype, coding)
     end
     function VarEffect()
-        VarEffect(nothing, SI, Dict{Symbol, AbstractContrasts}())
+        VarEffect(@covstr(1), SI, Dict{Symbol, AbstractContrasts}())
     end
 end
 ################################################################################
@@ -135,6 +136,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         block   = Vector{Vector{Vector{Int}}}(undef, length(random))
         z       = Matrix{Float64}(undef, size(data, 1), 0)
         zr      = Vector{UnitRange}(undef, length(random))
+        rz      = Matrix{Float64}(undef, size(data, 1), 0)
             for i = 1:length(random)
                 if length(random[i].coding) == 0 && random[i].fulldummy
                     fill_coding_dict!(random[i].model, random[i].coding, data)
@@ -165,19 +167,20 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                 end
                 =#
             end
-        if repeated.model !== nothing
+        #if repeated.model !== nothing
             if length(repeated.coding) == 0 && repeated.fulldummy
                 fill_coding_dict!(repeated.model, repeated.coding, data)
             end
             schema[end] = apply_schema(repeated.model, StatsModels.schema(data, repeated.coding))
-            rz = reduce(hcat, modelcols(schema[end], data))
+            rz       = hcat(rz, reduce(hcat, modelcols(schema[end], data)))
+
             #schema[end] = rschema
             q[end]     = size(rz, 2)
-        else
-            rz           = Matrix{eltype(z)}(undef, 0, 0)
-            schema[end]  = tuple(0)
-            q[end]       = 0
-        end
+        #else
+        #    rz           = Matrix{eltype(z)}(undef, 0, 0)
+        #    schema[end]  = tuple(0)
+        #    q[end]       = 0
+        #end
         t[end]      = repeated.covtype.f(q[end])
         tr[end]     = UnitRange(sum(t[1:end-1]) + 1, sum(t[1:end-1]) + t[end])
         tl  = sum(t)
@@ -231,8 +234,6 @@ end
 ################################################################################
 #                            CONTRAST CODING
 ################################################################################
-
-ContinuousTerm
 
 function fill_coding_dict!(t::T, d::Dict, data) where T <: ConstantTerm
 end

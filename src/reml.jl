@@ -87,6 +87,49 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
     return   θ₁ + logdetθ₂ + θ₃ + c,  β, θ₂
 end
 
+function reml_sweep_β_ub(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{T}} where T <: Number where T2 <: Number
+    n::Int        = length(lmm.data.block)
+    N::Int        = length(lmm.data.yv)
+    #ZGZ::Matrix{T}= gmat_base_z(θ, lmm.covstr)
+    c::Float64    = (N - lmm.rankx)*log(2π)
+    #---------------------------------------------------------------------------
+    #V⁻¹           = Matrix{T}(undef, n)
+    # Vector log determinant of V matrix
+    θ₁::T         = zero(T)
+    θ₂::Matrix{T} = zeros(T, lmm.rankx, lmm.rankx)
+    θ₃::T         = zero(T)
+    βm::Vector{T} = zeros(T, lmm.rankx)
+    β::Vector{T}  = zeros(T, lmm.rankx)
+
+    qswm = N + lmm.rankx
+    Vp = zeros(T, qswm, qswm)
+    gmat_base_z!(Vp, θ, lmm.covstr)
+    V   = view(Vp, 1:N, 1:N)
+
+    rmat_basep!(V, θ[lmm.covstr.tr[end]], lmm.data.zrv, lmm.covstr)
+
+    θ₁  += logdet(V)
+
+    sweep!(Vp, 1:q)
+    V⁻¹ = Symmetric(utriaply!(x -> -x, V))
+        #-----------------------------------------------------------------------
+    qswm = size(Vp, 1)
+    θ₂ .-= Symmetric(view(Vp, N + 1:qswm, N + 1:qswm))
+    mulαtβinc!(βm, view(Vp, 1:N, N + 1:qswm), lmm.data.yv)
+        #-----------------------------------------------------------------------
+
+    mul!(β, inv(θ₂), βm)
+
+        #r    =  lmm.data.yv[i] - lmm.data.xv[i] * β
+        #θ₃  += r' * V⁻¹[i] * r
+    @inbounds θ₃  += mulθ₃(lmm.data.yv, lmm.data.xv, β, V⁻¹)
+
+
+    logdetθ₂ = logdet(θ₂)
+
+    return   θ₁ + logdetθ₂ + θ₃ + c,  β, θ₂
+end
+
 ################################################################################
 function reml_inv_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{T}} where T <: Number where T2 <: Number
     n::Int        = length(lmm.data.block)
