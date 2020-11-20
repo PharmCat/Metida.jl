@@ -34,13 +34,17 @@ function rcoefnames(s, t, ::Val)
 end
 function rcoefnames(s, t, ::Val{:CSH})
     cn = coefnames(s)
-    l  = length(cn)
+    if isa(cn, Vector)
+        l  = length(cn)
+    else
+        l  = 1
+    end
     v  = Vector{String}(undef, t)
     view(v, 1:l) .= string.(cn)
     v[end] = "Rho"
     v
 end
-function rcoefnames(s, t, ::Val{:SI}) 
+function rcoefnames(s, t, ::Val{:SI})
     ["Var"]
 end
 function rcoefnames(s, t, ::Val{:VC})

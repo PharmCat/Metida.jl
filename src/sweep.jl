@@ -16,11 +16,10 @@ function nsyrk!(alpha, A, C)
     end
     C
 end
-
-function sweep!(A::AbstractMatrix, k::Integer, inv::Bool = false)
-    sweepb!(Vector{eltype(A)}(undef, size(A, 2)), A, k, inv)
+function sweep!(A::AbstractMatrix, k::Integer, inv::Bool = false; syrkblas::Bool = false)
+    sweepb!(Vector{eltype(A)}(undef, size(A, 2)), A, k, inv; syrkblas = syrkblas)
 end
-function sweepb!(akk::AbstractVector{T}, A::AbstractMatrix{T}, k::Integer, inv::Bool = false) where T <: Number
+function sweepb!(akk::AbstractVector{T}, A::AbstractMatrix{T}, k::Integer, inv::Bool = false; syrkblas::Bool = false) where T <: Number
     p = checksquare(A)
     p == length(akk) || throw(DimensionError("incorrect buffer size"))
     @inbounds d = one(T) / A[k, k]
@@ -30,7 +29,11 @@ function sweepb!(akk::AbstractVector{T}, A::AbstractMatrix{T}, k::Integer, inv::
     @simd for j in (k+1):p
         @inbounds akk[j] = A[k, j]
     end
-    nsyrk!(-d, akk, A)
+    if syrkblas
+        BLAS.syrk!('U', 'N', -d, akk, one(T), A)
+    else
+        nsyrk!(-d, akk, A)
+    end
     rmul!(akk, d * (-one(T)) ^ inv)
     @simd for i in 1:(k-1)
         @inbounds A[i, k] = akk[i]
@@ -41,18 +44,18 @@ function sweepb!(akk::AbstractVector{T}, A::AbstractMatrix{T}, k::Integer, inv::
     @inbounds A[k, k] = -d
     A
 end
-function sweep!(A::AbstractMatrix{T}, ks::AbstractVector{I}, inv::Bool = false) where
+function sweep!(A::AbstractMatrix{T}, ks::AbstractVector{I}, inv::Bool = false; syrkblas::Bool = false) where
     {T <: Number, I <: Integer}
     akk = zeros(T, size(A, 1))
     for k in ks
-        sweepb!(akk, A, k, inv)
+        sweepb!(akk, A, k, inv; syrkblas = syrkblas)
     end
     A
 end
-function sweepb!(akk::AbstractVector{T}, A::AbstractMatrix{T}, ks::AbstractVector{I}, inv::Bool = false) where
+function sweepb!(akk::AbstractVector{T}, A::AbstractMatrix{T}, ks::AbstractVector{I}, inv::Bool = false; syrkblas::Bool = false) where
         {T <: Number, I<:Integer}
     for k in ks
-        sweepb!(akk, A, k, inv)
+        sweepb!(akk, A, k, inv; syrkblas = syrkblas)
     end
     A
 end

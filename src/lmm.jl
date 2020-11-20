@@ -25,10 +25,22 @@ struct LMM{T} <: MetidaModel
     data::LMMData{T}
     rankx::Int
     result::ModelResult
+    blocksolve::Bool
+    warn::Vector{String}
 
-    function LMM(model, data; contrasts=Dict{Symbol,Any}(), subject::Union{Nothing, Symbol} = nothing,  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
-        mf = ModelFrame(model, data; contrasts = contrasts)
-        mm = ModelMatrix(mf)
+    function LMM(model, data; contrasts=Dict{Symbol,Any}(), subject::Union{Nothing, Symbol, AbstractVector{Symbol}} = nothing,  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
+        if isa(subject, Nothing)
+            subject = Vector{Symbol}(undef, 0)
+        elseif isa(subject, Symbol)
+            subject = [subject]
+        elseif isa(subject,  AbstractVector{Symbol})
+            #
+        else
+            throw(ArgumentError("subject type should be Symbol or Vector{tymbol}"))
+        end
+        warn = Vector{String}(undef, 0)
+        mf   = ModelFrame(model, data; contrasts = contrasts)
+        mm   = ModelMatrix(mf)
         if random === nothing
             random = VarEffect()
         end
@@ -37,17 +49,26 @@ struct LMM{T} <: MetidaModel
         end
         if !isa(random, Vector) random = [random] end
         covstr = CovStructure(random, repeated, data)
-        if isa(subject, Symbol)
-            xa, za, rza, ya = subjblocks(data, subject, mm.m, covstr.z, mf.data[mf.f.lhs.sym], covstr.repeated.model === nothing ? nothing : covstr.rz)
-            lmmdata = LMMData(xa, za, rza, ya)
-        else
-            lmmdata = LMMData([mm.m], [covstr.z], [covstr.rz], [mf.data[mf.f.lhs.sym]])
+        #blocks
+        intsub, eq = intersectsubj(covstr)
+        blocksolve = false
+        if length(subject) > 0 blocksolve = true end
+        if eq blocksolve = true end
+        if (length(subject) > 0 && !eq && length(intsub) > 0) || (length(subject) > 0 && !issetequal(subject, intsub) && length(intsub) > 0) push!(warn, "::You specify global subject variable, but variance effect have different subject's values and would be ignored!") end
+        if length(subject) == 0
+            subject = intsub
         end
-        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, rank(mm.m), ModelResult())
+        block  = intersectdf(data, subject)
+        lmmdata = LMMData(mm.m, covstr.z, covstr.rz, mf.data[mf.f.lhs.sym], block)
+        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, rank(mm.m), ModelResult(), blocksolve, warn)
     end
 end
 ################################################################################
 
+function thetalength(lmm::LMM)
+    lmm.covstr.tl
+end
+################################################################################
 
 function Base.show(io::IO, lmm::LMM)
     println(io, "Linear Mixed Model: ", lmm.model)

@@ -17,7 +17,7 @@ function reml_sweep(lmm, β, θ::Vector{T})::T where T <: Number
         Vp  = mulαβαt3(lmm.data.zv[i], G, lmm.data.xv[i])
         V   = view(Vp, 1:q, 1:q)
         rmat_basep!(V, θ[lmm.covstr.tr[end]], lmm.data.zrv[i], lmm.covstr)
-        
+
         θ₁  += logdet(V)
         sweep!(Vp, 1:q)
         iV  = Symmetric(utriaply!(x -> -x, Vp[1:q, 1:q]))
@@ -39,8 +39,8 @@ end
     -2 log Restricted Maximum Likelihood; β calculation inside
 """
 function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{T}} where T <: Number where T2 <: Number
-    n::Int        = length(lmm.data.yv)
-    N::Int        = sum(length.(lmm.data.yv))
+    n::Int        = length(lmm.data.block)
+    N::Int        = length(lmm.data.yv)
     G::Matrix{T}  = gmat_base(θ, lmm.covstr)
     c::Float64    = (N - lmm.rankx)*log(2π)
     #---------------------------------------------------------------------------
@@ -59,29 +59,177 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
     local logdetθ₂::T
 
     @inbounds for i = 1:n
-        q   = length(lmm.data.yv[i])
-        Vp  = mulαβαt3(lmm.data.zv[i], G, lmm.data.xv[i])
+        q   = length(lmm.data.block[i])
+        Vp  = mulαβαt3(view(lmm.data.zv, lmm.data.block[i],:), G, view(lmm.data.xv, lmm.data.block[i],:))
         V   = view(Vp, 1:q, 1:q)
-        rmat_basep!(V, θ[lmm.covstr.tr[end]], lmm.data.zrv[i], lmm.covstr)
+        rmat_basep!(V, θ[lmm.covstr.tr[end]], view(lmm.data.zrv, lmm.data.block[i],:), lmm.covstr)
         #θ₁  += logdet(V)
-        try
-            θ₁  += logdet(V)
-        catch
-            θ₁  += Inf
-        end
+
+        θ₁  += logdet(V)
+
         sweep!(Vp, 1:q)
         V⁻¹[i] = Symmetric(utriaply!(x -> -x, V))
         #-----------------------------------------------------------------------
         qswm = size(Vp, 1)
         θ₂ .-= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
-        mulαtβinc!(βm, view(Vp, 1:q, q + 1:qswm), lmm.data.yv[i])
+        mulαtβinc!(βm, view(Vp, 1:q, q + 1:qswm), view(lmm.data.yv, lmm.data.block[i]))
         #-----------------------------------------------------------------------
     end
     mul!(β, inv(θ₂), βm)
     @simd for i = 1:n
         #r    =  lmm.data.yv[i] - lmm.data.xv[i] * β
         #θ₃  += r' * V⁻¹[i] * r
-        @inbounds θ₃  += mulθ₃(lmm.data.yv[i], lmm.data.xv[i], β, V⁻¹[i])
+        @inbounds θ₃  += mulθ₃(view(lmm.data.yv, lmm.data.block[i]), view(lmm.data.xv, lmm.data.block[i],:), β, V⁻¹[i])
+    end
+
+    logdetθ₂ = logdet(θ₂)
+
+    return   θ₁ + logdetθ₂ + θ₃ + c,  β, θ₂
+end
+
+function reml_sweep_β2(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{T}} where T <: Number where T2 <: Number
+    n::Int        = length(lmm.data.block)
+    N::Int        = length(lmm.data.yv)
+    #G::Matrix{T}  = gmat_base(θ, lmm.covstr)
+    c::Float64    = (N - lmm.rankx)*log(2π)
+    #---------------------------------------------------------------------------
+    V⁻¹           = Vector{Matrix{T}}(undef, n)
+    # Vector log determinant of V matrix
+    θ₁::T         = zero(T)
+    θ₂::Matrix{T} = zeros(T, lmm.rankx, lmm.rankx)
+    θ₃::T         = zero(T)
+    βm::Vector{T} = zeros(T, lmm.rankx)
+    β::Vector{T}  = zeros(T, lmm.rankx)
+
+    local q::Int
+    local qswm::Int
+    local R::Matrix{T}
+    local Vp::Matrix{T}
+    local logdetθ₂::T
+
+    V   = zeros(T, N, N)
+    gmat_base_z!(V, θ, lmm.covstr)
+    rmat_basep_z!(V, θ[lmm.covstr.tr[end]], lmm.data.zrv, lmm.covstr)
+    @inbounds for i = 1:n
+        q    = length(lmm.data.block[i])
+        qswm = q+lmm.rankx
+        Vi   = view(V, lmm.data.block[i], lmm.data.block[i])
+        θ₁  += logdet(Vi)
+        Vp   = zeros(T, q+lmm.rankx, q+lmm.rankx)
+        Vpv  = view(Vp, 1:q, 1:q)
+        Vpv .= Vi
+        Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
+        #Vxt  = view(Vp,  N+1:qswm, 1:N)
+        Vx  .= view(lmm.data.xv,  lmm.data.block[i],:)
+
+        sweep!(Vp, 1:q)
+        V⁻¹[i] = Symmetric(utriaply!(x -> -x, Vpv))
+        #-----------------------------------------------------------------------
+        qswm = size(Vp, 1)
+        θ₂ .-= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
+        mulαtβinc!(βm, view(Vp, 1:q, q + 1:qswm), view(lmm.data.yv, lmm.data.block[i]))
+        #-----------------------------------------------------------------------
+    end
+    mul!(β, inv(θ₂), βm)
+    @simd for i = 1:n
+        #r    =  lmm.data.yv[i] - lmm.data.xv[i] * β
+        #θ₃  += r' * V⁻¹[i] * r
+        @inbounds θ₃  += mulθ₃(view(lmm.data.yv, lmm.data.block[i]), view(lmm.data.xv, lmm.data.block[i],:), β, V⁻¹[i])
+    end
+
+    logdetθ₂ = logdet(θ₂)
+
+    return   θ₁ + logdetθ₂ + θ₃ + c,  β, θ₂
+end
+
+function reml_sweep_β_ub(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{T}} where T <: Number where T2 <: Number
+    n::Int        = length(lmm.data.block)
+    N::Int        = length(lmm.data.yv)
+    #ZGZ::Matrix{T}= gmat_base_z(θ, lmm.covstr)
+    c::Float64    = (N - lmm.rankx)*log(2π)
+    #---------------------------------------------------------------------------
+    #V⁻¹           = Matrix{T}(undef, n)
+    # Vector log determinant of V matrix
+    θ₁::T         = zero(T)
+    θ₂::Matrix{T} = zeros(T, lmm.rankx, lmm.rankx)
+    θ₃::T         = zero(T)
+    βm::Vector{T} = zeros(T, lmm.rankx)
+    β::Vector{T}  = zeros(T, lmm.rankx)
+
+    qswm = N + lmm.rankx
+    Vp   = zeros(T, qswm, qswm)
+    Vx   = view(Vp, 1:N, N+1:qswm)
+    #Vxt  = view(Vp,  N+1:qswm, 1:N)
+    Vx  .= lmm.data.xv
+    #Vxt .= lmm.data.xv'
+
+    V   = view(Vp, 1:N, 1:N)
+    gmat_base_z!(V, θ, lmm.covstr)
+    rmat_basep_z!(V, θ[lmm.covstr.tr[end]], lmm.data.zrv, lmm.covstr)
+    θ₁  += logdet(V)
+
+    sweep!(Vp, 1:N)
+
+    V⁻¹ = Symmetric(utriaply!(x -> -x, V))
+        #-----------------------------------------------------------------------
+    θ₂ .-= Symmetric(view(Vp, N + 1:qswm, N + 1:qswm))
+    mulαtβinc!(βm, view(Vp, 1:N, N + 1:qswm), lmm.data.yv)
+        #-----------------------------------------------------------------------
+
+    mul!(β, inv(θ₂), βm)
+        #r    =  lmm.data.yv[i] - lmm.data.xv[i] * β
+        #θ₃  += r' * V⁻¹[i] * r
+    @inbounds θ₃  += mulθ₃(lmm.data.yv, lmm.data.xv, β, V⁻¹)
+
+
+    logdetθ₂ = logdet(θ₂)
+
+    return   θ₁ + logdetθ₂ + θ₃ + c,  β, θ₂
+end
+
+################################################################################
+function reml_inv_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{T}} where T <: Number where T2 <: Number
+    n::Int        = length(lmm.data.block)
+    N::Int        = length(lmm.data.yv)
+    G::Matrix{T}  = gmat_base(θ, lmm.covstr)
+    c::Float64    = (N - lmm.rankx)*log(2π)
+    #---------------------------------------------------------------------------
+    V⁻¹           = Vector{Matrix{T}}(undef, n)
+    # Vector log determinant of V matrix
+    θ₁::T         = zero(T)
+    θ₂::Matrix{T} = zeros(T, lmm.rankx, lmm.rankx)
+    θ₃::T         = zero(T)
+    βm::Vector{T} = zeros(T, lmm.rankx)
+    β::Vector{T}  = zeros(T, lmm.rankx)
+
+    local q::Int
+    local qswm::Int
+    local R::Matrix{T}
+    local Vp::Matrix{T}
+    local logdetθ₂::T
+
+    @inbounds for i = 1:n
+        q   = length(lmm.data.block[i])
+        V  = mulαβαt(view(lmm.data.zv, lmm.data.block[i],:), G)
+        rmat_basep!(V, θ[lmm.covstr.tr[end]], view(lmm.data.zrv, lmm.data.block[i],:), lmm.covstr)
+        #θ₁  += logdet(V)
+        try
+            θ₁  += logdet(V)
+        catch
+            θ₁  += Inf
+        end
+        V⁻¹[i] = inv(V)
+        #-----------------------------------------------------------------------
+        #θ2 += Xv[i]'*iVv[i]*Xv[i]
+        #βm += Xv[i]'*iVv[i]*yv[i]
+        mulθβinc!(θ₂, βm, view(lmm.data.xv, lmm.data.block[i],:), V⁻¹[i], view(lmm.data.yv, lmm.data.block[i]))
+        #-----------------------------------------------------------------------
+    end
+    mul!(β, inv(θ₂), βm)
+    @simd for i = 1:n
+        #r    =  lmm.data.yv[i] - lmm.data.xv[i] * β
+        #θ₃  += r' * V⁻¹[i] * r
+        @inbounds θ₃  += mulθ₃(view(lmm.data.yv, lmm.data.block[i]), view(lmm.data.xv, lmm.data.block[i],:), β, V⁻¹[i])
     end
     try
         logdetθ₂ = logdet(θ₂)
@@ -92,112 +240,3 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
 end
 
 ################################################################################
-
-
-################################################################################
-
-#=
-"""
-    2 log Restricted Maximum Likelihood gradient vector
-"""
-function reml_grad(yv, Zv, p, Xv, θvec, β)
-    n     = length(yv)
-    G     = gmat(θvec[3:5])
-    θ1    = zeros(length(θvec))
-    θ2    = zeros(length(θvec))
-    θ3    = zeros(length(θvec))
-    iV    = Vector{AbstractMatrix}(undef, n)
-    θ2m   = zeros(p,p)
-    H     = zeros(p, p)
-    for i = 1:n
-        iV[i] = inv(vmat(G, rmat(θvec[1:2], Zv[i]), Zv[i]))
-        mulαtβαinc!(H, Xv[i], iV[i])
-        #H .+= Xv[i]'*inv(vmat(G, rmat(θvec[1:2], Zv[i]), Zv[i]))*Xv[i]
-    end
-    iH = inv(H)
-    #fx = x -> vmat(gmat(x[3:5]), rmat(x[1:2], Zv[1]), Zv[1])
-    #cfg   = ForwardDiff.JacobianConfig(fx, θvec)
-    for i = 1:n
-        #V   = vmat(G, rmat(θvec[1:2], Zv[i]), Zv[i])
-        #iV  = inv(V)
-        r   = yv[i] .- Xv[i]*β
-        jV  = covmat_grad(vmat, Zv[i], θvec)
-        Aj  = zeros(length(yv[i]), length(yv[i]))
-        for j = 1:length(θvec)
-
-            mulαβαc!(Aj, iV[i], view(jV, :, :, j))
-            #Aj      = iV[i] * view(jV, :, :, j) * iV[i]
-
-            θ1[j]  += trmulαβ(iV[i], view(jV, :, :, j))
-            #θ1[j]  += tr(iV[i] * view(jV, :, :, j))
-
-            θ2[j]  -= tr(iH * Xv[i]' *Aj * Xv[i])
-
-            θ3[j]  -= r' * Aj * r
-        end
-    end
-    return - (θ1 .+ θ2 .+ θ3)
-end
-
-"""
-    2 log Restricted Maximum Likelihood hessian matrix
-"""
-function reml_hessian(yv, Zv, p, Xv, θvec, β)
-    n     = length(yv)
-    G     = gmat(θvec[3:5])
-    θ1    = zeros(length(θvec))
-    θ2    = zeros(length(θvec))
-    θ3    = zeros(length(θvec))
-    iV    = nothing
-    θ2m   = zeros(p,p)
-    H     = zeros(p, p)
-    for i = 1:n
-        H += Xv[i]'*inv(vmat(rmat(θvec[1:2], Zv[i]), G, Zv[i]))*Xv[i]
-    end
-    iH = inv(H)
-    for i = 1:n
-        vmatdvec = x -> vmat(rmat(x[1:2], Zv[i]), gmat(x[3:end]), Zv[i])[:]
-        V   = vmat(rmat(θvec[1:2], Zv[i]), G, Zv[i])
-        iV  = inv(V)
-        r   = yv[i] .- Xv[i]*β
-        ∇V  = covmat_grad(covmat, θ, cfg)
-        ∇²V = covmat_hessian(covmat, θ)
-        #Aij        = iV*∇V[j]*iV
-        #Aijk       = -iV * (∇V[k] * iV * ∇V[j] - ∇²V[k,j] + ∇V[j] * iV * ∇V[k]) * iV
-
-        #θ1[j]  += tr(iV * ∇V[j])
-        #θ2[j]  -= tr(iH * Xv[i]' * Aij * Xv[i])
-        #θ3[j]  -= r' * Aij * r
-
-        #θ1[j,k]  += tr( - Aik' * ∇V[j] + iV * ∇²V[j,k])
-        #θ2[j,k]  = - tr( iH * sum(X' * Aik * X) * iH * sum(X' * Aij * X)) - tr(iH * sum(X' * Aijk * X))
-        #θ3[j,k]  -= r' * Aijk * r
-
-        #A[j,k] =
-
-        for j = 1:length(θvec)
-            for k = 1:length(θvec)
-
-            #θ1[j,k]  +=
-
-            #θ2[j,k]  -=
-
-            #θ3[j,k]  -=
-            end
-        end
-
-    end
-    return - (θ1 .+ θ2 .+ θ3)
-end
-################################################################################
-function reml_grad2(yv, Zv, p, Xv, θvec, β)
-    n     = length(yv)
-    for i = 1:n
-        jV  = covmat_grad(vmat, Zv[i], θvec)
-    end
-end
-function reml_grad3(yv, Zv, p, Xv, θvec, β)
-    n     = length(yv)
-    covmat_grad2(vmatvec, Zv, θvec)
-end
-=#
