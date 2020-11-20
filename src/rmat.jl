@@ -2,21 +2,41 @@
 #                         R MATRIX FUNCTIONS
 ################################################################################
 function rmat_basep!(mx, θ::AbstractVector{T}, zrv, covstr) where T
-    if covstr.repeated.covtype.s == :SI
-        rmatp_si!(mx, θ, zrv, covstr.repeated.covtype)
-    elseif covstr.repeated.covtype.s == :VC
-        rmatp_vc!(mx, θ, zrv, covstr.repeated.covtype)
-    elseif covstr.repeated.covtype.s == :AR
-        rmatp_ar!(mx, θ, zrv, covstr.repeated.covtype)
-    elseif covstr.repeated.covtype.s == :ARH
-        rmatp_arh!(mx, θ, zrv, covstr.repeated.covtype)
-    elseif covstr.repeated.covtype.s == :CSH
-        rmatp_csh!(mx, θ, zrv, covstr.repeated.covtype)
-    elseif covstr.repeated.covtype.s == :CS
-        rmatp_cs!(mx, θ, zrv, covstr.repeated.covtype)
-    else
-        throw(ErrorException("Unknown covariance structure: $(covstr.repeated.covtype.s)"))
+        if covstr.repeated.covtype.s == :SI
+            rmatp_si!(mx, θ, zrv, covstr.repeated.covtype)
+        elseif covstr.repeated.covtype.s == :VC
+            rmatp_vc!(mx, θ, zrv, covstr.repeated.covtype)
+        elseif covstr.repeated.covtype.s == :AR
+            rmatp_ar!(mx, θ, zrv, covstr.repeated.covtype)
+        elseif covstr.repeated.covtype.s == :ARH
+            rmatp_arh!(mx, θ, zrv, covstr.repeated.covtype)
+        elseif covstr.repeated.covtype.s == :CSH
+            rmatp_csh!(mx, θ, zrv, covstr.repeated.covtype)
+        elseif covstr.repeated.covtype.s == :CS
+            rmatp_cs!(mx, θ, zrv, covstr.repeated.covtype)
+        else
+            throw(ErrorException("Unknown covariance structure: $(covstr.repeated.covtype.s)"))
+        end
+end
+function rmat_basep_z!(mx, θ::AbstractVector{T}, zrv, covstr) where T
+    for i = 1:length(covstr.block[end])
+        if covstr.repeated.covtype.s == :SI
+            rmatp_si!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
+        elseif covstr.repeated.covtype.s == :VC
+            rmatp_vc!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
+        elseif covstr.repeated.covtype.s == :AR
+            rmatp_ar!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
+        elseif covstr.repeated.covtype.s == :ARH
+            rmatp_arh!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
+        elseif covstr.repeated.covtype.s == :CSH
+            rmatp_csh!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
+        elseif covstr.repeated.covtype.s == :CS
+            rmatp_cs!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
+        else
+            throw(ErrorException("Unknown covariance structure: $(covstr.repeated.covtype.s)"))
+        end
     end
+    mx
 end
 function rmatp_si!(mx, θ::Vector{T}, ::AbstractMatrix, ::CovarianceType) where T
     θsq = θ[1]*θ[1]

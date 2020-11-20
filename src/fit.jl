@@ -13,7 +13,7 @@ function fit!(lmm::LMM{T}) where T
 
     #Optim options
     optmethod  = Optim.Newton()
-    optoptions = Optim.Options(g_tol = 1e-14,
+    optoptions = Optim.Options(g_tol = 1e-10,
         iterations = 300,
         store_trace = true,
         show_trace = false,
@@ -32,13 +32,13 @@ function fit!(lmm::LMM{T}) where T
     ############################################################################
 
     #Twice differentiable object
-    td = TwiceDifferentiable(x -> reml_sweep_β(lmm, varlinkvecapply!(x, fv))[1], θ; autodiff = :forward)
+    td = TwiceDifferentiable(x -> reml_sweep_β2(lmm, varlinkvecapply!(x, fv))[1], θ; autodiff = :forward)
     #Optimization object
     lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     #Theta (θ) vector
     lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), fv)
     #Hessian
-    lmm.result.h      = ForwardDiff.hessian(x -> reml_sweep_β(lmm, x)[1], lmm.result.theta)
+    lmm.result.h      = ForwardDiff.hessian(x -> reml_sweep_β2(lmm, x)[1], lmm.result.theta)
     #SVD decomposition
     try
         hsvd = svd(lmm.result.h)
@@ -52,7 +52,7 @@ function fit!(lmm::LMM{T}) where T
             end
         end
         #-2 LogREML, β, iC
-        lmm.result.reml, lmm.result.beta, iC = reml_sweep_β(lmm, lmm.result.theta)
+        lmm.result.reml, lmm.result.beta, iC = reml_sweep_β2(lmm, lmm.result.theta)
         #Variance-vovariance matrix of β
         lmm.result.c            = pinv(iC)
         #SE
@@ -61,9 +61,81 @@ function fit!(lmm::LMM{T}) where T
         lmm.result.fit          = true
     catch
         #-2 LogREML, β, iC
-        lmm.result.reml, lmm.result.beta, iC = reml_sweep_β(lmm, lmm.result.theta)
+        lmm.result.reml, lmm.result.beta, iC = reml_sweep_β2(lmm, lmm.result.theta)
         #Fit false
         lmm.result.fit          = false
     end
     lmm
 end
+
+#=
+function fit2!(lmm::LMM{T}) where T
+
+    #Make varlink function
+    fv  = varlinkvec(lmm.covstr.ct)
+    fvr = varlinkrvec(lmm.covstr.ct)
+
+    #Optim options
+    optmethod  = Optim.Newton()
+    optoptions = Optim.Options(g_tol = 1e-10,
+        iterations = 300,
+        store_trace = true,
+        show_trace = false,
+        allow_f_increases = true)
+    ############################################################################
+    #Initial variance
+    initθ = initvar(lmm.mf.data[lmm.mf.f.lhs.sym], lmm.mm.m)[1]
+    θ  = zeros(T, lmm.covstr.tl)
+    θ                      .= 1.01
+    θ[lmm.covstr.tr[end]]  .= initθ
+    #θ .= initθ / (length(lmm.covstr.random) + 1)
+    for i = 1:length(θ)
+        if lmm.covstr.ct[i] == :rho θ[i] = 0.0 end
+    end
+    varlinkvecapply!(θ, fvr)
+    ############################################################################
+
+    opt = NLopt.Opt(:LN_BOBYQA,  thetalength(lmm))
+    NLopt.ftol_rel!(opt, 1.0e-10)
+    NLopt.ftol_abs!(opt, 1.0e-10)
+    NLopt.xtol_rel!(opt, 1.0e-10)
+    NLopt.xtol_abs!(opt, 1.0e-10)
+
+    obj = (x,y) -> reml_sweep_β2(lmm, varlinkvecapply!(x, fv))[1]
+    NLopt.min_objective!(opt, obj)
+    result = NLopt.optimize!(opt, θ)
+    #Optimization object
+    #lmm.result.optim
+    #Theta (θ) vector
+    lmm.result.theta  = varlinkvecapply!(deepcopy(result[2]), fv)
+    #Hessian
+    lmm.result.h      = ForwardDiff.hessian(x -> reml_sweep_β2(lmm, x)[1], lmm.result.theta)
+    #SVD decomposition
+    try
+        hsvd = svd(lmm.result.h)
+        for i = 1:length(lmm.result.theta)
+            if hsvd.S[i] < 1E-10 hsvd.S[i] = 0 end
+        end
+        rhsvd = hsvd.U * Diagonal(hsvd.S) * hsvd.Vt
+        for i = 1:length(lmm.result.theta)
+            if rhsvd[i,i] < 1E-10
+                if lmm.covstr.ct[i] == :var lmm.result.theta[i] = 0 end
+            end
+        end
+        #-2 LogREML, β, iC
+        lmm.result.reml, lmm.result.beta, iC = reml_sweep_β2(lmm, lmm.result.theta)
+        #Variance-vovariance matrix of β
+        lmm.result.c            = pinv(iC)
+        #SE
+        lmm.result.se           = sqrt.(diag(lmm.result.c))
+        #Fit true
+        lmm.result.fit          = true
+    catch
+        #-2 LogREML, β, iC
+        lmm.result.reml, lmm.result.beta, iC = reml_sweep_β2(lmm, lmm.result.theta)
+        #Fit false
+        lmm.result.fit          = false
+    end
+    lmm
+end
+=#

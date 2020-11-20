@@ -85,9 +85,19 @@ struct VarEffect
     covtype::CovarianceType
     coding::Dict{Symbol, AbstractContrasts}
     fulldummy::Bool
-    subj::Union{Symbol, Nothing}
+    subj::Vector{Symbol}
     function VarEffect(model, covtype::T, coding; fulldummy = true, subj = nothing) where T <: AbstractCovarianceType
         if isa(model, AbstractTerm) model = tuple(model) end
+        if isa(subj, Nothing)
+            subj = Vector{Symbol}(undef, 0)
+        elseif isa(subj, Symbol)
+            subj = [subj]
+        elseif isa(subj,  AbstractVector{Symbol})
+            #
+        else
+            throw(ArgumentError("subj type should be Symbol or Vector{tymbol}"))
+        end
+
         if coding === nothing && model !== nothing
             coding = Dict{Symbol, AbstractContrasts}()
         elseif coding === nothing && model === nothing
@@ -133,7 +143,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         t       = Vector{Int}(undef, length(random) + 1)
         tr      = Vector{UnitRange}(undef, length(random) + 1)
         schema  = Vector{Tuple}(undef, length(random) + 1)
-        block   = Vector{Vector{Vector{Int}}}(undef, length(random))
+        block   = Vector{Vector{Vector{Int}}}(undef, length(random) + 1 )
         z       = Matrix{Float64}(undef, size(data, 1), 0)
         zr      = Vector{UnitRange}(undef, length(random))
         rz      = Matrix{Float64}(undef, size(data, 1), 0)
@@ -142,16 +152,18 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                     fill_coding_dict!(random[i].model, random[i].coding, data)
                 end
                 if i > 1
-                    if  random[i].subj == random[i - 1].subj block[i] = block[i - 1] else block[i]  = subjblocks(data, random[i].subj) end
+                    #if  random[i].subj == random[i - 1].subj block[i] = block[i - 1] else block[i]  = subjblocks(data, random[i].subj) end
+                    if  random[i].subj == random[i - 1].subj block[i] = block[i - 1] else block[i]  = intersectdf(data, random[i].subj) end
                 else
-                    block[i]  = subjblocks(data, random[i].subj)
+                    #block[i]  = subjblocks(data, random[i].subj)
+                    block[i]  = intersectdf(data, random[i].subj)
                 end
                 schema[i] = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
-                ztemp   = reduce(hcat, modelcols(schema[i], data))
+                ztemp     = reduce(hcat, modelcols(schema[i], data))
                 #schema[i] = rschema
-                q[i]    = size(ztemp, 2)
-                t[i]    = random[i].covtype.f(q[i])
-                z       = hcat(z, ztemp)
+                q[i]      = size(ztemp, 2)
+                t[i]      = random[i].covtype.f(q[i])
+                z         = hcat(z, ztemp)
                 fillur!(zr, i, q)
                 fillur!(tr, i, t)
                 #=
@@ -171,11 +183,12 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             if length(repeated.coding) == 0 && repeated.fulldummy
                 fill_coding_dict!(repeated.model, repeated.coding, data)
             end
+            block[end]  = intersectdf(data, repeated.subj)
             schema[end] = apply_schema(repeated.model, StatsModels.schema(data, repeated.coding))
-            rz       = hcat(rz, reduce(hcat, modelcols(schema[end], data)))
+            rz          = hcat(rz, reduce(hcat, modelcols(schema[end], data)))
 
             #schema[end] = rschema
-            q[end]     = size(rz, 2)
+            q[end]      = size(rz, 2)
         #else
         #    rz           = Matrix{eltype(z)}(undef, 0, 0)
         #    schema[end]  = tuple(0)
