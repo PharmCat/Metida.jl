@@ -131,6 +131,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     rcnames::Vector{String}
     block::Vector{Vector{Vector{Int}}}
     z::Matrix{T}                                                                #Z matrix
+    subjz
     zr::Vector{UnitRange{Int}}
     rz::Matrix{T}                                                               #repeated effect parametrization matrix
     q::Vector{Int}                                                              # size 2 of z/rz matrix
@@ -145,6 +146,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         schema  = Vector{Tuple}(undef, length(random) + 1)
         block   = Vector{Vector{Vector{Int}}}(undef, length(random) + 1 )
         z       = Matrix{Float64}(undef, size(data, 1), 0)
+        subjz   = Vector{BitArray{2}}(undef, length(random) + 1)
         zr      = Vector{UnitRange}(undef, length(random))
         rz      = Matrix{Float64}(undef, size(data, 1), 0)
             for i = 1:length(random)
@@ -158,26 +160,26 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                     #block[i]  = subjblocks(data, random[i].subj)
                     block[i]  = intersectdf(data, random[i].subj)
                 end
+
                 schema[i] = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
-                ztemp     = reduce(hcat, modelcols(schema[i], data))
+                #ztemp     = reduce(hcat, modelcols(schema[i], data)) #MatrixTerm should be used modelcols(MatrixTerm(schema[i]), data)
+                ztemp     = modelcols(MatrixTerm(schema[i]), data)
                 #schema[i] = rschema
                 q[i]      = size(ztemp, 2)
                 t[i]      = random[i].covtype.f(q[i])
                 z         = hcat(z, ztemp)
                 fillur!(zr, i, q)
                 fillur!(tr, i, t)
-                #=
-                if i > 1
-                    zr[i]   = UnitRange(sum(q[1:i-1]) + 1, sum(q[1:i-1]) + q[i])
+                if length(random[i].subj) > 0
+                    sujterm = InteractionTerm(Tuple(term.(random[i].subj)))
+                    subjdict = Dict{Symbol, AbstractContrasts}()
+                    fill_coding_dict!(sujterm, subjdict, data)
+                    subjz    = BitArray(modelcols(apply_schema(sujterm, StatsModels.schema(data, subjdict)), data))
                 else
-                    zr[1]   = UnitRange(1, q[1])
+                    subjz    = trues(size(data, 1),1)
                 end
-                if i > 1
-                    tr[i]   = UnitRange(sum(t[1:i-1]) + 1, sum(t[1:i-1])+t[i])
-                else
-                    tr[1]   = UnitRange(1, t[1])
-                end
-                =#
+
+
             end
         #if repeated.model !== nothing
             if length(repeated.coding) == 0 && repeated.fulldummy
@@ -224,7 +226,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             end
         end
         view(rcnames, tr[end]) .= rcoefnames(schema[end], t[end], Val{repeated.covtype.s}())
-        new{eltype(z)}(random, repeated, schema, rcnames, block, z, zr, rz, q, t, tr, tl, ct)
+        new{eltype(z)}(random, repeated, schema, rcnames, block, z, subjz, zr, rz, q, t, tr, tl, ct)
     end
 end
 ################################################################################
@@ -249,6 +251,8 @@ end
 ################################################################################
 
 function fill_coding_dict!(t::T, d::Dict, data) where T <: ConstantTerm
+end
+function fill_coding_dict!(t::T, d::Dict, data) where T <: Type{InterceptTerm}
 end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Term
     if typeof(data[!, t.sym]) <: CategoricalArray

@@ -1,4 +1,4 @@
-using DataFrames, CSV, StatsModels, LinearAlgebra, ForwardDiff, BenchmarkTools, ForwardDiff, Optim
+using DataFrames, CSV, StatsModels, LinearAlgebra, ForwardDiff, BenchmarkTools, ForwardDiff, Optim, Distributions
 using NLopt
 using SnoopCompile
 using LineSearches

@@ -18,6 +18,7 @@ function rmat_basep!(mx, θ::AbstractVector{T}, zrv, covstr) where T
             throw(ErrorException("Unknown covariance structure: $(covstr.repeated.covtype.s)"))
         end
 end
+################################################################################
 function rmat_basep_z!(mx, θ::AbstractVector{T}, zrv, covstr) where T
     for i = 1:length(covstr.block[end])
         if covstr.repeated.covtype.s == :SI
@@ -38,6 +39,12 @@ function rmat_basep_z!(mx, θ::AbstractVector{T}, zrv, covstr) where T
     end
     mx
 end
+################################################################################
+function rmat_basep_z2!(mx, θ::AbstractVector{T}, zrv, covstr, block) where T
+
+    mx
+end
+################################################################################
 function rmatp_si!(mx, θ::Vector{T}, ::AbstractMatrix, ::CovarianceType) where T
     θsq = θ[1]*θ[1]
     for i = 1:size(mx, 1)

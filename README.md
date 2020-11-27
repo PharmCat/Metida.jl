@@ -1,6 +1,6 @@
 # Metida
 
-[![Project Status: Concept – Minimal or no implementation has been done yet, or the repository is only intended to be a limited example, demo, or proof-of-concept.](https://www.repostatus.org/badges/latest/concept.svg)](https://www.repostatus.org/#concept)
+[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 
 [![codecov](https://codecov.io/gh/PharmCat/Metida.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/PharmCat/Metida.jl)
 
@@ -10,7 +10,6 @@
 
 Metida.jl is a experimental Julia package for fitting mixed-effects models with flexible covariance structure. At this moment package is in early development stage.
 
-*Alfa version*
 
 Install:
 

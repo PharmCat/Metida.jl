@@ -43,6 +43,22 @@ function gmat_base_z!(mx, θ::Vector{T}, covstr) where T
     mx
 end
 ################################################################################
+function gmat_base_z2!(mx, θ::Vector{T}, covstr, block) where T
+    q = sum(length.(covstr.block[1]))
+    for r = 1:length(covstr.random)
+        G = zeros(T, covstr.q[r], covstr.q[r])
+        gmat_switch!(G, θ, covstr, r)
+        subjblock = view(subjz[r], block, :)
+        for i = 1:size(subjblock, 2)
+            subji = view(subjblock, : , i)
+            if any(subji)
+                mulαβαtinc!(view(mx, subji, subji), view(covstr.z, subji, covstr.zr[r]), G)
+            end
+        end
+    end
+    mx
+end
+################################################################################
 function gmat_si!(mx, θ::Vector{T}, zn::Int, ::CovarianceType) where T
     val = θ[1] ^ 2
     for i = 1:size(mx, 1)

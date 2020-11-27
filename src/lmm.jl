@@ -59,7 +59,7 @@ struct LMM{T} <: MetidaModel
             subject = intsub
         end
         block  = intersectdf(data, subject)
-        lmmdata = LMMData(mm.m, covstr.z, covstr.rz, mf.data[mf.f.lhs.sym], block)
+        lmmdata = LMMData(mm.m, mf.data[mf.f.lhs.sym], block)
         new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, rank(mm.m), ModelResult(), blocksolve, warn)
     end
 end

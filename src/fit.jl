@@ -5,7 +5,7 @@
 
 Fit LMM model.
 """
-function fit!(lmm::LMM{T}) where T
+function fit!(lmm::LMM{T}; verbose::Symbol = :auto) where T
 
     #Make varlink function
     fv  = varlinkvec(lmm.covstr.ct)
@@ -30,15 +30,15 @@ function fit!(lmm::LMM{T}) where T
     end
     varlinkvecapply!(θ, fvr)
     ############################################################################
-
+    if lmm.blocksolve optfunc = reml_sweep_β else optfunc = reml_sweep_β2 end
     #Twice differentiable object
-    td = TwiceDifferentiable(x -> reml_sweep_β2(lmm, varlinkvecapply!(x, fv))[1], θ; autodiff = :forward)
+    td = TwiceDifferentiable(x ->optfunc(lmm, varlinkvecapply!(x, fv))[1], θ; autodiff = :forward)
     #Optimization object
     lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     #Theta (θ) vector
     lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), fv)
     #Hessian
-    lmm.result.h      = ForwardDiff.hessian(x -> reml_sweep_β2(lmm, x)[1], lmm.result.theta)
+    lmm.result.h      = ForwardDiff.hessian(x -> optfunc(lmm, x)[1], lmm.result.theta)
     #SVD decomposition
     try
         hsvd = svd(lmm.result.h)
@@ -52,7 +52,7 @@ function fit!(lmm::LMM{T}) where T
             end
         end
         #-2 LogREML, β, iC
-        lmm.result.reml, lmm.result.beta, iC = reml_sweep_β2(lmm, lmm.result.theta)
+        lmm.result.reml, lmm.result.beta, iC = optfunc(lmm, lmm.result.theta)
         #Variance-vovariance matrix of β
         lmm.result.c            = pinv(iC)
         #SE
@@ -61,7 +61,7 @@ function fit!(lmm::LMM{T}) where T
         lmm.result.fit          = true
     catch
         #-2 LogREML, β, iC
-        lmm.result.reml, lmm.result.beta, iC = reml_sweep_β2(lmm, lmm.result.theta)
+        lmm.result.reml, lmm.result.beta, iC = optfunc(lmm, lmm.result.theta)
         #Fit false
         lmm.result.fit          = false
     end
