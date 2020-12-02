@@ -5,38 +5,43 @@
 
 Fit LMM model.
 """
-function fit!(lmm::LMM{T}; verbose::Symbol = :auto) where T
+function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = :sigm) where T
 
     #Make varlink function
     fv  = varlinkvec(lmm.covstr.ct)
     fvr = varlinkrvec(lmm.covstr.ct)
 
     #Optim options
-    optmethod  = Optim.Newton()
+    #optmethod  = Optim.Newton(linesearch = LineSearches.MoreThuente())
+    optmethod  = Optim.Newton(linesearch = LineSearches.HagerZhang())
     optoptions = Optim.Options(g_tol = 1e-10,
         iterations = 300,
         store_trace = true,
         show_trace = false,
-        allow_f_increases = true)
+        allow_f_increases = true,
+        callback = optim_callback)
     ############################################################################
     #Initial variance
     initθ = initvar(lmm.mf.data[lmm.mf.f.lhs.sym], lmm.mm.m)[1]
     θ  = zeros(T, lmm.covstr.tl)
-    θ                      .= 1.01
+    θ                      .= 0.01
     θ[lmm.covstr.tr[end]]  .= initθ
     #θ .= initθ / (length(lmm.covstr.random) + 1)
     for i = 1:length(θ)
         if lmm.covstr.ct[i] == :rho θ[i] = 0.0 end
     end
-    varlinkvecapply!(θ, fvr)
+    #varlinkvecapply!(θ, fvr)
+    varlinkrvecapply2!(θ, lmm.covstr.ct)
     ############################################################################
     if lmm.blocksolve optfunc = reml_sweep_β else optfunc = reml_sweep_β2 end
     #Twice differentiable object
-    td = TwiceDifferentiable(x ->optfunc(lmm, varlinkvecapply!(x, fv))[1], θ; autodiff = :forward)
+    #td = TwiceDifferentiable(x ->optfunc(lmm, varlinkvecapply!(x, fv))[1], θ; autodiff = :forward)
+    td = TwiceDifferentiable(x ->optfunc(lmm, varlinkvecapply2!(x, lmm.covstr.ct))[1], θ; autodiff = :forward)
     #Optimization object
     lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     #Theta (θ) vector
-    lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), fv)
+    #lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), fv)
+    lmm.result.theta  = varlinkvecapply2!(deepcopy(Optim.minimizer(lmm.result.optim)),lmm.covstr.ct)
     #Hessian
     lmm.result.h      = ForwardDiff.hessian(x -> optfunc(lmm, x)[1], lmm.result.theta)
     #SVD decomposition

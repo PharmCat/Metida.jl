@@ -5,7 +5,7 @@ __precompile__()
 module Metida
 
 using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables, ForwardDiff, CategoricalArrays#, BlockDiagonals, BlockArrays#, SweepOperator
-using Optim
+using Optim, LineSearches
 #using NLopt
 
 import LinearAlgebra:checksquare

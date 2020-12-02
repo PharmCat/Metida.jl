@@ -109,6 +109,7 @@ end
 ################################################################################
 
 function vlink(σ::T) where T <: Real
+    if σ < -21.0 return one(T)*7.582560427911907e-10 end #Experimental
     exp(σ)
 end
 function vlinkr(σ::T) where T <: Real
@@ -152,6 +153,7 @@ function varlinkrvec(v)
     end
     fv
 end
+#=
 function varlinkvecapply(v, f)
     rv = similar(v)
     for i = 1:length(v)
@@ -159,9 +161,32 @@ function varlinkvecapply(v, f)
     end
     rv
 end
+=#
 function varlinkvecapply!(v, f)
     for i = 1:length(v)
         v[i] = f[i](v[i])
+    end
+    v
+end
+varlinkvecapply(v, f) = map.(f,v) #Test
+################################################################################
+function varlinkvecapply2!(v, p; varlinkf = :exp, rholinkf = :sigm)
+    for i = 1:length(v)
+        if p[i] == :var
+            v[i] = vlink(v[i])
+        else
+            v[i] = rholinksigmoid(v[i])
+        end
+    end
+    v
+end
+function varlinkrvecapply2!(v, p; varlinkf = :exp, rholinkf = :sigm)
+    for i = 1:length(v)
+        if p[i] == :var
+            v[i] = vlinkr(v[i])
+        else
+            v[i] = rholinksigmoidr(v[i])
+        end
     end
     v
 end
@@ -192,4 +217,9 @@ function m2logreml(lmm)
 end
 function logreml(lmm)
     -m2logreml(lmm)/2.
+end
+################################################################################
+
+function optim_callback(x)
+    false
 end
