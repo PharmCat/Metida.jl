@@ -1,35 +1,35 @@
-authors = ["Vladimir Arnautov <mail@pharmcat.net>"]
 name = "Metida"
 uuid = "a1dec852-9fe5-11e9-361f-8d9fde67cfa2"
+authors = ["Vladimir Arnautov <mail@pharmcat.net>"]
 version = "0.1.7"
 
 [deps]
+CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 StatsModels = "3eaba693-59b7-5ba5-a881-562e759f1c8d"
 Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
-Optim = "429524aa-4258-5aef-a3af-852621145aeb"
-CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
-LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
-
-[extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
-DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
-
-[targets]
-test = ["Test", "CSV", "DataFrames", "StatsBase"]
 
 [compat]
-julia = "1.1, 1.2, 1.3, 1.4, 1.5"
-Distributions = "0.20, 0.21, 0.22, 0.23"
+CategoricalArrays = "0.7, 0.8, 0.9"
+Distributions = "0.20, 0.21, 0.22, 0.23, 0.24"
+ForwardDiff = "0.10"
+LineSearches = "7"
+Optim = "0.19, 0.20, 0.21, 0.22, 1.0, 1.1, 1.2"
 StatsBase = "0.29, 0.30, 0.31, 0.32, 0.33"
 StatsModels = "0.6"
 Tables = "1"
-ForwardDiff = "0.10"
-Optim = "0.19, 0.20, 0.21, 0.22, 1.0, 1.1, 1.2"
-CategoricalArrays = "0.7, 0.8, 0.9"
-LineSearches = "7"
+julia = "1.1, 1.2, 1.3, 1.4, 1.5"
+
+[extras]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test", "CSV", "DataFrames", "StatsBase"]
