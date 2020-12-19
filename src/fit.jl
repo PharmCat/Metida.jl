@@ -12,9 +12,15 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
     fvr = varlinkrvec(lmm.covstr.ct)
 
     #Optim options
-    #optmethod  = Optim.Newton(linesearch = LineSearches.MoreThuente())
-    optmethod  = Optim.Newton(linesearch = LineSearches.HagerZhang())
-    optoptions = Optim.Options(g_tol = 1e-10,
+    #alphaguess = InitialHagerZhang(α0=1.0) #25s
+    #linesearch =  LineSearches.MoreThuente()
+    #LineSearches.InitialQuadratic(α0 = 1.0, αmin = 1e-12, αmax = 1.0, ρ = 0.25, snap2one = (0.75, Inf))
+    #LineSearches.InitialQuadratic(α0 = 0.01, αmin = 1e-12, αmax = 0.5, ρ = 0.25, snap2one = (0.75, Inf))
+    #LineSearches.InitialConstantChange()
+    #LineSearches.BackTracking(order=3)
+    optmethod  = Optim.Newton(;alphaguess = LineSearches.InitialHagerZhang(), linesearch = LineSearches.HagerZhang())
+    #optmethod  = Optim.Newton(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.HagerZhang())
+    optoptions = Optim.Options(g_tol = 1e-12, x_tol = 1e-10, f_tol = 1e-12,
         iterations = 300,
         store_trace = true,
         show_trace = false,
@@ -44,16 +50,27 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
     lmm.result.theta  = varlinkvecapply2!(deepcopy(Optim.minimizer(lmm.result.optim)),lmm.covstr.ct)
     #Hessian
     lmm.result.h      = ForwardDiff.hessian(x -> optfunc(lmm, x)[1], lmm.result.theta)
+    #H positive definite check
+    if !isposdef(lmm.result.h)
+        push!(lmm.warn, "Hessian is not positive definite.")
+    end
     #SVD decomposition
     try
         hsvd = svd(lmm.result.h)
         for i = 1:length(lmm.result.theta)
-            if hsvd.S[i] < 1E-10 hsvd.S[i] = 0 end
+            if hsvd.S[i] < 1E-10
+                hsvd.S[i] = 0
+            end
         end
         rhsvd = hsvd.U * Diagonal(hsvd.S) * hsvd.Vt
         for i = 1:length(lmm.result.theta)
             if rhsvd[i,i] < 1E-10
-                if lmm.covstr.ct[i] == :var lmm.result.theta[i] = 0 end
+                if lmm.covstr.ct[i] == :var
+                    lmm.result.theta[i] = 0
+                    push!(lmm.warn, "Variation parameter ($(i)) set to zero.")
+                elseif lmm.covstr.ct[i] == :rho
+                    push!(lmm.warn, "Rho SVD value ($(i)) is less than 1e-10.")
+                end
             end
         end
         #-2 LogREML, β, iC
