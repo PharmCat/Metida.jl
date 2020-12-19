@@ -163,12 +163,14 @@ function reml_sweep_β3(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix
     local logdetθ₂::T
 
     @inbounds for i = 1:n
-        q   = length(lmm.data.block[i])
+        q    = length(lmm.data.block[i])
+        qswm = q + lmm.rankx
         Vp  = zeros(T, q + lmm.rankx, q + lmm.rankx)
         V   = view(Vp, 1:q, 1:q)
-
-        gmat_base_z2!(V, θ, covstr, lmm.data.block[i])
-        rmat_basep_z2!(V, θ, view(lmm.covstr.rz, lmm.data.block[i],:), lmm.covstr, lmm.data.block[i])
+        Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
+        Vx  .= view(lmm.data.xv,  lmm.data.block[i],:)
+        gmat_base_z2!(V, θ, lmm.covstr, lmm.data.block[i])
+        rmat_basep_z2!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.data.block[i])
 
         #θ₁  += logdet(V)
 

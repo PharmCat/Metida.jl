@@ -155,7 +155,17 @@ subject =  [:subject, :formulation])
 lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
 random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH; subj = :subject),
 repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC; subj = [:subject, :formulation]),
+subject = :sequence)
+
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
+repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC; subj = :subject),
 subject = :subject)
+
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df;
+random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
+repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC; subj = :subject),
+)
 
 Metida.fit!(lmm)
 θ = [0.02832, 0.02832, 0.02832]
@@ -168,16 +178,25 @@ Metida.reml_sweep_β2(lmm, lmm.result.theta)
 Metida.reml_sweep_β_ub(lmm, θ)
 Metida.reml_sweep_β(lmm, θ)
 Metida.reml_sweep_β2(lmm, θ)
+Metida.reml_sweep_β3(lmm, θ)
 
 @benchmark Metida.reml_sweep_β_ub(lmm, lmm.result.theta)
+@benchmark Metida.reml_sweep_β(lmm, θ)
+@benchmark Metida.reml_sweep_β2(lmm, θ)
+@benchmark Metida.reml_sweep_β3(lmm, θ)
 
 G = [0.3697 	-0.03628;
 -0.03628 	0.003561]
 mx = zeros(20, 20)
 
 Metida.gmat_base_z!(mx, lmm.result.theta, lmm.covstr)
-Metida.rmat_basep_z!(mx, lmm.result.theta, lmm.data.zrv, lmm.covstr)
+Metida.rmat_basep_z!(mx, lmm.result.theta[lmm.covstr.tr[end]], lmm.covstr.zr, lmm.covstr)
 
+mx = zeros(4, 4)
+Metida.gmat_base_z2!(mx, lmm.result.theta, lmm.covstr, lmm.data.block[2])
+
+Metida.rmat_basep_z2!(mx, lmm.result.theta[lmm.covstr.tr[end]], lmm.covstr, lmm.data.block[2])
+Metida.reml_sweep_β3(lmm, lmm.result.theta)
 
 Z = [1 1.0;
 1  2.0;

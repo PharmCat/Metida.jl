@@ -1,6 +1,8 @@
 ################################################################################
 #                         R MATRIX FUNCTIONS
 ################################################################################
+
+################################################################################
 function rmat_basep!(mx, θ::AbstractVector{T}, zrv, covstr) where T
         if covstr.repeated.covtype.s == :SI
             rmatp_si!(mx, θ, zrv, covstr.repeated.covtype)
@@ -40,8 +42,15 @@ function rmat_basep_z!(mx, θ::AbstractVector{T}, zrv, covstr) where T
     mx
 end
 ################################################################################
-function rmat_basep_z2!(mx, θ::AbstractVector{T}, zrv, covstr, block) where T
-
+function rmat_basep_z2!(mx, θ::AbstractVector{T}, covstr, block) where T
+    subjblock = view(covstr.subjz[end], block, :)
+    zblock    = view(covstr.rz, block, :)
+    for i = 1:size(subjblock, 2)
+        subji = view(subjblock, : , i)
+        if any(subji)
+            rmat_basep!(view(mx, subji, subji), θ, view(zblock, subji, :), covstr)
+        end
+    end
     mx
 end
 ################################################################################

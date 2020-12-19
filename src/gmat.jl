@@ -48,11 +48,12 @@ function gmat_base_z2!(mx, θ::Vector{T}, covstr, block) where T
     for r = 1:length(covstr.random)
         G = zeros(T, covstr.q[r], covstr.q[r])
         gmat_switch!(G, θ, covstr, r)
-        subjblock = view(subjz[r], block, :)
+        subjblock = view(covstr.subjz[r], block, :)
+        zblock    = view(covstr.z, block, covstr.zr[r])
         for i = 1:size(subjblock, 2)
             subji = view(subjblock, : , i)
             if any(subji)
-                mulαβαtinc!(view(mx, subji, subji), view(covstr.z, subji, covstr.zr[r]), G)
+                mulαβαtinc!(view(mx, subji, subji), view(zblock, subji, :), G)
             end
         end
     end

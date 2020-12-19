@@ -174,9 +174,9 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                     sujterm = InteractionTerm(Tuple(term.(random[i].subj)))
                     subjdict = Dict{Symbol, AbstractContrasts}()
                     fill_coding_dict!(sujterm, subjdict, data)
-                    subjz    = BitArray(modelcols(apply_schema(sujterm, StatsModels.schema(data, subjdict)), data))
+                    subjz[i]    = BitArray(modelcols(apply_schema(sujterm, StatsModels.schema(data, subjdict)), data))
                 else
-                    subjz    = trues(size(data, 1),1)
+                    subjz[i]    = trues(size(data, 1),1)
                 end
 
 
@@ -188,6 +188,15 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             block[end]  = intersectdf(data, repeated.subj)
             schema[end] = apply_schema(repeated.model, StatsModels.schema(data, repeated.coding))
             rz          = hcat(rz, reduce(hcat, modelcols(schema[end], data)))
+
+            if length(repeated.subj) > 0
+                sujterm = InteractionTerm(Tuple(term.(repeated.subj)))
+                subjdict = Dict{Symbol, AbstractContrasts}()
+                fill_coding_dict!(sujterm, subjdict, data)
+                subjz[end]    = BitArray(modelcols(apply_schema(sujterm, StatsModels.schema(data, subjdict)), data))
+            else
+                subjz[end]    = trues(size(data, 1),1)
+            end
 
             #schema[end] = rschema
             q[end]      = size(rz, 2)

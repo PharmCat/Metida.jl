@@ -33,7 +33,7 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
     #varlinkvecapply!(θ, fvr)
     varlinkrvecapply2!(θ, lmm.covstr.ct)
     ############################################################################
-    if lmm.blocksolve optfunc = reml_sweep_β else optfunc = reml_sweep_β2 end
+    if lmm.blocksolve optfunc = reml_sweep_β else optfunc = reml_sweep_β3 end
     #Twice differentiable object
     #td = TwiceDifferentiable(x ->optfunc(lmm, varlinkvecapply!(x, fv))[1], θ; autodiff = :forward)
     td = TwiceDifferentiable(x ->optfunc(lmm, varlinkvecapply2!(x, lmm.covstr.ct))[1], θ; autodiff = :forward)
