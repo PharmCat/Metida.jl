@@ -47,6 +47,6 @@ end
 function rcoefnames(s, t, ::Val{:SI})
     ["Var"]
 end
-function rcoefnames(s, t, ::Val{:VC})
+function rcoefnames(s, t, ::Val{:DIAG})
     string.(coefnames(s))
 end

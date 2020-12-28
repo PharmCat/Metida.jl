@@ -15,8 +15,8 @@ end
 function gmat_switch!(G, θ, covstr, i)
     if covstr.random[i].covtype.s == :SI
         gmat_si!(G, θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype) # i > r
-    elseif covstr.random[i].covtype.s == :VC
-        gmat_vc!(G, θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
+    elseif covstr.random[i].covtype.s == :DIAG
+        gmat_diag!(G, θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
     elseif covstr.random[i].covtype.s == :AR
         gmat_ar!(G, θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
     elseif covstr.random[i].covtype.s == :ARH
@@ -67,7 +67,7 @@ function gmat_si!(mx, θ::Vector{T}, zn::Int, ::CovarianceType) where T
     end
     nothing
 end
-function gmat_vc!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
+function gmat_diag!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     for i = 1:size(mx, 1)
         mx[i, i] = θ[i] ^ 2
     end

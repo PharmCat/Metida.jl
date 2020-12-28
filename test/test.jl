@@ -5,9 +5,9 @@ using  Test, CSV, DataFrames, StatsModels
 path    = dirname(@__FILE__)
 include("testdata.jl")
 
-@testset "  Model: VC + nothing                                      " begin
+@testset "  Model: DIAG + nothing                                    " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
-    random = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
+    random = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG),
     )
     Metida.fit!(lmm)
     io = IOBuffer();
@@ -15,9 +15,9 @@ include("testdata.jl")
 
     @test lmm.result.reml ≈ 25.129480634331063 atol=1E-8 #need check
 end
-@testset "  Model: VC/subject + nothing                              " begin
+@testset "  Model: DIAG/subject + nothing                            " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
-    random = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
+    random = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG),
     subject = :subject
     )
     Metida.fit!(lmm)
@@ -38,18 +38,18 @@ end
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 25.129480634331067 atol=1E-8
 end
-@testset "  Model: (VC(period) + VC(formulation)) + nothing          " begin
+@testset "  Model: (DIAG(period) + DIAG(formulation)) + nothing      " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
-    random = [Metida.VarEffect(Metida.@covstr(period), Metida.VC), Metida.VarEffect(Metida.@covstr(formulation), Metida.VC)],
+    random = [Metida.VarEffect(Metida.@covstr(period), Metida.DIAG), Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG)],
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 25.12948063433108 atol=1E-8
 
 end
-@testset "  Model: CSH + VC                                          " begin
+@testset "  Model: CSH + DIAG                                        " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
-    repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
+    repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG),
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 25.00077786912235 atol=1E-8
@@ -70,20 +70,20 @@ end
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 10.314822655850815 atol=1E-6
 end
-@testset "  Model: CSH/subject + VC                                  " begin
+@testset "  Model: CSH/subject + DIAG                                " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
-    repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
+    repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG),
     subject = :subject
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 10.065239006121315 atol=1E-6
 
 end
-@testset "  Model: SI/subject + VC                                   " begin
+@testset "  Model: SI/subject + DIAG                                 " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation), Metida.SI),
-    repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.VC),
+    repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG),
     subject = :subject
     )
     Metida.fit!(lmm)
@@ -99,10 +99,10 @@ end
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 9.948203272948428 atol=1E-6
 end
-@testset "  Model: (CSH+VC) + nothing                                " begin
+@testset "  Model: (CSH+DIAG) + nothing                              " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = [Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
-    Metida.VarEffect(Metida.@covstr(period), Metida.VC)],
+    Metida.VarEffect(Metida.@covstr(period), Metida.DIAG)],
     )
     Metida.fit!(lmm)
     @test true
@@ -123,8 +123,37 @@ end
 end
 @testset "  Model: CSH(formulation * period) + nothing               " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
-    random = Metida.VarEffect(Metida.@covstr(formulation * period), Metida.CSH), subject = :subject
+    random = Metida.VarEffect(Metida.@covstr(formulation * period), Metida.DIAG), subject = :subject
     )
-    #Metida.fit!(lmm)
-    @test true
+    Metida.fit!(lmm)
+    @test lmm.result.reml ≈ 13.555817544390917 atol=1E-4 
+    #@test true
+end
+
+
+@testset "  Model: DIAG + DIAG                                       " begin
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG, subj = :subject),
+    repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG, subj = [:subject, :period]),
+    )
+    Metida.fit!(lmm)
+    @test lmm.result.reml ≈ 15.921517816789876 atol=1E-4 #need check
+end
+
+@testset "  Model: DIAG + DIAG                                       " begin
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG, subj = :subject),
+    repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG, subj = [:subject, :period]),
+    subject = :sequence)
+    Metida.fit!(lmm)
+    @test lmm.result.reml ≈ 25.00077786912234 atol=1E-4 #need check
+end
+
+@testset "  Model: DIAG + DIAG                                       " begin
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG, subj = :subject),
+    repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG, subj = [:period]),
+    subject = [:sequence, :formulation])
+    Metida.fit!(lmm)
+    @test lmm.result.reml ≈ 25.00077786912234 atol=1E-4 #need check
 end

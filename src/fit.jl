@@ -47,7 +47,7 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
     lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     #Theta (θ) vector
     #lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), fv)
-    lmm.result.theta  = varlinkvecapply2!(deepcopy(Optim.minimizer(lmm.result.optim)),lmm.covstr.ct)
+    lmm.result.theta  = varlinkvecapply2!(deepcopy(Optim.minimizer(lmm.result.optim)), lmm.covstr.ct)
     #Hessian
     lmm.result.h      = ForwardDiff.hessian(x -> optfunc(lmm, x)[1], lmm.result.theta)
     #H positive definite check

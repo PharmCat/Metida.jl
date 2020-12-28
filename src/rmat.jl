@@ -6,8 +6,8 @@
 function rmat_basep!(mx, θ::AbstractVector{T}, zrv, covstr) where T
         if covstr.repeated.covtype.s == :SI
             rmatp_si!(mx, θ, zrv, covstr.repeated.covtype)
-        elseif covstr.repeated.covtype.s == :VC
-            rmatp_vc!(mx, θ, zrv, covstr.repeated.covtype)
+        elseif covstr.repeated.covtype.s == :DIAG
+            rmatp_diag!(mx, θ, zrv, covstr.repeated.covtype)
         elseif covstr.repeated.covtype.s == :AR
             rmatp_ar!(mx, θ, zrv, covstr.repeated.covtype)
         elseif covstr.repeated.covtype.s == :ARH
@@ -25,8 +25,8 @@ function rmat_basep_z!(mx, θ::AbstractVector{T}, zrv, covstr) where T
     for i = 1:length(covstr.block[end])
         if covstr.repeated.covtype.s == :SI
             rmatp_si!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
-        elseif covstr.repeated.covtype.s == :VC
-            rmatp_vc!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
+        elseif covstr.repeated.covtype.s == :DIAG
+            rmatp_diag!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
         elseif covstr.repeated.covtype.s == :AR
             rmatp_ar!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
         elseif covstr.repeated.covtype.s == :ARH
@@ -61,7 +61,7 @@ function rmatp_si!(mx, θ::Vector{T}, ::AbstractMatrix, ::CovarianceType) where 
     end
     nothing
 end
-function rmatp_vc!(mx, θ::Vector{T}, rz,  ::CovarianceType) where T
+function rmatp_diag!(mx, θ::Vector{T}, rz,  ::CovarianceType) where T
     for i = 1:size(mx, 1)
         for c = 1:length(θ)
             mx[i, i] += θ[c]*θ[c]*rz[i, c]

@@ -13,7 +13,7 @@ Make Linear-Mixed Model object.
 
 `random`: vector of random effects or single random effect
 
-`repeated`: is a repeated effect (only single)
+`repeated`: is a repeated effect (only one)
 
 `subject`: is a block-diagonal factor
 """
@@ -23,7 +23,7 @@ struct LMM{T} <: MetidaModel
     mm::ModelMatrix
     covstr::CovStructure{T}
     data::LMMData{T}
-    rankx::Int
+    rankx::UInt32
     result::ModelResult
     blocksolve::Bool
     warn::Vector{String}
@@ -64,7 +64,11 @@ struct LMM{T} <: MetidaModel
     end
 end
 ################################################################################
+"""
+    thetalength(lmm::LMM)
 
+Length of theta vector.
+"""
 function thetalength(lmm::LMM)
     lmm.covstr.tl
 end
@@ -86,6 +90,7 @@ function Base.show(io::IO, lmm::LMM)
     if lmm.result.fit
         print(io, "Status: ")
         Optim.converged(lmm.result.optim) ? printstyled(io, "converged \n"; color = :green) : printstyled(io, "not converged \n"; color = :red)
+        if length(lmm.warn) > 0  printstyled(io, "Warnings! See lmm.warn \n"; color = :yellow) end
         println(io, "")
         println(io, "   -2 logREML: ", round(lmm.result.reml, sigdigits = 6))
         println(io, "")

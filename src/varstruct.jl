@@ -41,10 +41,10 @@ function ScaledIdentity()
 end
 const SI = ScaledIdentity()
 
-function VarianceComponents()
-    CovarianceType(:VC, ffx, ffx, ffxzero)
+function Diag()
+    CovarianceType(:DIAG, ffx, ffx, ffxzero)
 end
-const VC = VarianceComponents()
+const DIAG = Diag()
 
 function Autoregressive()
     CovarianceType(:AR, x -> 2, ffxone, ffxone)
@@ -81,13 +81,13 @@ const CSH = HeterogeneousCompoundSymmetry()
     VarEffect(model, covtype::T, coding; fulldummy = true, subj = nothing) where T <: AbstractCovarianceType
 """
 struct VarEffect
-    model::Union{Tuple{Vararg{AbstractTerm}}, Nothing}
+    model::Union{Tuple{Vararg{AbstractTerm}}, Nothing, AbstractTerm}
     covtype::CovarianceType
     coding::Dict{Symbol, AbstractContrasts}
     fulldummy::Bool
     subj::Vector{Symbol}
     function VarEffect(model, covtype::T, coding; fulldummy = true, subj = nothing) where T <: AbstractCovarianceType
-        if isa(model, AbstractTerm) model = tuple(model) end
+        #if isa(model, AbstractTerm) model = tuple(model) end
         if isa(subj, Nothing)
             subj = Vector{Symbol}(undef, 0)
         elseif isa(subj, Symbol)
@@ -103,7 +103,7 @@ struct VarEffect
         elseif coding === nothing && model === nothing
             coding = Dict{Symbol, AbstractContrasts}()
         end
-        if isa(model, AbstractTerm) model = tuple(model) end
+        #if isa(model, AbstractTerm) model = tuple(model) end
         new(model, covtype, coding, fulldummy, subj)
     end
     function VarEffect(model, covtype::T; coding = nothing, fulldummy = true, subj = nothing) where T <: AbstractCovarianceType
@@ -112,7 +112,7 @@ struct VarEffect
 
 
     function VarEffect(model; coding = nothing)
-        VarEffect(model, VC, coding)
+        VarEffect(model, DIAG, coding)
     end
     function VarEffect(covtype::T; coding = nothing) where T <: AbstractCovarianceType
         VarEffect(@covstr(1), covtype, coding)
@@ -127,88 +127,64 @@ end
 struct CovStructure{T} <: AbstractCovarianceStructure
     random::Vector{VarEffect}                                                   #Random effects
     repeated::VarEffect                                                         #Repearted effects
-    schema::Vector{Tuple}
+    schema::Vector{Union{Tuple, AbstractTerm}}
     rcnames::Vector{String}
-    block::Vector{Vector{Vector{Int}}}
+    block::Vector{Vector{Vector{UInt32}}}
     z::Matrix{T}                                                                #Z matrix
-    subjz
+    subjz::Vector{BitArray{2}}
+    #subjz::Vector{Vector{Vector{UInt32}}}
     zr::Vector{UnitRange{Int}}
     rz::Matrix{T}                                                               #repeated effect parametrization matrix
     q::Vector{Int}                                                              # size 2 of z/rz matrix
     t::Vector{Int}                                                              # number of parametert in each effect
-    tr::Vector{UnitRange{Int}}                                                  # range of each parameters in θ vector
+    tr::Vector{UnitRange{UInt32}}                                                  # range of each parameters in θ vector
     tl::Int                                                                     # θ Parameter count
     ct::Vector{Symbol}                                                          #Parameter type :var / :rho
     function CovStructure(random, repeated, data)
         q       = Vector{Int}(undef, length(random) + 1)
         t       = Vector{Int}(undef, length(random) + 1)
-        tr      = Vector{UnitRange}(undef, length(random) + 1)
-        schema  = Vector{Tuple}(undef, length(random) + 1)
-        block   = Vector{Vector{Vector{Int}}}(undef, length(random) + 1 )
+        tr      = Vector{UnitRange{UInt32}}(undef, length(random) + 1)
+        schema  = Vector{Union{AbstractTerm, Tuple}}(undef, length(random) + 1)
+        block   = Vector{Vector{Vector{UInt32}}}(undef, length(random) + 1 )
         z       = Matrix{Float64}(undef, size(data, 1), 0)
         subjz   = Vector{BitArray{2}}(undef, length(random) + 1)
         zr      = Vector{UnitRange}(undef, length(random))
         rz      = Matrix{Float64}(undef, size(data, 1), 0)
-            for i = 1:length(random)
-                if length(random[i].coding) == 0 && random[i].fulldummy
-                    fill_coding_dict!(random[i].model, random[i].coding, data)
-                end
-                if i > 1
-                    #if  random[i].subj == random[i - 1].subj block[i] = block[i - 1] else block[i]  = subjblocks(data, random[i].subj) end
-                    if  random[i].subj == random[i - 1].subj block[i] = block[i - 1] else block[i]  = intersectdf(data, random[i].subj) end
-                else
-                    #block[i]  = subjblocks(data, random[i].subj)
-                    block[i]  = intersectdf(data, random[i].subj)
-                end
-
-                schema[i] = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
-                #ztemp     = reduce(hcat, modelcols(schema[i], data)) #MatrixTerm should be used modelcols(MatrixTerm(schema[i]), data)
-                ztemp     = modelcols(MatrixTerm(schema[i]), data)
-                #schema[i] = rschema
-                q[i]      = size(ztemp, 2)
-                t[i]      = random[i].covtype.f(q[i])
-                z         = hcat(z, ztemp)
-                fillur!(zr, i, q)
-                fillur!(tr, i, t)
-                if length(random[i].subj) > 0
-                    sujterm = InteractionTerm(Tuple(term.(random[i].subj)))
-                    subjdict = Dict{Symbol, AbstractContrasts}()
-                    fill_coding_dict!(sujterm, subjdict, data)
-                    subjz[i]    = BitArray(modelcols(apply_schema(sujterm, StatsModels.schema(data, subjdict)), data))
-                else
-                    subjz[i]    = trues(size(data, 1),1)
-                end
-
-
+        # RANDOM EFFECTS
+        for i = 1:length(random)
+            if length(random[i].coding) == 0 && random[i].fulldummy
+                fill_coding_dict!(random[i].model, random[i].coding, data)
             end
-        #if repeated.model !== nothing
-            if length(repeated.coding) == 0 && repeated.fulldummy
-                fill_coding_dict!(repeated.model, repeated.coding, data)
-            end
-            block[end]  = intersectdf(data, repeated.subj)
-            schema[end] = apply_schema(repeated.model, StatsModels.schema(data, repeated.coding))
-            rz          = hcat(rz, reduce(hcat, modelcols(schema[end], data)))
-
-            if length(repeated.subj) > 0
-                sujterm = InteractionTerm(Tuple(term.(repeated.subj)))
-                subjdict = Dict{Symbol, AbstractContrasts}()
-                fill_coding_dict!(sujterm, subjdict, data)
-                subjz[end]    = BitArray(modelcols(apply_schema(sujterm, StatsModels.schema(data, subjdict)), data))
+            if i > 1
+                if  random[i].subj == random[i - 1].subj block[i] = block[i - 1] else block[i]  = intersectdf(data, random[i].subj) end
             else
-                subjz[end]    = trues(size(data, 1),1)
+                block[i]  = intersectdf(data, random[i].subj)
             end
-
-            #schema[end] = rschema
-            q[end]      = size(rz, 2)
-        #else
-        #    rz           = Matrix{eltype(z)}(undef, 0, 0)
-        #    schema[end]  = tuple(0)
-        #    q[end]       = 0
-        #end
+            schema[i] = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
+            ztemp     = modelcols(MatrixTerm(schema[i]), data)
+            q[i]      = size(ztemp, 2)
+            t[i]      = random[i].covtype.f(q[i])
+            z         = hcat(z, ztemp)
+            fillur!(zr, i, q)
+            fillur!(tr, i, t)
+            subjmatrix!(random[i].subj, data, subjz, i)
+        end
+        # REPEATED EFFECTS
+        if length(repeated.coding) == 0 && repeated.fulldummy
+            fill_coding_dict!(repeated.model, repeated.coding, data)
+        end
+        block[end]  = intersectdf(data, repeated.subj)
+        schema[end] = apply_schema(repeated.model, StatsModels.schema(data, repeated.coding))
+        rz          = modelcols(MatrixTerm(schema[end]), data)
+        subjmatrix!(repeated.subj, data, subjz, length(subjz))
+        q[end]      = size(rz, 2)
         t[end]      = repeated.covtype.f(q[end])
         tr[end]     = UnitRange(sum(t[1:end-1]) + 1, sum(t[1:end-1]) + t[end])
+        #Theta length
         tl  = sum(t)
+        #Theta parameter type
         ct  = Vector{Symbol}(undef, tl)
+        # Names
         rcnames = Vector{String}(undef, tl)
         ctn = 1
         for i = 1:length(random)
@@ -255,6 +231,21 @@ function schemalength(s)
     end
 end
 #
+
+function subjmatrix!(subj, data, subjz, i)
+    if length(subj) > 0
+        if length(subj) == 1
+            subjterm = Term(subj[1])
+        else
+            subjterm = InteractionTerm(Tuple(Term.(subj)))
+        end
+        subjdict = Dict{Symbol, AbstractContrasts}()
+        fill_coding_dict!(subjterm, subjdict, data)
+        subjz[i]    = BitArray(modelcols(apply_schema(subjterm, StatsModels.schema(data, subjdict)), data))
+    else
+        subjz[i]    = trues(size(data, 1),1)
+    end
+end
 ################################################################################
 #                            CONTRAST CODING
 ################################################################################
@@ -309,3 +300,11 @@ function vmatvec(G, Z, θ)
 end
 
 ################################################################################
+function Base.show(io::IO, e::VarEffect)
+    println(io, "Effect")
+    println(io, "Model:", e.model)
+    println(io, "Type: ", e.covtype)
+    println(io, "Coding: ", e.coding)
+    println(io, "FullDummy: ", e.fulldummy)
+    println(io, "Subject:", e.subj)
+end
