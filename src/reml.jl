@@ -169,7 +169,7 @@ function reml_sweep_β3(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix
         V   = view(Vp, 1:q, 1:q)
         Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
         Vx  .= view(lmm.data.xv,  lmm.data.block[i],:)
-        gmat_base_z2!(V, θ, lmm.covstr, lmm.data.block[i])
+        gmat_base_z2!(V, θ, lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
         rmat_basep_z2!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.data.block[i])
 
         #θ₁  += logdet(V)

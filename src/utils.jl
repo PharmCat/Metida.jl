@@ -88,6 +88,21 @@ function intersectsubj(covstr)
     end
     intersect(a...), eq
 end
+function intersectsubj(random, repeated)
+    a  = Vector{Vector{Symbol}}(undef, length(random)+1)
+    eq = true
+    for i = 1:length(random)
+        a[i] = random[i].subj
+    end
+    a[end] = repeated.subj
+    for i = 2:length(a)
+        if !(issetequal(a[1], a[i]))
+            eq = false
+            break
+        end
+    end
+    intersect(a...), eq
+end
 
 function diffsubj!(a, subj)
     push!(a, subj)

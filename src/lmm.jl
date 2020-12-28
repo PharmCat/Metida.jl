@@ -48,9 +48,8 @@ struct LMM{T} <: MetidaModel
             repeated = VarEffect()
         end
         if !isa(random, Vector) random = [random] end
-        covstr = CovStructure(random, repeated, data)
         #blocks
-        intsub, eq = intersectsubj(covstr)
+        intsub, eq = intersectsubj(random, repeated)
         blocksolve = false
         if length(subject) > 0 blocksolve = true end
         if eq blocksolve = true end
@@ -60,6 +59,7 @@ struct LMM{T} <: MetidaModel
         end
         block  = intersectdf(data, subject)
         lmmdata = LMMData(mm.m, mf.data[mf.f.lhs.sym], block)
+        covstr = CovStructure(random, repeated, data, block)
         new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, rank(mm.m), ModelResult(), blocksolve, warn)
     end
 end

@@ -125,31 +125,49 @@ end
 #                            COVARIANCE STRUCTURE
 ################################################################################
 struct CovStructure{T} <: AbstractCovarianceStructure
-    random::Vector{VarEffect}                                                   #Random effects
-    repeated::VarEffect                                                         #Repearted effects
+    # Random effects
+    random::Vector{VarEffect}
+    # Repearted effects
+    repeated::VarEffect
     schema::Vector{Union{Tuple, AbstractTerm}}
     rcnames::Vector{String}
+    # subject (local) blocks for each effect
     block::Vector{Vector{Vector{UInt32}}}
-    z::Matrix{T}                                                                #Z matrix
+    # Z matrix
+    z::Matrix{T}
     subjz::Vector{BitArray{2}}
-    #subjz::Vector{Vector{Vector{UInt32}}}
-    zr::Vector{UnitRange{Int}}
-    rz::Matrix{T}                                                               #repeated effect parametrization matrix
-    q::Vector{Int}                                                              # size 2 of z/rz matrix
-    t::Vector{Int}                                                              # number of parametert in each effect
-    tr::Vector{UnitRange{UInt32}}                                                  # range of each parameters in θ vector
-    tl::Int                                                                     # θ Parameter count
-    ct::Vector{Symbol}                                                          #Parameter type :var / :rho
-    function CovStructure(random, repeated, data)
-        q       = Vector{Int}(undef, length(random) + 1)
-        t       = Vector{Int}(undef, length(random) + 1)
-        tr      = Vector{UnitRange{UInt32}}(undef, length(random) + 1)
-        schema  = Vector{Union{AbstractTerm, Tuple}}(undef, length(random) + 1)
-        block   = Vector{Vector{Vector{UInt32}}}(undef, length(random) + 1 )
+    # Blocks for each blocking subject, each effect, each effect subject
+    sblock::Vector{Vector{Vector{Vector{UInt32}}}}
+    #unit range z column range for each random effect
+    zrndur::Vector{UnitRange{Int}}
+    # repeated effect parametrization matrix
+    rz::Matrix{T}
+    # size 2 of z/rz matrix
+    q::Vector{Int}
+    # number of parametert in each effect
+    t::Vector{Int}
+    # range of each parameters in θ vector
+    tr::Vector{UnitRange{UInt32}}
+    # θ Parameter count
+    tl::UInt16
+    # Parameter type :var / :rho
+    ct::Vector{Symbol}
+    #--
+    #
+    function CovStructure(random, repeated, data, blocks)
+        alleffl =  length(random) + 1
+        #
+        q       = Vector{Int}(undef, alleffl)
+        t       = Vector{Int}(undef, alleffl)
+        tr      = Vector{UnitRange{UInt32}}(undef, alleffl)
+        schema  = Vector{Union{AbstractTerm, Tuple}}(undef, alleffl)
+        block   = Vector{Vector{Vector{UInt32}}}(undef, alleffl)
         z       = Matrix{Float64}(undef, size(data, 1), 0)
-        subjz   = Vector{BitArray{2}}(undef, length(random) + 1)
-        zr      = Vector{UnitRange}(undef, length(random))
+        subjz   = Vector{BitArray{2}}(undef, alleffl)
+        sblock  = Vector{Vector{Vector{Vector{UInt32}}}}(undef, length(blocks))
+        zrndur  = Vector{UnitRange{Int}}(undef, alleffl)
         rz      = Matrix{Float64}(undef, size(data, 1), 0)
+        #
         # RANDOM EFFECTS
         for i = 1:length(random)
             if length(random[i].coding) == 0 && random[i].fulldummy
@@ -165,7 +183,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             q[i]      = size(ztemp, 2)
             t[i]      = random[i].covtype.f(q[i])
             z         = hcat(z, ztemp)
-            fillur!(zr, i, q)
+            fillur!(zrndur, i, q)
             fillur!(tr, i, t)
             subjmatrix!(random[i].subj, data, subjz, i)
         end
@@ -211,7 +229,17 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             end
         end
         view(rcnames, tr[end]) .= rcoefnames(schema[end], t[end], Val{repeated.covtype.s}())
-        new{eltype(z)}(random, repeated, schema, rcnames, block, z, subjz, zr, rz, q, t, tr, tl, ct)
+        for i = 1:length(blocks)
+            sblock[i] = Vector{Vector{Vector{UInt32}}}(undef, alleffl)
+            for s = 1:alleffl
+                sblock[i][s] = Vector{Vector{UInt32}}(undef, 0)
+                for col in eachcol(view(subjz[s], blocks[i], :))
+                    if any(col) push!(sblock[i][s], findall(x->x==true, col)) end
+                end
+            end
+        end
+        #
+        new{eltype(z)}(random, repeated, schema, rcnames, block, z, subjz, sblock, zrndur, rz, q, t, tr, tl, ct)
     end
 end
 ################################################################################

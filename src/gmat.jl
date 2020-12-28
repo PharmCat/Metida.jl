@@ -37,19 +37,20 @@ function gmat_base_z!(mx, θ::Vector{T}, covstr) where T
         G = zeros(T, covstr.q[r], covstr.q[r])
         gmat_switch!(G, θ, covstr, r)
         for i = 1:length(covstr.block[r])
-            mulαβαtinc!(view(mx, covstr.block[r][i], covstr.block[r][i]), view(covstr.z, covstr.block[r][i], covstr.zr[r]), G)
+            mulαβαtinc!(view(mx, covstr.block[r][i], covstr.block[r][i]), view(covstr.z, covstr.block[r][i], covstr.zrndur[r]), G)
         end
     end
     mx
 end
 ################################################################################
+
 function gmat_base_z2!(mx, θ::Vector{T}, covstr, block) where T
     q = sum(length.(covstr.block[1]))
     for r = 1:length(covstr.random)
         G = zeros(T, covstr.q[r], covstr.q[r])
         gmat_switch!(G, θ, covstr, r)
         subjblock = view(covstr.subjz[r], block, :)
-        zblock    = view(covstr.z, block, covstr.zr[r])
+        zblock    = view(covstr.z, block, covstr.zrndur[r])
         for i = 1:size(subjblock, 2)
             subji = view(subjblock, : , i)
             if any(subji)
@@ -59,6 +60,21 @@ function gmat_base_z2!(mx, θ::Vector{T}, covstr, block) where T
     end
     mx
 end
+function gmat_base_z2!(mx, θ::Vector{T}, covstr, block, sblock) where T
+    q = sum(length.(covstr.block[1]))
+    for r = 1:length(covstr.random)
+        G = zeros(T, covstr.q[r], covstr.q[r])
+        gmat_switch!(G, θ, covstr, r)
+        subjblock = view(covstr.subjz[r], block, :)
+        zblock    = view(covstr.z, block, covstr.zrndur[r])
+        for i = 1:length(sblock[r])
+            mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i]), view(zblock, sblock[r][i], :), G)
+        end
+    end
+    mx
+end
+
+
 ################################################################################
 function gmat_si!(mx, θ::Vector{T}, zn::Int, ::CovarianceType) where T
     val = θ[1] ^ 2

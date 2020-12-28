@@ -190,7 +190,7 @@ G = [0.3697 	-0.03628;
 mx = zeros(20, 20)
 
 Metida.gmat_base_z!(mx, lmm.result.theta, lmm.covstr)
-Metida.rmat_basep_z!(mx, lmm.result.theta[lmm.covstr.tr[end]], lmm.covstr.zr, lmm.covstr)
+
 
 mx = zeros(4, 4)
 Metida.gmat_base_z2!(mx, lmm.result.theta, lmm.covstr, lmm.data.block[2])
