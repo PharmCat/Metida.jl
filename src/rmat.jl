@@ -53,6 +53,13 @@ function rmat_basep_z2!(mx, θ::AbstractVector{T}, covstr, block) where T
     end
     mx
 end
+function rmat_basep_z2!(mx, θ::AbstractVector{T}, covstr, block, sblock) where T
+    zblock    = view(covstr.rz, block, :)
+    for i = 1:length(sblock[end])
+        rmat_basep!(view(mx, sblock[end][i],  sblock[end][i]), θ, view(zblock,  sblock[end][i], :), covstr)
+    end
+    mx
+end
 ################################################################################
 function rmatp_si!(mx, θ::Vector{T}, ::AbstractMatrix, ::CovarianceType) where T
     θsq = θ[1]*θ[1]

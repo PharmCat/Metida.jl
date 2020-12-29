@@ -65,7 +65,7 @@ function gmat_base_z2!(mx, θ::Vector{T}, covstr, block, sblock) where T
     for r = 1:length(covstr.random)
         G = zeros(T, covstr.q[r], covstr.q[r])
         gmat_switch!(G, θ, covstr, r)
-        subjblock = view(covstr.subjz[r], block, :)
+        #subjblock = view(covstr.subjz[r], block, :)
         zblock    = view(covstr.z, block, covstr.zrndur[r])
         for i = 1:length(sblock[r])
             mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i]), view(zblock, sblock[r][i], :), G)
