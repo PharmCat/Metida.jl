@@ -10,6 +10,8 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
     #Make varlink function
     fv  = varlinkvec(lmm.covstr.ct)
     fvr = varlinkrvec(lmm.covstr.ct)
+    # Optimization function
+    if lmm.blocksolve optfunc = reml_sweep_β else optfunc = reml_sweep_β3 end
 
     #Optim options
     #alphaguess = InitialHagerZhang(α0=1.0) #25s
@@ -22,29 +24,53 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
     #optmethod  = Optim.Newton(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.HagerZhang())
     optoptions = Optim.Options(g_tol = 1e-12, x_tol = 1e-10, f_tol = 1e-12,
         iterations = 300,
+        time_limit = 120,
         store_trace = true,
         show_trace = false,
         allow_f_increases = true,
+        extended_trace = true,
         callback = optim_callback)
     ############################################################################
     #Initial variance
     initθ = initvar(lmm.mf.data[lmm.mf.f.lhs.sym], lmm.mm.m)[1]
+
     θ  = zeros(T, lmm.covstr.tl)
-    θ                      .= 0.01
-    θ[lmm.covstr.tr[end]]  .= initθ
+    #θ                      .= initθ
+    θ                      .= initθ ./2
+    #θ[lmm.covstr.tr[end]]  .= 0.01
     #θ .= initθ / (length(lmm.covstr.random) + 1)
     for i = 1:length(θ)
         if lmm.covstr.ct[i] == :rho θ[i] = 0.0 end
     end
+
+    #Initial step with modified Newton method
+    ############################################################################
+    #=
+    initgstep(x-> optfunc(lmm, x)[1], θ)
+    for i = 1:length(θ)
+        if lmm.covstr.ct[i] == :rho
+            if θ[i] > 0.99
+                θ[i] = 0.9
+            elseif θ[i] < -0.99
+                θ[i] = -0.9
+            end
+        else
+            if θ[i] < 0.00001 θ[i] = 0.01 end
+        end
+    end
+    =#
     #varlinkvecapply!(θ, fvr)
     varlinkrvecapply2!(θ, lmm.covstr.ct)
-    ############################################################################
-    if lmm.blocksolve optfunc = reml_sweep_β else optfunc = reml_sweep_β3 end
     #Twice differentiable object
     #td = TwiceDifferentiable(x ->optfunc(lmm, varlinkvecapply!(x, fv))[1], θ; autodiff = :forward)
     td = TwiceDifferentiable(x ->optfunc(lmm, varlinkvecapply2!(x, lmm.covstr.ct))[1], θ; autodiff = :forward)
     #Optimization object
-    lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
+    try
+        lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
+    catch
+        optmethod  = Optim.Newton(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.HagerZhang())
+        lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
+    end
     #Theta (θ) vector
     #lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), fv)
     lmm.result.theta  = varlinkvecapply2!(deepcopy(Optim.minimizer(lmm.result.optim)), lmm.covstr.ct)

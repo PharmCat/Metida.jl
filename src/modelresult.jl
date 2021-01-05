@@ -30,3 +30,12 @@ mutable struct ModelResult
         new(false, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
     end
 end
+
+
+function Base.show(io::IO, lmmr::ModelResult)
+    println(io, "Theta :" , lmmr.theta)
+    println(io, "Beta :" , lmmr.beta)
+    println(io, "H :" , lmmr.h)
+    println(io, "C :" , lmmr.c)
+    println(io, "se :" , lmmr.se)
+end

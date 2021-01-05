@@ -31,6 +31,7 @@ include("ml.jl")
 include("fit.jl")
 include("showutils.jl")
 include("statsbase.jl")
+include("initg.jl")
 
 function __init__()
 

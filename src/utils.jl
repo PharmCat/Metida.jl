@@ -235,6 +235,8 @@ function logreml(lmm)
 end
 ################################################################################
 
-function optim_callback(x)
+
+
+function optim_callback(os)
     false
 end

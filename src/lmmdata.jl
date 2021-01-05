@@ -7,7 +7,9 @@ struct LMMData{T}
     yv::Vector{T}
     # Global variance blocking factor (subject)
     block::Vector{Vector{UInt32}}
-    function LMMData(xa::Matrix{T}, ya::Vector{T}, block) where T
-        new{T}(xa, ya, block)
+    # Block factor
+    subject::Vector{Symbol}
+    function LMMData(xa::Matrix{T}, ya::Vector{T}, block, subject) where T
+        new{T}(xa, ya, block, subject)
     end
 end
