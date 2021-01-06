@@ -78,7 +78,6 @@ function rmatp_diag!(mx, θ::Vector{T}, rz,  ::CovarianceType) where T
 end
 function rmatp_ar!(mx, θ::Vector{T}, rz, ::CovarianceType) where T
     rn  = size(mx, 1)
-    mx  = Matrix{T}(undef, rn, rn)
     de  = θ[1] ^ 2
     for m = 1:rn
         mx[m, m] += de
