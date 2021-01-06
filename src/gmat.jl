@@ -25,6 +25,8 @@ function gmat_switch!(G, θ, covstr, i)
         gmat_csh!(G, θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
     elseif covstr.random[i].covtype.s == :CS
         gmat_cs!(G, θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
+    elseif covstr.random[i].covtype.s == :ZERO
+        gmat_zero!(G, similar(θ, 0), covstr.q[i], covstr.random[i].covtype)
     else
         throw(ErrorException("Unknown covariance structure: $(covstr.random[i].covtype.s), n = $(i)"))
     end
@@ -76,6 +78,10 @@ end
 
 
 ################################################################################
+function gmat_zero!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
+    mx .= zero(T)
+    nothing
+end
 function gmat_si!(mx, θ::Vector{T}, zn::Int, ::CovarianceType) where T
     val = θ[1] ^ 2
     for i = 1:size(mx, 1)
@@ -90,11 +96,16 @@ function gmat_diag!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     nothing
 end
 function gmat_ar!(mx, θ::Vector{T}, zn::Int, ::CovarianceType) where T
-    mx .= θ[1] ^ 2
+    #mx .= θ[1] ^ 2
+    de  = θ[1] ^ 2
+    for i = 1:zn
+        mx[i, i] = de
+    end
     if zn > 1
         for m = 1:zn - 1
             for n = m + 1:zn
-                @inbounds mx[m, n] = mx[m, m] * θ[2] ^ (n - m)
+                ode = de * θ[2] ^ (n - m)
+                @inbounds mx[m, n] = ode
                 @inbounds mx[n, m] = mx[m, n]
             end
         end

@@ -66,6 +66,10 @@ function HeterogeneousCompoundSymmetry()
 end
 const CSH = HeterogeneousCompoundSymmetry()
 
+function RZero()
+    CovarianceType(:ZERO, x -> 0, x -> 0, x -> 0)
+end
+
 #TOE
 
 #TOEH
@@ -114,8 +118,8 @@ struct VarEffect
     function VarEffect(model; coding = nothing)
         VarEffect(model, DIAG, coding)
     end
-    function VarEffect(covtype::T; coding = nothing) where T <: AbstractCovarianceType
-        VarEffect(@covstr(1), covtype, coding)
+    function VarEffect(covtype::T; coding = nothing, subj = nothing) where T <: AbstractCovarianceType
+        VarEffect(@covstr(1), covtype, coding; subj = subj)
     end
     function VarEffect()
         VarEffect(@covstr(1), SI, Dict{Symbol, AbstractContrasts}())
@@ -170,6 +174,13 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         #
         # RANDOM EFFECTS
         for i = 1:length(random)
+            if random[i].covtype.s == :ZERO
+                q[i] = 0
+                t[i] = 0
+                tr[i] = 0:0
+                zrndur[i] = 0:0
+                continue
+            end
             if length(random[i].coding) == 0 && random[i].fulldummy
                 fill_coding_dict!(random[i].model, random[i].coding, data)
             end
@@ -206,6 +217,9 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         rcnames = Vector{String}(undef, tl)
         ctn = 1
         for i = 1:length(random)
+            if random[i].covtype.s == :ZERO
+                continue
+            end
             for i2 = 1:random[i].covtype.v(q[i])
                 ct[ctn] = :var
                 ctn +=1
@@ -229,12 +243,14 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             end
         end
         view(rcnames, tr[end]) .= rcoefnames(schema[end], t[end], Val{repeated.covtype.s}())
-        for i = 1:length(blocks)
-            sblock[i] = Vector{Vector{Vector{UInt32}}}(undef, alleffl)
-            for s = 1:alleffl
-                sblock[i][s] = Vector{Vector{UInt32}}(undef, 0)
-                for col in eachcol(view(subjz[s], blocks[i], :))
-                    if any(col) push!(sblock[i][s], findall(x->x==true, col)) end
+        if random[1].covtype.s != :ZERO
+            for i = 1:length(blocks)
+                sblock[i] = Vector{Vector{Vector{UInt32}}}(undef, alleffl)
+                for s = 1:alleffl
+                    sblock[i][s] = Vector{Vector{UInt32}}(undef, 0)
+                    for col in eachcol(view(subjz[s], blocks[i], :))
+                        if any(col) push!(sblock[i][s], findall(x->x==true, col)) end
+                    end
                 end
             end
         end

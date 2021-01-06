@@ -76,7 +76,7 @@ function rmatp_diag!(mx, θ::Vector{T}, rz,  ::CovarianceType) where T
     end
     nothing
 end
-function rmatp_ar!(mx, θ::Vector{T}, rz, ::CovarianceType) where T
+function rmatp_ar!(mx, θ::Vector{T}, ::AbstractMatrix, ::CovarianceType) where T
     rn  = size(mx, 1)
     de  = θ[1] ^ 2
     for m = 1:rn

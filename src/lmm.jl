@@ -43,6 +43,7 @@ struct LMM{T} <: MetidaModel
         mm   = ModelMatrix(mf)
         if random === nothing
             random = VarEffect()
+            #random = RZero()
         end
         if repeated === nothing
             repeated = VarEffect()
@@ -80,12 +81,12 @@ function Base.show(io::IO, lmm::LMM)
         println(io, "Random $i: ")
         println(io, "   Model: $(lmm.covstr.random[i].model === nothing ? "nothing" : lmm.covstr.random[i].model)")
         println(io, "   Type: $(lmm.covstr.random[i].covtype.s) ($(lmm.covstr.t[i]))")
-        println(io, "   Coefnames: $(coefnames(lmm.covstr.schema[i]))")
+        #println(io, "   Coefnames: $(coefnames(lmm.covstr.schema[i]))")
     end
     println(io, "Repeated: ")
     println(io, "   Model: $(lmm.covstr.repeated.model === nothing ? "nothing" : lmm.covstr.repeated.model)")
     println(io, "   Type: $(lmm.covstr.repeated.covtype.s) ($(lmm.covstr.t[end]))")
-    println(io, "   Coefnames: $(lmm.covstr.repeated.model === nothing ? "-" : coefnames(lmm.covstr.schema[end]))")
+    #println(io, "   Coefnames: $(lmm.covstr.repeated.model === nothing ? "-" : coefnames(lmm.covstr.schema[end]))")
     println(io, "")
     if lmm.result.fit
         print(io, "Status: ")
@@ -110,7 +111,9 @@ function Base.show(io::IO, lmm::LMM)
         mx = hcat(Matrix{Any}(undef, lmm.covstr.tl, 1), lmm.covstr.rcnames, lmm.covstr.ct, round.(lmm.result.theta, sigdigits = 6))
 
         for i = 1:length(lmm.covstr.random)
-            view(mx, lmm.covstr.tr[i], 1) .= "Random $i"
+            if lmm.covstr.random[i].covtype.s != :ZERO
+                view(mx, lmm.covstr.tr[i], 1) .= "Random $i"
+            end
         end
         view(mx, lmm.covstr.tr[end], 1) .= "Repeated"
         for i = 1:lmm.covstr.tl

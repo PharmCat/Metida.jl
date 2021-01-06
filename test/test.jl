@@ -78,7 +78,6 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 10.065239006121315 atol=1E-6
-
 end
 @testset "  Model: SI/subject + DIAG                                 " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
@@ -126,7 +125,7 @@ end
     random = Metida.VarEffect(Metida.@covstr(formulation * period), Metida.DIAG), subject = :subject
     )
     Metida.fit!(lmm)
-    #@test lmm.result.reml ≈ 13.555817544390917 atol=1E-4 
+    #@test lmm.result.reml ≈ 13.555817544390917 atol=1E-4
     @test true
 end
 
