@@ -156,3 +156,7 @@ end
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 25.00077786912234 atol=1E-4 #need check
 end
+
+include("ar.jl")
+include("lme4.jl")
+include("norand.jl")

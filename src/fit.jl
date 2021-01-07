@@ -37,7 +37,6 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
     θ  = zeros(T, lmm.covstr.tl)
     #θ                      .= initθ
     θ                      .= initθ ./2
-    #θ[lmm.covstr.tr[end]]  .= 0.01
     #θ .= initθ / (length(lmm.covstr.random) + 1)
     for i = 1:length(θ)
         if lmm.covstr.ct[i] == :rho θ[i] = 0.0 end
@@ -88,11 +87,13 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
                 hsvd.S[i] = 0
             end
         end
+        lmm.result.hsvds = copy(hsvd.S)
         rhsvd = hsvd.U * Diagonal(hsvd.S) * hsvd.Vt
+        theta = copy(lmm.result.theta)
         for i = 1:length(lmm.result.theta)
             if rhsvd[i,i] < 1E-10
                 if lmm.covstr.ct[i] == :var
-                    lmm.result.theta[i] = 0
+                    theta[i] = 0
                     push!(lmm.warn, "Variation parameter ($(i)) set to zero.")
                 elseif lmm.covstr.ct[i] == :rho
                     push!(lmm.warn, "Rho SVD value ($(i)) is less than 1e-10.")
@@ -100,7 +101,7 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
             end
         end
         #-2 LogREML, β, iC
-        lmm.result.reml, lmm.result.beta, iC = optfunc(lmm, lmm.result.theta)
+        lmm.result.reml, lmm.result.beta, iC = optfunc(lmm, theta)
         #Variance-vovariance matrix of β
         lmm.result.c            = pinv(iC)
         #SE

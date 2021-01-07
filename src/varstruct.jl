@@ -139,7 +139,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     block::Vector{Vector{Vector{UInt32}}}
     # Z matrix
     z::Matrix{T}
-    subjz::Vector{BitArray{2}}
+    #subjz::Vector{BitArray{2}}
     # Blocks for each blocking subject, each effect, each effect subject
     sblock::Vector{Vector{Vector{Vector{UInt32}}}}
     #unit range z column range for each random effect
@@ -169,18 +169,11 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         z       = Matrix{Float64}(undef, size(data, 1), 0)
         subjz   = Vector{BitArray{2}}(undef, alleffl)
         sblock  = Vector{Vector{Vector{Vector{UInt32}}}}(undef, length(blocks))
-        zrndur  = Vector{UnitRange{Int}}(undef, alleffl)
+        zrndur  = Vector{UnitRange{Int}}(undef, alleffl - 1)
         rz      = Matrix{Float64}(undef, size(data, 1), 0)
         #
         # RANDOM EFFECTS
         for i = 1:length(random)
-            if random[i].covtype.s == :ZERO
-                q[i] = 0
-                t[i] = 0
-                tr[i] = 0:0
-                zrndur[i] = 0:0
-                continue
-            end
             if length(random[i].coding) == 0 && random[i].fulldummy
                 fill_coding_dict!(random[i].model, random[i].coding, data)
             end
@@ -243,7 +236,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             end
         end
         view(rcnames, tr[end]) .= rcoefnames(schema[end], t[end], Val{repeated.covtype.s}())
-        if random[1].covtype.s != :ZERO
+
             for i = 1:length(blocks)
                 sblock[i] = Vector{Vector{Vector{UInt32}}}(undef, alleffl)
                 for s = 1:alleffl
@@ -253,9 +246,9 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                     end
                 end
             end
-        end
+
         #
-        new{eltype(z)}(random, repeated, schema, rcnames, block, z, subjz, sblock, zrndur, rz, q, t, tr, tl, ct)
+        new{eltype(z)}(random, repeated, schema, rcnames, block, z, sblock, zrndur, rz, q, t, tr, tl, ct)
     end
 end
 ################################################################################
@@ -263,7 +256,11 @@ function fillur!(ur, i, v)
     if i > 1
         ur[i]   = UnitRange(sum(v[1:i-1]) + 1, sum(v[1:i-1]) + v[i])
     else
-        ur[1]   = UnitRange(1, v[1])
+        if v[1] > 0
+            ur[1]   = UnitRange(1, v[1])
+        else
+            ur[1]   = UnitRange(0, 0)
+        end
     end
 end
 ################################################################################
@@ -351,4 +348,21 @@ function Base.show(io::IO, e::VarEffect)
     println(io, "Coding: ", e.coding)
     println(io, "FullDummy: ", e.fulldummy)
     println(io, "Subject:", e.subj)
+end
+
+
+function Base.show(io::IO, cs::CovStructure)
+    println(io, "Covariance Structure:")
+    for i = 1:length(cs.random)
+        println(io, "Random $(i):", cs.random[i])
+    end
+    println(io, "Repeated: ", cs.repeated)
+    println(io, "Random effect range in complex Z: ", cs.zrndur)
+    println(io, "Size of Z: ", cs.q)
+    println(io, "Parameter number for each effect: ", cs.t)
+    println(io, "Theta length:", cs.tl)
+end
+
+function Base.show(io::IO, ct::CovarianceType)
+    println(io, "Covariance Type: $(ct.s)")
 end

@@ -3,12 +3,13 @@
 mutable struct ModelResult
     fit::Bool
     optim
-    theta
-    reml
-    beta
-    h
-    c
-    se
+    theta::Union{Vector, Nothing}
+    reml::Union{Float64, Nothing}
+    beta::Union{Vector, Nothing}
+    h::Union{Matrix, Nothing}
+    c::Union{Matrix, Nothing}
+    se::Union{Vector, Nothing}
+    hsvds::Union{Vector, Nothing}
     function ModelResult(
     optim,
     theta,
@@ -16,7 +17,8 @@ mutable struct ModelResult
     beta,
     h,
     c,
-    se)
+    se,
+    hsvds)
         new(true,
         optim,
         theta,
@@ -24,10 +26,11 @@ mutable struct ModelResult
         beta,
         h,
         c,
-        se)
+        se,
+        hsvds)
     end
     function ModelResult()
-        new(false, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
+        new(false, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
     end
 end
 

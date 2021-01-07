@@ -41,12 +41,12 @@ struct LMM{T} <: MetidaModel
         warn = Vector{String}(undef, 0)
         mf   = ModelFrame(model, data; contrasts = contrasts)
         mm   = ModelMatrix(mf)
-        if random === nothing
-            random = VarEffect()
-            #random = RZero()
-        end
         if repeated === nothing
             repeated = VarEffect()
+        end
+        if random === nothing
+            random = VarEffect(Metida.@covstr(0), Metida.RZero(), subj = repeated.subj)
+            #random = RZero()
         end
         if !isa(random, Vector) random = [random] end
         #blocks
@@ -79,6 +79,10 @@ function Base.show(io::IO, lmm::LMM)
     println(io, "Linear Mixed Model: ", lmm.model)
     for i = 1:length(lmm.covstr.random)
         println(io, "Random $i: ")
+        if lmm.covstr.random[i].covtype.s == :ZERO
+            println(io, "   No")
+            continue
+        end
         println(io, "   Model: $(lmm.covstr.random[i].model === nothing ? "nothing" : lmm.covstr.random[i].model)")
         println(io, "   Type: $(lmm.covstr.random[i].covtype.s) ($(lmm.covstr.t[i]))")
         #println(io, "   Coefnames: $(coefnames(lmm.covstr.schema[i]))")
