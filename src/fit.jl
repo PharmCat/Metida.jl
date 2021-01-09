@@ -32,11 +32,11 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
         callback = optim_callback)
     ############################################################################
     #Initial variance
-    initθ = initvar(lmm.mf.data[lmm.mf.f.lhs.sym], lmm.mm.m)[1]
+    initθ = sqrt(initvar(lmm.mf.data[lmm.mf.f.lhs.sym], lmm.mm.m)[1]/4)
 
     θ  = zeros(T, lmm.covstr.tl)
     #θ                      .= initθ
-    θ                      .= initθ ./2
+    θ                      .= initθ
     #θ .= initθ / (length(lmm.covstr.random) + 1)
     for i = 1:length(θ)
         if lmm.covstr.ct[i] == :rho θ[i] = 0.0 end
@@ -44,20 +44,29 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
 
     #Initial step with modified Newton method
     ############################################################################
-    #=
-    initgstep(x-> optfunc(lmm, x)[1], θ)
+    aif(x) = optfunc(lmm, x)[4]
+    grf(x) = optfunc(lmm, x)[1]
+    ai = ForwardDiff.hessian(aif, θ)
+    gr = ForwardDiff.gradient(grf, θ)
+    println("vec: ", θ)
+    try
+        θ .-= (inv(ai) ./4 )*gr
+    catch
+        θ .-= (pinv(ai) ./4 )*gr
+    end
     for i = 1:length(θ)
         if lmm.covstr.ct[i] == :rho
             if θ[i] > 0.99
                 θ[i] = 0.9
-            elseif θ[i] < -0.99
-                θ[i] = -0.9
+            elseif θ[i] < 0.0
+                θ[i] = 0.0
             end
         else
-            if θ[i] < 0.00001 θ[i] = 0.01 end
+            if θ[i] < 0.01 θ[i] = initθ / 2 end
+            if θ[i] > initθ*1.25 θ[i] = initθ*1.25 end
         end
     end
-    =#
+    println("new: ", θ)
     #varlinkvecapply!(θ, fvr)
     varlinkrvecapply2!(θ, lmm.covstr.ct)
     #Twice differentiable object
@@ -77,31 +86,22 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
     lmm.result.h      = ForwardDiff.hessian(x -> optfunc(lmm, x)[1], lmm.result.theta)
     #H positive definite check
     if !isposdef(lmm.result.h)
-        push!(lmm.warn, "Hessian is not positive definite.")
+        push!(lmm.log, "Hessian is not positive definite.")
     end
-    #SVD decomposition
+
     try
-        hsvd = svd(lmm.result.h)
+        qrd = qr(lmm.result.h, Val(true))
         for i = 1:length(lmm.result.theta)
-            if hsvd.S[i] < 1E-10
-                hsvd.S[i] = 0
-            end
-        end
-        lmm.result.hsvds = copy(hsvd.S)
-        rhsvd = hsvd.U * Diagonal(hsvd.S) * hsvd.Vt
-        theta = copy(lmm.result.theta)
-        for i = 1:length(lmm.result.theta)
-            if rhsvd[i,i] < 1E-10
-                if lmm.covstr.ct[i] == :var
-                    theta[i] = 0
-                    push!(lmm.warn, "Variation parameter ($(i)) set to zero.")
-                elseif lmm.covstr.ct[i] == :rho
-                    push!(lmm.warn, "Rho SVD value ($(i)) is less than 1e-10.")
+            if abs(qrd.R[i,i]) < 1E-10
+                if lmm.covstr.ct[qrd.jpvt[i]] == :var
+                    push!(lmm.log, "Variation R diagonal value ($(qrd.jpvt[i])) is less than 1e-10.")
+                elseif lmm.covstr.ct[qrd.jpvt[i]] == :rho
+                    push!(lmm.log, "Rho R diagonal value ($(qrd.jpvt[i])) is less than 1e-10.")
                 end
             end
         end
         #-2 LogREML, β, iC
-        lmm.result.reml, lmm.result.beta, iC = optfunc(lmm, theta)
+        lmm.result.reml, lmm.result.beta, iC, θ₃ = optfunc(lmm, lmm.result.theta)
         #Variance-vovariance matrix of β
         lmm.result.c            = pinv(iC)
         #SE
@@ -110,7 +110,7 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
         lmm.result.fit          = true
     catch
         #-2 LogREML, β, iC
-        lmm.result.reml, lmm.result.beta, iC = optfunc(lmm, lmm.result.theta)
+        lmm.result.reml, lmm.result.beta, iC, θ₃ = optfunc(lmm, lmm.result.theta)
         #Fit false
         lmm.result.fit          = false
     end

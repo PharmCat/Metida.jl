@@ -104,3 +104,12 @@ plot(x, y01)
 p = plot!(x, y02)
 
 png("plot100-VC-VC-NLopt-Optim.png")
+
+
+ Metida.reml_sweep_β2(lmm,  lmm.result.theta)
+theta = lmm.result.theta .- 0.1
+ai = ForwardDiff.hessian(x -> Metida.reml_sweep_β2(lmm, x)[4], theta)
+g = ForwardDiff.gradient(x -> Metida.reml_sweep_β2(lmm, x)[1], theta)
+he = ForwardDiff.hessian(x -> Metida.reml_sweep_β2(lmm, x)[1], theta)
+
+theta - he*g

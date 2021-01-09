@@ -9,7 +9,7 @@ mutable struct ModelResult
     h::Union{Matrix, Nothing}
     c::Union{Matrix, Nothing}
     se::Union{Vector, Nothing}
-    hsvds::Union{Vector, Nothing}
+    hsvds
     function ModelResult(
     optim,
     theta,

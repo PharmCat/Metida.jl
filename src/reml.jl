@@ -38,7 +38,7 @@ end
 """
     -2 log Restricted Maximum Likelihood; β calculation inside
 """
-function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{T}} where T <: Number where T2 <: Number
+function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T}) where T <: Number where T2 <: Number
     n::Int        = length(lmm.data.block)
     N::Int        = length(lmm.data.yv)
     G::Matrix{T}  = gmat_base(θ, lmm.covstr)
@@ -92,10 +92,10 @@ function reml_sweep_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{
         logdetθ₂ = Inf
     end
 
-    return   θ₁ + logdetθ₂ + θ₃ + c,  β, θ₂
+    return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃
 end
 
-function reml_sweep_β2(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{T}} where T <: Number where T2 <: Number
+function reml_sweep_β2(lmm::LMM{T2}, θ::Vector{T}) where T <: Number where T2 <: Number
     n::Int        = length(lmm.data.block)
     N::Int        = length(lmm.data.yv)
     #G::Matrix{T}  = gmat_base(θ, lmm.covstr)
@@ -147,10 +147,10 @@ function reml_sweep_β2(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix
 
     logdetθ₂ = logdet(θ₂)
 
-    return   θ₁ + logdetθ₂ + θ₃ + c,  β, θ₂
+    return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃
 end
 
-function reml_sweep_β3(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{T}} where T <: Number where T2 <: Number
+function reml_sweep_β3(lmm::LMM{T2}, θ::Vector{T}) where T <: Number where T2 <: Number
     n::Int        = length(lmm.data.block)
     N::Int        = length(lmm.data.yv)
     G::Matrix{T}  = gmat_base(θ, lmm.covstr)
@@ -201,7 +201,7 @@ function reml_sweep_β3(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix
 
     logdetθ₂ = logdet(θ₂)
 
-    return   θ₁ + logdetθ₂ + θ₃ + c,  β, θ₂
+    return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃
 end
 #=
 function reml_sweep_β_ub(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{T}} where T <: Number where T2 <: Number

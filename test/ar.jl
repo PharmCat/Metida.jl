@@ -17,11 +17,11 @@ categorical!(df, :Day);
     @test lmm.result.reml ≈ 450.75260020816347 atol=1E-6
 
     lmm = Metida.LMM(@formula(Pulse~1), df;
-    random = Metida.VarEffect(Metida.@covstr(1), Metida.AR),
+    repeated = Metida.VarEffect(Metida.@covstr(1), Metida.AR),
     subject = :Time
     )
     Metida.fit!(lmm)
-    @test lmm.result.reml ≈ 453.3395546350102 atol=1E-6
+    @test lmm.result.reml ≈ 462.66964037860635 atol=1E-6
 end
 
 #=

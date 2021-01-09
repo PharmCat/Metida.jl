@@ -26,7 +26,7 @@ struct LMM{T} <: MetidaModel
     rankx::UInt32
     result::ModelResult
     blocksolve::Bool
-    warn::Vector{String}
+    log::Vector{String}
 
     function LMM(model, data; contrasts=Dict{Symbol,Any}(), subject::Union{Nothing, Symbol, AbstractVector{Symbol}} = nothing,  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
         if isa(subject, Nothing)
@@ -95,7 +95,7 @@ function Base.show(io::IO, lmm::LMM)
     if lmm.result.fit
         print(io, "Status: ")
         Optim.converged(lmm.result.optim) ? printstyled(io, "converged \n"; color = :green) : printstyled(io, "not converged \n"; color = :red)
-        if length(lmm.warn) > 0  printstyled(io, "Warnings! See lmm.warn \n"; color = :yellow) end
+        #if length(lmm.log) > 0  printstyled(io, "Warnings! See lmm.log \n"; color = :yellow) end
         println(io, "")
         println(io, "   -2 logREML: ", round(lmm.result.reml, sigdigits = 6))
         println(io, "")
