@@ -242,7 +242,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                 for s = 1:alleffl
                     sblock[i][s] = Vector{Vector{UInt32}}(undef, 0)
                     for col in eachcol(view(subjz[s], blocks[i], :))
-                        if any(col) push!(sblock[i][s], findall(x->x==true, col)) end
+                        if any(col) push!(sblock[i][s], sort!(findall(x->x==true, col))) end
                     end
                 end
             end

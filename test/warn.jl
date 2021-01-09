@@ -45,3 +45,10 @@ G = [1. 2.;
 @code_warntype Metida.gmat_cs!(G, lmm.result.theta[lmm.covstr.tr[1]], lmm.covstr.q[1], lmm.covstr.random[1].covtype)
 
 @code_warntype Metida.gmat_ar!(G, lmm.result.theta[lmm.covstr.tr[1]], lmm.covstr.q[1], lmm.covstr.random[1].covtype)
+
+
+
+V = zeros(4,4)
+
+Metida.rmatp_ar!(V, lmm.result.theta[lmm.covstr.tr[end]], view(lmm.covstr.rz, lmm.covstr.block[end][1], :), lmm.covstr.repeated.covtype)
+Metida.rmatp_ar!(V, [1.49136, 2.07002, 0.16827][lmm.covstr.tr[end]], view(lmm.covstr.rz, lmm.covstr.block[end][1], :), lmm.covstr.repeated.covtype)

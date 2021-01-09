@@ -5,13 +5,18 @@
 
 Fit LMM model.
 """
-function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = :sigm, aifirst = false) where T
+function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = :sigm, aifirst = false, g_tol = 1e-12, x_tol = 1e-12, f_tol = 1e-12, init = nothing) where T
 
     #Make varlink function
     fv  = varlinkvec(lmm.covstr.ct)
     fvr = varlinkrvec(lmm.covstr.ct)
     # Optimization function
-    if lmm.blocksolve optfunc = reml_sweep_β else optfunc = reml_sweep_β3 end
+    if lmm.blocksolve
+        optfunc = reml_sweep_β
+        push!(lmm.log, "Solving by blocks.")
+    else
+        optfunc = reml_sweep_β3
+    end
 
     #Optim options
     #alphaguess = InitialHagerZhang(α0=1.0) #25s
@@ -22,7 +27,7 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
     #LineSearches.BackTracking(order=3)
     optmethod  = Optim.Newton(;alphaguess = LineSearches.InitialHagerZhang(), linesearch = LineSearches.HagerZhang())
     #optmethod  = Optim.Newton(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.HagerZhang())
-    optoptions = Optim.Options(g_tol = 1e-12, x_tol = 1e-10, f_tol = 1e-12,
+    optoptions = Optim.Options(g_tol = g_tol, x_tol = x_tol, f_tol = f_tol,
         iterations = 300,
         time_limit = 120,
         store_trace = true,
@@ -32,16 +37,17 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
         callback = optim_callback)
     ############################################################################
     #Initial variance
-    initθ = sqrt(initvar(lmm.mf.data[lmm.mf.f.lhs.sym], lmm.mm.m)[1]/4)
-
     θ  = zeros(T, lmm.covstr.tl)
-    #θ                      .= initθ
-    θ                      .= initθ
-    #θ .= initθ / (length(lmm.covstr.random) + 1)
-    for i = 1:length(θ)
-        if lmm.covstr.ct[i] == :rho θ[i] = 0.0 end
+    if isa(init, Vector{T}) && length(θ) == length(init)
+        copyto!(θ, init)
+    else
+        initθ = sqrt(initvar(lmm.mf.data[lmm.mf.f.lhs.sym], lmm.mm.m)[1]/4)
+        θ                      .= initθ
+        for i = 1:length(θ)
+            if lmm.covstr.ct[i] == :rho θ[i] = 0.0 end
+        end
+        push!(lmm.log, "Initial θ: "*string(θ))
     end
-    push!(lmm.log, "Initial θ: "*string(θ))
     #Initial step with modified Newton method
     ############################################################################
     if aifirst

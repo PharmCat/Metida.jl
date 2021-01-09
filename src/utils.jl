@@ -65,7 +65,7 @@ function intersectdf(df, s)::Vector
     end
     for i2 = 1:size(u, 1)
         for i = 1:length(s)
-            v2[i] = v[i][u[i2, i]]
+            v2[i] = sort!(v[i][u[i2, i]])
         end
         res[i2] = collect(intersect(Set.(v2)...))
         #res[i2] = intersect(v2...)

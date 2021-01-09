@@ -5,6 +5,7 @@ REML 453.339544
 =#
 df        = CSV.File(path*"/csv/RepeatedPulse.csv") |> DataFrame
 df.Pulse = float.(df.Pulse)
+sort!(df, :Day)
 transform!(df, :Time => categorical, renamecols=false)
 transform!(df, :Day => categorical, renamecols=false)
 
@@ -15,14 +16,14 @@ transform!(df, :Day => categorical, renamecols=false)
     subject = :Time
     )
     Metida.fit!(lmm)
-    @test lmm.result.reml ≈ 453.1926914954099 atol=1E-6
+    @test lmm.result.reml ≈ 451.06614967014093 atol=1E-6
 
     lmm = Metida.LMM(@formula(Pulse~1), df;
     repeated = Metida.VarEffect(Metida.@covstr(1), Metida.AR),
     subject = :Time
     )
     Metida.fit!(lmm)
-    @test lmm.result.reml ≈ 470.5275730199629 atol=1E-6
+    @test lmm.result.reml ≈ 463.9964183016498 atol=1E-6
 end
 
 #=

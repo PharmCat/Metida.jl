@@ -70,19 +70,28 @@ function reml_sweep_β(lmm::LMM{T2}, @nospecialize θ::Vector{T}) where T <: Num
             θ₁ += Inf
         end
 
+        #println("logdet(V) $(i) : ", θ₁)
+
         sweep!(Vp, 1:q)
         V⁻¹[i] = Symmetric(utriaply!(x -> -x, V))
         #-----------------------------------------------------------------------
         qswm = size(Vp, 1)
-        θ₂ .-= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
+        θ₂ -= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
         mulαtβinc!(βm, view(Vp, 1:q, q + 1:qswm), view(lmm.data.yv, lmm.data.block[i]))
+        #println("sum Vp : ", sum(view(Vp, 1:q, q + 1:qswm)), " sum yv : ", sum(view(lmm.data.yv, lmm.data.block[i])))
+        #println("βm : ", βm)
+        #println("Vp : ", view(Vp, 1:q, q + 1:qswm))
+        #println("y : ", view(lmm.data.yv, lmm.data.block[i]))
         #-----------------------------------------------------------------------
     end
+    #println("θ₂ : ", θ₂)
+    #println("βm : ", βm)
     mul!(β, inv(θ₂), βm)
     @simd for i = 1:n
         #r    =  lmm.data.yv[i] - lmm.data.xv[i] * β
         #θ₃  += r' * V⁻¹[i] * r
         @inbounds θ₃  += mulθ₃(view(lmm.data.yv, lmm.data.block[i]), view(lmm.data.xv, lmm.data.block[i],:), β, V⁻¹[i])
+        #println("θ₃ : ", θ₃)
     end
 
     #logdetθ₂ = logdet(θ₂)
@@ -91,7 +100,6 @@ function reml_sweep_β(lmm::LMM{T2}, @nospecialize θ::Vector{T}) where T <: Num
     catch
         logdetθ₂ = Inf
     end
-
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃
 end
 
