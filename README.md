@@ -29,7 +29,7 @@ categorical!(df, :formulation);
 
 lmm = LMM(@formula(var~sequence+period+formulation), df;
 random = VarEffect(@covstr(formulation), CSH),
-repeated = VarEffect(@covstr(formulation), VC),
+repeated = VarEffect(@covstr(formulation), DIAG),
 subject = :subject)
 
 fit!(lmm)

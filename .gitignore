@@ -1,5 +1,5 @@
 src/temp.jl
-#test/precompile/
+test/precompile/
 test/devtest.jl
 examples/
 docs/build/

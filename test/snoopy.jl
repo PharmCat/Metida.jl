@@ -15,3 +15,13 @@ end
 data = SnoopCompile.read("$path/precompile/metida_compiles.log")
 pc = SnoopCompile.parcel(reverse!(data[2]))
 SnoopCompile.write("$path/precompile", pc)
+
+
+using SnoopCompileCore
+invalidations = @snoopr begin
+    using Metida
+end
+using SnoopCompile
+ui = uinvalidated(invalidations)
+trees = invalidation_trees(invalidations)
+ftrees = filtermod(Metida, trees)

@@ -5,7 +5,7 @@
 
 Fit LMM model.
 """
-function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = :sigm) where T
+function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = :sigm, aifirst = false) where T
 
     #Make varlink function
     fv  = varlinkvec(lmm.covstr.ct)
@@ -41,32 +41,35 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
     for i = 1:length(θ)
         if lmm.covstr.ct[i] == :rho θ[i] = 0.0 end
     end
-
+    push!(lmm.log, "Initial θ: "*string(θ))
     #Initial step with modified Newton method
     ############################################################################
-    aif(x) = optfunc(lmm, x)[4]
-    grf(x) = optfunc(lmm, x)[1]
-    ai = ForwardDiff.hessian(aif, θ)
-    gr = ForwardDiff.gradient(grf, θ)
-    println("vec: ", θ)
-    try
-        θ .-= (inv(ai) ./4 )*gr
-    catch
-        θ .-= (pinv(ai) ./4 )*gr
-    end
-    for i = 1:length(θ)
-        if lmm.covstr.ct[i] == :rho
-            if θ[i] > 0.99
-                θ[i] = 0.9
-            elseif θ[i] < 0.0
-                θ[i] = 0.0
-            end
-        else
-            if θ[i] < 0.01 θ[i] = initθ / 2 end
-            if θ[i] > initθ*1.25 θ[i] = initθ*1.25 end
+    if aifirst
+        aif(x) = optfunc(lmm, x)[4]
+        grf(x) = optfunc(lmm, x)[1]
+        ai = ForwardDiff.hessian(aif, θ)
+        gr = ForwardDiff.gradient(grf, θ)
+    #println("vec: ", θ)
+        try
+            θ .-= (inv(ai) ./4 )*gr
+        catch
+            θ .-= (pinv(ai) ./4 )*gr
         end
+        for i = 1:length(θ)
+            if lmm.covstr.ct[i] == :rho
+                if θ[i] > 0.99
+                    θ[i] = 0.9
+                elseif θ[i] < 0.0
+                    θ[i] = 0.0
+                end
+            else
+                if θ[i] < 0.01 θ[i] = initθ / 2 end
+                if θ[i] > initθ*1.25 θ[i] = initθ*1.25 end
+            end
+        end
+        push!(lmm.log, "First step with AI like method, θ: "*string(θ))
     end
-    println("new: ", θ)
+    #println("new: ", θ)
     #varlinkvecapply!(θ, fvr)
     varlinkrvecapply2!(θ, lmm.covstr.ct)
     #Twice differentiable object

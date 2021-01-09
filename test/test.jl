@@ -160,3 +160,4 @@ end
 include("ar.jl")
 include("lme4.jl")
 include("norand.jl")
+include("berds.jl")
