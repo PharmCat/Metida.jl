@@ -29,10 +29,11 @@ df        = CSV.File(path*"/csv/berds/rds29.csv", types = Dict(:PK => Float64)) 
 for i = 1:30
     df        = CSV.File(path*"/csv/berds/rds"*string(i)*".csv", types = Dict(:PK => Float64)) |> DataFrame
     dropmissing!(df)
-    categorical!(df, :subject);
-    categorical!(df, :period);
-    categorical!(df, :sequence);
-    categorical!(df, :treatment);
+    transform!(df, :subject => categorical, renamecols=false)
+    transform!(df, :period => categorical, renamecols=false)
+    transform!(df, :sequence => categorical, renamecols=false)
+    transform!(df, :treatment => categorical, renamecols=false)
+
     df.lnpk = log.(df.PK)
 
     @testset "  Test $(i)" begin

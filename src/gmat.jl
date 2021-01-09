@@ -28,7 +28,7 @@ function gmat_switch!(G, θ, covstr, i)
     elseif covstr.random[i].covtype.s == :ZERO
         gmat_zero!(G, similar(θ, 0), covstr.q[i], covstr.random[i].covtype)
     else
-        throw(ErrorException("Unknown covariance structure: $(covstr.random[i].covtype.s), n = $(i)"))
+        error("Unknown covariance structure!")
     end
     G
 end

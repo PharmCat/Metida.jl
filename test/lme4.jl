@@ -1,8 +1,9 @@
 
 
 df        = CSV.File(path*"/csv/lme4/sleepstudy.csv") |> DataFrame
-categorical!(df, :Subject);
-categorical!(df, :Days);
+transform!(df, :Subject => categorical, renamecols=false)
+transform!(df, :Days => categorical, renamecols=false)
+
 
 #=
 SPSS
@@ -19,8 +20,9 @@ end
 
 df        = CSV.File(path*"/csv/lme4/Penicillin.csv") |> DataFrame
 df.diameter = float.(df.diameter)
-categorical!(df, :plate);
-categorical!(df, :sample);
+transform!(df, :plate => categorical, renamecols=false)
+transform!(df, :sample => categorical, renamecols=false)
+
 
 @testset " Penicillin.csv" begin
     lmm = Metida.LMM(@formula(diameter~1), df;
@@ -32,9 +34,10 @@ end
 
 
 df        = CSV.File(path*"/csv/lme4/Pastes.csv") |> DataFrame
-categorical!(df, :batch);
-categorical!(df, :cask);
-categorical!(df, :sample);
+transform!(df, :batch => categorical, renamecols=false)
+transform!(df, :sample => categorical, renamecols=false)
+transform!(df, :cask=> categorical, renamecols=false)
+
 @testset " Pastes.csv" begin
     lmm = Metida.LMM(@formula(strength~1), df;
     random = [Metida.VarEffect(Metida.SI, subj = :batch), Metida.VarEffect(Metida.SI, subj = [:batch,  :cask])]

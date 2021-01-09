@@ -3,7 +3,7 @@
 ################################################################################
 
 ################################################################################
-function rmat_basep!(mx, θ::AbstractVector{T}, zrv, covstr) where T
+function rmat_basep!(mx, θ::AbstractVector{T}, zrv, covstr::CovStructure{T2}) where T where T2
         if covstr.repeated.covtype.s == :SI
             rmatp_si!(mx, θ, zrv, covstr.repeated.covtype)
         elseif covstr.repeated.covtype.s == :DIAG
@@ -17,7 +17,7 @@ function rmat_basep!(mx, θ::AbstractVector{T}, zrv, covstr) where T
         elseif covstr.repeated.covtype.s == :CS
             rmatp_cs!(mx, θ, zrv, covstr.repeated.covtype)
         else
-            throw(ErrorException("Unknown covariance structure: $(covstr.repeated.covtype.s)"))
+            error("Unknown covariance structure!")
         end
 end
 ################################################################################
@@ -36,7 +36,7 @@ function rmat_basep_z!(mx, θ::AbstractVector{T}, zrv, covstr) where T
         elseif covstr.repeated.covtype.s == :CS
             rmatp_cs!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
         else
-            throw(ErrorException("Unknown covariance structure: $(covstr.repeated.covtype.s)"))
+            error("Unknown covariance structure!")
         end
     end
     mx
