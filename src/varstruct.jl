@@ -236,7 +236,6 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             end
         end
         view(rcnames, tr[end]) .= rcoefnames(schema[end], t[end], Val{repeated.covtype.s}())
-
             for i = 1:length(blocks)
                 sblock[i] = Vector{Vector{Vector{UInt32}}}(undef, alleffl)
                 for s = 1:alleffl

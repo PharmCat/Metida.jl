@@ -136,7 +136,7 @@ function reml_sweep_β2(lmm::LMM{T2}, @nospecialize θ::Vector{T}) where T <: Nu
         Vpv .= Vi
         Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
         #Vxt  = view(Vp,  N+1:qswm, 1:N)
-        Vx  .= view(lmm.data.xv,  lmm.data.block[i],:)
+        Vx  .= view(lmm.data.xv, lmm.data.block[i], :)
 
         sweep!(Vp, 1:q)
         V⁻¹[i] = Symmetric(utriaply!(x -> -x, Vpv))

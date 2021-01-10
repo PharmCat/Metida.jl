@@ -44,6 +44,8 @@ function _precompile_()
     precompile(Tuple{typeof(Metida.ffxpone), Int64})
 
     precompile(Tuple{typeof(Metida.reml_sweep_β), Metida.LMM{Float64}, Array{Float64, 1}})
+    precompile(Tuple{typeof(Metida.reml_sweep_β3), Metida.LMM{Float64}, Array{Float64, 1}})
+
     precompile(Tuple{typeof(Metida.rholinkpsigmoid), Float64})
 
     precompile(Tuple{typeof(Metida.varlinkvecapply!), Array{Float64, 1}, Array{Function, 1}})

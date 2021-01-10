@@ -16,14 +16,14 @@ transform!(df, :Day => categorical, renamecols=false)
     subject = :Time
     )
     Metida.fit!(lmm)
-    @test lmm.result.reml ≈ 451.06614967014093 atol=1E-6
+    @test lmm.result.reml ≈ 453.3395435627574 atol=1E-6
 
     lmm = Metida.LMM(@formula(Pulse~1), df;
     repeated = Metida.VarEffect(Metida.@covstr(1), Metida.AR),
     subject = :Time
     )
     Metida.fit!(lmm)
-    @test lmm.result.reml ≈ 463.9964183016498 atol=1E-6
+    @test lmm.result.reml ≈ 471.85107712169827 atol=1E-6
 end
 
 #=
@@ -44,7 +44,7 @@ transform!(df, :Diet => categorical, renamecols=false)
     subject = :Chick
     )
     Metida.fit!(lmm)
-    @test lmm.result.reml ≈ 5451.857613990478 atol=1E-6
+    @test lmm.result.reml ≈ 4439.254893054906 atol=1E-6
 
     lmm = Metida.LMM(@formula(weight~1 + Diet & Time), df;
     random = Metida.VarEffect(Metida.@covstr(Diet), Metida.ARH),

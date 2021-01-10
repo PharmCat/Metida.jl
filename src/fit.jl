@@ -55,7 +55,6 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
         grf(x) = optfunc(lmm, x)[1]
         ai = ForwardDiff.hessian(aif, θ)
         gr = ForwardDiff.gradient(grf, θ)
-    #println("vec: ", θ)
         try
             θ .-= (inv(ai) ./4 )*gr
         catch
@@ -73,7 +72,7 @@ function fit!(lmm::LMM{T}; verbose::Symbol = :auto, varlinkf = :exp, rholinkf = 
                 if θ[i] > initθ*1.25 θ[i] = initθ*1.25 end
             end
         end
-        push!(lmm.log, "First step with AI like method, θ: "*string(θ))
+        push!(lmm.log, "First step with AI-like method, θ: "*string(θ))
     end
     #println("new: ", θ)
     #varlinkvecapply!(θ, fvr)
