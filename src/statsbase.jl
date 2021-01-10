@@ -1,6 +1,5 @@
 
-
-
+#=
 StatsBase.coef(model::LMM) = error("coef is not defined for $(typeof(model)).")
 
 StatsBase.coefnames(model::LMM) = error("coefnames is not defined for $(typeof(model)).")
@@ -122,3 +121,5 @@ StatsBase.predict(model::LMM) = error("predict is not defined for $(typeof(model
 StatsBase.predict!(model::LMM) = error("predict! is not defined for $(typeof(model)).")
 
 StatsBase.dof_residual(model::LMM) = error("dof_residual is not defined for $(typeof(model)).")
+
+=#

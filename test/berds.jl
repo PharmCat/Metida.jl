@@ -36,7 +36,7 @@ for i = 1:30
 
     df.lnpk = log.(df.PK)
 
-    @testset "  Test $(i)" begin
+    @testset "  RDS Test $(i)                                            " begin
         atol=1E-6
 
         lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), df;
@@ -46,7 +46,7 @@ for i = 1:30
         Metida.fit!(lmm)
         @test lmm.result.reml ≈ remlsb[i] atol=atol
 
-        
+
         if i == 13 || i == 15 atol = 1E-4 end
         lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), df;
         random = Metida.VarEffect(Metida.@covstr(treatment), Metida.CSH),

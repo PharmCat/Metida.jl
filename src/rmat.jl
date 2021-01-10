@@ -21,6 +21,7 @@ function rmat_basep!(mx, θ::AbstractVector{T}, zrv, covstr::CovStructure{T2}) w
         end
 end
 ################################################################################
+#=
 function rmat_basep_z!(mx, θ::AbstractVector{T}, zrv, covstr) where T
     for i = 1:length(covstr.block[end])
         if covstr.repeated.covtype.s == :SI
@@ -41,7 +42,9 @@ function rmat_basep_z!(mx, θ::AbstractVector{T}, zrv, covstr) where T
     end
     mx
 end
+=#
 ################################################################################
+#=
 function rmat_basep_z2!(mx, θ::AbstractVector{T}, covstr, block) where T
     subjblock = view(covstr.subjz[end], block, :)
     zblock    = view(covstr.rz, block, :)
@@ -53,6 +56,7 @@ function rmat_basep_z2!(mx, θ::AbstractVector{T}, covstr, block) where T
     end
     mx
 end
+=#
 function rmat_basep_z2!(mx, θ::AbstractVector{T}, covstr, block, sblock) where T
     zblock    = view(covstr.rz, block, :)
     for i = 1:length(sblock[end])

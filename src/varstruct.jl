@@ -19,13 +19,14 @@ end
 function ffxpone(x::T)::T where T
     x + one(T)
 end
+#=
 function ffxmone(x::T)::T where T
     x - one(T)
 end
 function ff2xmone(x::T)::T where T
     2x - one(T)
 end
-
+=#
 ################################################################################
 #                          COVARIANCE TYPE
 ################################################################################
@@ -263,6 +264,7 @@ function fillur!(ur, i, v)
     end
 end
 ################################################################################
+#=
 function schemalength(s)
     if isa(s, Tuple)
         return length(s)
@@ -270,6 +272,7 @@ function schemalength(s)
         return 1
     end
 end
+=#
 #
 
 function subjmatrix!(subj, data, subjz, i)
@@ -326,10 +329,13 @@ end
 """
     Return variance-covariance matrix V
 """
+#=
 function vmat(G, R, Z)::AbstractMatrix
     return  mulαβαtc(Z, G, R)
 end
+=#
 ################################################################################
+#=
 function vmatvec(G, Z, θ)
     v = Vector{Matrix{eltype(G)}}(undef, length(Z))
     for i = 1:length(Z)
@@ -338,7 +344,7 @@ function vmatvec(G, Z, θ)
     #reduce(vcat, v)
     v
 end
-
+=#
 ################################################################################
 function Base.show(io::IO, e::VarEffect)
     println(io, "Effect")

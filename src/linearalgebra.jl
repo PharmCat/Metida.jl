@@ -2,6 +2,7 @@
 """
 A * B * A' + C
 """
+#=
 function mulαβαtc(A, B, C)
     q  = size(B, 1)
     p  = size(A, 1)
@@ -23,9 +24,11 @@ function mulαβαtc(A, B, C)
     end
     Symmetric(mx)
 end
+=#
 """
 A * B * A'
 """
+#=
 function mulαβαt(A, B)
     q  = size(B, 1)
     p  = size(A, 1)
@@ -92,6 +95,7 @@ function mulαβαtc3(A, B, C, X)
     mx[p+1:end, 1:p] = X'
     mx
 end
+=#
 function mulαβαt3(A, B, X)
     q  = size(B, 1)
     p  = size(A, 1)
@@ -118,6 +122,7 @@ end
 A' * B * A -> +θ
 A' * B * C -> +β
 """
+#=
 function mulθβinc!(θ, β, A::AbstractMatrix, B::AbstractMatrix, C::AbstractVector)
     q = size(B, 1)
     p = size(A, 2)
@@ -138,10 +143,12 @@ function mulθβinc!(θ, β, A::AbstractMatrix, B::AbstractMatrix, C::AbstractVe
     end
     θ, β
 end
+=#
 #-------------------------------------------------------------------------------
 """
 A' * B * A -> + θ
 """
+#=
 function mulαtβαinc!(θ, A, B)
     q = size(B, 1)
     p = size(A, 2)
@@ -156,6 +163,7 @@ function mulαtβαinc!(θ, A, B)
         end
     end
 end
+=#
 """
 A * B * A' -> + θ
 """
@@ -179,6 +187,7 @@ end
 """
 A' * B * A -> θ
 """
+#=
 function mulαtβα!(θ, A, B)
     q = size(B, 1)
     p = size(A, 2)
@@ -195,9 +204,11 @@ function mulαtβα!(θ, A, B)
     end
     θ
 end
+=#
 """
 A * B * A -> θ
 """
+#=
 function mulαβα!(θ, A, B)
     q = size(B, 1)
     p = size(A, 2)
@@ -214,9 +225,11 @@ function mulαβα!(θ, A, B)
     end
     θ
 end
+=#
 """
 tr(A * B)
 """
+#=
 function trmulαβ(A, B)
     c = 0
     @inbounds for n = 1:size(A,1), m = 1:size(B, 1)
@@ -224,11 +237,14 @@ function trmulαβ(A, B)
     end
     c
 end
+=#
 """
 tr(H * A' * B * A)
 """
+#=
 function trmulhαtβα(H, A, B)
 end
+=#
 """
 (y - X * β)' * V * (y - X * β)
 """
@@ -252,6 +268,7 @@ end
 """
 (y - X * β)
 """
+#=
 function mulr!(v::AbstractVector, y::AbstractVector, X::AbstractMatrix, β::AbstractVector)
     fill!(v, zero(eltype(v)))
     q = length(y)
@@ -276,6 +293,7 @@ function mulr(y::AbstractVector, X::AbstractMatrix, β::AbstractVector)
     end
     return v
 end
+=#
 """
 A' * B  -> + θ
 """

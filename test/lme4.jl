@@ -4,12 +4,11 @@ df        = CSV.File(path*"/csv/lme4/sleepstudy.csv") |> DataFrame
 transform!(df, :Subject => categorical, renamecols=false)
 transform!(df, :Days => categorical, renamecols=false)
 
-
 #=
 SPSS
 REML 1729.492560
 =#
-@testset "  sleepstudy.csv" begin
+@testset "  sleepstudy.csv                                           " begin
     lmm = Metida.LMM(@formula(Reaction~Days), df;
     random = Metida.VarEffect(Metida.SI),
     subject = :Subject
@@ -18,13 +17,27 @@ REML 1729.492560
     @test lmm.result.reml ≈ 1729.4925602367025 atol=1E-6
 end
 
+@testset "  CS sleepstudy.csv                                        " begin
+    lmm = Metida.LMM(@formula(Reaction~1), df;
+    random = Metida.VarEffect(Metida.@covstr(Days), Metida.CS),
+    subject = :Subject
+    )
+    Metida.fit!(lmm)
+    @test lmm.result.reml ≈ 1904.3265170722132 atol=1E-6
+
+    lmm = Metida.LMM(@formula(Reaction~1 + Days), df;
+    repeated = Metida.VarEffect(Metida.@covstr(1), Metida.CS, subj = :Subject)
+    )
+    Metida.fit!(lmm)
+    @test lmm.result.reml ≈ 1729.4925602367027 atol=1E-6
+end
+
 df        = CSV.File(path*"/csv/lme4/Penicillin.csv") |> DataFrame
 df.diameter = float.(df.diameter)
 transform!(df, :plate => categorical, renamecols=false)
 transform!(df, :sample => categorical, renamecols=false)
 
-
-@testset " Penicillin.csv" begin
+@testset " Penicillin.csv                                            " begin
     lmm = Metida.LMM(@formula(diameter~1), df;
     random = [Metida.VarEffect(Metida.SI, subj = :plate), Metida.VarEffect(Metida.SI, subj = :sample)]
     )
@@ -38,7 +51,7 @@ transform!(df, :batch => categorical, renamecols=false)
 transform!(df, :sample => categorical, renamecols=false)
 transform!(df, :cask=> categorical, renamecols=false)
 
-@testset " Pastes.csv" begin
+@testset " Pastes.csv                                                " begin
     lmm = Metida.LMM(@formula(strength~1), df;
     random = [Metida.VarEffect(Metida.SI, subj = :batch), Metida.VarEffect(Metida.SI, subj = [:batch,  :cask])]
     )

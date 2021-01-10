@@ -3,6 +3,7 @@
 """
     -2 log Restricted Maximum Likelihood;
 """
+#=
 function reml_sweep(lmm, β, θ::Vector{T})::T where T <: Number
     n  = length(lmm.data.yv)
     N  = sum(length.(lmm.data.yv))
@@ -27,14 +28,16 @@ function reml_sweep(lmm, β, θ::Vector{T})::T where T <: Number
     θ₂       = logdet(θ2m)
     return   -(θ₁ + θ₂ + θ₃ + c)
 end
-
+=#
 """
     -2 log Restricted Maximum Likelihood; β calculation inside
 """
+#=
 function reml_sweep_β(lmm, f::Function, θ::Vector{T}) where T <: Number
     f(θ)
     reml_sweep_β(lmm, θ)
 end
+=#
 """
     -2 log Restricted Maximum Likelihood; β calculation inside
 """
@@ -69,9 +72,7 @@ function reml_sweep_β(lmm::LMM{T2}, @nospecialize θ::Vector{T}) where T <: Num
         catch
             θ₁ += Inf
         end
-
         #println("logdet(V) $(i) : ", θ₁)
-
         sweep!(Vp, 1:q)
         V⁻¹[i] = Symmetric(utriaply!(x -> -x, V))
         #-----------------------------------------------------------------------
@@ -93,7 +94,6 @@ function reml_sweep_β(lmm::LMM{T2}, @nospecialize θ::Vector{T}) where T <: Num
         @inbounds θ₃  += mulθ₃(view(lmm.data.yv, lmm.data.block[i]), view(lmm.data.xv, lmm.data.block[i],:), β, V⁻¹[i])
         #println("θ₃ : ", θ₃)
     end
-
     #logdetθ₂ = logdet(θ₂)
     try
         logdetθ₂ = logdet(θ₂)
@@ -102,7 +102,7 @@ function reml_sweep_β(lmm::LMM{T2}, @nospecialize θ::Vector{T}) where T <: Num
     end
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃
 end
-
+#=
 function reml_sweep_β2(lmm::LMM{T2}, @nospecialize θ::Vector{T}) where T <: Number where T2 <: Number
     n::Int        = length(lmm.data.block)
     N::Int        = length(lmm.data.yv)
@@ -157,7 +157,7 @@ function reml_sweep_β2(lmm::LMM{T2}, @nospecialize θ::Vector{T}) where T <: Nu
 
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃
 end
-
+=#
 function reml_sweep_β3(lmm::LMM{T2}, @nospecialize θ::Vector{T}) where T <: Number where T2 <: Number
     n::Int        = length(lmm.data.block)
     N::Int        = length(lmm.data.yv)
@@ -187,11 +187,8 @@ function reml_sweep_β3(lmm::LMM{T2}, @nospecialize θ::Vector{T}) where T <: Nu
         Vx  .= view(lmm.data.xv,  lmm.data.block[i],:)
         gmat_base_z2!(V, θ, lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
         rmat_basep_z2!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
-
         #θ₁  += logdet(V)
-
         θ₁  += logdet(V)
-
         sweep!(Vp, 1:q)
         V⁻¹[i] = Symmetric(utriaply!(x -> -x, V))
         #-----------------------------------------------------------------------
@@ -206,9 +203,7 @@ function reml_sweep_β3(lmm::LMM{T2}, @nospecialize θ::Vector{T}) where T <: Nu
         #θ₃  += r' * V⁻¹[i] * r
         @inbounds θ₃  += mulθ₃(view(lmm.data.yv, lmm.data.block[i]), view(lmm.data.xv, lmm.data.block[i],:), β, V⁻¹[i])
     end
-
     logdetθ₂ = logdet(θ₂)
-
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃
 end
 #=
@@ -258,6 +253,7 @@ function reml_sweep_β_ub(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matr
 end
 =#
 ################################################################################
+#=
 function reml_inv_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{T}} where T <: Number where T2 <: Number
     n::Int        = length(lmm.data.block)
     N::Int        = length(lmm.data.yv)
@@ -308,5 +304,5 @@ function reml_inv_β(lmm::LMM{T2}, θ::Vector{T})::Tuple{T, Vector{T}, Matrix{T}
     end
     return   θ₁ + logdetθ₂ + θ₃ + c,  β, θ₂
 end
-
+=#
 ################################################################################

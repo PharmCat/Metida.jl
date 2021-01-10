@@ -1,4 +1,4 @@
-@testset "  No random                            " begin
+@testset "  No random                                                " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG),
     subject = :subject

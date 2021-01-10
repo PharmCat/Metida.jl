@@ -9,7 +9,7 @@ sort!(df, :Day)
 transform!(df, :Time => categorical, renamecols=false)
 transform!(df, :Day => categorical, renamecols=false)
 
-@testset "  RepeatedPulse.csv" begin
+@testset "  AR RepeatedPulse.csv                                     " begin
     lmm = Metida.LMM(@formula(Pulse~1), df;
     random = Metida.VarEffect(Metida.@covstr(Time), Metida.SI),
     repeated = Metida.VarEffect(Metida.@covstr(Day), Metida.AR),
@@ -24,6 +24,13 @@ transform!(df, :Day => categorical, renamecols=false)
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 471.85107712169827 atol=1E-6
+
+    lmm = Metida.LMM(@formula(Pulse~1), df;
+    random = Metida.VarEffect(Metida.@covstr(Day), Metida.AR),
+    subject = :Time
+    )
+    Metida.fit!(lmm)
+    @test lmm.result.reml ≈ 453.3395560121246 atol=1E-6
 end
 
 #=
@@ -37,7 +44,7 @@ df.Time2 = copy(df.Time)
 transform!(df, :Time2 => categorical, renamecols=false)
 transform!(df, :Chick => categorical, renamecols=false)
 transform!(df, :Diet => categorical, renamecols=false)
-@testset "  ChickWeight.csv" begin
+@testset "  ARH ChickWeight.csv                                      " begin
     lmm = Metida.LMM(@formula(weight~1 + Diet & Time), df;
     random = Metida.VarEffect(Metida.@covstr(1), Metida.SI),
     repeated = Metida.VarEffect(Metida.@covstr(Diet), Metida.ARH),

@@ -1,6 +1,7 @@
 """
     Make X, Z matrices and vector y for each subject;
 """
+#=
 function subjblocks(df, sbj::Symbol, x::Matrix{T}, z::Matrix{T}, y::Vector{T}, rz::Matrix{T}) where T
     u = unique(df[!, sbj])
     xa  = Vector{Matrix{T}}(undef, length(u))
@@ -44,6 +45,7 @@ function subjblocks(df, sbj)
     r[1] = collect(1:size(df, 1))
     r
 end
+=#
 """
     Intersect dataframe.
 """
@@ -73,7 +75,7 @@ function intersectdf(df, s)::Vector
     end
     res
 end
-
+#=
 function intersectsubj(covstr)
     a  = Vector{Vector{Symbol}}(undef, length(covstr.random)+1)
     eq = true
@@ -89,6 +91,7 @@ function intersectsubj(covstr)
     end
     intersect(a...), eq
 end
+=#
 function intersectsubj(random, repeated)
     a  = Vector{Vector{Symbol}}(undef, length(random)+1)
     eq = true
@@ -104,12 +107,12 @@ function intersectsubj(random, repeated)
     end
     intersect(a...), eq
 end
-
+#=
 function diffsubj!(a, subj)
     push!(a, subj)
     symdiff(a...)
 end
-
+=#
 """
 Variance estimate via OLS and QR decomposition.
 """
@@ -208,7 +211,7 @@ function varlinkrvecapply2!(v, p; varlinkf = :exp, rholinkf = :sigm)
 end
 
 ################################################################################
-
+#=
 function vmatr(lmm, i)
     θ  = lmm.result.theta
     G  = gmat_base(θ, lmm.covstr)
@@ -225,7 +228,7 @@ function gmatr(lmm, i)
     θ  = lmm.result.theta
     gmat_base(θ, lmm.covstr)
 end
-
+=#
 ################################################################################
 
 function m2logreml(lmm)
@@ -235,8 +238,6 @@ function logreml(lmm)
     -m2logreml(lmm)/2.
 end
 ################################################################################
-
-
 
 function optim_callback(os)
     false

@@ -2,6 +2,7 @@
 """
     2 log Restricted Maximum Likelihood gradient vector
 """
+#=
 function reml_grad(yv, Zv, p, Xv, θvec, β)
     n     = length(yv)
     G     = gmat(θvec[3:5])
@@ -40,10 +41,11 @@ function reml_grad(yv, Zv, p, Xv, θvec, β)
     end
     return - (θ1 .+ θ2 .+ θ3)
 end
-
+=#
 """
     2 log Restricted Maximum Likelihood hessian matrix
 """
+#=
 function reml_hessian(yv, Zv, p, Xv, θvec, β)
     n     = length(yv)
     G     = gmat(θvec[3:5])
@@ -91,7 +93,9 @@ function reml_hessian(yv, Zv, p, Xv, θvec, β)
     end
     return - (θ1 .+ θ2 .+ θ3)
 end
+=#
 ################################################################################
+#=
 function reml_grad2(yv, Zv, p, Xv, θvec, β)
     n     = length(yv)
     for i = 1:n
@@ -102,3 +106,4 @@ function reml_grad3(yv, Zv, p, Xv, θvec, β)
     n     = length(yv)
     covmat_grad2(vmatvec, Zv, θvec)
 end
+=#
