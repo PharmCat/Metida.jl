@@ -6,7 +6,8 @@ module Metida
 
 using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables, ForwardDiff, CategoricalArrays#, BlockDiagonals, BlockArrays#, SweepOperator
 using Optim, LineSearches
-#using NLopt
+
+#using TimerOutputs
 
 import LinearAlgebra:checksquare
 

@@ -209,7 +209,28 @@ function varlinkrvecapply2!(v, p; varlinkf = :exp, rholinkf = :sigm)
     end
     v
 end
-
+function varlinkvecapply2(v, p; varlinkf = :exp, rholinkf = :sigm)
+    s = similar(v)
+    for i = 1:length(v)
+        if p[i] == :var
+            s[i] = vlink(v[i])
+        else
+            s[i] = rholinksigmoid(v[i])
+        end
+    end
+    s
+end
+function varlinkrvecapply2(v, p; varlinkf = :exp, rholinkf = :sigm)
+    s = similar(v)
+    for i = 1:length(v)
+        if p[i] == :var
+            s[i] = vlinkr(v[i])
+        else
+            s[i] = rholinksigmoidr(v[i])
+        end
+    end
+    s
+end
 ################################################################################
 #=
 function vmatr(lmm, i)

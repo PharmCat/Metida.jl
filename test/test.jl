@@ -5,7 +5,7 @@ using  Test, CSV, DataFrames, StatsModels
 path    = dirname(@__FILE__)
 include("testdata.jl")
 
-@testset "  Basic test, DIAG / SI                                    " begin
+@testset "  Basic test                                               " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG),
     )
@@ -15,9 +15,16 @@ include("testdata.jl")
     Base.show(io, lmm.data)
     Base.show(io, lmm.result)
     Base.show(io, lmm.covstr)
+    Base.show(io, lmm.log)
     @test Metida.logreml(lmm)   ≈ -12.564740317165533 atol=1E-6
     @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
-    @test lmm.result.reml       ≈ 25.129480634331063 atol=1E-6 #need check
+    @test lmm.result.reml       ≈ 25.129480634331063 atol=1E-6 #need chec
+
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    repeated = Metida.VarEffect(Metida.SI, subj = :subject),
+    )
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
 end
 @testset "  Model: DIAG/subject + nothing                            " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;

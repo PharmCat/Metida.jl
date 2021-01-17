@@ -47,30 +47,11 @@ function gmat_base_z!(mx, θ::Vector{T}, covstr) where T
 end
 =#
 ################################################################################
-#=
-function gmat_base_z2!(mx, θ::Vector{T}, covstr, block) where T
-    q = sum(length.(covstr.block[1]))
-    for r = 1:length(covstr.random)
-        G = zeros(T, covstr.q[r], covstr.q[r])
-        gmat_switch!(G, θ, covstr, r)
-        subjblock = view(covstr.subjz[r], block, :)
-        zblock    = view(covstr.z, block, covstr.zrndur[r])
-        for i = 1:size(subjblock, 2)
-            subji = view(subjblock, : , i)
-            if any(subji)
-                mulαβαtinc!(view(mx, subji, subji), view(zblock, subji, :), G)
-            end
-        end
-    end
-    mx
-end
-=#
 function gmat_base_z2!(mx, θ::Vector{T}, covstr, block, sblock) where T
     q = sum(length.(covstr.block[1]))
     for r = 1:length(covstr.random)
         G = zeros(T, covstr.q[r], covstr.q[r])
         gmat_switch!(G, θ, covstr, r)
-        #subjblock = view(covstr.subjz[r], block, :)
         zblock    = view(covstr.z, block, covstr.zrndur[r])
         for i = 1:length(sblock[r])
             mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i]), view(zblock, sblock[r][i], :), G)
@@ -99,7 +80,6 @@ function gmat_diag!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     nothing
 end
 function gmat_ar!(mx, θ::Vector{T}, zn::Int, ::CovarianceType) where T
-    #mx .= θ[1] ^ 2
     de  = θ[1] ^ 2
     for i = 1:zn
         mx[i, i] = de

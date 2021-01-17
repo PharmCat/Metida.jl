@@ -12,6 +12,7 @@ makedocs(
         "Details" => "details.md",
         "Options" => "options.md",
         "API" => "api.md",
+        "Citation & Reference" => "ref.md",
     ],
 )
 

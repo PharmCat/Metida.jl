@@ -1,5 +1,9 @@
 #lmm.jl
 
+struct LMMLogMsg
+    type::Symbol
+    msg::String
+end
 """
     LMM(model, data; contrasts=Dict{Symbol,Any}(), subject::Union{Nothing, Symbol} = nothing,  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
 
@@ -26,7 +30,7 @@ struct LMM{T} <: MetidaModel
     rankx::UInt32
     result::ModelResult
     blocksolve::Bool
-    log::Vector{String}
+    log::Vector{LMMLogMsg}
 
     function LMM(model, data; contrasts=Dict{Symbol,Any}(), subject::Union{Nothing, Symbol, AbstractVector{Symbol}} = nothing,  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
         if isa(subject, Nothing)
@@ -38,7 +42,7 @@ struct LMM{T} <: MetidaModel
         else
             throw(ArgumentError("subject type should be Symbol or Vector{tymbol}"))
         end
-        warn = Vector{String}(undef, 0)
+        lmmlog  = Vector{LMMLogMsg}(undef, 0)
         mf   = ModelFrame(model, data; contrasts = contrasts)
         mm   = ModelMatrix(mf)
         if repeated === nothing
@@ -54,14 +58,16 @@ struct LMM{T} <: MetidaModel
         blocksolve = false
         if length(subject) > 0 blocksolve = true end
         if eq blocksolve = true end
-        if (length(subject) > 0 && !eq && length(intsub) > 0) || (length(subject) > 0 && !issetequal(subject, intsub) && length(intsub) > 0) push!(warn, "::You specify global subject variable, but variance effect have different subject's values and would be ignored!") end
+        if (length(subject) > 0 && !eq && length(intsub) > 0) || (length(subject) > 0 && !issetequal(subject, intsub) && length(intsub) > 0)
+            lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Global subject variable is specified, but variance effect(s) have different subject's values!"))
+        end
         if length(subject) == 0
             subject = intsub
         end
         block  = intersectdf(data, subject)
         lmmdata = LMMData(mm.m, mf.data[mf.f.lhs.sym], block, subject)
         covstr = CovStructure(random, repeated, data, block)
-        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, rank(mm.m), ModelResult(), blocksolve, warn)
+        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, rank(mm.m), ModelResult(), blocksolve, lmmlog)
     end
 end
 ################################################################################
@@ -72,6 +78,24 @@ Length of theta vector.
 """
 function thetalength(lmm::LMM)
     lmm.covstr.tl
+end
+################################################################################
+function lmmlog!(io, lmmlog::Vector{LMMLogMsg}, verbose, vmsg)
+    if verbose == 1
+        push!(lmmlog, vmsg)
+    elseif verbose == 2
+        println(io, vmsg)
+        push!(lmmlog, vmsg)
+    end
+end
+function lmmlog!(lmmlog::Vector{LMMLogMsg}, verbose, vmsg)
+    lmmlog!(stdout, lmmlog, verbose, vmsg)
+end
+function lmmlog!(io, lmm::LMM, verbose, vmsg)
+    lmmlog!(io, lmm.log, verbose, vmsg)
+end
+function lmmlog!(lmm::LMM, verbose, vmsg)
+    lmmlog!(stdout, lmm, verbose, vmsg)
 end
 ################################################################################
 
@@ -126,5 +150,21 @@ function Base.show(io::IO, lmm::LMM)
         printmatrix(io, mx)
     else
         println(io, "Not fitted.")
+    end
+end
+
+
+function Base.show(io::IO, lmmlog::LMMLogMsg)
+    if lmmlog.type == :INFO
+        printstyled(io, "  INFO  : "; color = :blue)
+        println(io, lmmlog.msg)
+    elseif lmmlog.type == :WARN
+        printstyled(io, "  WARN  : "; color = :yellow)
+        println(io, lmmlog.msg)
+    elseif lmmlog.type == :ERROR
+        printstyled(io, "  ERROR : "; color = :red)
+        println(io, lmmlog.msg)
+    else
+
     end
 end

@@ -330,19 +330,8 @@ end
     Return variance-covariance matrix V
 """
 #=
-function vmat(G, R, Z)::AbstractMatrix
-    return  mulαβαtc(Z, G, R)
-end
-=#
-################################################################################
-#=
-function vmatvec(G, Z, θ)
-    v = Vector{Matrix{eltype(G)}}(undef, length(Z))
-    for i = 1:length(Z)
-        v[i] = mulαβαtc(Z[i], G, rmat(θ[1:2], Z[i]))
-    end
-    #reduce(vcat, v)
-    v
+function vmat()::AbstractMatrix
+
 end
 =#
 ################################################################################

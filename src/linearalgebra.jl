@@ -252,7 +252,7 @@ function mulθ₃(y::AbstractVector, X::AbstractMatrix, β::AbstractVector, V::A
     q = size(V, 1)
     p = size(X, 2)
     θ = zero(T)
-    c = zeros(eltype(V), q)
+    c = zeros(T, q)
     @simd for n = 1:q
         @simd for m = 1:p
             @inbounds c[n] += X[n, m] * β[m]
