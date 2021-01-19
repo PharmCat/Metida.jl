@@ -33,4 +33,8 @@ subject = :subject)
 fit!(lmm)
 ```
 
+Also you can use this package with [MatidaNLopt.jl](https://github.com/PharmCat/MetidaNLopt.jl) and [MetidaCu.jl](https://github.com/PharmCat/MetidaCu.jl).
+
+See also [MixedModels.jl](https://github.com/JuliaStats/MixedModels.jl): powerful package for mixed models. 
+
 Copyright © 2020 Metida Author: Vladimir Arnautov <mail@pharmcat.net>
