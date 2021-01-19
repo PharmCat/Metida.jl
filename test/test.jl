@@ -28,9 +28,20 @@ include("testdata.jl")
     @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
 
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(1 + formulation), Metida.CSH; coding = Dict(:formulation => StatsModels.DummyCoding())),
+    subject = :subject)
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 10.314822559210157 atol=1E-6
+
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    repeated = Metida.VarEffect(Metida.@covstr(formulation)),
+    )
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 25.129480634331063 atol=1E-6
+
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG),
     subject = :subject)
-
     Metida.fit!(lmm; aifirst = true)
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
 

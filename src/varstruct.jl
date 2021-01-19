@@ -115,9 +115,8 @@ struct VarEffect
     model::Union{Tuple{Vararg{AbstractTerm}}, Nothing, AbstractTerm}
     covtype::CovarianceType
     coding::Dict{Symbol, AbstractContrasts}
-    fulldummy::Bool
     subj::Vector{Symbol}
-    function VarEffect(model, covtype::T, coding; fulldummy = true, subj = nothing) where T <: AbstractCovarianceType
+    function VarEffect(model, covtype::T, coding; subj = nothing) where T <: AbstractCovarianceType
         #if isa(model, AbstractTerm) model = tuple(model) end
         if isa(subj, Nothing)
             subj = Vector{Symbol}(undef, 0)
@@ -135,10 +134,10 @@ struct VarEffect
             coding = Dict{Symbol, AbstractContrasts}()
         end
         #if isa(model, AbstractTerm) model = tuple(model) end
-        new(model, covtype, coding, fulldummy, subj)
+        new(model, covtype, coding, subj)
     end
-    function VarEffect(model, covtype::T; coding = nothing, fulldummy = true, subj = nothing) where T <: AbstractCovarianceType
-        VarEffect(model, covtype, coding; fulldummy = fulldummy, subj = subj)
+    function VarEffect(model, covtype::T; coding = nothing, subj = nothing) where T <: AbstractCovarianceType
+        VarEffect(model, covtype, coding;  subj = subj)
     end
     function VarEffect(model; coding = nothing)
         VarEffect(model, SI, coding)
@@ -198,7 +197,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         #
         # RANDOM EFFECTS
         for i = 1:length(random)
-            if length(random[i].coding) == 0 && random[i].fulldummy
+            if length(random[i].coding) == 0
                 fill_coding_dict!(random[i].model, random[i].coding, data)
             end
             if i > 1
@@ -216,7 +215,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             subjmatrix!(random[i].subj, data, subjz, i)
         end
         # REPEATED EFFECTS
-        if length(repeated.coding) == 0 && repeated.fulldummy
+        if length(repeated.coding) == 0
             fill_coding_dict!(repeated.model, repeated.coding, data)
         end
         block[end]  = intersectdf(data, repeated.subj)
@@ -362,7 +361,6 @@ function Base.show(io::IO, e::VarEffect)
     println(io, "Model:", e.model)
     println(io, "Type: ", e.covtype)
     println(io, "Coding: ", e.coding)
-    println(io, "FullDummy: ", e.fulldummy)
     println(io, "Subject:", e.subj)
 end
 
