@@ -76,8 +76,12 @@ end
 
 Length of theta vector.
 """
-function thetalength(lmm::LMM)
+function thetalength(lmm)
     lmm.covstr.tl
+end
+
+function theta(lmm::LMM)
+    copy(lmm.result.theta)
 end
 ################################################################################
 function lmmlog!(io, lmmlog::Vector{LMMLogMsg}, verbose, vmsg)
@@ -118,7 +122,8 @@ function Base.show(io::IO, lmm::LMM)
     println(io, "")
     if lmm.result.fit
         print(io, "Status: ")
-        Optim.converged(lmm.result.optim) ? printstyled(io, "converged \n"; color = :green) : printstyled(io, "not converged \n"; color = :red)
+        printresult(io, lmm.result.optim)
+        #Optim.converged(lmm.result.optim) ? printstyled(io, "converged \n"; color = :green) : printstyled(io, "not converged \n"; color = :red)
         #if length(lmm.log) > 0  printstyled(io, "Warnings! See lmm.log \n"; color = :yellow) end
         println(io, "")
         println(io, "   -2 logREML: ", round(lmm.result.reml, sigdigits = 6))
@@ -153,6 +158,16 @@ function Base.show(io::IO, lmm::LMM)
     end
 end
 
+function printresult(io, res::T) where T <: Optim.MultivariateOptimizationResults
+    Optim.converged(res) ? printstyled(io, "converged \n"; color = :green) : printstyled(io, "not converged \n"; color = :red)
+end
+function printresult(io, res)
+    if res[3] == :FTOL_REACHED || res[3] == :XTOL_REACHED || res[3] == :SUCCESS
+        printstyled(io, "converged ($(string(res[3])))\n"; color = :green)
+    else
+        printstyled(io, "not converged ($(string(res[3])))\n"; color = :red)
+    end
+end
 
 function Base.show(io::IO, lmmlog::LMMLogMsg)
     if lmmlog.type == :INFO
@@ -164,7 +179,5 @@ function Base.show(io::IO, lmmlog::LMMLogMsg)
     elseif lmmlog.type == :ERROR
         printstyled(io, "  ERROR : "; color = :red)
         println(io, lmmlog.msg)
-    else
-
     end
 end

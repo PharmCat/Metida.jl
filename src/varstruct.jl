@@ -1,6 +1,11 @@
 ################################################################################
 #                         @covstr macro
 ################################################################################
+"""
+    @covstr(ex)
+
+Macros for random/repeated effect model.
+"""
 macro covstr(ex)
     return :(@formula(nothing ~ $ex).rhs)
 end
@@ -37,36 +42,55 @@ struct CovarianceType <: AbstractCovarianceType
     rho::Function      #number of rho parameters for Z size 2
 end
 ################################################################################
+"""
+    ScaledIdentity()
+
+Scaled identity covariance type.
+
+SI = ScaledIdentity()
+"""
 function ScaledIdentity()
     CovarianceType(:SI, ffxone, ffxone, ffxzero)
 end
 const SI = ScaledIdentity()
-
+"""
+    Diag()
+"""
 function Diag()
     CovarianceType(:DIAG, ffx, ffx, ffxzero)
 end
 const DIAG = Diag()
-
+"""
+    Autoregressive()
+"""
 function Autoregressive()
     CovarianceType(:AR, x -> 2, ffxone, ffxone)
 end
 const AR = Autoregressive()
-
+"""
+    HeterogeneousAutoregressive()
+"""
 function HeterogeneousAutoregressive()
     CovarianceType(:ARH, ffxpone, ffx, ffxone)
 end
 const ARH = HeterogeneousAutoregressive()
-
+"""
+    CompoundSymmetry()
+"""
 function CompoundSymmetry()
     CovarianceType(:CS, x -> 2, ffxone, ffxone)
 end
 const CS = CompoundSymmetry()
-
+"""
+    HeterogeneousCompoundSymmetry()
+"""
 function HeterogeneousCompoundSymmetry()
     CovarianceType(:CSH, ffxpone, ffx, ffxone)
 end
 const CSH = HeterogeneousCompoundSymmetry()
-
+"""
+    RZero()
+"""
 function RZero()
     CovarianceType(:ZERO, x -> 0, x -> 0, x -> 0)
 end
@@ -84,6 +108,8 @@ end
 ################################################################################
 """
     VarEffect(model, covtype::T, coding; fulldummy = true, subj = nothing) where T <: AbstractCovarianceType
+
+Random/repeated effect.
 """
 struct VarEffect
     model::Union{Tuple{Vararg{AbstractTerm}}, Nothing, AbstractTerm}
@@ -114,10 +140,8 @@ struct VarEffect
     function VarEffect(model, covtype::T; coding = nothing, fulldummy = true, subj = nothing) where T <: AbstractCovarianceType
         VarEffect(model, covtype, coding; fulldummy = fulldummy, subj = subj)
     end
-
-
     function VarEffect(model; coding = nothing)
-        VarEffect(model, DIAG, coding)
+        VarEffect(model, SI, coding)
     end
     function VarEffect(covtype::T; coding = nothing, subj = nothing) where T <: AbstractCovarianceType
         VarEffect(@covstr(1), covtype, coding; subj = subj)
@@ -154,11 +178,10 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     # range of each parameters in θ vector
     tr::Vector{UnitRange{UInt32}}
     # θ Parameter count
-    tl::UInt16
+    tl::Int
     # Parameter type :var / :rho
     ct::Vector{Symbol}
     #--
-    #
     function CovStructure(random, repeated, data, blocks)
         alleffl =  length(random) + 1
         #
@@ -246,7 +269,6 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                     end
                 end
             end
-
         #
         new{eltype(z)}(random, repeated, schema, rcnames, block, z, sblock, zrndur, rz, q, t, tr, tl, ct)
     end
@@ -343,7 +365,6 @@ function Base.show(io::IO, e::VarEffect)
     println(io, "FullDummy: ", e.fulldummy)
     println(io, "Subject:", e.subj)
 end
-
 
 function Base.show(io::IO, cs::CovStructure)
     println(io, "Covariance Structure:")

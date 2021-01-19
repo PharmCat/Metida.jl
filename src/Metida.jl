@@ -4,7 +4,7 @@
 __precompile__()
 module Metida
 
-using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables, ForwardDiff, CategoricalArrays#, BlockDiagonals, BlockArrays#, SweepOperator
+using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables, ForwardDiff, CategoricalArrays
 using Optim, LineSearches
 
 #using TimerOutputs
@@ -14,7 +14,14 @@ import LinearAlgebra:checksquare
 import StatsBase: fit, fit!, coef
 import Base:show
 
-export @formula, @covstr, VC, VarianceComponents, CSH, HeterogeneousCompoundSymmetry, SI, ScaledIdentity, fit!, LMM, VarEffect
+export @formula, @covstr,
+SI, ScaledIdentity,
+DIAG, Diag,
+AR, Autoregressive,
+ARH, HeterogeneousAutoregressive,
+CS, CompoundSymmetry,
+CSH, HeterogeneousCompoundSymmetry,
+fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength
 
 include("abstracttype.jl")
 include("sweep.jl")

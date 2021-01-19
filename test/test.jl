@@ -6,11 +6,11 @@ path    = dirname(@__FILE__)
 include("testdata.jl")
 
 @testset "  Basic test                                               " begin
+    io = IOBuffer();
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG),
     )
     Metida.fit!(lmm)
-    io = IOBuffer();
     Base.show(io, lmm)
     Base.show(io, lmm.data)
     Base.show(io, lmm.result)
@@ -18,13 +18,24 @@ include("testdata.jl")
     Base.show(io, lmm.log)
     @test Metida.logreml(lmm)   ≈ -12.564740317165533 atol=1E-6
     @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
+    @test Metida.thetalength(lmm) == 3
     @test lmm.result.reml       ≈ 25.129480634331063 atol=1E-6 #need chec
 
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     repeated = Metida.VarEffect(Metida.SI, subj = :subject),
     )
-    Metida.fit!(lmm)
+    Metida.fit!(lmm; verbose = 2, io = io)
     @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
+
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG),
+    subject = :subject)
+
+    Metida.fit!(lmm; aifirst = true)
+    @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
+
+    Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm))
+    @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
 end
 @testset "  Model: DIAG/subject + nothing                            " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;

@@ -14,7 +14,18 @@ end
 fit_nlopt!(lmm::MetidaModel; kwargs...)  = error("MetidaNLopt not found. \n - Run `using MetidaNLopt` before.")
 
 """
-    fit!(lmm::LMM{T}) where T
+    fit!(lmm::LMM{T};
+    solver::Symbol = :default,
+    verbose = :auto,
+    varlinkf = :exp,
+    rholinkf = :sigm,
+    aifirst::Bool = false,
+    g_tol::Float64 = 1e-12,
+    x_tol::Float64 = 1e-12,
+    f_tol::Float64 = 1e-12,
+    hcalck::Bool   = true,
+    init = nothing,
+    io::IO = stdout) where T
 
 Fit LMM model.
 """
@@ -28,7 +39,11 @@ function fit!(lmm::LMM{T};
     x_tol::Float64 = 1e-12,
     f_tol::Float64 = 1e-12,
     hcalck::Bool   = true,
-    init = nothing) where T
+    init = nothing,
+    io::IO = stdout) where T
+
+    if lmm.result.fit lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Refit model...")) end
+
     if solver == :nlopt
         return fit_nlopt!(lmm; solver = :nlopt, verbose = verbose, varlinkf = varlinkf, rholinkf = rholinkf, aifirst = aifirst, g_tol = g_tol, x_tol = x_tol, f_tol = f_tol, hcalck = false, init = init)
     elseif solver == :cuda
@@ -44,7 +59,7 @@ function fit!(lmm::LMM{T};
     # Optimization function
     if lmm.blocksolve
         optfunc = reml_sweep_β_b
-        lmmlog!(lmm, verbose, LMMLogMsg(:INFO, "Solving by blocks..."))
+        lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Solving by blocks..."))
     else
         optfunc = reml_sweep_β
     end
@@ -71,8 +86,13 @@ function fit!(lmm::LMM{T};
     #ux = similar(θ)
     #lx .= 0.0
     #ux .= Inf
-    if isa(init, Vector{T}) && length(θ) == length(init)
-        copyto!(θ, init)
+    if isa(init, Vector{T})
+        if length(θ) == length(init)
+            copyto!(θ, init)
+            lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Using provided θ: "*string(θ)))
+        else
+            error("init length $(length(init)) != θ length $(length(init))")
+        end
     else
         initθ = sqrt(initvar(lmm.mf.data[lmm.mf.f.lhs.sym], lmm.mm.m)[1]/4)
         θ                      .= initθ
@@ -83,7 +103,7 @@ function fit!(lmm::LMM{T};
                 #ux[i] = 1.0
             end
         end
-        lmmlog!(lmm, verbose, LMMLogMsg(:INFO, "Initial θ: "*string(θ)))
+        lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Initial θ: "*string(θ)))
     end
     #dfc = TwiceDifferentiableConstraints(lx, ux)
     #Initial step with modified Newton method
@@ -93,6 +113,7 @@ function fit!(lmm::LMM{T};
         grf(x) = optfunc(lmm, x)[1]
         ai = ForwardDiff.hessian(aif, θ)
         gr = ForwardDiff.gradient(grf, θ)
+        initθ = copy(θ)
         try
             θ .-= (inv(ai) ./4 )*gr
         catch
@@ -106,11 +127,11 @@ function fit!(lmm::LMM{T};
                     θ[i] = 0.0
                 end
             else
-                if θ[i] < 0.01 θ[i] = initθ / 2 end
-                if θ[i] > initθ*1.25 θ[i] = initθ*1.25 end
+                if θ[i] < 0.01 θ[i] = initθ[i] / 2 end
+                if θ[i] > initθ[i] * 1.25 θ[i] = initθ[i] * 1.25 end
             end
         end
-        lmmlog!(lmm, verbose, LMMLogMsg(:INFO, "First step with AI-like method, θ: "*string(θ)))
+        lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "First step with AI-like method, θ: "*string(θ)))
     end
     varlinkrvecapply2!(θ, lmm.covstr.ct)
 
@@ -136,21 +157,22 @@ function fit!(lmm::LMM{T};
     end
     #Theta (θ) vector
     lmm.result.theta  = varlinkvecapply2!(deepcopy(Optim.minimizer(lmm.result.optim)), lmm.covstr.ct)
+    lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Resulting θ: "*string(lmm.result.theta)))
     try
         if hcalck
             #Hessian
             lmm.result.h      = ForwardDiff.hessian(x -> optfunc(lmm, x)[1], lmm.result.theta)
             #H positive definite check
             if !isposdef(lmm.result.h)
-                lmmlog!(lmm, verbose, LMMLogMsg(:WARN, "Hessian is not positive definite."))
+                lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian is not positive definite."))
             end
             qrd = qr(lmm.result.h, Val(true))
             for i = 1:length(lmm.result.theta)
                 if abs(qrd.R[i,i]) < 1E-10
                     if lmm.covstr.ct[qrd.jpvt[i]] == :var
-                        lmmlog!(lmm, verbose, LMMLogMsg(:WARN, "Variation QR.R diagonal value ($(qrd.jpvt[i])) is less than 1e-10."))
+                        lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Variation QR.R diagonal value ($(qrd.jpvt[i])) is less than 1e-10."))
                     elseif lmm.covstr.ct[qrd.jpvt[i]] == :rho
-                        lmmlog!(lmm, verbose, LMMLogMsg(:WARN, "Rho QR.R diagonal value ($(qrd.jpvt[i])) is less than 1e-10."))
+                        lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Rho QR.R diagonal value ($(qrd.jpvt[i])) is less than 1e-10."))
                     end
                 end
             end
@@ -163,11 +185,15 @@ function fit!(lmm::LMM{T};
         lmm.result.se           = sqrt.(diag(lmm.result.c))
         #Fit true
         lmm.result.fit          = true
+
+        lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model fitted."))
     catch
         #-2 LogREML, β, iC
         lmm.result.reml, lmm.result.beta, iC, θ₃ = optfunc(lmm, lmm.result.theta)
         #Fit false
         lmm.result.fit          = false
+
+        lmmlog!(io, lmm, verbose, LMMLogMsg(:ERROR, "Model not fitted!"))
     end
     lmm
 end
