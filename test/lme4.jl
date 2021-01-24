@@ -48,7 +48,7 @@ end
     lmm = Metida.LMM(@formula(Reaction~1), df;
     random = Metida.VarEffect(Metida.@covstr(Days), Metida.CSH, subj = :Subject)
     )
-    Metida.fit!(lmm)
+    Metida.fit!(lmm; init = [26.4881, 35.5197, 34.8287, 56.1999, 63.8281, 85.4346, 94.218, 92.8584, 113.679, 129.721, 0.959643, 22.5597])
     @test lmm.result.reml ≈ 1772.0953251997046 atol=1E-6
 end
 
