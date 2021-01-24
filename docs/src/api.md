@@ -49,3 +49,13 @@ Metida.CompoundSymmetry
 ```@docs
 Metida.HeterogeneousCompoundSymmetry
 ```
+
+### Metida.gmatrix
+```@docs
+Metida.gmatrix
+```
+
+### Metida.rmatrix
+```@docs
+Metida.rmatrix
+```

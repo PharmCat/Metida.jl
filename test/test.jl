@@ -1,6 +1,6 @@
 # Metida
 
-using  Test, CSV, DataFrames, StatsModels
+using  Test, CSV, DataFrames, StatsModels, StatsBase
 
 path    = dirname(@__FILE__)
 include("testdata.jl")
@@ -47,7 +47,31 @@ include("testdata.jl")
 
     Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm))
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
+
+    Metida.gmatrix(lmm, 1)
+    Metida.rmatrix(lmm, 1)
+    dof(lmm)
+
+    @test nobs(lmm) == 20
+    @test bic(lmm) ≈ 24.558878811225412 atol=1E-6
+    @test aic(lmm) ≈ 22.241112644506067 atol=1E-6
+    @test aicc(lmm) ≈ 24.241112644506067 atol=1E-6
+    @test Metida.caic(lmm) ≈ 27.558878811225412 atol=1E-6
+    @test dof_residual(lmm) == 14
+    @test isfitted(lmm) == true
+
 end
+@testset "  Errors                                                   " begin
+    @test_throws ArgumentError Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG, subj = "subj")
+    @test_throws ErrorException lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CovarianceType(:XX)),
+    )
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG),
+    )
+    @test_throws ErrorException Metida.fit!(lmm; init = [0.0, 1.0, 0.0, 0.0, 0.0])
+end
+
 @testset "  Model: DIAG/subject + nothing                            " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG),

@@ -1,16 +1,5 @@
 # fit.jl
-#=
-function gfunc!(g, x, f)
-    chunk  = ForwardDiff.Chunk{1}()
-    gcfg   = ForwardDiff.GradientConfig(f, x, chunk)
-    ForwardDiff.gradient!(g, f, x, gcfg)
-end
-function hfunc!(h, x, f)
-    chunk  = ForwardDiff.Chunk{1}()
-    hcfg   = ForwardDiff.HessianConfig(f, x, chunk)
-    ForwardDiff.hessian!(h, f, x, hcfg)
-end
-=#
+
 fit_nlopt!(lmm::MetidaModel; kwargs...)  = error("MetidaNLopt not found. \n - Run `using MetidaNLopt` before.")
 
 """
@@ -53,9 +42,7 @@ function fit!(lmm::LMM{T};
     if verbose == :auto
         verbose = 1
     end
-    #Make varlink function
-    fv  = varlinkvec(lmm.covstr.ct)
-    fvr = varlinkrvec(lmm.covstr.ct)
+
     # Optimization function
     if lmm.blocksolve
         optfunc = reml_sweep_β_b
@@ -91,7 +78,7 @@ function fit!(lmm::LMM{T};
             copyto!(θ, init)
             lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Using provided θ: "*string(θ)))
         else
-            error("init length $(length(init)) != θ length $(length(init))")
+            error("init length $(length(init)) != θ length $(length(θ))")
         end
     else
         initθ = sqrt(initvar(lmm.mf.data[lmm.mf.f.lhs.sym], lmm.mm.m)[1]/4)
@@ -133,11 +120,11 @@ function fit!(lmm::LMM{T};
         end
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "First step with AI-like method, θ: "*string(θ)))
     end
-    varlinkrvecapply2!(θ, lmm.covstr.ct)
+    varlinkrvecapply!(θ, lmm.covstr.ct)
 
     #Twice differentiable object
 
-    vloptf(x) = optfunc(lmm, varlinkvecapply2(x, lmm.covstr.ct))[1]
+    vloptf(x) = optfunc(lmm, varlinkvecapply(x, lmm.covstr.ct))[1]
     chunk  = ForwardDiff.Chunk{1}()
     gcfg   = ForwardDiff.GradientConfig(vloptf, θ, chunk)
     hcfg   = ForwardDiff.HessianConfig(vloptf, θ, chunk)
@@ -156,7 +143,7 @@ function fit!(lmm::LMM{T};
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     end
     #Theta (θ) vector
-    lmm.result.theta  = varlinkvecapply2!(deepcopy(Optim.minimizer(lmm.result.optim)), lmm.covstr.ct)
+    lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), lmm.covstr.ct)
     lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Resulting θ: "*string(lmm.result.theta)))
     try
         if hcalck

@@ -15,18 +15,65 @@ StatsBase.islinear(model::LMM) = error("islinear is not defined for $(typeof(mod
 StatsBase.nulldeviance(model::LMM) =
     error("nulldeviance is not defined for $(typeof(model)).")
 
-StatsBase.loglikelihood(model::LMM) =
-    error("loglikelihood is not defined for $(typeof(model)).")
-
 StatsBase.nullloglikelihood(model::LMM) =
         error("nullloglikelihood is not defined for $(typeof(model)).")
 
 StatsBase.score(model::LMM) = error("score is not defined for $(typeof(model)).")
 
-StatsBase.nobs(model::LMM) = error("nobs is not defined for $(typeof(model)).")
+=#
 
-StatsBase.dof(model::LMM) = error("dof is not defined for $(typeof(model)).")
+#=
+REML: n = total number of observation - number fixed effect parameters; d = number of covariance parameters
+ML:, n = total number of observation; d = number of fixed effect parameters + number of covariance parameters.
+=#
+function StatsBase.nobs(lmm::LMM)
+    return length(lmm.data.yv)
+end
 
+function StatsBase.dof_residual(lmm::LMM)
+    nobs(lmm) - lmm.rankx
+end
+
+function StatsBase.dof(lmm::LMM)
+    lmm.nfixed + lmm.covstr.tl
+end
+
+function StatsBase.loglikelihood(lmm::LMM)
+    -lmm.result.reml/2
+end
+
+function StatsBase.aic(lmm::LMM)
+    l = loglikelihood(lmm)
+    d = lmm.covstr.tl
+    -2l + 2d
+end
+
+function StatsBase.bic(lmm::LMM)
+    l = loglikelihood(lmm)
+    d = lmm.covstr.tl
+    n = nobs(lmm) - lmm.nfixed
+    -2l + d * log(n)
+end
+
+function StatsBase.aicc(lmm::LMM)
+    l = loglikelihood(lmm)
+    d = lmm.covstr.tl
+    n = nobs(lmm) - lmm.nfixed
+    -2l + (2d * n) / (n - d - 1.0)
+end
+
+function caic(lmm::LMM)
+    l = loglikelihood(lmm)
+    d = lmm.covstr.tl
+    n = nobs(lmm) - lmm.nfixed
+    -2l + d * (log(n) + 1.0)
+end
+
+function StatsBase.isfitted(lmm::LMM)
+    lmm.result.fit
+end
+
+#=
 StatsBase.mss(model::LMM) = error("mss is not defined for $(typeof(model)).")
 
 StatsBase.rss(model::LMM) = error("rss is not defined for $(typeof(model)).")
@@ -41,16 +88,6 @@ StatsBase.vcov(model::LMM) = error("vcov is not defined for $(typeof(model)).")
 StatsBase.weights(model::LMM) = error("weights is not defined for $(typeof(model)).")
 
 StatsBase.isfitted(model::LMM) = error("isfitted is not defined for $(typeof(model)).")
-
-StatsBase.aic(model::LMM) = -2loglikelihood(model) + 2dof(model)
-
-function StatsBase.aicc(model::LMM)
-    k = dof(model)
-    n = nobs(model)
-    -2loglikelihood(model) + 2k + 2k*(k+1)/(n-k-1)
-end
-
-StatsBase.bic(model::LMM) = -2loglikelihood(model) + dof(model)*log(nobs(model))
 
 function StatsBase.r2(model::LMM)
     Base.depwarn("The default r² method for linear models is deprecated. " *
@@ -120,6 +157,5 @@ StatsBase.predict(model::LMM) = error("predict is not defined for $(typeof(model
 
 StatsBase.predict!(model::LMM) = error("predict! is not defined for $(typeof(model)).")
 
-StatsBase.dof_residual(model::LMM) = error("dof_residual is not defined for $(typeof(model)).")
 
 =#

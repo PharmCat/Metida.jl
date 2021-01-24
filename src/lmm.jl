@@ -27,6 +27,7 @@ struct LMM{T} <: MetidaModel
     mm::ModelMatrix
     covstr::CovStructure{T}
     data::LMMData{T}
+    nfixed::Int
     rankx::UInt32
     result::ModelResult
     blocksolve::Bool
@@ -37,20 +38,16 @@ struct LMM{T} <: MetidaModel
             subject = Vector{Symbol}(undef, 0)
         elseif isa(subject, Symbol)
             subject = [subject]
-        elseif isa(subject,  AbstractVector{Symbol})
-            #
-        else
-            throw(ArgumentError("subject type should be Symbol or Vector{tymbol}"))
         end
-        lmmlog  = Vector{LMMLogMsg}(undef, 0)
-        mf   = ModelFrame(model, data; contrasts = contrasts)
-        mm   = ModelMatrix(mf)
+        lmmlog = Vector{LMMLogMsg}(undef, 0)
+        mf     = ModelFrame(model, data; contrasts = contrasts)
+        mm     = ModelMatrix(mf)
+        nfixed = nterms(mf.f.rhs.terms)
         if repeated === nothing
             repeated = VarEffect()
         end
         if random === nothing
             random = VarEffect(Metida.@covstr(0), Metida.RZero(), subj = repeated.subj)
-            #random = RZero()
         end
         if !isa(random, Vector) random = [random] end
         #blocks
@@ -67,7 +64,7 @@ struct LMM{T} <: MetidaModel
         block  = intersectdf(data, subject)
         lmmdata = LMMData(mm.m, mf.data[mf.f.lhs.sym], block, subject)
         covstr = CovStructure(random, repeated, data, block)
-        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, rank(mm.m), ModelResult(), blocksolve, lmmlog)
+        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, nfixed, rank(mm.m), ModelResult(), blocksolve, lmmlog)
     end
 end
 ################################################################################

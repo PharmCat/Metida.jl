@@ -12,21 +12,21 @@ function gmat_base(θ::Vector{T}, covstr) where T
     mx
 end
 ################################################################################
-function gmat_switch!(G, θ, covstr, i)
-    if covstr.random[i].covtype.s == :SI
-        gmat_si!(G, θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype) # i > r
-    elseif covstr.random[i].covtype.s == :DIAG
-        gmat_diag!(G, θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
-    elseif covstr.random[i].covtype.s == :AR
-        gmat_ar!(G, θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
-    elseif covstr.random[i].covtype.s == :ARH
-        gmat_arh!(G, θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
-    elseif covstr.random[i].covtype.s == :CSH
-        gmat_csh!(G, θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
-    elseif covstr.random[i].covtype.s == :CS
-        gmat_cs!(G, θ[covstr.tr[i]], covstr.q[i], covstr.random[i].covtype)
-    elseif covstr.random[i].covtype.s == :ZERO
-        gmat_zero!(G, similar(θ, 0), covstr.q[i], covstr.random[i].covtype)
+function gmat_switch!(G, θ, covstr, r)
+    if covstr.random[r].covtype.s == :SI
+        gmat_si!(G, θ[covstr.tr[r]], covstr.q[r], covstr.random[r].covtype) # i > r
+    elseif covstr.random[r].covtype.s == :DIAG
+        gmat_diag!(G, θ[covstr.tr[r]], covstr.q[r], covstr.random[r].covtype)
+    elseif covstr.random[r].covtype.s == :AR
+        gmat_ar!(G, θ[covstr.tr[r]], covstr.q[r], covstr.random[r].covtype)
+    elseif covstr.random[r].covtype.s == :ARH
+        gmat_arh!(G, θ[covstr.tr[r]], covstr.q[r], covstr.random[r].covtype)
+    elseif covstr.random[r].covtype.s == :CSH
+        gmat_csh!(G, θ[covstr.tr[r]], covstr.q[r], covstr.random[r].covtype)
+    elseif covstr.random[r].covtype.s == :CS
+        gmat_cs!(G, θ[covstr.tr[r]], covstr.q[r], covstr.random[r].covtype)
+    elseif covstr.random[r].covtype.s == :ZERO
+        gmat_zero!(G, similar(θ, 0), covstr.q[r], covstr.random[r].covtype)
     else
         error("Unknown covariance structure!")
     end
@@ -47,7 +47,7 @@ function gmat_base_z!(mx, θ::Vector{T}, covstr) where T
 end
 =#
 ################################################################################
-function gmat_base_z2!(mx, θ::Vector{T}, covstr, block, sblock) where T
+function zgz_base_inc!(mx, θ::Vector{T}, covstr, block, sblock) where T
     q = sum(length.(covstr.block[1]))
     for r = 1:length(covstr.random)
         G = zeros(T, covstr.q[r], covstr.q[r])
@@ -66,7 +66,7 @@ function gmat_zero!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     mx .= zero(T)
     nothing
 end
-function gmat_si!(mx, θ::Vector{T}, zn::Int, ::CovarianceType) where T
+function gmat_si!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     val = θ[1] ^ 2
     for i = 1:size(mx, 1)
         mx[i, i] = val
@@ -79,14 +79,15 @@ function gmat_diag!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     end
     nothing
 end
-function gmat_ar!(mx, θ::Vector{T}, zn::Int, ::CovarianceType) where T
+function gmat_ar!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     de  = θ[1] ^ 2
-    for i = 1:zn
+    s   = size(mx, 1)
+    for i = 1:s
         mx[i, i] = de
     end
-    if zn > 1
-        for m = 1:zn - 1
-            for n = m + 1:zn
+    if s > 1
+        for m = 1:s - 1
+            for n = m + 1:s
                 ode = de * θ[2] ^ (n - m)
                 @inbounds mx[m, n] = ode
                 @inbounds mx[n, m] = mx[m, n]

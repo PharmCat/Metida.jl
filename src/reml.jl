@@ -24,7 +24,7 @@ function reml_sweep_β_b(lmm, θ::Vector{T}) where T <: Number
         q   = length(lmm.data.block[i])
         Vp  = mulαβαt3(view(lmm.covstr.z, lmm.data.block[i],:), G, view(lmm.data.xv, lmm.data.block[i],:))
         V   = view(Vp, 1:q, 1:q)
-        rmat_basep!(V, θ[lmm.covstr.tr[end]], view(lmm.covstr.rz, lmm.data.block[i],:), lmm.covstr)
+        rmat_base_inc_b!(V, θ[lmm.covstr.tr[end]], view(lmm.covstr.rz, lmm.data.block[i],:), lmm.covstr)
         try
             θ₁  += logdet(cholesky(V))
         catch
@@ -76,8 +76,8 @@ function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
         V   = view(Vp, 1:q, 1:q)
         Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
         Vx  .= view(lmm.data.xv,  lmm.data.block[i],:)
-        gmat_base_z2!(V, θ, lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
-        rmat_basep_z2!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
+        zgz_base_inc!(V, θ, lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
+        rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
         #-----------------------------------------------------------------------
         θ₁  += logdet(cholesky(V))
         sweep!(Vp, 1:q)
@@ -97,32 +97,3 @@ function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
 end
 ################################################################################
 ################################################################################
-"""
-    -2 log Restricted Maximum Likelihood;
-"""
-#=
-function reml_sweep(lmm, β, θ::Vector{T})::T where T <: Number
-    n  = length(lmm.data.yv)
-    N  = sum(length.(lmm.data.yv))
-    G  = gmat_base(θ, lmm.covstr)
-    c  = (N - lmm.rankx)*log(2π)
-    θ₁ = zero(eltype(θ))
-    θ₂ = zero(eltype(θ))
-    θ₃ = zero(eltype(θ))
-    θ2m  = zeros(eltype(θ), lmm.rankx, lmm.rankx)
-    @inbounds for i = 1:n
-        q   = length(lmm.data.yv[i])
-        Vp  = mulαβαt3(lmm.data.zv[i], G, lmm.data.xv[i])
-        V   = view(Vp, 1:q, 1:q)
-        rmat_basep!(V, θ[lmm.covstr.tr[end]], lmm.data.zrv[i], lmm.covstr)
-
-        θ₁  += logdet(V)
-        sweep!(Vp, 1:q)
-        iV  = Symmetric(utriaply!(x -> -x, Vp[1:q, 1:q]))
-        mulαtβαinc!(θ2m, lmm.data.xv[i], iV)
-        θ₃  += -Vp[end, end]
-    end
-    θ₂       = logdet(θ2m)
-    return   -(θ₁ + θ₂ + θ₃ + c)
-end
-=#

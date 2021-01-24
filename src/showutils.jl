@@ -28,25 +28,28 @@ function printmatrix(io::IO, m::Matrix)
     end
 end
 
-function rcoefnames(s, t, ::Val)
-    v = Vector{String}(undef, t)
-    v .= "─"
-end
-function rcoefnames(s, t, ::Val{:CSH})
-    cn = coefnames(s)
-    if isa(cn, Vector)
-        l  = length(cn)
+function rcoefnames(s, t, ve)
+
+    if ve == :SI
+        return ["Var"]
+    elseif ve == :DIAG
+        return string.(coefnames(s))
+    elseif ve == :CS || ve == :AR
+        return ["Var", "Rho"]
+    elseif ve == :CSH || ve == :ARH
+        cn = coefnames(s)
+        if isa(cn, Vector)
+            l  = length(cn)
+        else
+            l  = 1
+        end
+        v  = Vector{String}(undef, t)
+        view(v, 1:l) .= string.(cn)
+        v[end] = "Rho"
+        return v
     else
-        l  = 1
+        v = Vector{String}(undef, t)
+        v .= "─"
+        return v
     end
-    v  = Vector{String}(undef, t)
-    view(v, 1:l) .= string.(cn)
-    v[end] = "Rho"
-    v
-end
-function rcoefnames(s, t, ::Val{:SI})
-    ["Var"]
-end
-function rcoefnames(s, t, ::Val{:DIAG})
-    string.(coefnames(s))
 end

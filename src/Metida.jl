@@ -25,7 +25,6 @@ fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength
 
 include("abstracttype.jl")
 include("sweep.jl")
-include("utils.jl")
 include("varstruct.jl")
 include("gmat.jl")
 include("rmat.jl")
@@ -40,6 +39,7 @@ include("fit.jl")
 include("showutils.jl")
 include("statsbase.jl")
 include("initg.jl")
+include("utils.jl")
 
 function __init__()
 
@@ -48,16 +48,24 @@ end
 function _precompile_()
     ccall(:jl_generating_output, Cint, ()) == 1 || return nothing
     isdefined(Metida, Symbol("#@covstr")) && precompile(Tuple{getfield(Metida, Symbol("#@covstr")), LineNumberNode, Module, Int})
-    precompile(Tuple{typeof(Metida.ffx), Int64})
-    precompile(Tuple{typeof(Metida.ffxpone), Int64})
 
     precompile(Tuple{typeof(Metida.reml_sweep_β), Metida.LMM{Float64}, Array{Float64, 1}})
     precompile(Tuple{typeof(Metida.reml_sweep_β_b), Metida.LMM{Float64}, Array{Float64, 1}})
 
     precompile(Tuple{typeof(Metida.rholinkpsigmoid), Float64})
+    precompile(Tuple{typeof(Metida.rholinkpsigmoidr), Float64})
 
-    precompile(Tuple{typeof(Metida.varlinkvecapply!), Array{Float64, 1}, Array{Function, 1}})
+    precompile(Tuple{typeof(Metida.varlinkvecapply!),  Array{Float64, 1},  Array{Symbol, 1}})
+    precompile(Tuple{typeof(Metida.varlinkrvecapply!),  Array{Float64, 1},  Array{Symbol, 1}})
+    precompile(Tuple{typeof(Metida.varlinkvecapply),  Array{Float64, 1},  Array{Symbol, 1}})
+
     precompile(Tuple{typeof(Metida.vlink), Float64})
+    precompile(Tuple{typeof(Metida.vlinkr), Float64})
+
+    precompile(Tuple{typeof(Metida.initvar),  Array{Float64, 1},  Array{Float64, 2}})
+
+    precompile(Tuple{typeof(Metida.intersectsubj),  Array{VarEffect, 1},  VarEffect})
+
 end
 _precompile_()
 #include(".jl")

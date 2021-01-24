@@ -1,6 +1,9 @@
 src/temp.jl
 test/precompile/
 test/devtest.jl
+test/dstest.jl
+test/snoopy.jl
 examples/
 docs/build/
 docs/img/
+etc/

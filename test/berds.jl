@@ -25,37 +25,33 @@ REML G - SI, R - SI
 30 - 32.418048
 
 =#
-df        = CSV.File(path*"/csv/berds/rds29.csv", types = Dict(:PK => Float64)) |> DataFrame
 for i = 1:30
-    df        = CSV.File(path*"/csv/berds/rds"*string(i)*".csv", types = Dict(:PK => Float64)) |> DataFrame
-    dropmissing!(df)
-    transform!(df, :subject => categorical, renamecols=false)
-    transform!(df, :period => categorical, renamecols=false)
-    transform!(df, :sequence => categorical, renamecols=false)
-    transform!(df, :treatment => categorical, renamecols=false)
+    dfrds        = CSV.File(path*"/csv/berds/rds"*string(i)*".csv", types = Dict(:PK => Float64)) |> DataFrame
+    dropmissing!(dfrds)
+    transform!(dfrds, :subject => categorical, renamecols=false)
+    transform!(dfrds, :period => categorical, renamecols=false)
+    transform!(dfrds, :sequence => categorical, renamecols=false)
+    transform!(dfrds, :treatment => categorical, renamecols=false)
 
-    df.lnpk = log.(df.PK)
+    dfrds.lnpk = log.(dfrds.PK)
 
     @testset "  RDS Test $(i)                                            " begin
         atol=1E-6
 
-        lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), df;
+        lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), dfrds;
         random = Metida.VarEffect(Metida.@covstr(1), Metida.SI),
         subject = :subject
         )
         Metida.fit!(lmm)
         @test lmm.result.reml ≈ remlsb[i] atol=atol
 
-
         if i == 13 || i == 15 atol = 1E-4 end
-        lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), df;
+        lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), dfrds;
         random = Metida.VarEffect(Metida.@covstr(treatment), Metida.CSH),
         repeated = Metida.VarEffect(Metida.@covstr(treatment), Metida.DIAG),
         subject = :subject
         )
         Metida.fit!(lmm)
         @test lmm.result.reml ≈ remls[i] atol=atol
-
-
     end
 end

@@ -1,5 +1,4 @@
 
-
 function initgstep(f, θ)
     g = ForwardDiff.gradient(f, θ)
     he = ForwardDiff.hessian(f, θ)

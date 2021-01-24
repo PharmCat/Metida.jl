@@ -3,7 +3,7 @@
 ################################################################################
 
 ################################################################################
-function rmat_basep!(mx, θ::AbstractVector{T}, zrv, covstr::CovStructure{T2}) where T where T2
+function rmat_base_inc_b!(mx, θ::AbstractVector{T}, zrv, covstr::CovStructure{T2}) where T where T2
         if covstr.repeated.covtype.s == :SI
             rmatp_si!(mx, θ, zrv, covstr.repeated.covtype)
         elseif covstr.repeated.covtype.s == :DIAG
@@ -21,33 +21,11 @@ function rmat_basep!(mx, θ::AbstractVector{T}, zrv, covstr::CovStructure{T2}) w
         end
 end
 ################################################################################
-#=
-function rmat_basep_z!(mx, θ::AbstractVector{T}, zrv, covstr) where T
-    for i = 1:length(covstr.block[end])
-        if covstr.repeated.covtype.s == :SI
-            rmatp_si!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
-        elseif covstr.repeated.covtype.s == :DIAG
-            rmatp_diag!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
-        elseif covstr.repeated.covtype.s == :AR
-            rmatp_ar!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
-        elseif covstr.repeated.covtype.s == :ARH
-            rmatp_arh!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
-        elseif covstr.repeated.covtype.s == :CSH
-            rmatp_csh!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
-        elseif covstr.repeated.covtype.s == :CS
-            rmatp_cs!(view(mx, covstr.block[end][i], covstr.block[end][i]), θ, view(covstr.rz, covstr.block[end][i], :), covstr.repeated.covtype)
-        else
-            error("Unknown covariance structure!")
-        end
-    end
-    mx
-end
-=#
 ################################################################################
-function rmat_basep_z2!(mx, θ::AbstractVector{T}, covstr, block, sblock) where T
+function rmat_base_inc!(mx, θ::AbstractVector{T}, covstr, block, sblock) where T
     zblock    = view(covstr.rz, block, :)
     for i = 1:length(sblock[end])
-        rmat_basep!(view(mx, sblock[end][i],  sblock[end][i]), θ, view(zblock,  sblock[end][i], :), covstr)
+        rmat_base_inc_b!(view(mx, sblock[end][i],  sblock[end][i]), θ, view(zblock,  sblock[end][i], :), covstr)
     end
     mx
 end

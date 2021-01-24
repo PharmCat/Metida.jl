@@ -1,53 +1,5 @@
 """
-    Make X, Z matrices and vector y for each subject;
-"""
-#=
-function subjblocks(df, sbj::Symbol, x::Matrix{T}, z::Matrix{T}, y::Vector{T}, rz::Matrix{T}) where T
-    u = unique(df[!, sbj])
-    xa  = Vector{Matrix{T}}(undef, length(u))
-    za  = Vector{Matrix{T}}(undef, length(u))
-    ya  = Vector{Vector{T}}(undef, length(u))
-    rza = Vector{Matrix{T}}(undef, length(u))
-        @inbounds @simd for i = 1:length(u)
-            v = findall(x -> x == u[i], df[!, sbj])
-            xa[i] = Matrix(view(x, v, :))
-            za[i] = Matrix(view(z, v, :))
-            ya[i] = Vector(view(y, v))
-            rza[i] = Matrix(view(rz, v, :))
-        end
-    return xa, za, rza, ya
-end
-function subjblocks(df, sbj::Symbol, x::Matrix{T}, z::Matrix{T}, y::Vector{T}, rz::Nothing) where T
-    u = unique(df[!, sbj])
-    xa  = Vector{Matrix{T}}(undef, length(u))
-    za  = Vector{Matrix{T}}(undef, length(u))
-    ya  = Vector{Vector{T}}(undef, length(u))
-    rza = Vector{Matrix{T}}(undef, length(u))
-        @inbounds @simd for i = 1:length(u)
-            v = findall(x -> x == u[i], df[!, sbj])
-            xa[i]  = Matrix(view(x, v, :))
-            za[i]  = Matrix(view(z, v, :))
-            ya[i]  = Vector(view(y, v))
-            rza[i] = Matrix{T}(undef, 0, 0)
-        end
-    return xa, za, rza, ya
-end
-function subjblocks(df, sbj)
-    if isa(sbj, Symbol)
-        u = unique(df[!, sbj])
-        r = Vector{Vector{Int}}(undef, length(u))
-        @inbounds @simd for i = 1:length(u)
-            r[i] = findall(x -> x == u[i], df[!, sbj])
-        end
-        return r
-    end
-    r = Vector{Vector{Int}}(undef, 1)
-    r[1] = collect(1:size(df, 1))
-    r
-end
-=#
-"""
-    Intersect dataframe.
+Intersect dataframe.
 """
 function intersectdf(df, s)::Vector
     if isa(s, Nothing) return [collect(1:size(df, 1))] end
@@ -75,23 +27,9 @@ function intersectdf(df, s)::Vector
     end
     res
 end
-#=
-function intersectsubj(covstr)
-    a  = Vector{Vector{Symbol}}(undef, length(covstr.random)+1)
-    eq = true
-    for i = 1:length(covstr.random)
-        a[i] = covstr.random[i].subj
-    end
-    a[end] = covstr.repeated.subj
-    for i = 2:length(a)
-        if !(issetequal(a[1], a[i]))
-            eq = false
-            break
-        end
-    end
-    intersect(a...), eq
-end
-=#
+"""
+Intersect subject set in effects.
+"""
 function intersectsubj(random, repeated)
     a  = Vector{Vector{Symbol}}(undef, length(random)+1)
     eq = true
@@ -107,12 +45,6 @@ function intersectsubj(random, repeated)
     end
     intersect(a...), eq
 end
-#=
-function diffsubj!(a, subj)
-    push!(a, subj)
-    symdiff(a...)
-end
-=#
 """
 Variance estimate via OLS and QR decomposition.
 """
@@ -122,7 +54,17 @@ function initvar(y::Vector, X::Matrix{T}) where T
     r    = y .- X * β
     sum(x -> x * x, r)/(length(r) - size(X, 2)), β
 end
-
+################################################################################
+function nterms(rhs)
+    if isa(rhs, Term)
+        p = 1
+    elseif isa(rhs, Tuple)
+        p = length(rhs)
+    else
+        p = 0
+    end
+    p
+end
 ################################################################################
 #                        VAR LINK
 ################################################################################
@@ -157,7 +99,7 @@ function rholinksigmoid2r(ρ::T) where T <: Real
 end
 
 ################################################################################
-
+#=
 function varlinkvec(v)
     fv = Vector{Function}(undef, length(v))
     for i = 1:length(v)
@@ -172,24 +114,9 @@ function varlinkrvec(v)
     end
     fv
 end
-#=
-function varlinkvecapply(v, f)
-    rv = similar(v)
-    for i = 1:length(v)
-        rv[i] = f[i](v[i])
-    end
-    rv
-end
 =#
-function varlinkvecapply!(v, f)
-    for i = 1:length(v)
-        v[i] = f[i](v[i])
-    end
-    v
-end
-varlinkvecapply(v, f) = map.(f,v) #Test
 ################################################################################
-function varlinkvecapply2!(v, p; varlinkf = :exp, rholinkf = :sigm)
+function varlinkvecapply!(v, p; varlinkf = :exp, rholinkf = :sigm)
     for i = 1:length(v)
         if p[i] == :var
             v[i] = vlink(v[i])
@@ -199,7 +126,7 @@ function varlinkvecapply2!(v, p; varlinkf = :exp, rholinkf = :sigm)
     end
     v
 end
-function varlinkrvecapply2!(v, p; varlinkf = :exp, rholinkf = :sigm)
+function varlinkrvecapply!(v, p; varlinkf = :exp, rholinkf = :sigm)
     for i = 1:length(v)
         if p[i] == :var
             v[i] = vlinkr(v[i])
@@ -209,7 +136,7 @@ function varlinkrvecapply2!(v, p; varlinkf = :exp, rholinkf = :sigm)
     end
     v
 end
-function varlinkvecapply2(v, p; varlinkf = :exp, rholinkf = :sigm)
+function varlinkvecapply(v, p; varlinkf = :exp, rholinkf = :sigm)
     s = similar(v)
     for i = 1:length(v)
         if p[i] == :var
@@ -220,38 +147,7 @@ function varlinkvecapply2(v, p; varlinkf = :exp, rholinkf = :sigm)
     end
     s
 end
-function varlinkrvecapply2(v, p; varlinkf = :exp, rholinkf = :sigm)
-    s = similar(v)
-    for i = 1:length(v)
-        if p[i] == :var
-            s[i] = vlinkr(v[i])
-        else
-            s[i] = rholinksigmoidr(v[i])
-        end
-    end
-    s
-end
 ################################################################################
-#=
-function vmatr(lmm, i)
-    θ  = lmm.result.theta
-    G  = gmat_base(θ, lmm.covstr)
-    V  = mulαβαt(view(lmm.data.zv, lmm.data.block[i],:), G)
-    if length(lmm.data.zrv) > 0
-        rmat_basep!(V, θ[lmm.covstr.tr[end]], view(lmm.data.zrv, lmm.data.block[i],:), lmm.covstr)
-    else
-        rmat_basep!(V, θ[lmm.covstr.tr[end]], lmm.data.zrv, lmm.covstr)
-    end
-    V
-end
-
-function gmatr(lmm, i)
-    θ  = lmm.result.theta
-    gmat_base(θ, lmm.covstr)
-end
-=#
-################################################################################
-
 function m2logreml(lmm)
     lmm.result.reml
 end
@@ -263,3 +159,32 @@ end
 function optim_callback(os)
     false
 end
+################################################################################
+"""
+    gmatrix(lmm::LMM{T}, r::Int) where T
+"""
+function gmatrix(lmm::LMM{T}, r::Int) where T
+    if !lmm.result.fit error("Model not fitted!") end
+    if r > length(lmm.covstr.random) error("Invalid random effect number: $(r)!") end
+    G = zeros(T, lmm.covstr.q[r], lmm.covstr.q[r])
+    gmat_switch!(G, lmm.result.theta, lmm.covstr, r)
+end
+"""
+    rmatrix(lmm::LMM{T}, i::Int) where T
+"""
+function rmatrix(lmm::LMM{T}, i::Int) where T
+    if !lmm.result.fit error("Model not fitted!") end
+    if i > length(lmm.data.block) error("Invalid block number: $(i)!") end
+    q    = length(lmm.data.block[i])
+    R    = zeros(T, q, q)
+    rmat_base_inc!(R, lmm.result.theta[lmm.covstr.tr[end]], lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
+
+end
+"""
+    Return variance-covariance matrix V
+"""
+#=
+function vmatrix()
+
+end
+=#

@@ -10,36 +10,17 @@ macro covstr(ex)
     return :(@formula(nothing ~ $ex).rhs)
 end
 ################################################################################
-#                       SIMPLE FUNCTIONS
-################################################################################
-function ffx(x::T)::T where T
-    x
-end
-function ffxzero(x::T)::T where T
-    zero(T)
-end
-function ffxone(x::T)::T where T
-    one(T)
-end
-function ffxpone(x::T)::T where T
-    x + one(T)
-end
-#=
-function ffxmone(x::T)::T where T
-    x - one(T)
-end
-function ff2xmone(x::T)::T where T
-    2x - one(T)
-end
-=#
-################################################################################
 #                          COVARIANCE TYPE
 ################################################################################
-struct CovarianceType <: AbstractCovarianceType
+struct CovarianceType{T} <: AbstractCovarianceType
     s::Symbol          #Covtype name
-    f::Function        #number of parameters for Z size 2
-    v::Function        #number of variance parameters for Z size 2
-    rho::Function      #number of rho parameters for Z size 2
+    t::T
+    function CovarianceType(s, t)
+        new{typeof(t)}(s, t)
+    end
+    function CovarianceType(s)
+        CovarianceType(s, 0)
+    end
 end
 ################################################################################
 """
@@ -50,49 +31,49 @@ Scaled identity covariance type.
 SI = ScaledIdentity()
 """
 function ScaledIdentity()
-    CovarianceType(:SI, ffxone, ffxone, ffxzero)
+    CovarianceType(:SI)
 end
 const SI = ScaledIdentity()
 """
     Diag()
 """
 function Diag()
-    CovarianceType(:DIAG, ffx, ffx, ffxzero)
+    CovarianceType(:DIAG)
 end
 const DIAG = Diag()
 """
     Autoregressive()
 """
 function Autoregressive()
-    CovarianceType(:AR, x -> 2, ffxone, ffxone)
+    CovarianceType(:AR)
 end
 const AR = Autoregressive()
 """
     HeterogeneousAutoregressive()
 """
 function HeterogeneousAutoregressive()
-    CovarianceType(:ARH, ffxpone, ffx, ffxone)
+    CovarianceType(:ARH)
 end
 const ARH = HeterogeneousAutoregressive()
 """
     CompoundSymmetry()
 """
 function CompoundSymmetry()
-    CovarianceType(:CS, x -> 2, ffxone, ffxone)
+    CovarianceType(:CS)
 end
 const CS = CompoundSymmetry()
 """
     HeterogeneousCompoundSymmetry()
 """
 function HeterogeneousCompoundSymmetry()
-    CovarianceType(:CSH, ffxpone, ffx, ffxone)
+    CovarianceType(:CSH)
 end
 const CSH = HeterogeneousCompoundSymmetry()
 """
     RZero()
 """
 function RZero()
-    CovarianceType(:ZERO, x -> 0, x -> 0, x -> 0)
+    CovarianceType(:ZERO)
 end
 
 #TOE
@@ -102,6 +83,42 @@ end
 #UNST
 
 #ARMA
+
+function covstrparam(ct::CovarianceType, q::Int, p::Int)::Tuple{Int, Int, Int}
+    if ct.s == :SI
+        return (1, 0, 1)
+    elseif ct.s == :DIAG
+        return (q, 0, q)
+    elseif ct.s == :VC
+        return (p, 0, p)
+    elseif ct.s == :AR
+        return (1, 1, 2)
+    elseif ct.s == :ARH
+        return (q, 1, q + 1)
+    elseif ct.s == :ARMA
+        return (1, 2, 3)
+    elseif ct.s == :CS
+        return (1, 1, 2)
+    elseif ct.s == :CSH
+        return (q, 1, q + 1)
+    elseif ct.s == :TOEP
+        return (1, q - 1, q)
+    elseif ct.s == :TOEPH
+        return (q, q - 1, 2 * q - 1)
+    elseif ct.s == :TOEPB
+        return (1, ct.t - 1, ct.t)
+    elseif ct.s == :TOEPHB
+        return (q, ct.t - 1, q + ct.t - 1)
+    elseif ct.s == :UN
+        return (q, q * (q + 1) / 2 - q, q * (q + 1) / 2)
+    elseif ct.s == :ZERO
+        return (0, 0, 0)
+    elseif ct.s == :FUNC
+        error("Not implemented!")
+    else
+        error("Unknown covariance type!")
+    end
+end
 
 ################################################################################
 #                  EFFECT
@@ -116,8 +133,8 @@ struct VarEffect
     covtype::CovarianceType
     coding::Dict{Symbol, AbstractContrasts}
     subj::Vector{Symbol}
+    p::Int
     function VarEffect(model, covtype::T, coding; subj = nothing) where T <: AbstractCovarianceType
-        #if isa(model, AbstractTerm) model = tuple(model) end
         if isa(subj, Nothing)
             subj = Vector{Symbol}(undef, 0)
         elseif isa(subj, Symbol)
@@ -127,14 +144,22 @@ struct VarEffect
         else
             throw(ArgumentError("subj type should be Symbol or Vector{tymbol}"))
         end
-
+        p = nterms(model)
+        #=
+        if isa(model, Term)
+            p = 1
+        elseif isa(model, Tuple)
+            p = length(model)
+        else
+            p = 0
+        end
+        =#
         if coding === nothing && model !== nothing
             coding = Dict{Symbol, AbstractContrasts}()
         elseif coding === nothing && model === nothing
             coding = Dict{Symbol, AbstractContrasts}()
         end
-        #if isa(model, AbstractTerm) model = tuple(model) end
-        new(model, covtype, coding, subj)
+        new(model, covtype, coding, subj, p)
     end
     function VarEffect(model, covtype::T; coding = nothing, subj = nothing) where T <: AbstractCovarianceType
         VarEffect(model, covtype, coding;  subj = subj)
@@ -172,7 +197,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     rz::Matrix{T}
     # size 2 of z/rz matrix
     q::Vector{Int}
-    # number of parametert in each effect
+    # total number of parameters in each effect
     t::Vector{Int}
     # range of each parameters in θ vector
     tr::Vector{UnitRange{UInt32}}
@@ -194,6 +219,10 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         sblock  = Vector{Vector{Vector{Vector{UInt32}}}}(undef, length(blocks))
         zrndur  = Vector{UnitRange{Int}}(undef, alleffl - 1)
         rz      = Matrix{Float64}(undef, size(data, 1), 0)
+        #Theta parameter type
+        ct  = Vector{Symbol}(undef, 0)
+        # Names
+        rcnames = Vector{String}(undef, 0)
         #
         # RANDOM EFFECTS
         for i = 1:length(random)
@@ -208,11 +237,13 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             schema[i] = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
             ztemp     = modelcols(MatrixTerm(schema[i]), data)
             q[i]      = size(ztemp, 2)
-            t[i]      = random[i].covtype.f(q[i])
+            csp       = covstrparam(random[i].covtype, q[i], random[i].p)
+            t[i]      = csp[3]
             z         = hcat(z, ztemp)
             fillur!(zrndur, i, q)
             fillur!(tr, i, t)
             subjmatrix!(random[i].subj, data, subjz, i)
+            updatenametype!(ct, rcnames, csp, schema[i], random[i].covtype.s)
         end
         # REPEATED EFFECTS
         if length(repeated.coding) == 0
@@ -223,51 +254,23 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         rz          = modelcols(MatrixTerm(schema[end]), data)
         subjmatrix!(repeated.subj, data, subjz, length(subjz))
         q[end]      = size(rz, 2)
-        t[end]      = repeated.covtype.f(q[end])
+        csp         = covstrparam(repeated.covtype, q[end], repeated.p)
+        t[end]      = csp[3]
         tr[end]     = UnitRange(sum(t[1:end-1]) + 1, sum(t[1:end-1]) + t[end])
+        updatenametype!(ct, rcnames, csp, schema[end], repeated.covtype.s)
         #Theta length
         tl  = sum(t)
-        #Theta parameter type
-        ct  = Vector{Symbol}(undef, tl)
-        # Names
-        rcnames = Vector{String}(undef, tl)
-        ctn = 1
-        for i = 1:length(random)
-            if random[i].covtype.s == :ZERO
-                continue
-            end
-            for i2 = 1:random[i].covtype.v(q[i])
-                ct[ctn] = :var
-                ctn +=1
-            end
-            if random[i].covtype.rho(q[i]) > 0
-                for i2 = 1:random[i].covtype.rho(q[i])
-                    ct[ctn] = :rho
-                    ctn +=1
+        ########################################################################
+        ########################################################################
+        for i = 1:length(blocks)
+            sblock[i] = Vector{Vector{Vector{UInt32}}}(undef, alleffl)
+            for s = 1:alleffl
+                sblock[i][s] = Vector{Vector{UInt32}}(undef, 0)
+                for col in eachcol(view(subjz[s], blocks[i], :))
+                    if any(col) push!(sblock[i][s], sort!(findall(x->x==true, col))) end
                 end
             end
-            view(rcnames, tr[i]) .= rcoefnames(schema[i], t[i], Val{random[i].covtype.s}())
         end
-        for i2 = 1:repeated.covtype.v(q[end])
-            ct[ctn] = :var
-            ctn +=1
-        end
-        if repeated.covtype.rho(q[end]) > 0
-            for i2 = 1:repeated.covtype.rho(q[end])
-                ct[ctn] = :rho
-                ctn +=1
-            end
-        end
-        view(rcnames, tr[end]) .= rcoefnames(schema[end], t[end], Val{repeated.covtype.s}())
-            for i = 1:length(blocks)
-                sblock[i] = Vector{Vector{Vector{UInt32}}}(undef, alleffl)
-                for s = 1:alleffl
-                    sblock[i][s] = Vector{Vector{UInt32}}(undef, 0)
-                    for col in eachcol(view(subjz[s], blocks[i], :))
-                        if any(col) push!(sblock[i][s], sort!(findall(x->x==true, col))) end
-                    end
-                end
-            end
         #
         new{eltype(z)}(random, repeated, schema, rcnames, block, z, sblock, zrndur, rz, q, t, tr, tl, ct)
     end
@@ -285,17 +288,12 @@ function fillur!(ur, i, v)
     end
 end
 ################################################################################
-#=
-function schemalength(s)
-    if isa(s, Tuple)
-        return length(s)
-    else
-        return 1
-    end
+function updatenametype!(ct, rcnames, csp, schema, s)
+    append!(ct, fill!(Vector{Symbol}(undef, csp[1]), :var))
+    append!(ct, fill!(Vector{Symbol}(undef, csp[2]), :rho))
+    append!(rcnames, rcoefnames(schema, csp[3], s))
 end
-=#
-#
-
+################################################################################
 function subjmatrix!(subj, data, subjz, i)
     if length(subj) > 0
         if length(subj) == 1
@@ -347,14 +345,7 @@ function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple
     end
 end
 ################################################################################
-"""
-    Return variance-covariance matrix V
-"""
-#=
-function vmat()::AbstractMatrix
 
-end
-=#
 ################################################################################
 function Base.show(io::IO, e::VarEffect)
     println(io, "Effect")
