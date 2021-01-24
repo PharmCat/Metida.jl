@@ -23,7 +23,7 @@ transform!(df, :Days => categorical, renamecols=false)
 end
 
 @testset "  CS sleepstudy.csv                                        " begin
-    #REML 1903.327
+    #REML SPSS 1904.327
     # 1662.172084
     # 296.693108
     #Model 2
@@ -58,7 +58,7 @@ end
     lmm = Metida.LMM(@formula(Reaction~1), df;
     random = Metida.VarEffect(Metida.@covstr(Days), Metida.ARH, subj = :Subject)
     )
-    Metida.fit!(lmm)
+    Metida.fit!(lmm; init = [37.9896, 41.1392, 34.1041, 48.1435, 52.2191, 72.4237, 83.3405, 76.7782, 90.2571, 102.617, 0.900038, 6.83327])
     @test lmm.result.reml ≈ 1730.1895427398322 atol=1E-6
 end
 
