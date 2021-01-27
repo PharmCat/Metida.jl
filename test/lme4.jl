@@ -79,6 +79,14 @@ transform!(df, :sample => categorical, renamecols=false)
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 330.86058899109184 atol=1E-6
+
+    #SPSS 432.686
+    #=
+    lmm = Metida.LMM(@formula(diameter~1), df;
+    random = Metida.VarEffect(Metida.@covstr(plate), Metida.ARMA, subj = :sample)
+    )
+    Metida.fit!(lmm)
+    =#
 end
 
 ################################################################################
@@ -97,4 +105,11 @@ transform!(df, :cask=> categorical, renamecols=false)
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 246.99074585348623 atol=1E-6
+
+    #SPSS REML 246.818951
+    lmm = Metida.LMM(@formula(strength~1), df;
+    random = Metida.VarEffect(Metida.@covstr(cask), Metida.ARMA, subj = :batch),
+    )
+    Metida.fit!(lmm)
+    @test lmm.result.reml ≈ 246.81895071012508 atol=1E-6
 end

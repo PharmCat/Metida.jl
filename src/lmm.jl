@@ -42,7 +42,7 @@ struct LMM{T} <: MetidaModel
         lmmlog = Vector{LMMLogMsg}(undef, 0)
         mf     = ModelFrame(model, data; contrasts = contrasts)
         mm     = ModelMatrix(mf)
-        nfixed = nterms(mf.f.rhs.terms)
+        nfixed = nterms(mf)
         if repeated === nothing
             repeated = VarEffect()
         end
@@ -86,6 +86,9 @@ function lmmlog!(io, lmmlog::Vector{LMMLogMsg}, verbose, vmsg)
         push!(lmmlog, vmsg)
     elseif verbose == 2
         println(io, vmsg)
+        push!(lmmlog, vmsg)
+    elseif verbose == 3
+        if vmsg.type == :ERROR println(io, vmsg) end
         push!(lmmlog, vmsg)
     end
 end
@@ -145,7 +148,7 @@ function Base.show(io::IO, lmm::LMM)
                 view(mx, lmm.covstr.tr[i], 1) .= "Random $i"
             end
         end
-        view(mx, lmm.covstr.tr[end], 1) .= "Repeated"
+        view(mx, lmm.covstr.tr[end], 1) .= "Residual"
         for i = 1:lmm.covstr.tl
             if mx[i, 3] == :var mx[i, 4] = round.(mx[i, 4]^2, sigdigits = 6) end
         end

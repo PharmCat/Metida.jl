@@ -25,6 +25,8 @@ function gmat_switch!(G, θ, covstr, r)
         gmat_csh!(G, θ[covstr.tr[r]], covstr.q[r], covstr.random[r].covtype)
     elseif covstr.random[r].covtype.s == :CS
         gmat_cs!(G, θ[covstr.tr[r]], covstr.q[r], covstr.random[r].covtype)
+    elseif covstr.random[r].covtype.s == :ARMA
+        gmat_arma!(G, θ[covstr.tr[r]], covstr.q[r], covstr.random[r].covtype)
     elseif covstr.random[r].covtype.s == :ZERO
         gmat_zero!(G, similar(θ, 0), covstr.q[r], covstr.random[r].covtype)
     else
@@ -146,3 +148,20 @@ function gmat_csh!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     nothing
 end
 ################################################################################
+function gmat_arma!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
+    de  = θ[1] ^ 2
+    s   = size(mx, 1)
+    for i = 1:s
+        mx[i, i] = de
+    end
+    if s > 1
+        for m = 1:s - 1
+            for n = m + 1:s
+                ode = de * θ[2] * θ[3] ^ (n - m - 1)
+                @inbounds mx[m, n] = ode
+                @inbounds mx[n, m] = mx[m, n]
+            end
+        end
+    end
+    nothing
+end

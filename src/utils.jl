@@ -55,7 +55,10 @@ function initvar(y::Vector, X::Matrix{T}) where T
     sum(x -> x * x, r)/(length(r) - size(X, 2)), β
 end
 ################################################################################
-function nterms(rhs)
+function nterms(mf::ModelFrame)
+    mf.schema.schema.count
+end
+function nterms(rhs::Union{Tuple{Vararg{AbstractTerm}}, Nothing, AbstractTerm})
     if isa(rhs, Term)
         p = 1
     elseif isa(rhs, Tuple)
@@ -188,3 +191,18 @@ function vmatrix()
 
 end
 =#
+"""
+    hessian(lmm, theta)
+
+Calculate Hessian matrix of REML
+"""
+function hessian(lmm, theta)
+    if lmm.blocksolve
+        vloptf = reml_sweep_β_b
+    else
+        vloptf = reml_sweep_β
+    end
+    chunk  = ForwardDiff.Chunk{1}()
+    hcfg   = ForwardDiff.HessianConfig(vloptf, theta, chunk)
+    ForwardDiff.hessian(x -> vloptf(lmm, x)[1], theta, hcfg, Val{false}())
+end

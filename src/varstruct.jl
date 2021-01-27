@@ -70,6 +70,12 @@ function HeterogeneousCompoundSymmetry()
 end
 const CSH = HeterogeneousCompoundSymmetry()
 """
+"""
+function AutoregressiveMovingAverage()
+    CovarianceType(:ARMA)
+end
+const ARMA = AutoregressiveMovingAverage()
+"""
     RZero()
 """
 function RZero()

@@ -24,9 +24,9 @@ function fit!(lmm::LMM{T};
     varlinkf = :exp,
     rholinkf = :sigm,
     aifirst::Bool = false,
-    g_tol::Float64 = 1e-12,
-    x_tol::Float64 = 1e-12,
-    f_tol::Float64 = 1e-12,
+    g_tol::Float64 = 1e-8,
+    x_tol::Float64 = 1e-8,
+    f_tol::Float64 = 1e-8,
     hcalck::Bool   = true,
     init = nothing,
     io::IO = stdout) where T
@@ -58,7 +58,7 @@ function fit!(lmm::LMM{T};
     #LineSearches.BackTracking(order=3)
     optmethod  = Optim.Newton(;alphaguess = LineSearches.InitialHagerZhang(), linesearch = LineSearches.HagerZhang())
     #optmethod  = IPNewton()
-    optoptions = Optim.Options(g_tol = g_tol, x_tol = x_tol, f_tol = f_tol,
+    optoptions = Optim.Options(g_tol = g_tol, x_tol = x_tol, f_abstol = f_tol,
         iterations = 300,
         time_limit = 120,
         store_trace = true,
@@ -128,8 +128,8 @@ function fit!(lmm::LMM{T};
     chunk  = ForwardDiff.Chunk{1}()
     gcfg   = ForwardDiff.GradientConfig(vloptf, θ, chunk)
     hcfg   = ForwardDiff.HessianConfig(vloptf, θ, chunk)
-    gfunc!(g, x) = ForwardDiff.gradient!(g, vloptf, x, gcfg)
-    hfunc!(h, x) = ForwardDiff.hessian!(h, vloptf, x, hcfg)
+    gfunc!(g, x) = ForwardDiff.gradient!(g, vloptf, x, gcfg, Val{false}())
+    hfunc!(h, x) = ForwardDiff.hessian!(h, vloptf, x, hcfg, Val{false}())
     td = TwiceDifferentiable(vloptf, gfunc!, hfunc!, θ)
     #td = TwiceDifferentiable(x ->optfunc(lmm, varlinkvecapply2(x, lmm.covstr.ct))[1], θ; autodiff = :forward)
 
@@ -145,10 +145,10 @@ function fit!(lmm::LMM{T};
     #Theta (θ) vector
     lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), lmm.covstr.ct)
     lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Resulting θ: "*string(lmm.result.theta)))
-    try
+    #try
         if hcalck
             #Hessian
-            lmm.result.h      = ForwardDiff.hessian(x -> optfunc(lmm, x)[1], lmm.result.theta)
+            lmm.result.h      = hessian(lmm, lmm.result.theta)
             #H positive definite check
             if !isposdef(lmm.result.h)
                 lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian is not positive definite."))
@@ -164,6 +164,7 @@ function fit!(lmm::LMM{T};
                 end
             end
         end
+    try
         #-2 LogREML, β, iC
         lmm.result.reml, lmm.result.beta, iC, θ₃ = optfunc(lmm, lmm.result.theta)
         #Variance-vovariance matrix of β

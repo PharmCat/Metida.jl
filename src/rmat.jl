@@ -16,6 +16,8 @@ function rmat_base_inc_b!(mx, θ::AbstractVector{T}, zrv, covstr::CovStructure{T
             rmatp_csh!(mx, θ, zrv, covstr.repeated.covtype)
         elseif covstr.repeated.covtype.s == :CS
             rmatp_cs!(mx, θ, zrv, covstr.repeated.covtype)
+        elseif covstr.repeated.covtype.s == :ARMA
+            rmatp_arma!(mx, θ, zrv, covstr.repeated.covtype)
         else
             error("Unknown covariance structure!")
         end
@@ -108,6 +110,24 @@ function rmatp_csh!(mx, θ::Vector{T}, rz, ::CovarianceType) where T
     end
     for m = 1:rn
         @inbounds mx[m, m] += vec[m] * vec[m]
+    end
+    nothing
+end
+################################################################################
+function rmatp_arma!(mx, θ::Vector{T}, ::AbstractMatrix, ::CovarianceType) where T
+    rn  = size(mx, 1)
+    de  = θ[1] ^ 2
+    for m = 1:rn
+        mx[m, m] += de
+    end
+    if rn > 1
+        for m = 1:rn - 1
+            for n = m + 1:rn
+                ode = de * θ[2] * θ[3] ^ (n - m - 1)
+                @inbounds mx[m, n] += ode
+                @inbounds mx[n, m] = mx[m, n]
+            end
+        end
     end
     nothing
 end

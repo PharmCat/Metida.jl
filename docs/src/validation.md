@@ -1,14 +1,18 @@
 ## Validation
 
+### REML result table
+
+| Model  | DataSet | REML  Metida | REML SPSS|
+|--------|--------|--------|-------|
+| 1 | sleepstudy.csv | 1729.4925602367025 | 1729.492560 |
+| 2 | sleepstudy.csv | 1904.3265170722132 | 1904.327 |
+| 3 | sleepstudy.csv | 1772.0953251997046 | 1772.095 |
+| 4 | sleepstudy.csv | 1730.1895427398322 | 1730.189543 |
+| 5 | pastes.csv | 246.99074585348623 | 246.990746 |
+| 6 | pastes.csv | 246.81895071012508 | 246.818951 |
+| 7 | penicillin.csv | 330.86058899109184 | 330.860589 |
+
 ### sleepstudy.csv
-
-| Model  |  REML  Metida | REML SPSS|
-|--------|--------|-------|
-| 1 | 1729.4925602367025 | 1729.492560 |
-| 2 | 1904.3265170722132 | 1904.327 |
-| 3 | 1772.0953251997046 | 1772.095 |
-| 4 | 1730.1895427398322 | 1730.189543 |
-
 
 #### Model 1
 
@@ -59,11 +63,7 @@ lmm = Metida.LMM(@formula(Reaction~1), df;
 ```
 ```
 
-### Pastes.csv
-
-| Model  |  REML  Metida | REML SPSS|
-|--------|--------|-------|
-| 5 | 246.99074585348623 | 246.990746 |
+### pastes.csv
 
 #### Model 5
 
@@ -77,6 +77,31 @@ Metida.fit!(lmm)
 ```
 ```
 
+#### Model 6
+
+```
+lmm = Metida.LMM(@formula(strength~1), df;
+random = Metida.VarEffect(Metida.@covstr(cask), Metida.ARMA, subj = :batch),
+)
+Metida.fit!(lmm)
+```
+
+```
+```
+
+### penicillin.csv
+
+#### Model 7
+
+```
+lmm = Metida.LMM(@formula(diameter~1), df;
+random = [Metida.VarEffect(Metida.SI, subj = :plate), Metida.VarEffect(Metida.SI, subj = :sample)]
+)
+Metida.fit!(lmm)
+```
+
+```
+```
 ### Reference dataset
 
 * Schütz, H., Labes, D., Tomashevskiy, M. et al. Reference Datasets for Studies in a Replicate Design Intended for Average Bioequivalence with Expanding Limits. AAPS J 22, 44 (2020). https://doi.org/10.1208/s12248-020-0427-6

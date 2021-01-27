@@ -79,7 +79,11 @@ function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
         zgz_base_inc!(V, θ, lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
         rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
         #-----------------------------------------------------------------------
-        θ₁  += logdet(cholesky(V))
+        if isposdef(V)
+            θ₁  += logdet(cholesky(V))
+        else
+            return (Inf, nothing, nothing, Inf)
+        end
         sweep!(Vp, 1:q)
         V⁻¹[i] = Symmetric(utriaply!(x -> -x, V))
         #-----------------------------------------------------------------------

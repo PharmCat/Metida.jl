@@ -51,6 +51,10 @@ include("testdata.jl")
     Metida.gmatrix(lmm, 1)
     Metida.rmatrix(lmm, 1)
     dof(lmm)
+    vcov(lmm)
+    stderror(lmm)
+    modelmatrix(lmm)
+    response(lmm)
 
     @test nobs(lmm) == 20
     @test bic(lmm) ≈ 24.558878811225412 atol=1E-6
@@ -59,6 +63,7 @@ include("testdata.jl")
     @test Metida.caic(lmm) ≈ 27.558878811225412 atol=1E-6
     @test dof_residual(lmm) == 14
     @test isfitted(lmm) == true
+
 
 end
 @testset "  Errors                                                   " begin

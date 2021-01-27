@@ -17,6 +17,8 @@ More:
 
 * Henderson, C. R., et al. “The Estimation of Environmental and Genetic Trends from Records Subject to Culling.” Biometrics, vol. 15, no. 2, 1959, pp. 192–218. JSTOR, www.jstor.org/stable/2527669.
 
+* Laird, Nan M., and James H. Ware. “Random-Effects Models for Longitudinal Data.” Biometrics, vol. 38, no. 4, 1982, pp. 963–974. JSTOR, www.jstor.org/stable/2529876.
+
 * Lindstrom & J.; Bates, M. (1988). Newton—Raphson and EM Algorithms for Linear Mixed-Effects Models for Repeated-Measures Data. Journal of the American Statistical Association. 83. 1014. 10.1080/01621459.1988.10478693.
 
 * Gurka, Matthew. (2006). Selecting the Best Linear Mixed Model under REML. The American Statistician. 60. 19-26. 10.1198/000313006X90396.
@@ -44,8 +46,6 @@ More:
 * McNeish, D., Harring, J. Covariance pattern mixture models: Eliminating random effects to improve convergence and performance. Behav Res 52, 947–979 (2020). https://doi.org/10.3758/s13428-019-01292-4
 
 ### And more
-
-* Laird, Nan M., and James H. Ware. “Random-Effects Models for Longitudinal Data.” Biometrics, vol. 38, no. 4, 1982, pp. 963–974. JSTOR, www.jstor.org/stable/2529876.
 
 * Giesbrecht, F. G., and Burns, J. C. (1985), "Two-Stage Analysis Based on a Mixed Model: Large-sample Asymptotic Theory and Small-Sample Simulation Results," Biometrics, 41, 853-862.
 

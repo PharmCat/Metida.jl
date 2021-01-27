@@ -1,8 +1,5 @@
 
 #=
-StatsBase.coef(model::LMM) = error("coef is not defined for $(typeof(model)).")
-
-StatsBase.coefnames(model::LMM) = error("coefnames is not defined for $(typeof(model)).")
 
 StatsBase.coeftable(model::LMM) = error("coeftable is not defined for $(typeof(model)).")
 
@@ -26,6 +23,11 @@ StatsBase.score(model::LMM) = error("score is not defined for $(typeof(model))."
 REML: n = total number of observation - number fixed effect parameters; d = number of covariance parameters
 ML:, n = total number of observation; d = number of fixed effect parameters + number of covariance parameters.
 =#
+
+StatsBase.coef(lmm::LMM) = copy(lmm.result.beta)
+
+StatsBase.coefnames(lmm::LMM) = StatsBase.coefnames(lmm.mf)
+
 function StatsBase.nobs(lmm::LMM)
     return length(lmm.data.yv)
 end
@@ -73,6 +75,13 @@ function StatsBase.isfitted(lmm::LMM)
     lmm.result.fit
 end
 
+StatsBase.vcov(lmm::LMM) = copy(lmm.result.c)
+
+StatsBase.stderror(lmm::LMM) = sqrt.(diag(vcov(lmm)))
+
+StatsBase.modelmatrix(lmm::LMM) = lmm.data.xv
+
+StatsBase.response(lmm::LMM) = lmm.data.yv
 #=
 StatsBase.mss(model::LMM) = error("mss is not defined for $(typeof(model)).")
 
@@ -81,18 +90,11 @@ StatsBase.rss(model::LMM) = error("rss is not defined for $(typeof(model)).")
 StatsBase.informationmatrix(model::LMM; expected::Bool = true) =
     error("informationmatrix is not defined for $(typeof(model)).")
 
-StatsBase.stderror(model::LMM) = sqrt.(diag(vcov(model)))
-
-StatsBase.vcov(model::LMM) = error("vcov is not defined for $(typeof(model)).")
-
 StatsBase.weights(model::LMM) = error("weights is not defined for $(typeof(model)).")
-
-StatsBase.isfitted(model::LMM) = error("isfitted is not defined for $(typeof(model)).")
 
 function StatsBase.r2(model::LMM)
     Base.depwarn("The default r² method for linear models is deprecated. " *
                  "Packages should define their own methods.", :r2)
-
     mss(model) / deviance(model)
 end
 
@@ -139,13 +141,9 @@ end
 
 const adjr² = adjr2
 
-StatsBase.response(model::LMM) = error("response is not defined for $(typeof(model)).")
-
 StatsBase.responsename(model::LMM) = error("responsename is not defined for $(typeof(model)).")
 
 StatsBase.meanresponse(model::LMM) = error("meanresponse is not defined for $(typeof(model)).")
-
-StatsBase.modelmatrix(model::LMM) = error("modelmatrix is not defined for $(typeof(model)).")
 
 StatsBase.crossmodelmatrix(model::LMM) = (x = modelmatrix(model); Symmetric(x' * x))
 

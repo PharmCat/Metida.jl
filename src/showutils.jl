@@ -31,11 +31,11 @@ end
 function rcoefnames(s, t, ve)
 
     if ve == :SI
-        return ["Var"]
+        return ["σ² "]
     elseif ve == :DIAG
-        return string.(coefnames(s))
+        return fill!(Vector{String}(undef, length(coefnames(s))), "σ² ") .* string.(coefnames(s))
     elseif ve == :CS || ve == :AR
-        return ["Var", "Rho"]
+        return ["σ² ", "ρ"]
     elseif ve == :CSH || ve == :ARH
         cn = coefnames(s)
         if isa(cn, Vector)
@@ -44,12 +44,14 @@ function rcoefnames(s, t, ve)
             l  = 1
         end
         v  = Vector{String}(undef, t)
-        view(v, 1:l) .= string.(cn)
-        v[end] = "Rho"
+        view(v, 1:l) .= (fill!(Vector{String}(undef, length(cn)), "σ² ") .*string.(cn))
+        v[end] = "ρ"
         return v
+    elseif ve == :ARMA
+        return ["σ² ", "γ", "ρ"]
     else
         v = Vector{String}(undef, t)
-        v .= "─"
+        v .= "NA"
         return v
     end
 end

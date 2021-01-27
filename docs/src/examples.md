@@ -2,11 +2,10 @@
 
 ```
 using Metida, StatsBase, StatsModels, CSV, DataFrames
-df = CSV.File(dirname(pathof(Metida))*"\\..\\test\\csv\\df0.csv") |> DataFrame
+df0 = CSV.File(dirname(pathof(Metida))*"\\..\\test\\csv\\df0.csv") |> DataFrame
 
-# EXAMPLE 1
 ################################################################################
-################################################################################
+#                                 EXAMPLE 1
 ################################################################################
 #=
 PROC MIXED data=df0;
@@ -15,16 +14,15 @@ MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
 RANDOM  formulation/TYPE=CSH SUB=subject G V;
 REPEATED/GRP=formulation SUB=subject R;
 RUN;
-
 REML: 10.06523862
 =#
 
-lmm = LMM(@formula(var ~ sequence + period + formulation), df;
+lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
 random   = VarEffect(@covstr(formulation), CSH),
-repeated = VarEffect(@covstr(formulation), VC),
+repeated = VarEffect(@covstr(formulation), DIAG),
 subject  = :subject)
-
 fit!(lmm)
+
 #=
 Linear Mixed Model: var ~ sequence + period + formulation
 Random 1:
@@ -61,9 +59,8 @@ Repeated   formulation: 1   var   0.0206445
 Repeated   formulation: 2   var   0.0422948
 =#
 
-# EXAMPLE 2
 ################################################################################
-################################################################################
+#                                 EXAMPLE 2
 ################################################################################
 #=
 PROC MIXED data=df0;
@@ -77,9 +74,9 @@ REML: 16.06148160
 =#
 
 lmm = LMM(
-    @formula(var ~ sequence + period + formulation), df;
+    @formula(var ~ sequence + period + formulation), df0;
     random   = VarEffect(@covstr(formulation), SI),
-    repeated = VarEffect(@covstr(formulation), VC),
+    repeated = VarEffect(@covstr(formulation), DIAG),
     subject  = :subject,
 )
 fit!(lmm)
@@ -117,9 +114,9 @@ Repeated   formulation: 1   var   0.0210784
 Repeated   formulation: 2   var   0.048761
 =#
 
-#EXAMPLE 3
+
 ################################################################################
-################################################################################
+#                                 EXAMPLE 3
 ################################################################################
 #=
 PROC MIXED data=df0;
@@ -131,7 +128,7 @@ RUN;
 REML: 10.86212458
 =#
 
-lmm = LMM(@formula(var ~ sequence + period + formulation), df;
+lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
     random = VarEffect(@covstr(subject), SI)
     )
 fit!(lmm)
@@ -168,9 +165,8 @@ Random 1   Var   var   0.168571
 Repeated   Var   var   0.0333559
 =#
 
-#EXAMPLE 4
 ################################################################################
-################################################################################
+#                                 EXAMPLE 4
 ################################################################################
 #=
 PROC MIXED data=df0;
@@ -184,7 +180,7 @@ REML: 25.12948063
 =#
 lmm = LMM(
     @formula(var ~ sequence + period + formulation), df;
-    random   = [VarEffect(@covstr(period), VC), VarEffect(@covstr(formulation), VC)]
+    random   = [VarEffect(@covstr(period), VC), VarEffect(@covstr(formulation), DIAG)]
 )
 fit!(lmm)
 
@@ -232,7 +228,7 @@ Repeated   Var              var   0.177845
 
 #EXAMPLE 5
 ################################################################################
-################################################################################
+#                                 EXAMPLE 5
 ################################################################################
 #=
 PROC MIXED data=df0;
@@ -244,8 +240,8 @@ RUN;
 REML: 16.24111264
 =#
 
-lmm = LMM(@formula(var ~ sequence + period + formulation), df;
-    random  = VarEffect(@covstr(formulation), VC),
+lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
+    random  = VarEffect(@covstr(formulation), DIAG),
     subject = :subject)
 fit!(lmm)
 
@@ -285,7 +281,7 @@ Repeated   Var              var   0.0342502
 
 #EXAMPLE 6
 ################################################################################
-################################################################################
+#                                 EXAMPLE 6
 ################################################################################
 
 using MixedModels
