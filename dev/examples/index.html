@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Examples · Metida Documentation</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">Metida Documentation</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href>Examples</a><ul class="internal"><li><a class="tocitem" href="#Examples"><span>Examples</span></a></li></ul></li><li><a class="tocitem" href="../details/">Details</a></li><li><a class="tocitem" href="../options/">Options</a></li><li><a class="tocitem" href="../nlopt/">NLopt</a></li><li><a class="tocitem" href="../cuda/">CUDA</a></li><li><a class="tocitem" href="../bench/">Benchmark</a></li><li><a class="tocitem" href="../validation/">Validation</a></li><li><a class="tocitem" href="../api/">API</a></li><li><a class="tocitem" href="../ref/">Citation &amp; Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Examples</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/PharmCat/Metida.jl/blob/master/docs/src/examples.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h2 id="Examples"><a class="docs-heading-anchor" href="#Examples">Examples</a><a id="Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Examples" title="Permalink"></a></h2><pre><code class="language-none">using Metida, StatsBase, StatsModels, CSV, DataFrames
-df = CSV.File(dirname(pathof(Metida))*&quot;\\..\\test\\csv\\df0.csv&quot;) |&gt; DataFrame
+df0 = CSV.File(dirname(pathof(Metida))*&quot;\\..\\test\\csv\\df0.csv&quot;) |&gt; DataFrame
 
-# EXAMPLE 1
 ################################################################################
-################################################################################
+#                                 EXAMPLE 1
 ################################################################################
 #=
 PROC MIXED data=df0;
@@ -13,16 +12,15 @@ MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
 RANDOM  formulation/TYPE=CSH SUB=subject G V;
 REPEATED/GRP=formulation SUB=subject R;
 RUN;
-
 REML: 10.06523862
 =#
 
-lmm = LMM(@formula(var ~ sequence + period + formulation), df;
+lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
 random   = VarEffect(@covstr(formulation), CSH),
-repeated = VarEffect(@covstr(formulation), VC),
+repeated = VarEffect(@covstr(formulation), DIAG),
 subject  = :subject)
-
 fit!(lmm)
+
 #=
 Linear Mixed Model: var ~ sequence + period + formulation
 Random 1:
@@ -59,9 +57,8 @@ Repeated   formulation: 1   var   0.0206445
 Repeated   formulation: 2   var   0.0422948
 =#
 
-# EXAMPLE 2
 ################################################################################
-################################################################################
+#                                 EXAMPLE 2
 ################################################################################
 #=
 PROC MIXED data=df0;
@@ -75,9 +72,9 @@ REML: 16.06148160
 =#
 
 lmm = LMM(
-    @formula(var ~ sequence + period + formulation), df;
+    @formula(var ~ sequence + period + formulation), df0;
     random   = VarEffect(@covstr(formulation), SI),
-    repeated = VarEffect(@covstr(formulation), VC),
+    repeated = VarEffect(@covstr(formulation), DIAG),
     subject  = :subject,
 )
 fit!(lmm)
@@ -115,9 +112,9 @@ Repeated   formulation: 1   var   0.0210784
 Repeated   formulation: 2   var   0.048761
 =#
 
-#EXAMPLE 3
+
 ################################################################################
-################################################################################
+#                                 EXAMPLE 3
 ################################################################################
 #=
 PROC MIXED data=df0;
@@ -129,7 +126,7 @@ RUN;
 REML: 10.86212458
 =#
 
-lmm = LMM(@formula(var ~ sequence + period + formulation), df;
+lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
     random = VarEffect(@covstr(subject), SI)
     )
 fit!(lmm)
@@ -166,9 +163,8 @@ Random 1   Var   var   0.168571
 Repeated   Var   var   0.0333559
 =#
 
-#EXAMPLE 4
 ################################################################################
-################################################################################
+#                                 EXAMPLE 4
 ################################################################################
 #=
 PROC MIXED data=df0;
@@ -182,7 +178,7 @@ REML: 25.12948063
 =#
 lmm = LMM(
     @formula(var ~ sequence + period + formulation), df;
-    random   = [VarEffect(@covstr(period), VC), VarEffect(@covstr(formulation), VC)]
+    random   = [VarEffect(@covstr(period), VC), VarEffect(@covstr(formulation), DIAG)]
 )
 fit!(lmm)
 
@@ -230,7 +226,7 @@ Repeated   Var              var   0.177845
 
 #EXAMPLE 5
 ################################################################################
-################################################################################
+#                                 EXAMPLE 5
 ################################################################################
 #=
 PROC MIXED data=df0;
@@ -242,8 +238,8 @@ RUN;
 REML: 16.24111264
 =#
 
-lmm = LMM(@formula(var ~ sequence + period + formulation), df;
-    random  = VarEffect(@covstr(formulation), VC),
+lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
+    random  = VarEffect(@covstr(formulation), DIAG),
     subject = :subject)
 fit!(lmm)
 
@@ -283,7 +279,7 @@ Repeated   Var              var   0.0342502
 
 #EXAMPLE 6
 ################################################################################
-################################################################################
+#                                 EXAMPLE 6
 ################################################################################
 
 using MixedModels
@@ -358,4 +354,4 @@ Repeated   Var              var   0.0316616
 =#
 
 ################################################################################
-</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../details/">Details »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 24 January 2021 20:47">Sunday 24 January 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../details/">Details »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 27 January 2021 17:23">Wednesday 27 January 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
