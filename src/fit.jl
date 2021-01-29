@@ -17,6 +17,8 @@ fit_nlopt!(lmm::MetidaModel; kwargs...)  = error("MetidaNLopt not found. \n - Ru
     io::IO = stdout) where T
 
 Fit LMM model.
+
+`rholinkf` - :sigm / :atan
 """
 function fit!(lmm::LMM{T};
     solver::Symbol = :default,
@@ -120,11 +122,11 @@ function fit!(lmm::LMM{T};
         end
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "First step with AI-like method, θ: "*string(θ)))
     end
-    varlinkrvecapply!(θ, lmm.covstr.ct)
+    varlinkrvecapply!(θ, lmm.covstr.ct; rholinkf = rholinkf)
 
     #Twice differentiable object
 
-    vloptf(x) = optfunc(lmm, varlinkvecapply(x, lmm.covstr.ct))[1]
+    vloptf(x) = optfunc(lmm, varlinkvecapply(x, lmm.covstr.ct; rholinkf = rholinkf))[1]
     chunk  = ForwardDiff.Chunk{1}()
     gcfg   = ForwardDiff.GradientConfig(vloptf, θ, chunk)
     hcfg   = ForwardDiff.HessianConfig(vloptf, θ, chunk)
@@ -143,7 +145,7 @@ function fit!(lmm::LMM{T};
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     end
     #Theta (θ) vector
-    lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), lmm.covstr.ct)
+    lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), lmm.covstr.ct; rholinkf = rholinkf)
     lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Resulting θ: "*string(lmm.result.theta)))
     #try
         if hcalck

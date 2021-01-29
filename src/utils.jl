@@ -94,10 +94,10 @@ function rholinksigmoidr(ρ::T) where T <: Real
     return sign(ρ)*sqrt(ρ^2/(1.0 - ρ^2))
 end
 
-function rholinksigmoid2(ρ::T) where T <: Real
+function rholinksigmoidatan(ρ::T) where T <: Real
     return atan(ρ)/pi*2.0
 end
-function rholinksigmoid2r(ρ::T) where T <: Real
+function rholinksigmoidatanr(ρ::T) where T <: Real
     return tan(ρ*pi/2.0)
 end
 
@@ -124,7 +124,11 @@ function varlinkvecapply!(v, p; varlinkf = :exp, rholinkf = :sigm)
         if p[i] == :var
             v[i] = vlink(v[i])
         else
-            v[i] = rholinksigmoid(v[i])
+            if rholinkf == :sigm
+                v[i] = rholinksigmoid(v[i])
+            elseif rholinkf == :atan
+                v[i] = rholinksigmoidatan(v[i])
+            end
         end
     end
     v
@@ -134,7 +138,11 @@ function varlinkrvecapply!(v, p; varlinkf = :exp, rholinkf = :sigm)
         if p[i] == :var
             v[i] = vlinkr(v[i])
         else
-            v[i] = rholinksigmoidr(v[i])
+            if rholinkf == :sigm
+                v[i] = rholinksigmoidr(v[i])
+            elseif rholinkf == :atan
+                v[i] = rholinksigmoidatanr(v[i])
+            end
         end
     end
     v
@@ -145,7 +153,11 @@ function varlinkvecapply(v, p; varlinkf = :exp, rholinkf = :sigm)
         if p[i] == :var
             s[i] = vlink(v[i])
         else
-            s[i] = rholinksigmoid(v[i])
+            if rholinkf == :sigm
+                s[i] = rholinksigmoid(v[i])
+            elseif rholinkf == :atan
+                s[i] = rholinksigmoidatan(v[i])
+            end
         end
     end
     s

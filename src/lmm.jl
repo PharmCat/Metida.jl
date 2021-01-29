@@ -77,8 +77,21 @@ function thetalength(lmm)
     lmm.covstr.tl
 end
 
+"""
+    theta(lmm::LMM)
+
+Return theta vector.
+"""
 function theta(lmm::LMM)
     copy(lmm.result.theta)
+end
+"""
+    rankx(lmm::LMM)
+
+Return rank of X matrix.
+"""
+function rankx(lmm::LMM)
+    Int(lmm.rankx)
 end
 ################################################################################
 function lmmlog!(io, lmmlog::Vector{LMMLogMsg}, verbose, vmsg)

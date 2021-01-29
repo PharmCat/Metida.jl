@@ -129,7 +129,7 @@ function gmat_cs!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     end
     nothing
 end
-function gmat_csh!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
+function gmat_csh!(mx::AbstractMatrix{T}, θ::Vector{T}, ::Int, ::CovarianceType) where T
     s = size(mx, 1)
     for m = 1:s
         @inbounds mx[m, m] = θ[m]

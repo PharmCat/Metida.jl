@@ -3,7 +3,7 @@
 ################################################################################
 
 ################################################################################
-function rmat_base_inc_b!(mx, θ::AbstractVector{T}, zrv, covstr::CovStructure{T2}) where T where T2
+function rmat_base_inc_b!(mx::AbstractMatrix{T}, θ::AbstractVector{T}, zrv, covstr::CovStructure{T2}) where T where T2
         if covstr.repeated.covtype.s == :SI
             rmatp_si!(mx, θ, zrv, covstr.repeated.covtype)
         elseif covstr.repeated.covtype.s == :DIAG
@@ -32,17 +32,17 @@ function rmat_base_inc!(mx, θ::AbstractVector{T}, covstr, block, sblock) where 
     mx
 end
 ################################################################################
-function rmatp_si!(mx, θ::Vector{T}, ::AbstractMatrix, ::CovarianceType) where T
+function rmatp_si!(mx::AbstractMatrix{T}, θ::Vector{T}, ::AbstractMatrix, ::CovarianceType) where T
     θsq = θ[1]*θ[1]
     for i = 1:size(mx, 1)
             mx[i, i] += θsq
     end
     nothing
 end
-function rmatp_diag!(mx, θ::Vector{T}, rz,  ::CovarianceType) where T
+function rmatp_diag!(mx::AbstractMatrix{T}, θ::Vector{T}, rz,  ::CovarianceType) where T
     for i = 1:size(mx, 1)
         for c = 1:length(θ)
-            mx[i, i] += θ[c]*θ[c]*rz[i, c]
+            mx[i, i] += rz[i, c] * θ[c] * θ[c]
         end
     end
     nothing

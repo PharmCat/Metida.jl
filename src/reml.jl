@@ -97,7 +97,7 @@ function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
         @inbounds θ₃  += mulθ₃(view(lmm.data.yv, lmm.data.block[i]), view(lmm.data.xv, lmm.data.block[i],:), β, V⁻¹[i])
     end
     logdetθ₂ = logdet(θ₂)
-    return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃
+    return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃ #REML, β, iC, θ₃
 end
 ################################################################################
 ################################################################################

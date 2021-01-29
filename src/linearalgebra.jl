@@ -1,6 +1,6 @@
 #linearalgebra.jl
 """
-    
+
 """
 function mulαβαt3(A, B, X)
     q  = size(B, 1)
@@ -27,12 +27,12 @@ end
 """
 A * B * A' -> + θ
 """
-function mulαβαtinc!(θ, A, B)
+function mulαβαtinc!(θ::AbstractVecOrMat{T}, A, B) where T
     q = size(B, 1)
     p = size(A, 1)
-    c = zeros(eltype(B), q)
+    c = zeros(T, q)
     for i = 1:p
-        fill!(c, zero(eltype(c)))
+        fill!(c, zero(T))
         @inbounds for n = 1:q, m = 1:q
             c[n] += B[m, n] * A[i, m]
         end
@@ -65,7 +65,7 @@ end
 """
 A' * B  -> + θ
 """
-function mulαtβinc!(θ, A::AbstractMatrix, B::AbstractVector)
+function mulαtβinc!(θ::AbstractVecOrMat{T}, A::AbstractMatrix, B::AbstractVector) where T
     if size(A, 1) != length(B) throw(DimensionMismatch("size(A, 1) should be equal length(B)")) end
     q = size(A, 1)
     p = size(A, 2)

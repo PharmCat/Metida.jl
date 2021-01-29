@@ -21,7 +21,7 @@ AR, Autoregressive,
 ARH, HeterogeneousAutoregressive,
 CS, CompoundSymmetry,
 CSH, HeterogeneousCompoundSymmetry,
-fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength
+fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter
 
 include("abstracttype.jl")
 include("sweep.jl")
@@ -40,6 +40,7 @@ include("showutils.jl")
 include("statsbase.jl")
 include("initg.jl")
 include("utils.jl")
+include("dof_satter.jl")
 
 function __init__()
 

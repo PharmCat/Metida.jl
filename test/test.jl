@@ -19,6 +19,10 @@ include("testdata.jl")
     @test Metida.logreml(lmm)   ≈ -12.564740317165533 atol=1E-6
     @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
     @test Metida.thetalength(lmm) == 3
+    @test Metida.rankx(lmm) == 6
+    @test lmm.result.reml       ≈ 25.129480634331063 atol=1E-6 #need chec
+
+    Metida.fit!(lmm; rholinkf = :atan)
     @test lmm.result.reml       ≈ 25.129480634331063 atol=1E-6 #need chec
 
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
@@ -32,6 +36,7 @@ include("testdata.jl")
     subject = :subject)
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 10.314822559210157 atol=1E-6
+    @test Metida.dof_satter(lmm, [1, 0, 0, 0, 0, 0]) ≈ 3.1779104924590023 atol=1E-6
 
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     repeated = Metida.VarEffect(Metida.@covstr(formulation)),
@@ -76,7 +81,15 @@ end
     )
     @test_throws ErrorException Metida.fit!(lmm; init = [0.0, 1.0, 0.0, 0.0, 0.0])
 end
-
+@testset "  Model: CSH/subject + DIAG                                " begin
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
+    repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG),
+    subject = :subject
+    )
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 10.065239006121315 atol=1E-6
+end
 @testset "  Model: DIAG/subject + nothing                            " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG),
@@ -131,15 +144,6 @@ end
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 10.314822655850815 atol=1E-6
-end
-@testset "  Model: CSH/subject + DIAG                                " begin
-    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
-    random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH),
-    repeated = Metida.VarEffect(Metida.@covstr(formulation), Metida.DIAG),
-    subject = :subject
-    )
-    Metida.fit!(lmm)
-    @test Metida.m2logreml(lmm) ≈ 10.065239006121315 atol=1E-6
 end
 @testset "  Model: SI/subject + DIAG                                 " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
