@@ -45,7 +45,7 @@ end
 """
 (y - X * β)' * V * (y - X * β)
 """
-function mulθ₃(y::AbstractVector, X::AbstractMatrix, β::AbstractVector, V::AbstractMatrix{T})::T where T
+function mulθ₃(y, X, β, V::AbstractMatrix{T})::T where T
     q = size(V, 1)
     p = size(X, 2)
     θ = zero(T)

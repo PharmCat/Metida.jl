@@ -68,7 +68,7 @@ include("testdata.jl")
     @test Metida.caic(lmm) ≈ 27.558878811225412 atol=1E-6
     @test dof_residual(lmm) == 14
     @test isfitted(lmm) == true
-
+    @test Metida.dof_satter(lmm, [0, 0, 0, 0, 0, 1]) ≈ 5.81896814947982 atol=1E-2
 
 end
 @testset "  Errors                                                   " begin

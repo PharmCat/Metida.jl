@@ -1,3 +1,11 @@
+- 0.2.2
+  * random effect zero fix
+  * ai-like algo fix
+  * dof-satter
+  * ranx
+  * rholinkf
+  * docs
+
 - 0.2.1
   * StatsBase methods
   * ARMA

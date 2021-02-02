@@ -196,25 +196,23 @@ function rmatrix(lmm::LMM{T}, i::Int) where T
 
 end
 """
-    Return variance-covariance matrix V
-"""
-#=
-function vmatrix()
+    vmatrix!(V, θ, lmm, i)
 
+Update variance-covariance matrix V for i bolock.
+"""
+function vmatrix!(V, θ, lmm, i)
+    zgz_base_inc!(V, θ, lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
+    rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
 end
-=#
 """
     hessian(lmm, theta)
 
 Calculate Hessian matrix of REML
 """
 function hessian(lmm, theta)
-    if lmm.blocksolve
-        vloptf = reml_sweep_β_b
-    else
-        vloptf = reml_sweep_β
-    end
+    if !lmm.result.fit error("Model not fitted!") end
+    vloptf(x) = reml_sweep_β(lmm, x, lmm.result.beta)[1]
     chunk  = ForwardDiff.Chunk{1}()
     hcfg   = ForwardDiff.HessianConfig(vloptf, theta, chunk)
-    ForwardDiff.hessian(x -> vloptf(lmm, x)[1], theta, hcfg, Val{false}())
+    ForwardDiff.hessian(vloptf, theta, hcfg, Val{false}())
 end

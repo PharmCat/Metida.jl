@@ -96,12 +96,17 @@ function fit!(lmm::LMM{T};
     end
     #dfc = TwiceDifferentiableConstraints(lx, ux)
     #Initial step with modified Newton method
+    chunk  = ForwardDiff.Chunk{1}()
     ############################################################################
     if aifirst
-        aif(x) = optfunc(lmm, x)[4]
+
+        beta = reml_sweep_β_c(lmm, θ)
+        aif(x) = reml_sweep_ai(lmm, x, beta)
         grf(x) = optfunc(lmm, x)[1]
-        ai = ForwardDiff.hessian(aif, θ)
-        gr = ForwardDiff.gradient(grf, θ)
+        aihcfg = ForwardDiff.HessianConfig(aif, θ, chunk)
+        aigcfg = ForwardDiff.GradientConfig(grf, θ, chunk)
+        ai = ForwardDiff.hessian(aif, θ, aihcfg, Val{false}())
+        gr = ForwardDiff.gradient(grf, θ, aigcfg, Val{false}())
         initθ = copy(θ)
         try
             θ .-= (inv(ai) ./4 )*gr
@@ -127,11 +132,12 @@ function fit!(lmm::LMM{T};
     #Twice differentiable object
 
     vloptf(x) = optfunc(lmm, varlinkvecapply(x, lmm.covstr.ct; rholinkf = rholinkf))[1]
-    chunk  = ForwardDiff.Chunk{1}()
     gcfg   = ForwardDiff.GradientConfig(vloptf, θ, chunk)
     hcfg   = ForwardDiff.HessianConfig(vloptf, θ, chunk)
     gfunc!(g, x) = ForwardDiff.gradient!(g, vloptf, x, gcfg, Val{false}())
-    hfunc!(h, x) = ForwardDiff.hessian!(h, vloptf, x, hcfg, Val{false}())
+    hfunc!(h, x) = begin
+        ForwardDiff.hessian!(h, vloptf, x, hcfg, Val{false}())
+    end
     td = TwiceDifferentiable(vloptf, gfunc!, hfunc!, θ)
     #td = TwiceDifferentiable(x ->optfunc(lmm, varlinkvecapply2(x, lmm.covstr.ct))[1], θ; autodiff = :forward)
 
@@ -147,43 +153,35 @@ function fit!(lmm::LMM{T};
     #Theta (θ) vector
     lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), lmm.covstr.ct; rholinkf = rholinkf)
     lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Resulting θ: "*string(lmm.result.theta)))
-    #try
-        if hcalck
+
+        #-2 LogREML, β, iC
+    lmm.result.reml, lmm.result.beta, iC, θ₃ = optfunc(lmm, lmm.result.theta)
+        #Variance-vovariance matrix of β
+    lmm.result.c            = pinv(iC)
+        #SE
+    lmm.result.se           = sqrt.(diag(lmm.result.c))
+        #Fit true
+    lmm.result.fit          = true
+
+    if hcalck
             #Hessian
-            lmm.result.h      = hessian(lmm, lmm.result.theta)
+        lmm.result.h      = hessian(lmm, lmm.result.theta)
             #H positive definite check
-            if !isposdef(lmm.result.h)
-                lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian is not positive definite."))
-            end
-            qrd = qr(lmm.result.h, Val(true))
-            for i = 1:length(lmm.result.theta)
-                if abs(qrd.R[i,i]) < 1E-10
-                    if lmm.covstr.ct[qrd.jpvt[i]] == :var
-                        lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Variation QR.R diagonal value ($(qrd.jpvt[i])) is less than 1e-10."))
-                    elseif lmm.covstr.ct[qrd.jpvt[i]] == :rho
-                        lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Rho QR.R diagonal value ($(qrd.jpvt[i])) is less than 1e-10."))
-                    end
+        if !isposdef(lmm.result.h)
+            lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian is not positive definite."))
+        end
+        qrd = qr(lmm.result.h, Val(true))
+        for i = 1:length(lmm.result.theta)
+            if abs(qrd.R[i,i]) < 1E-8
+                if lmm.covstr.ct[qrd.jpvt[i]] == :var
+                    lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Variation QR.R diagonal value ($(qrd.jpvt[i])) is less than 1e-10."))
+                elseif lmm.covstr.ct[qrd.jpvt[i]] == :rho
+                    lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Rho QR.R diagonal value ($(qrd.jpvt[i])) is less than 1e-10."))
                 end
             end
         end
-    try
-        #-2 LogREML, β, iC
-        lmm.result.reml, lmm.result.beta, iC, θ₃ = optfunc(lmm, lmm.result.theta)
-        #Variance-vovariance matrix of β
-        lmm.result.c            = pinv(iC)
-        #SE
-        lmm.result.se           = sqrt.(diag(lmm.result.c))
-        #Fit true
-        lmm.result.fit          = true
-
-        lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model fitted."))
-    catch
-        #-2 LogREML, β, iC
-        lmm.result.reml, lmm.result.beta, iC, θ₃ = optfunc(lmm, lmm.result.theta)
-        #Fit false
-        lmm.result.fit          = false
-
-        lmmlog!(io, lmm, verbose, LMMLogMsg(:ERROR, "Model not fitted!"))
     end
+    
+    lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model fitted."))
     lmm
 end

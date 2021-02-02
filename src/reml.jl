@@ -28,7 +28,7 @@ function reml_sweep_β_b(lmm, θ::Vector{T}) where T <: Number
         try
             θ₁  += logdet(cholesky(V))
         catch
-            θ₁  = Inf
+            return (Inf, nothing, nothing, Inf)
         end
         sweep!(Vp, 1:q)
         V⁻¹[i] = Symmetric(utriaply!(x -> -x, V))
@@ -46,11 +46,10 @@ function reml_sweep_β_b(lmm, θ::Vector{T}) where T <: Number
     try
         logdetθ₂ = logdet(θ₂)
     catch
-        logdetθ₂ = Inf
+        return (Inf, nothing, nothing, Inf)
     end
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃
 end
-
 function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
     n             = length(lmm.data.block)
     N             = length(lmm.data.yv)
@@ -76,8 +75,9 @@ function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
         V   = view(Vp, 1:q, 1:q)
         Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
         Vx  .= view(lmm.data.xv,  lmm.data.block[i],:)
-        zgz_base_inc!(V, θ, lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
-        rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
+        vmatrix!(V, θ, lmm, i)
+        #zgz_base_inc!(V, θ, lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
+        #rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
         #-----------------------------------------------------------------------
         if isposdef(V)
             θ₁  += logdet(cholesky(V))
@@ -101,3 +101,98 @@ function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
 end
 ################################################################################
 ################################################################################
+function reml_sweep_β(lmm, θ::Vector{T}, β) where T <: Number
+    n             = length(lmm.data.block)
+    N             = length(lmm.data.yv)
+    c             = (N - lmm.rankx)*log(2π)
+    #---------------------------------------------------------------------------
+    # Vector log determinant of V matrix
+    θ₁            = zero(T)
+    θ₂            = zeros(T, lmm.rankx, lmm.rankx)
+    θ₃            = zero(T)
+    #---------------------------------------------------------------------------
+    q             = zero(Int)
+    qswm          = zero(Int)
+    Vp            = Matrix{T}(undef, 0, 0)
+    logdetθ₂      = zero(T)
+    @inbounds for i = 1:n
+        q    = length(lmm.data.block[i])
+        qswm = q + lmm.rankx
+        Vp  = zeros(T, q + lmm.rankx, q + lmm.rankx)
+        V   = view(Vp, 1:q, 1:q)
+        Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
+        Vx  .= view(lmm.data.xv,  lmm.data.block[i],:)
+        vmatrix!(V, θ, lmm, i)
+        #-----------------------------------------------------------------------
+        if isposdef(V)
+            θ₁  += logdet(cholesky(V))
+        else
+            return (Inf, nothing, nothing, Inf)
+        end
+        sweep!(Vp, 1:q)
+        V⁻¹ = Symmetric(utriaply!(x -> -x, V))
+        #-----------------------------------------------------------------------
+        qswm = size(Vp, 1)
+        θ₂ .-= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
+        #-----------------------------------------------------------------------
+        @inbounds θ₃  += mulθ₃(view(lmm.data.yv, lmm.data.block[i]), view(lmm.data.xv, lmm.data.block[i],:), β, V⁻¹)
+    end
+    logdetθ₂ = logdet(θ₂)
+    return   θ₁ + logdetθ₂ + θ₃ + c, θ₂, θ₃ #REML, iC, θ₃
+end
+function reml_sweep_ai(lmm, θ::Vector{T}, β) where T <: Number
+    n             = length(lmm.data.block)
+    N             = length(lmm.data.yv)
+    c             = (N - lmm.rankx)*log(2π)
+    θ₃            = zero(T)
+    q             = zero(Int)
+    qswm          = zero(Int)
+    Vp            = Matrix{T}(undef, 0, 0)
+    @inbounds for i = 1:n
+        q    = length(lmm.data.block[i])
+        qswm = q + lmm.rankx
+        Vp  = zeros(T, q + lmm.rankx, q + lmm.rankx)
+        V   = view(Vp, 1:q, 1:q)
+        Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
+        Vx  .= view(lmm.data.xv,  lmm.data.block[i],:)
+        vmatrix!(V, θ, lmm, i)
+        sweep!(Vp, 1:q)
+        V⁻¹ = Symmetric(utriaply!(x -> -x, V))
+        @inbounds θ₃  += mulθ₃(view(lmm.data.yv, lmm.data.block[i]), view(lmm.data.xv, lmm.data.block[i],:), β, V⁻¹)
+    end
+    return  θ₃
+end
+function reml_sweep_β_c(lmm, θ::Vector{T}) where T <: Number
+    n             = length(lmm.data.block)
+    N             = length(lmm.data.yv)
+    c             = (N - lmm.rankx)*log(2π)
+    #---------------------------------------------------------------------------
+    V⁻¹           = Vector{Matrix{T}}(undef, n)
+    # Vector log determinant of V matrix
+    θ₂            = zeros(T, lmm.rankx, lmm.rankx)
+    βm            = zeros(T, lmm.rankx)
+    β             = Vector{T}(undef, lmm.rankx)
+    #---------------------------------------------------------------------------
+    q             = zero(Int)
+    qswm          = zero(Int)
+    Vp            = Matrix{T}(undef, 0, 0)
+    @inbounds for i = 1:n
+        q    = length(lmm.data.block[i])
+        qswm = q + lmm.rankx
+        Vp  = zeros(T, q + lmm.rankx, q + lmm.rankx)
+        V   = view(Vp, 1:q, 1:q)
+        Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
+        Vx  .= view(lmm.data.xv,  lmm.data.block[i],:)
+        vmatrix!(V, θ, lmm, i)
+        #-----------------------------------------------------------------------
+        sweep!(Vp, 1:q)
+        V⁻¹[i] = Symmetric(utriaply!(x -> -x, V))
+        #-----------------------------------------------------------------------
+        qswm = size(Vp, 1)
+        θ₂ .-= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
+        mulαtβinc!(βm, view(Vp, 1:q, q + 1:qswm), view(lmm.data.yv, lmm.data.block[i]))
+        #-----------------------------------------------------------------------
+    end
+    mul!(β, inv(θ₂), βm)
+    return  β
+end

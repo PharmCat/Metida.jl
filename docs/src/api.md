@@ -49,6 +49,25 @@ Metida.CompoundSymmetry
 ```@docs
 Metida.HeterogeneousCompoundSymmetry
 ```
+### StatsBase.dof
+```@docs
+StatsBase.dof
+```
+
+### StatsBase.dof_residual
+```@docs
+StatsBase.dof_residual
+```
+
+### Metida.dof_satter
+```@docs
+Metida.dof_satter
+```
+
+### Metida.caic
+```@docs
+Metida.caic
+```
 
 ### Metida.gmatrix
 ```@docs
@@ -58,4 +77,9 @@ Metida.gmatrix
 ### Metida.rmatrix
 ```@docs
 Metida.rmatrix
+```
+
+### Metida.vmatrix!
+```@docs
+Metida.vmatrix!
 ```

@@ -230,6 +230,11 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         # Names
         rcnames = Vector{String}(undef, 0)
         #
+        if length(random) > 1
+            for i = 2:length(random)
+                if random[i].covtype.s == :ZERO error("One of the random effect have zero type!") end
+            end
+        end
         # RANDOM EFFECTS
         for i = 1:length(random)
             if length(random[i].coding) == 0

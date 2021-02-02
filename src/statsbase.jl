@@ -23,33 +23,56 @@ StatsBase.score(model::LMM) = error("score is not defined for $(typeof(model))."
 REML: n = total number of observation - number fixed effect parameters; d = number of covariance parameters
 ML:, n = total number of observation; d = number of fixed effect parameters + number of covariance parameters.
 =#
-
+"""
+    StatsBase.coef(lmm::LMM) = copy(lmm.result.beta)
+"""
 StatsBase.coef(lmm::LMM) = copy(lmm.result.beta)
 
+"""
+    StatsBase.coefnames(lmm::LMM) = StatsBase.coefnames(lmm.mf)
+"""
 StatsBase.coefnames(lmm::LMM) = StatsBase.coefnames(lmm.mf)
 
+"""
+    StatsBase.nobs(lmm::LMM)
+"""
 function StatsBase.nobs(lmm::LMM)
     return length(lmm.data.yv)
 end
 
+"""
+    StatsBase.dof_residual(lmm::LMM)
+"""
 function StatsBase.dof_residual(lmm::LMM)
     nobs(lmm) - lmm.rankx
 end
 
+"""
+    StatsBase.dof(lmm::LMM)
+"""
 function StatsBase.dof(lmm::LMM)
     lmm.nfixed + lmm.covstr.tl
 end
 
+"""
+    StatsBase.loglikelihood(lmm::LMM)
+"""
 function StatsBase.loglikelihood(lmm::LMM)
     -lmm.result.reml/2
 end
 
+"""
+    StatsBase.aic(lmm::LMM)
+"""
 function StatsBase.aic(lmm::LMM)
     l = loglikelihood(lmm)
     d = lmm.covstr.tl
     -2l + 2d
 end
 
+"""
+    StatsBase.bic(lmm::LMM)
+"""
 function StatsBase.bic(lmm::LMM)
     l = loglikelihood(lmm)
     d = lmm.covstr.tl
@@ -57,6 +80,9 @@ function StatsBase.bic(lmm::LMM)
     -2l + d * log(n)
 end
 
+"""
+    StatsBase.aicc(lmm::LMM)
+"""
 function StatsBase.aicc(lmm::LMM)
     l = loglikelihood(lmm)
     d = lmm.covstr.tl
@@ -64,6 +90,9 @@ function StatsBase.aicc(lmm::LMM)
     -2l + (2d * n) / (n - d - 1.0)
 end
 
+"""
+    caic(lmm::LMM)
+"""
 function caic(lmm::LMM)
     l = loglikelihood(lmm)
     d = lmm.covstr.tl
@@ -71,6 +100,9 @@ function caic(lmm::LMM)
     -2l + d * (log(n) + 1.0)
 end
 
+"""
+    StatsBase.isfitted(lmm::LMM)
+"""
 function StatsBase.isfitted(lmm::LMM)
     lmm.result.fit
 end

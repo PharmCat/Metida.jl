@@ -21,7 +21,8 @@ AR, Autoregressive,
 ARH, HeterogeneousAutoregressive,
 CS, CompoundSymmetry,
 CSH, HeterogeneousCompoundSymmetry,
-fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter
+fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, rankx, caic,
+gmatrix, rmatrix, vmatrix!
 
 include("abstracttype.jl")
 include("sweep.jl")

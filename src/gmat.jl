@@ -4,10 +4,12 @@
 function gmat_base(θ::Vector{T}, covstr) where T
     q = size(covstr.z, 2)
     mx = zeros(T, q, q)
-    for i = 1:length(covstr.random)
-        vmxr = (1 + sum(covstr.q[1:i]) - covstr.q[i]):sum(covstr.q[1:i])
-        vmx = view(mx, vmxr, vmxr)
-        gmat_switch!(vmx, θ, covstr, i)
+    if covstr.random[1].covtype.s != :ZERO
+        for i = 1:length(covstr.random)
+            vmxr = (1 + sum(covstr.q[1:i]) - covstr.q[i]):sum(covstr.q[1:i])
+            vmx = view(mx, vmxr, vmxr)
+            gmat_switch!(vmx, θ, covstr, i)
+        end
     end
     mx
 end
@@ -27,47 +29,33 @@ function gmat_switch!(G, θ, covstr, r)
         gmat_cs!(G, θ[covstr.tr[r]], covstr.q[r], covstr.random[r].covtype)
     elseif covstr.random[r].covtype.s == :ARMA
         gmat_arma!(G, θ[covstr.tr[r]], covstr.q[r], covstr.random[r].covtype)
-    elseif covstr.random[r].covtype.s == :ZERO
-        gmat_zero!(G, similar(θ, 0), covstr.q[r], covstr.random[r].covtype)
     else
         error("Unknown covariance structure!")
     end
     G
 end
 ################################################################################
-#=
-function gmat_base_z!(mx, θ::Vector{T}, covstr) where T
-    q = sum(length.(covstr.block[1]))
-    for r = 1:length(covstr.random)
-        G = zeros(T, covstr.q[r], covstr.q[r])
-        gmat_switch!(G, θ, covstr, r)
-        for i = 1:length(covstr.block[r])
-            mulαβαtinc!(view(mx, covstr.block[r][i], covstr.block[r][i]), view(covstr.z, covstr.block[r][i], covstr.zrndur[r]), G)
-        end
-    end
-    mx
-end
-=#
-################################################################################
 function zgz_base_inc!(mx, θ::Vector{T}, covstr, block, sblock) where T
     q = sum(length.(covstr.block[1]))
-    for r = 1:length(covstr.random)
-        G = zeros(T, covstr.q[r], covstr.q[r])
-        gmat_switch!(G, θ, covstr, r)
-        zblock    = view(covstr.z, block, covstr.zrndur[r])
-        for i = 1:length(sblock[r])
-            mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i]), view(zblock, sblock[r][i], :), G)
+    if covstr.random[1].covtype.s != :ZERO
+        for r = 1:length(covstr.random)
+            G = zeros(T, covstr.q[r], covstr.q[r])
+            gmat_switch!(G, θ, covstr, r)
+            zblock    = view(covstr.z, block, covstr.zrndur[r])
+            for i = 1:length(sblock[r])
+                mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i]), view(zblock, sblock[r][i], :), G)
+            end
         end
     end
     mx
 end
-
-
 ################################################################################
+#=
 function gmat_zero!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     mx .= zero(T)
     nothing
 end
+=#
 function gmat_si!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     val = θ[1] ^ 2
     for i = 1:size(mx, 1)
