@@ -1,5 +1,14 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
+CSV        = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+MixedModels = "ff71e718-51f3-5ec2-a782-8ffcbfa3c316"
+
 
 [compat]
 Documenter = "≥0.22"
+StatsPlots = "≥0.14"
+CSV        = "0.7, 0.8"
+DataFrames = "≥0.22"
+MixedModels = "3.1.5"

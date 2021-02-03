@@ -148,6 +148,7 @@ function fit!(lmm::LMM{T};
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     catch
         optmethod  = Optim.Newton(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.HagerZhang())
+        #optmethod  = Optim.LBFGS(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.MoreThuente())
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     end
     #Theta (θ) vector
@@ -161,7 +162,13 @@ function fit!(lmm::LMM{T};
         #SE
     lmm.result.se           = sqrt.(diag(lmm.result.c))
         #Fit true
-    lmm.result.fit          = true
+    if !isnan(lmm.result.reml) && !isinf(lmm.result.reml)
+        lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model fitted."))
+        lmm.result.fit      = true
+    else
+        lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model NOT fitted."))
+        lmm.result.fit      = false
+    end
 
     if hcalck
             #Hessian
@@ -181,7 +188,7 @@ function fit!(lmm::LMM{T};
             end
         end
     end
-    
-    lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model fitted."))
+
+
     lmm
 end

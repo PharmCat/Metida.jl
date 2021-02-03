@@ -2,9 +2,7 @@
 #                             sleepstudy.csv
 ################################################################################
 
-df        = CSV.File(path*"/csv/lme4/sleepstudy.csv") |> DataFrame
-transform!(df, :Subject => categorical, renamecols=false)
-transform!(df, :Days => categorical, renamecols=false)
+df        = CSV.File(path*"/csv/lme4/sleepstudy.csv"; types = [String, Float64, String, String]) |> DataFrame
 
 @testset "  sleepstudy.csv                                           " begin
     #=
@@ -67,10 +65,8 @@ end
 #                             Penicillin.csv
 ################################################################################
 
-df        = CSV.File(path*"/csv/lme4/Penicillin.csv") |> DataFrame
+df        = CSV.File(path*"/csv/lme4/Penicillin.csv"; types = [String, Float64, String, String]) |> DataFrame
 df.diameter = float.(df.diameter)
-transform!(df, :plate => categorical, renamecols=false)
-transform!(df, :sample => categorical, renamecols=false)
 
 @testset " SI + SI Penicillin.csv                                    " begin
     #SPSS 330.860589
@@ -93,11 +89,7 @@ end
 #                             Pastes.csv
 ################################################################################
 
-df        = CSV.File(path*"/csv/lme4/Pastes.csv") |> DataFrame
-transform!(df, :batch => categorical, renamecols=false)
-transform!(df, :sample => categorical, renamecols=false)
-transform!(df, :cask=> categorical, renamecols=false)
-
+df        = CSV.File(path*"/csv/lme4/Pastes.csv"; types = [String, Float64, String, String, String]) |> DataFrame
 @testset " SI + SI Pastes.csv                                        " begin
     #REML 246.990746
     lmm = Metida.LMM(@formula(strength~1), df;

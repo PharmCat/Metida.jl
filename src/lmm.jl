@@ -34,6 +34,7 @@ struct LMM{T} <: MetidaModel
     log::Vector{LMMLogMsg}
 
     function LMM(model, data; contrasts=Dict{Symbol,Any}(), subject::Union{Nothing, Symbol, AbstractVector{Symbol}} = nothing,  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
+        #need check responce - Float
         if isa(subject, Nothing)
             subject = Vector{Symbol}(undef, 0)
         elseif isa(subject, Symbol)
@@ -113,6 +114,9 @@ function lmmlog!(io, lmm::LMM, verbose, vmsg)
 end
 function lmmlog!(lmm::LMM, verbose, vmsg)
     lmmlog!(stdout, lmm, verbose, vmsg)
+end
+function lmmlog!(lmm::LMM, vmsg)
+    lmmlog!(stdout, lmm, 1, vmsg)
 end
 ################################################################################
 

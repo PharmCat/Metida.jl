@@ -1,5 +1,11 @@
 #reml.jl
-
+function logdetv(V)
+    if isposdef(V)
+        return logdet(cholesky(V))
+    else
+        return logdet(V)
+    end
+end
 """
     -2 log Restricted Maximum Likelihood; β calculation inside
 """
@@ -26,8 +32,9 @@ function reml_sweep_β_b(lmm, θ::Vector{T}) where T <: Number
         V   = view(Vp, 1:q, 1:q)
         rmat_base_inc_b!(V, θ[lmm.covstr.tr[end]], view(lmm.covstr.rz, lmm.data.block[i],:), lmm.covstr)
         try
-            θ₁  += logdet(cholesky(V))
+            θ₁  += logdetv(V)
         catch
+            lmmlog!(lmm, LMMLogMsg(:ERROR, "θ₁ not estimated during REML calculation, V isn't positive definite or |V| less zero."))
             return (Inf, nothing, nothing, Inf)
         end
         sweep!(Vp, 1:q)
@@ -79,9 +86,10 @@ function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
         #zgz_base_inc!(V, θ, lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
         #rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
         #-----------------------------------------------------------------------
-        if isposdef(V)
-            θ₁  += logdet(cholesky(V))
-        else
+        try
+            θ₁  += logdetv(V)
+        catch
+            lmmlog!(lmm, LMMLogMsg(:ERROR, "θ₁ not estimated during REML calculation, V isn't positive definite or |V| less zero."))
             return (Inf, nothing, nothing, Inf)
         end
         sweep!(Vp, 1:q)
@@ -96,7 +104,11 @@ function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
     @simd for i = 1:n
         @inbounds θ₃  += mulθ₃(view(lmm.data.yv, lmm.data.block[i]), view(lmm.data.xv, lmm.data.block[i],:), β, V⁻¹[i])
     end
-    logdetθ₂ = logdet(θ₂)
+    try
+        logdetθ₂ = logdet(θ₂)
+    catch
+        return (Inf, nothing, nothing, Inf)
+    end
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃ #REML, β, iC, θ₃
 end
 ################################################################################
@@ -124,9 +136,10 @@ function reml_sweep_β(lmm, θ::Vector{T}, β) where T <: Number
         Vx  .= view(lmm.data.xv,  lmm.data.block[i],:)
         vmatrix!(V, θ, lmm, i)
         #-----------------------------------------------------------------------
-        if isposdef(V)
-            θ₁  += logdet(cholesky(V))
-        else
+        try
+            θ₁  += logdetv(V)
+        catch
+            lmmlog!(lmm, LMMLogMsg(:ERROR, "θ₁ not estimated during REML calculation, V isn't positive definite or |V| less zero."))
             return (Inf, nothing, nothing, Inf)
         end
         sweep!(Vp, 1:q)
@@ -137,7 +150,11 @@ function reml_sweep_β(lmm, θ::Vector{T}, β) where T <: Number
         #-----------------------------------------------------------------------
         @inbounds θ₃  += mulθ₃(view(lmm.data.yv, lmm.data.block[i]), view(lmm.data.xv, lmm.data.block[i],:), β, V⁻¹)
     end
-    logdetθ₂ = logdet(θ₂)
+    try
+        logdetθ₂ = logdet(θ₂)
+    catch
+        return (Inf, nothing, nothing, Inf)
+    end
     return   θ₁ + logdetθ₂ + θ₃ + c, θ₂, θ₃ #REML, iC, θ₃
 end
 function reml_sweep_ai(lmm, θ::Vector{T}, β) where T <: Number

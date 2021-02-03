@@ -26,16 +26,12 @@ REML G - SI, R - SI
 
 =#
 for i = 1:30
-    dfrds        = CSV.File(path*"/csv/berds/rds"*string(i)*".csv", types = Dict(:PK => Float64)) |> DataFrame
+    dfrds        = CSV.File(path*"/csv/berds/rds"*string(i)*".csv", types = Dict(:PK => Float64, :subject => String, :period => String, :sequence => String, :treatment => String )) |> DataFrame
     dropmissing!(dfrds)
-    transform!(dfrds, :subject => categorical, renamecols=false)
-    transform!(dfrds, :period => categorical, renamecols=false)
-    transform!(dfrds, :sequence => categorical, renamecols=false)
-    transform!(dfrds, :treatment => categorical, renamecols=false)
 
     dfrds.lnpk = log.(dfrds.PK)
 
-    @testset "  RDS Test $(i)                                            " begin
+    @testset "  RDS Test $(i)                                               " begin
         atol=1E-6
 
         lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), dfrds;

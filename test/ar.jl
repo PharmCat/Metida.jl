@@ -3,11 +3,9 @@
 SPSS
 REML 453.339544
 =#
-df        = CSV.File(path*"/csv/RepeatedPulse.csv") |> DataFrame
+df        = CSV.File(path*"/csv/RepeatedPulse.csv"; types = [String, Float64, String, String]) |> DataFrame
 df.Pulse = float.(df.Pulse)
 sort!(df, :Day)
-transform!(df, :Time => categorical, renamecols=false)
-transform!(df, :Day => categorical, renamecols=false)
 
 @testset "  AR RepeatedPulse.csv                                     " begin
     lmm = Metida.LMM(@formula(Pulse~1), df;
@@ -37,13 +35,8 @@ end
 SPSS
 REML 5456.638120
 =#
-df        = CSV.File(path*"/csv/ChickWeight.csv") |> DataFrame
-df.weight = float.(df.weight)
-df.Time = float.(df.Time)
-df.Time2 = copy(df.Time)
-transform!(df, :Time2 => categorical, renamecols=false)
-transform!(df, :Chick => categorical, renamecols=false)
-transform!(df, :Diet => categorical, renamecols=false)
+df        = CSV.File(path*"/csv/ChickWeight.csv"; types = [String, Float64, Float64, String, String]) |> DataFrame
+
 @testset "  ARH ChickWeight.csv                                      " begin
     lmm = Metida.LMM(@formula(weight~1 + Diet & Time), df;
     random = Metida.VarEffect(Metida.@covstr(1), Metida.SI),

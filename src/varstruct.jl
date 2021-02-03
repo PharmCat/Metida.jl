@@ -1,5 +1,5 @@
 ################################################################################
-#                         @covstr macro
+#                     @covstr macro
 ################################################################################
 """
     @covstr(ex)
@@ -328,7 +328,7 @@ end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Type{InterceptTerm}
 end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Term
-    if typeof(data[!, t.sym]) <: CategoricalArray
+    if typeof(data[!, t.sym]) <: CategoricalArray || !(typeof(data[!, t.sym]) <: Vector{T} where T <: Real)
         d[t.sym] = StatsModels.FullDummyCoding()
     end
 end
@@ -339,7 +339,7 @@ function fill_coding_dict!(t::T, d::Dict, data) where T <: CategoricalTerm
 end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: InteractionTerm
     for i in t.terms
-        if typeof(data[!, i.sym])  <: CategoricalArray
+        if typeof(data[!, i.sym])  <: CategoricalArray || !(typeof(data[!, i.sym]) <: Vector{T} where T <: Real)
             d[i.sym] = StatsModels.FullDummyCoding()
         end
     end
@@ -347,7 +347,7 @@ end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple
     for i in t
         if isa(i, Term)
-            if typeof(data[!, i.sym]) <: CategoricalArray
+            if typeof(data[!, i.sym]) <: CategoricalArray || !(typeof(data[!, i.sym]) <: Vector{T} where T <: Real)
                 d[i.sym] = StatsModels.FullDummyCoding()
             end
         else

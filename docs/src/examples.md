@@ -1,5 +1,37 @@
 ## Examples
 
+### Example 1
+
+```@example 1
+using Metida, StatsPlots, CSV, DataFrames, MixedModels # hide
+
+df = CSV.File(dirname(pathof(Metida))*"\\..\\test\\csv\\1fptime.csv; types = [String, String, Float64, Float64]") |> DataFrame
+
+@df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
+savefig("f-plot.svg"); nothing # hide
+```
+Continuous and categorical predictors: response ~ 1 + factor*time
+
+![](f-plot.svg)
+
+Metida result:
+
+```@example 1
+lmm = Metida.LMM(@formula(response ~1 + factor*time), rds;
+random = Metida.VarEffect(Metida.@covstr(1 + time), Metida.CSH),
+subject = [:subject, :factor]
+)
+Metida.fit!(lmm)
+```
+
+MixedModels result:
+
+```@example 1
+fm = @formula(response ~ 1 + factor*time + (1 + time|subject&factor))
+mm = fit(MixedModel, fm, rds, REML=true)
+```
+### Other
+
 ```
 using Metida, StatsBase, StatsModels, CSV, DataFrames
 df0 = CSV.File(dirname(pathof(Metida))*"\\..\\test\\csv\\df0.csv") |> DataFrame
