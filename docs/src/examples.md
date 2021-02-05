@@ -5,7 +5,7 @@
 ```@example 1
 using Metida, StatsPlots, CSV, DataFrames, MixedModels;
 
-df = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
+rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 
 @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
 savefig("f-plot.svg"); nothing
@@ -37,7 +37,7 @@ Metida
 
 ```@example 1
 
-df          = CSV.File(dirname(pathof(Metida))*"/csv/lme4/Penicillin.csv"; types = [String, Float64, String, String]) |> DataFrame
+df          = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "lme4", "Penicillin.csv"); types = [String, Float64, String, String]) |> DataFrame
 df.diameter = float.(df.diameter)
 
 lmm = Metida.LMM(@formula(diameter ~ 1), df;
