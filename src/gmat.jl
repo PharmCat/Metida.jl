@@ -69,6 +69,9 @@ function gmat_diag!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     end
     nothing
 end
+#function gmat_vc!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
+#    nothing
+#end
 function gmat_ar!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     de  = θ[1] ^ 2
     s   = size(mx, 1)

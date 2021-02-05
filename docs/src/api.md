@@ -49,14 +49,14 @@ Metida.CompoundSymmetry
 ```@docs
 Metida.HeterogeneousCompoundSymmetry
 ```
-### StatsBase.dof
+### Metida.dof
 ```@docs
-StatsBase.dof
+Metida.dof
 ```
 
-### StatsBase.dof_residual
+### Metida.dof_residual
 ```@docs
-StatsBase.dof_residual
+Metida.dof_residual
 ```
 
 ### Metida.dof_satter

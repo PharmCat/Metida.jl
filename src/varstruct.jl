@@ -125,7 +125,6 @@ function covstrparam(ct::CovarianceType, q::Int, p::Int)::Tuple{Int, Int, Int}
         error("Unknown covariance type!")
     end
 end
-
 ################################################################################
 #                  EFFECT
 ################################################################################
@@ -151,15 +150,6 @@ struct VarEffect
             throw(ArgumentError("subj type should be Symbol or Vector{tymbol}"))
         end
         p = nterms(model)
-        #=
-        if isa(model, Term)
-            p = 1
-        elseif isa(model, Tuple)
-            p = length(model)
-        else
-            p = 0
-        end
-        =#
         if coding === nothing && model !== nothing
             coding = Dict{Symbol, AbstractContrasts}()
         elseif coding === nothing && model === nothing
@@ -322,7 +312,8 @@ end
 ################################################################################
 #                            CONTRAST CODING
 ################################################################################
-
+function fill_coding_dict!(t::FunctionTerm{T}, d::Dict, data) where T
+end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: ConstantTerm
 end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Type{InterceptTerm}

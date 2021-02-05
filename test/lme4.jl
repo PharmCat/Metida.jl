@@ -70,7 +70,7 @@ df.diameter = float.(df.diameter)
 
 @testset " SI + SI Penicillin.csv                                    " begin
     #SPSS 330.860589
-    lmm = Metida.LMM(@formula(diameter~1), df;
+    lmm = Metida.LMM(@formula(diameter ~ 1), df;
     random = [Metida.VarEffect(Metida.SI, subj = :plate), Metida.VarEffect(Metida.SI, subj = :sample)]
     )
     Metida.fit!(lmm)

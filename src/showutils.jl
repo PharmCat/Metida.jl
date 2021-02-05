@@ -29,7 +29,6 @@ function printmatrix(io::IO, m::Matrix)
 end
 
 function rcoefnames(s, t, ve)
-
     if ve == :SI
         return ["σ² "]
     elseif ve == :DIAG
@@ -44,7 +43,7 @@ function rcoefnames(s, t, ve)
             l  = 1
         end
         v  = Vector{String}(undef, t)
-        view(v, 1:l) .= (fill!(Vector{String}(undef, length(cn)), "σ² ") .*string.(cn))
+        view(v, 1:l) .= (fill!(Vector{String}(undef, l), "σ² ") .*string.(cn))
         v[end] = "ρ"
         return v
     elseif ve == :ARMA

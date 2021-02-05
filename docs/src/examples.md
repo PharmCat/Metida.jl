@@ -1,16 +1,16 @@
 ## Examples
 
-### Example 1
+### Example 1 - Continuous and categorical predictors
 
 ```@example 1
 using Metida, StatsPlots, CSV, DataFrames, MixedModels # hide
 
-df = CSV.File(dirname(pathof(Metida))*"\\..\\test\\csv\\1fptime.csv; types = [String, String, Float64, Float64]") |> DataFrame
+df = CSV.File(dirname(pathof(Metida))*"\\..\\test\\csv\\1fptime.csv"; types = [String, String, Float64, Float64]) |> DataFrame
 
 @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
 savefig("f-plot.svg"); nothing # hide
 ```
-Continuous and categorical predictors: response ~ 1 + factor*time
+Model: response ~ 1 + factor*time
 
 ![](f-plot.svg)
 
@@ -30,6 +30,30 @@ MixedModels result:
 fm = @formula(response ~ 1 + factor*time + (1 + time|subject&factor))
 mm = fit(MixedModel, fm, rds, REML=true)
 ```
+
+### Example 2 - Two random factors (Penicillin data)
+
+Metida
+
+```@example 1
+
+df          = CSV.File(dirname(pathof(Metida))*"/csv/lme4/Penicillin.csv"; types = [String, Float64, String, String]) |> DataFrame
+df.diameter = float.(df.diameter)
+
+lmm = Metida.LMM(@formula(diameter ~ 1), df;
+random = [Metida.VarEffect(Metida.SI, subj = :plate), Metida.VarEffect(Metida.SI, subj = :sample)]
+)
+Metida.fit!(lmm)
+```
+
+MixedModels
+
+```@example 1
+
+fm2 = @formula(diameter ~ 1 + (1|plate) + (1|sample))
+mm = fit(MixedModel, fm2, df, REML=true)
+```
+
 ### Other
 
 ```

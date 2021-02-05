@@ -83,7 +83,7 @@ function fit!(lmm::LMM{T};
             error("init length $(length(init)) != θ length $(length(θ))")
         end
     else
-        initθ = sqrt(initvar(lmm.mf.data[lmm.mf.f.lhs.sym], lmm.mm.m)[1]/4)
+        initθ = sqrt(initvar(lmm.data.yv, lmm.mm.m)[1]/4)
         θ                      .= initθ
         for i = 1:length(θ)
             if lmm.covstr.ct[i] == :rho

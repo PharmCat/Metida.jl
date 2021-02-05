@@ -71,7 +71,17 @@ end
     subject = [:subject, :factor]
     )
     Metida.fit!(lmm)
-    @test Metida.m2logreml(lmm) ≈ 1250.019739470665 atol=1E-6
+    @test Metida.m2logreml(lmm) ≈ 1300.1807598168923 atol=1E-6
+end
+@testset "  Model: Function terms                                    " begin
+    ftdf.expresp = exp.(ftdf.response)
+    ftdf.exptime = exp.(ftdf.time)
+    lmm = Metida.LMM(@formula(log(expresp) ~ 1 + factor*log(exptime)), ftdf;
+    random = Metida.VarEffect(Metida.@covstr(1 + log(exptime)), Metida.CSH),
+    subject = [:subject, :factor]
+    )
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 1300.1807598168923 atol=1E-6
 end
 @testset "  Model: Only random (SI), noblock                         " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;

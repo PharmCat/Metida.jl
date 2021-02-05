@@ -63,7 +63,7 @@ struct LMM{T} <: MetidaModel
             subject = intsub
         end
         block  = intersectdf(data, subject)
-        lmmdata = LMMData(mm.m, mf.data[mf.f.lhs.sym], block, subject)
+        lmmdata = LMMData(mm.m, response(mf), block, subject)
         covstr = CovStructure(random, repeated, data, block)
         new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, nfixed, rank(mm.m), ModelResult(), blocksolve, lmmlog)
     end
