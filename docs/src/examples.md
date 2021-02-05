@@ -3,12 +3,12 @@
 ### Example 1 - Continuous and categorical predictors
 
 ```@example 1
-using Metida, StatsPlots, CSV, DataFrames, MixedModels # hide
+using Metida, StatsPlots, CSV, DataFrames, MixedModels;
 
-df = CSV.File(dirname(pathof(Metida))*"\\..\\test\\csv\\1fptime.csv"; types = [String, String, Float64, Float64]) |> DataFrame
+df = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 
 @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
-savefig("f-plot.svg"); nothing # hide
+savefig("f-plot.svg"); nothing
 ```
 Model: response ~ 1 + factor*time
 
