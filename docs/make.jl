@@ -8,8 +8,8 @@ makedocs(
     doctest = false,
     pages = [
         "Home" => "index.md",
-        "Examples" => "examples.md",
         "Details" => "details.md",
+        "Examples" => "examples.md",
         "Options" => "options.md",
         "NLopt" => "nlopt.md",
         "CUDA" => "cuda.md",

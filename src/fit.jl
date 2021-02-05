@@ -18,7 +18,17 @@ fit_nlopt!(lmm::MetidaModel; kwargs...)  = error("MetidaNLopt not found. \n - Ru
 
 Fit LMM model.
 
-`rholinkf` - :sigm / :atan
+* `solver` - :default / :nlopt / :cuda
+* `verbose` - :auto / 1 / 2 / 3
+* `varlinkf` - not implemented
+* `rholinkf` - :sigm / :atan
+* `aifirst` - first iteration with AI-like method
+* `g_tol` - absolute tolerance in the gradient
+* `x_tol` - absolute tolerance of theta vector
+* `f_tol` - absolute tolerance in changes of the REML
+* `hcalck` - calculate REML Hessian
+* `init` - initial theta values
+* `io` - uotput IO
 """
 function fit!(lmm::LMM{T};
     solver::Symbol = :default,

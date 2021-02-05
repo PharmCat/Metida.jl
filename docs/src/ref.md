@@ -74,3 +74,22 @@ More:
 * https://docs.nvidia.com/cuda/cusolver/index.html
 
 * https://docs.nvidia.com/cuda/cublas/index.htm
+
+### Reference dataset
+
+* Bioequivalence reference datasets: Schütz, H., Labes, D., Tomashevskiy, M. et al. Reference Datasets for Studies in a Replicate Design Intended for Average Bioequivalence with Expanding Limits. AAPS J 22, 44 (2020). https://doi.org/10.1208/s12248-020-0427-6
+
+* sleepstudy.csv: Gregory Belenky, Nancy J. Wesensten, David R. Thorne, Maria L. Thomas, Helen C. Sing, Daniel P. Redmond, Michael B. Russo and Thomas J. Balkin (2003) Patterns of performance degradation and restoration during sleep restriction and subsequent recovery: a sleep dose-response study. Journal of Sleep Research 12, 1–12.
+
+* Penicillin.csv: O.L. Davies and P.L. Goldsmith (eds), Statistical Methods in Research and Production, 4th ed., Oliver and Boyd, (1972), section 6.6
+
+* Pastes.csv: O.L. Davies and P.L. Goldsmith (eds), Statistical Methods in Research and Production, 4th ed., Oliver and Boyd, (1972), section 6.5
+
+* ChickWeight.csv:
+    - Crowder, M. and Hand, D. (1990), Analysis of Repeated Measures, Chapman and Hall (example 5.3)
+    - Hand, D. and Crowder, M. (1996), Practical Longitudinal Data Analysis, Chapman and Hall (table A.2)
+    - Pinheiro, J. C. and Bates, D. M. (2000) Mixed-effects Models in S and S-PLUS, Springer.
+
+* RepeatedPulse.csv: Data supplied by a student at Oberlin College.
+
+See also: https://vincentarelbundock.github.io/Rdatasets/datasets.html
