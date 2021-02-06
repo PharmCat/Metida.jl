@@ -1,6 +1,6 @@
 # Metida
 
-using  Test, CSV, DataFrames, StatsModels, StatsBase
+using  Test, CSV, DataFrames, StatsModels, StatsBase, LinearAlgebra
 
 path    = dirname(@__FILE__)
 include("testdata.jl")
@@ -236,6 +236,29 @@ end
     )
     @test_throws ErrorException Metida.fit!(lmm; init = [0.0, 1.0, 0.0, 0.0, 0.0])
 end
+
+
+@testset "  Sweep test                                               " begin
+    A =
+[1.0  2  2  4  1
+ 2  2  3  3  5
+ 2  3  3  4  2
+ 4  3  4  4  5
+ 1  5  2  5  5]
+    iA =  inv(A[1:4, 1:4])
+    iAs = Symmetric(-Metida.sweep!(copy(A), 1:4; syrkblas = true)[1:4, 1:4])
+    B = copy(A)
+    for i = 1:4
+        Metida.sweep!(B, i; syrkblas = false)
+    end
+    iAss = Symmetric(-B[1:4, 1:4])
+    akk = zeros(5)
+    iAb = Symmetric(-Metida.sweepb!(view(akk, 1:5), copy(A), 1:4)[1:4, 1:4])
+    @test iA  ≈ iAs atol=1E-6
+    @test iA  ≈ iAss atol=1E-6
+    @test iAs ≈ iAb atol=1E-6
+end
+
 
 include("ar.jl")
 include("lme4.jl")

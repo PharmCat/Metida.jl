@@ -31,7 +31,14 @@ lmm = Metida.LMM(@formula(Reaction~Days), df;
   Metida.fit!(lmm)
 ```
 
+SPSS:
 ```
+MIXED Reaction BY Days
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=Days | SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=INTERCEPT | SUBJECT(Subject) COVTYPE(ID).
 ```
 #### Model 2
 
@@ -43,7 +50,14 @@ lmm = Metida.LMM(@formula(Reaction~1), df;
   Metida.fit!(lmm)
 ```
 
+SPSS:
 ```
+MIXED Reaction BY Days
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=INTERCEPT | SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=Days | SUBJECT(Subject) COVTYPE(CS).
 ```
 
 #### Model 3
@@ -55,7 +69,14 @@ lmm = Metida.LMM(@formula(Reaction~1), df;
   Metida.fit!(lmm)
 ```
 
+SPSS:
 ```
+MIXED Reaction BY Days
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=INTERCEPT | SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=Days | SUBJECT(Subject) COVTYPE(CSH).
 ```
 
 #### Model 4
@@ -67,7 +88,14 @@ lmm = Metida.LMM(@formula(Reaction~1), df;
   Metida.fit!(lmm)
 ```
 
+SPSS:
 ```
+MIXED Reaction BY Days
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=INTERCEPT | SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=Days | SUBJECT(Subject) COVTYPE(ARH1).
 ```
 
 ### pastes.csv
@@ -81,7 +109,15 @@ random = [Metida.VarEffect(Metida.SI, subj = :batch), Metida.VarEffect(Metida.SI
 Metida.fit!(lmm)
 ```
 
+SPSS:
 ```
+MIXED strength
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=| SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=INTERCEPT | SUBJECT(batch) COVTYPE(ID)
+  /RANDOM=INTERCEPT | SUBJECT(cask * batch) COVTYPE(ID).
 ```
 
 #### Model 6
@@ -93,7 +129,14 @@ random = Metida.VarEffect(Metida.@covstr(cask), Metida.ARMA, subj = :batch),
 Metida.fit!(lmm)
 ```
 
+SPSS:
 ```
+MIXED strength by cask
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=| SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=cask | SUBJECT(batch) COVTYPE(ARMA11).
 ```
 
 ### penicillin.csv
@@ -107,7 +150,15 @@ random = [Metida.VarEffect(Metida.SI, subj = :plate), Metida.VarEffect(Metida.SI
 Metida.fit!(lmm)
 ```
 
+SPSS:
 ```
+MIXED diameter
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=| SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=INTERCEPT | SUBJECT(plate) COVTYPE(ID)
+  /RANDOM=INTERCEPT | SUBJECT(sample) COVTYPE(ID).
 ```
 
 ## Section 2: Parameters validation for public datasets Metida & SPSS & MixedModels
@@ -117,6 +168,58 @@ not done yet
 ## Section 3: Validation with bioequivalence datasets with Metida & SPSS
 
 not done yet
+
+#### Model BE1
+
+```
+lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), dfrds;
+    random = Metida.VarEffect(Metida.@covstr(1), Metida.SI),
+    subject = :subject
+    )
+    Metida.fit!(lmm)
+```
+
+#### Model BE2
+
+```
+lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), dfrds;
+    random = Metida.VarEffect(Metida.@covstr(treatment), Metida.CSH),
+    repeated = Metida.VarEffect(Metida.@covstr(treatment), Metida.DIAG),
+    subject = :subject
+    )
+    Metida.fit!(lmm)
+```
+
+#### Typical SPSS code
+
+```
+UNIANOVA lnpk BY period sequence treatment subject
+  /RANDOM subject
+  /CONTRAST(treatment)=Simple(1)
+  /METHOD=SSTYPE(3)
+  /INTERCEPT=INCLUDE
+  /CRITERIA=ALPHA(0.05)
+  /DESIGN=period sequence treatment subject(sequence).
+
+MIXED lnpk BY period sequence treatment subject
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=period sequence treatment | SSTYPE(3)
+  /METHOD=REML
+  /RANDOM= subject(sequence) | COVTYPE(ID)
+  /EMMEANS=TABLES(treatment) COMPARE REFCAT(FIRST) ADJ(LSD).
+
+MIXED lnpk BY period treatment sequence subject
+  /CRITERIA=CIN(90) MXITER(200) MXSTEP(20) SCORING(2) SINGULAR(0.000000000001) HCONVERGE(0,
+    RELATIVE) LCONVERGE(0.0000000000001, RELATIVE) PCONVERGE(0, RELATIVE)
+  /FIXED=period treatment sequence | SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=treatment | SUBJECT(subject) COVTYPE(CSH)
+  /REPEATED=treatment | SUBJECT(subject*period) COVTYPE(DIAG)
+  /EMMEANS=TABLES(treatment) COMPARE REFCAT(FIRST) ADJ(LSD).
+```
+
+Full SPSS code provided in validation folder ([here](https://github.com/PharmCat/Metida.jl/blob/master/validation/spssrdscode.txt)). 
 
 ## Discussion
 

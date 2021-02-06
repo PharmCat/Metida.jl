@@ -6,9 +6,9 @@ function logdetv(V)
         return logdet(V)
     end
 end
-"""
-    -2 log Restricted Maximum Likelihood; β calculation inside
-"""
+################################################################################
+#                     REML without provided β, by blocks
+################################################################################
 function reml_sweep_β_b(lmm, θ::Vector{T}) where T <: Number
     n             = length(lmm.data.block)
     N             = length(lmm.data.yv)
@@ -57,8 +57,12 @@ function reml_sweep_β_b(lmm, θ::Vector{T}) where T <: Number
     end
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃
 end
+################################################################################
+#                     REML without provided β
+################################################################################
 function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
     n             = length(lmm.data.block)
+    #maxn          = maximum(length.(lmm.data.block))
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)
     #---------------------------------------------------------------------------
@@ -74,13 +78,14 @@ function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
     qswm          = zero(Int)
     Vp            = Matrix{T}(undef, 0, 0)
     logdetθ₂      = zero(T)
+    #akk           = zeros(T, maxn)
 
     @inbounds for i = 1:n
         q    = length(lmm.data.block[i])
         qswm = q + lmm.rankx
-        Vp  = zeros(T, q + lmm.rankx, q + lmm.rankx)
+        Vp  = zeros(T, qswm, qswm)
         V   = view(Vp, 1:q, 1:q)
-        Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
+        Vx   = view(Vp, 1:q, q+1:qswm)
         Vx  .= view(lmm.data.xv,  lmm.data.block[i],:)
         vmatrix!(V, θ, lmm, i)
         #zgz_base_inc!(V, θ, lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
@@ -92,6 +97,7 @@ function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
             lmmlog!(lmm, LMMLogMsg(:ERROR, "θ₁ not estimated during REML calculation, V isn't positive definite or |V| less zero."))
             return (Inf, nothing, nothing, Inf)
         end
+        #sweepb!(view(akk, 1:qswm), Vp, 1:q)
         sweep!(Vp, 1:q)
         V⁻¹[i] = Symmetric(utriaply!(x -> -x, V))
         #-----------------------------------------------------------------------
@@ -112,6 +118,7 @@ function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃ #REML, β, iC, θ₃
 end
 ################################################################################
+#                     REML with provided β
 ################################################################################
 function reml_sweep_β(lmm, θ::Vector{T}, β) where T <: Number
     n             = length(lmm.data.block)
@@ -157,6 +164,9 @@ function reml_sweep_β(lmm, θ::Vector{T}, β) where T <: Number
     end
     return   θ₁ + logdetθ₂ + θ₃ + c, θ₂, θ₃ #REML, iC, θ₃
 end
+################################################################################
+#                     REML AI-like part
+################################################################################
 function reml_sweep_ai(lmm, θ::Vector{T}, β) where T <: Number
     n             = length(lmm.data.block)
     N             = length(lmm.data.yv)
@@ -179,13 +189,14 @@ function reml_sweep_ai(lmm, θ::Vector{T}, β) where T <: Number
     end
     return  θ₃
 end
+################################################################################
+#                     β calculation
+################################################################################
 function reml_sweep_β_c(lmm, θ::Vector{T}) where T <: Number
     n             = length(lmm.data.block)
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)
     #---------------------------------------------------------------------------
-    V⁻¹           = Vector{Matrix{T}}(undef, n)
-    # Vector log determinant of V matrix
     θ₂            = zeros(T, lmm.rankx, lmm.rankx)
     βm            = zeros(T, lmm.rankx)
     β             = Vector{T}(undef, lmm.rankx)
@@ -203,7 +214,6 @@ function reml_sweep_β_c(lmm, θ::Vector{T}) where T <: Number
         vmatrix!(V, θ, lmm, i)
         #-----------------------------------------------------------------------
         sweep!(Vp, 1:q)
-        V⁻¹[i] = Symmetric(utriaply!(x -> -x, V))
         #-----------------------------------------------------------------------
         qswm = size(Vp, 1)
         θ₂ .-= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
@@ -212,4 +222,35 @@ function reml_sweep_β_c(lmm, θ::Vector{T}) where T <: Number
     end
     mul!(β, inv(θ₂), βm)
     return  β
+end
+################################################################################
+#                     variance-covariance matrix of β
+################################################################################
+function reml_sweep_β_c(lmm, θ::Vector{T}, β) where T <: Number
+    n             = length(lmm.data.block)
+    N             = length(lmm.data.yv)
+    c             = (N - lmm.rankx)*log(2π)
+    #---------------------------------------------------------------------------
+    θ₂            = zeros(T, lmm.rankx, lmm.rankx)
+    #---------------------------------------------------------------------------
+    q             = zero(Int)
+    qswm          = zero(Int)
+    Vp            = Matrix{T}(undef, 0, 0)
+    @inbounds for i = 1:n
+        q    = length(lmm.data.block[i])
+        qswm = q + lmm.rankx
+        Vp  = zeros(T, q + lmm.rankx, q + lmm.rankx)
+        V   = view(Vp, 1:q, 1:q)
+        Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
+        Vx  .= view(lmm.data.xv,  lmm.data.block[i],:)
+        vmatrix!(V, θ, lmm, i)
+        #-----------------------------------------------------------------------
+        sweep!(Vp, 1:q)
+        V⁻¹ = Symmetric(utriaply!(x -> -x, V))
+        #-----------------------------------------------------------------------
+        qswm = size(Vp, 1)
+        θ₂ .-= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
+        #-----------------------------------------------------------------------
+    end
+    return θ₂
 end

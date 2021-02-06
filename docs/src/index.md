@@ -78,6 +78,8 @@ where:
 
 * `io` - uotput IO
 
+### Contents
+
 ```@contents
 Pages = [
         "details.md",

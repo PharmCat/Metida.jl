@@ -1,12 +1,16 @@
 #
 
 function gradc(lmm::LMM{T}, theta) where T
+    #=
     if lmm.blocksolve
         optfunc = reml_sweep_β_b
     else
         optfunc = reml_sweep_β
     end
     vloptf(x) = optfunc(lmm, x)[3]
+    =#
+    if !lmm.result.fit error("Model not fitted!") end
+    vloptf(x) = reml_sweep_β_c(lmm, x, lmm.result.beta)
     chunk  = ForwardDiff.Chunk{1}()
     jcfg   = ForwardDiff.JacobianConfig(vloptf, theta, chunk)
     jic    = ForwardDiff.jacobian(vloptf, theta, jcfg, Val{false}())
@@ -21,7 +25,7 @@ end
     dof_satter(lmm::LMM{T}, l) where T
 
 Return Satterthwaite approximation for the denominator degrees of freedom, where l is a contrast vector (estimable linear combination
-of β).    
+ofβ).
 """
 function dof_satter(lmm::LMM{T}, l) where T
     H     = copy(lmm.result.h)
