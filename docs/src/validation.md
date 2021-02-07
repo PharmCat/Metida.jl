@@ -5,7 +5,7 @@ Validation provided with 3 sections:
 * Parameters validation for public datasets Metida & SPSS & MixedModels
 * Validation with bioequivalence datasets with Metida & SPSS
 
-## Section 1: REML validation for public datasets Metida vs SPSS
+## Section 1: REML validation for public datasets Metida & SPSS
 
 ### REML result table
 
@@ -219,7 +219,9 @@ MIXED lnpk BY period treatment sequence subject
   /EMMEANS=TABLES(treatment) COMPARE REFCAT(FIRST) ADJ(LSD).
 ```
 
-Full SPSS code provided in validation folder ([here](https://github.com/PharmCat/Metida.jl/blob/master/validation/spssrdscode.txt)). 
+Full SPSS code provided in validation folder ([here](https://github.com/PharmCat/Metida.jl/blob/master/validation/spssrdscode.txt)).
+
+Validation dataset available [here](https://link.springer.com/article/10.1208%2Fs12248-020-0427-6), [12248_2020_427_MOESM2_ESM.xls](https://static-content.springer.com/esm/art%3A10.1208%2Fs12248-020-0427-6/MediaObjects/12248_2020_427_MOESM2_ESM.xls).
 
 ## Discussion
 

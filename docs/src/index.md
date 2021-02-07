@@ -84,7 +84,7 @@ where:
 Pages = [
         "details.md",
         "examples.md",
-        "validation.md"
+        "validation.md",
         "api.md"]
 Depth = 3
 ```
