@@ -8,7 +8,7 @@ using Metida, StatsPlots, CSV, DataFrames, MixedModels;
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 
 @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
-savefig("f-plot.svg");
+savefig("f-plot.svg"); nothing # hide
 ```
 Model: response ~ 1 + factor*time
 
