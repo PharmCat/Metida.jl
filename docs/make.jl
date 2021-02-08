@@ -21,5 +21,6 @@ makedocs(
 )
 
 deploydocs(repo = "github.com/PharmCat/Metida.jl.git",
-    versions = ["stable" => "v^", "v#.#.#", devurl => devurl]
+    devurl = "dev",
+    versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
 )
