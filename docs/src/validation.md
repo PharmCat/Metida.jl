@@ -7,7 +7,7 @@ Validation provided with 3 sections:
 
 ## Section 1: REML validation for public datasets Metida & SPSS
 
-### REML result table
+#### REML result table
 
 | Model  | DataSet |Used cov. types | REML  Metida | REML SPSS|
 |--------|--------|--------|--------|-------|
@@ -22,9 +22,9 @@ Validation provided with 3 sections:
 | 9 | RepeatedPulse.csv | 0/AR | 471.85107712169827 | 471.851077 |
 | 10 | RepeatedPulse.csv | AR/SI | 453.3395560121246 | 453.339555 |
 
-### sleepstudy.csv
+#### sleepstudy.csv
 
-#### Model 1
+##### Model 1
 
 ```
 lmm = Metida.LMM(@formula(Reaction~Days), df;
@@ -43,7 +43,7 @@ MIXED Reaction BY Days
   /METHOD=REML
   /RANDOM=INTERCEPT | SUBJECT(Subject) COVTYPE(ID).
 ```
-#### Model 2
+##### Model 2
 
 ```
 lmm = Metida.LMM(@formula(Reaction~1), df;
@@ -63,7 +63,7 @@ MIXED Reaction BY Days
   /RANDOM=Days | SUBJECT(Subject) COVTYPE(CS).
 ```
 
-#### Model 3
+##### Model 3
 
 ```
 lmm = Metida.LMM(@formula(Reaction~1), df;
@@ -82,7 +82,7 @@ MIXED Reaction BY Days
   /RANDOM=Days | SUBJECT(Subject) COVTYPE(CSH).
 ```
 
-#### Model 4
+##### Model 4
 
 ```
 lmm = Metida.LMM(@formula(Reaction~1), df;
@@ -101,9 +101,9 @@ MIXED Reaction BY Days
   /RANDOM=Days | SUBJECT(Subject) COVTYPE(ARH1).
 ```
 
-### pastes.csv
+#### pastes.csv
 
-#### Model 5
+##### Model 5
 
 ```
 lmm = Metida.LMM(@formula(strength~1), df;
@@ -123,7 +123,7 @@ MIXED strength
   /RANDOM=INTERCEPT | SUBJECT(cask * batch) COVTYPE(ID).
 ```
 
-#### Model 6
+##### Model 6
 
 ```
 lmm = Metida.LMM(@formula(strength~1), df;
@@ -142,9 +142,9 @@ MIXED strength by cask
   /RANDOM=cask | SUBJECT(batch) COVTYPE(ARMA11).
 ```
 
-### penicillin.csv
+#### penicillin.csv
 
-#### Model 7
+##### Model 7
 
 ```
 lmm = Metida.LMM(@formula(diameter~1), df;
@@ -164,9 +164,9 @@ MIXED diameter
   /RANDOM=INTERCEPT | SUBJECT(sample) COVTYPE(ID).
 ```
 
-### RepeatedPulse.csv
+#### RepeatedPulse.csv
 
-#### Model 8
+##### Model 8
 
 ```
 sort!(df, :Day)
@@ -183,7 +183,7 @@ SPSS:
 
 ```
 
-#### Model 9
+##### Model 9
 
 ```
 sort!(df, :Day)
@@ -199,7 +199,7 @@ SPSS:
 
 ```
 
-#### Model 10
+##### Model 10
 
 ```
 sort!(df, :Day)

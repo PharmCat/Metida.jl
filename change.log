@@ -1,3 +1,8 @@
+v0.2.5
+  * hessian isposdef fix
+  * check det(G)
+  * docs
+
 v0.2.4
   * minor optimizations
   * docs remake

@@ -179,26 +179,31 @@ function fit!(lmm::LMM{T};
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model NOT fitted."))
         lmm.result.fit      = false
     end
+    #Check G
+    if lmm.covstr.random[1].covtype.s != :ZERO
+        for i = 1:length(lmm.covstr.random)
+            dg = det(gmatrix(lmm, i))
+            if dg < 1e-08 lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "det(G) of random effect $(i) is less 1e-08.")) end
+        end
+    end
 
     if hcalck
             #Hessian
         lmm.result.h      = hessian(lmm, lmm.result.theta)
             #H positive definite check
-        if !isposdef(lmm.result.h)
+        if !isposdef(Symmetric(lmm.result.h))
             lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian is not positive definite."))
         end
         qrd = qr(lmm.result.h, Val(true))
         for i = 1:length(lmm.result.theta)
             if abs(qrd.R[i,i]) < 1E-8
                 if lmm.covstr.ct[qrd.jpvt[i]] == :var
-                    lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Variation QR.R diagonal value ($(qrd.jpvt[i])) is less than 1e-10."))
+                    lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian parameter (variation) QR.R diagonal value ($(qrd.jpvt[i])) is less than 1e-10."))
                 elseif lmm.covstr.ct[qrd.jpvt[i]] == :rho
-                    lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Rho QR.R diagonal value ($(qrd.jpvt[i])) is less than 1e-10."))
+                    lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian parameter (rho) QR.R diagonal value ($(qrd.jpvt[i])) is less than 1e-10."))
                 end
             end
         end
     end
-
-
     lmm
 end

@@ -98,6 +98,14 @@ end
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 10.862124583312674 atol=1E-8
 end
+@testset "  Model: Only random, Int SI/SI                            " begin
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(1), Metida.SI),
+    subject = :subject
+    )
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 10.862124583312674 atol=1E-8
+end
 @testset "  Model: Noblock, equal subjects, CSH/CS                   " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation), Metida.CSH, subj = :subject),

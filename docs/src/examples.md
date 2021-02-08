@@ -5,11 +5,9 @@ using Metida, StatsPlots, CSV, DataFrames, MixedModels;
 
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 
-p = @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
-png(p, "plot1.png"); nothing # hide
+@df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
+png("plot1.png"); nothing # hide
 ```
-
-Model: response ~ 1 + factor*time
 
 ![](plot1.png)
 
@@ -55,9 +53,7 @@ mm = fit(MixedModel, fm2, df, REML=true)
 
 ### Example 3 - Repeated ARMA/AR/ARH
 
-```@example 2
-using Metida, StatsPlots, CSV, DataFrames, MixedModels; # hide
-
+```@example 1
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1freparma.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 
 @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
@@ -68,7 +64,7 @@ png("plot2.png"); nothing # hide
 
 ARMA:
 
-```@example 2
+```@example 1
 lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
 random = Metida.VarEffect(Metida.@covstr(factor), Metida.DIAG),
 repeated = Metida.VarEffect(Metida.ARMA),
@@ -79,7 +75,7 @@ Metida.fit!(lmm)
 
 AR:
 
-```@example 2
+```@example 1
 lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
 random = Metida.VarEffect(Metida.@covstr(factor), Metida.DIAG),
 repeated = Metida.VarEffect(Metida.AR),
@@ -90,7 +86,7 @@ Metida.fit!(lmm)
 
 ARH:
 
-```@example 2
+```@example 1
 lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
 random = Metida.VarEffect(Metida.@covstr(factor), Metida.DIAG),
 repeated = Metida.VarEffect(Metida.ARH),
@@ -104,7 +100,6 @@ Metida.fit!(lmm)
 #### Model 1
 
 ```
-using Metida, CSV, DataFrames
 df0 = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "df0.csv")) |> DataFrame
 
 lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
