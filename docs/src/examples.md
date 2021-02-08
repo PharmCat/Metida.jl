@@ -5,13 +5,13 @@ using Metida, StatsPlots, CSV, DataFrames, MixedModels;
 
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 
-@df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
-savefig("plot1.svg"); nothing # hide
+p = @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
+png(p, "plot1.png"); nothing # hide
 ```
 
 Model: response ~ 1 + factor*time
 
-![](plot1.svg)
+![](plot1.png)
 
 Metida result:
 
@@ -61,10 +61,10 @@ using Metida, StatsPlots, CSV, DataFrames, MixedModels; # hide
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1freparma.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 
 @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
-savefig("plot2.svg"); nothing # hide
+png("plot2.png"); nothing # hide
 ```
 
-![](plot2.svg)
+![](plot2.png)
 
 ARMA:
 
