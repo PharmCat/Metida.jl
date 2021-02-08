@@ -29,6 +29,10 @@ end
 Scaled identity covariance type.
 
 SI = ScaledIdentity()
+
+```math
+\\begin{bmatrix} 1 & 0 & 0 \\\\ 0 & 1 & 0 \\\\ 0 & 0 & 1 \\end{bmatrix}\\sigma^{2}
+```
 """
 function ScaledIdentity()
     CovarianceType(:SI)
@@ -36,6 +40,14 @@ end
 const SI = ScaledIdentity()
 """
     Diag()
+
+Diagonal covariance type.
+
+DIAG = Diag()
+
+```math
+\\begin{bmatrix} \\sigma_a^2 & 0 & 0 \\\\ 0 & \\sigma_b^2 & 0 \\\\ 0 & 0 & \\sigma_c^2 \\end{bmatrix}
+```
 """
 function Diag()
     CovarianceType(:DIAG)
@@ -43,6 +55,17 @@ end
 const DIAG = Diag()
 """
     Autoregressive()
+
+Autoregressive covariance type.
+
+AR = Autoregressive()
+
+```math
+\\begin{bmatrix} 1 & \\rho & \\rho^2 & \\rho^3 \\\\
+\\rho & 1 & \\rho & \\rho^2 \\\\ \\rho^2 & \\rho & 1 & \\rho \\\\
+\\rho^3 & \\rho^2 & \\rho & 1
+\\end{bmatrix}\\sigma^2
+```
 """
 function Autoregressive()
     CovarianceType(:AR)
@@ -50,6 +73,19 @@ end
 const AR = Autoregressive()
 """
     HeterogeneousAutoregressive()
+
+Heterogeneous autoregressive covariance type.
+
+ARH = HeterogeneousAutoregressive()
+
+```math
+\\begin{bmatrix}
+\\sigma_a^2 & \\rho\\sigma_a\\sigma_b & \\rho^2\\sigma_a\\sigma_c & \\rho^3\\sigma_a\\sigma_d \\\\
+\\rho\\sigma_b\\sigma_a & \\sigma_b^2 & \\rho\\sigma_b\\sigma_c & \\rho^2\\sigma_b\\sigma_d \\\\
+\\rho^2\\sigma_c\\sigma_a & \\rho\\sigma_c\\sigma_b & \\sigma_c^2 & \\rho\\sigma_c\\sigma_d \\\\
+\\rho^3\\sigma_d\\sigma_a & \\rho^2\\sigma_d\\sigma_b & \\rho\\sigma_d\\sigma_c & \\sigma_d^2
+\\end{bmatrix}
+```
 """
 function HeterogeneousAutoregressive()
     CovarianceType(:ARH)
@@ -57,6 +93,18 @@ end
 const ARH = HeterogeneousAutoregressive()
 """
     CompoundSymmetry()
+
+Compound symmetry covariance type.
+
+CS = CompoundSymmetry()
+
+```math
+\\begin{bmatrix} 1 & \\rho & \\rho & \\rho \\\\
+\\rho & 1 & \\rho & \\rho \\\\
+\\rho & \\rho & 1 & \\rho \\\\
+\\rho & \\rho & \\rho & 1
+\\end{bmatrix}\\sigma^2
+```
 """
 function CompoundSymmetry()
     CovarianceType(:CS)
@@ -64,12 +112,38 @@ end
 const CS = CompoundSymmetry()
 """
     HeterogeneousCompoundSymmetry()
+
+Heterogeneous compound symmetry covariance type.
+
+CSH = HeterogeneousCompoundSymmetry()
+
+```math
+\\begin{bmatrix}
+\\sigma_a^2 & \\rho\\sigma_a\\sigma_b & \\rho\\sigma_a\\sigma_c & \\rho\\sigma_a\\sigma_d \\\\
+\\rho\\sigma_b\\sigma_a & \\sigma_b^2 & \\rho\\sigma_b\\sigma_c & \\rho\\sigma_b\\sigma_d \\\\
+\\rho\\sigma_c\\sigma_a & \\rho\\sigma_c\\sigma_b & \\sigma_c^2 & \\rho\\sigma_c\\sigma_d \\\\
+\\rho\\sigma_d\\sigma_a & \\rho\\sigma_d\\sigma_b & \\rho\\sigma_d\\sigma_c & \\sigma_d^2
+\\end{bmatrix}
+```
 """
 function HeterogeneousCompoundSymmetry()
     CovarianceType(:CSH)
 end
 const CSH = HeterogeneousCompoundSymmetry()
 """
+    AutoregressiveMovingAverage()
+
+Autoregressive moving average covariance type.
+
+ARMA = AutoregressiveMovingAverage()
+
+```math
+\\begin{bmatrix} 1 & \\gamma & \\gamma\\rho & \\gamma\\rho^2 \\\\
+\\gamma & 1 & \\gamma & \\gamma\\rho \\\\
+\\gamma\\rho & \\gamma & 1 & \\gamma \\\\
+\\gamma\\rho^2 & \\gamma\\rho & \\gamma & 1
+\\end{bmatrix}\\sigma^2
+```
 """
 function AutoregressiveMovingAverage()
     CovarianceType(:ARMA)

@@ -8,11 +8,12 @@ using Metida, StatsPlots, CSV, DataFrames, MixedModels;
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 
 @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
-savefig("f-plot.svg"); nothing # hide
+savefig("plot1.svg"); nothing # hide
 ```
+
 Model: response ~ 1 + factor*time
 
-![](f-plot.svg)
+![](plot1.svg)
 
 Metida result:
 
@@ -33,7 +34,7 @@ mm = fit(MixedModel, fm, rds, REML=true)
 
 ### Example 2 - Two random factors (Penicillin data)
 
-Metida
+Metida:
 
 ```@example 1
 
@@ -46,12 +47,58 @@ random = [Metida.VarEffect(Metida.SI, subj = :plate), Metida.VarEffect(Metida.SI
 Metida.fit!(lmm)
 ```
 
-MixedModels
+MixedModels:
 
 ```@example 1
 
 fm2 = @formula(diameter ~ 1 + (1|plate) + (1|sample))
 mm = fit(MixedModel, fm2, df, REML=true)
+```
+
+### Example 3 - Repeated ARMA/AR/ARH
+
+```@example 2
+using Metida, StatsPlots, CSV, DataFrames, MixedModels; # hide
+
+rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1freparma.csv"); types = [String, String, Float64, Float64]) |> DataFrame
+
+@df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
+savefig("plot2.svg"); nothing # hide
+```
+
+![](plot2.svg)
+
+ARMA:
+
+```@example 2
+lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
+random = Metida.VarEffect(Metida.@covstr(factor), Metida.DIAG),
+repeated = Metida.VarEffect(Metida.ARMA),
+subject = [:subject, :factor]
+)
+Metida.fit!(lmm)
+```
+
+AR:
+
+```@example 2
+lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
+random = Metida.VarEffect(Metida.@covstr(factor), Metida.DIAG),
+repeated = Metida.VarEffect(Metida.AR),
+subject = [:subject, :factor]
+)
+Metida.fit!(lmm)
+```
+
+ARH:
+
+```@example 2
+lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
+random = Metida.VarEffect(Metida.@covstr(factor), Metida.DIAG),
+repeated = Metida.VarEffect(Metida.ARH),
+subject = [:subject, :factor]
+)
+Metida.fit!(lmm)
 ```
 
 ### Other

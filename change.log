@@ -1,6 +1,8 @@
 - 0.2.4
   * minor optimizations
   * docs
+  * split test and validation
+  * new test datasets
 
 - 0.2.3
   * FullDummyCoding fix

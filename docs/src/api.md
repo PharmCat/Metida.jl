@@ -49,6 +49,22 @@ Metida.CompoundSymmetry
 ```@docs
 Metida.HeterogeneousCompoundSymmetry
 ```
+
+### Metida.coef
+```@docs
+Metida.coef
+```
+
+### Metida.coefnames
+```@docs
+Metida.coefnames
+```
+
+### Metida.nobs
+```@docs
+Metida.nobs
+```
+
 ### Metida.dof
 ```@docs
 Metida.dof
@@ -67,6 +83,21 @@ Metida.dof_satter
 ### Metida.caic
 ```@docs
 Metida.caic
+```
+
+### Metida.aic
+```@docs
+Metida.aic
+```
+
+### Metida.bic
+```@docs
+Metida.bic
+```
+
+### Metida.aicc
+```@docs
+Metida.aicc
 ```
 
 ### Metida.gmatrix

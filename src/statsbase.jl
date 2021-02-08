@@ -25,6 +25,7 @@ ML:, n = total number of observation; d = number of fixed effect parameters + nu
 =#
 """
     StatsBase.coef(lmm::LMM) = copy(lmm.result.beta)
+
 """
 StatsBase.coef(lmm::LMM) = copy(lmm.result.beta)
 
@@ -35,6 +36,8 @@ StatsBase.coefnames(lmm::LMM) = StatsBase.coefnames(lmm.mf)
 
 """
     StatsBase.nobs(lmm::LMM)
+
+Number of observations.
 """
 function StatsBase.nobs(lmm::LMM)
     return length(lmm.data.yv)
@@ -56,6 +59,8 @@ end
 
 """
     StatsBase.loglikelihood(lmm::LMM)
+
+Return loglikelihood value.
 """
 function StatsBase.loglikelihood(lmm::LMM)
     -lmm.result.reml/2
@@ -63,6 +68,8 @@ end
 
 """
     StatsBase.aic(lmm::LMM)
+
+Akaike Information Criterion.
 """
 function StatsBase.aic(lmm::LMM)
     l = loglikelihood(lmm)
@@ -72,6 +79,8 @@ end
 
 """
     StatsBase.bic(lmm::LMM)
+
+Bayesian information criterion.
 """
 function StatsBase.bic(lmm::LMM)
     l = loglikelihood(lmm)
@@ -82,6 +91,8 @@ end
 
 """
     StatsBase.aicc(lmm::LMM)
+
+Corrected Akaike Information Criterion.
 """
 function StatsBase.aicc(lmm::LMM)
     l = loglikelihood(lmm)
@@ -92,6 +103,8 @@ end
 
 """
     caic(lmm::LMM)
+
+Conditional Akaike Information Criterion.
 """
 function caic(lmm::LMM)
     l = loglikelihood(lmm)

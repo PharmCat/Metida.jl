@@ -15,9 +15,12 @@ Validation provided with 3 sections:
 | 2 | sleepstudy.csv | CS/SI | 1904.3265170722132 | 1904.327 |
 | 3 | sleepstudy.csv | CSH/SI | 1772.0953251997046 | 1772.095 |
 | 4 | sleepstudy.csv | ARH/SI | 1730.1895427398322 | 1730.189543 |
-| 5 | pastes.csv | SI,SI/SI | 246.99074585348623 | 246.990746 |
-| 6 | pastes.csv | ARMA/SI | 246.81895071012508 | 246.818951 |
-| 7 | penicillin.csv | SI,SI/SI | 330.86058899109184 | 330.860589 |
+| 5 | Pastes.csv | SI,SI/SI | 246.99074585348623 | 246.990746 |
+| 6 | Pastes.csv | ARMA/SI | 246.81895071012508 | 246.818951 |
+| 7 | Penicillin.csv | SI,SI/SI | 330.86058899109184 | 330.860589 |
+| 8 | RepeatedPulse.csv | SI/AR | 453.3395435627574 | 453.339544 |
+| 9 | RepeatedPulse.csv | 0/AR | 471.85107712169827 | 471.851077 |
+| 10 | RepeatedPulse.csv | AR/SI | 453.3395560121246 | 453.339555 |
 
 ### sleepstudy.csv
 
@@ -161,6 +164,57 @@ MIXED diameter
   /RANDOM=INTERCEPT | SUBJECT(sample) COVTYPE(ID).
 ```
 
+### RepeatedPulse.csv
+
+#### Model 8
+
+```
+sort!(df, :Day)
+lmm = Metida.LMM(@formula(Pulse~1), df;
+random = Metida.VarEffect(Metida.@covstr(Time), Metida.SI),
+repeated = Metida.VarEffect(Metida.@covstr(Day), Metida.AR),
+subject = :Time
+)
+Metida.fit!(lmm)
+```
+
+SPSS:
+```
+
+```
+
+#### Model 9
+
+```
+sort!(df, :Day)
+lmm = Metida.LMM(@formula(Pulse~1), df;
+repeated = Metida.VarEffect(Metida.@covstr(Day), Metida.AR),
+subject = :Time
+)
+Metida.fit!(lmm)
+```
+
+SPSS:
+```
+
+```
+
+#### Model 10
+
+```
+sort!(df, :Day)
+lmm = Metida.LMM(@formula(Pulse~1), df;
+random = Metida.VarEffect(Metida.@covstr(Day), Metida.AR),
+subject = :Time
+)
+Metida.fit!(lmm)
+```
+
+SPSS:
+```
+
+```
+
 ## Section 2: Parameters validation for public datasets Metida & SPSS & MixedModels
 
 not done yet
@@ -193,14 +247,6 @@ lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), dfrds;
 #### Typical SPSS code
 
 ```
-UNIANOVA lnpk BY period sequence treatment subject
-  /RANDOM subject
-  /CONTRAST(treatment)=Simple(1)
-  /METHOD=SSTYPE(3)
-  /INTERCEPT=INCLUDE
-  /CRITERIA=ALPHA(0.05)
-  /DESIGN=period sequence treatment subject(sequence).
-
 MIXED lnpk BY period sequence treatment subject
   /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
     SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
@@ -219,7 +265,7 @@ MIXED lnpk BY period treatment sequence subject
   /EMMEANS=TABLES(treatment) COMPARE REFCAT(FIRST) ADJ(LSD).
 ```
 
-Full SPSS code provided in validation folder ([here](https://github.com/PharmCat/Metida.jl/blob/master/validation/spssrdscode.txt)).
+Full SPSS code provided in validation folder ([here](https://github.com/PharmCat/Metida.jl/blob/master/validation/spssrdscode.sps.txt)).
 
 Validation dataset available [here](https://link.springer.com/article/10.1208%2Fs12248-020-0427-6), [12248_2020_427_MOESM2_ESM.xls](https://static-content.springer.com/esm/art%3A10.1208%2Fs12248-020-0427-6/MediaObjects/12248_2020_427_MOESM2_ESM.xls).
 

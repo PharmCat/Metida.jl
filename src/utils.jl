@@ -45,6 +45,14 @@ function intersectsubj(random, repeated)
     end
     intersect(a...), eq
 end
+function intersectsubj(random)
+    if !isa(random, Vector) return random.subj end
+    a  = Vector{Vector{Symbol}}(undef, length(random))
+    for i = 1:length(random)
+        a[i] = random[i].subj
+    end
+    intersect(a...)
+end
 """
 Variance estimate via OLS and QR decomposition.
 """

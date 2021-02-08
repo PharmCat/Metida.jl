@@ -35,6 +35,9 @@ struct LMM{T} <: MetidaModel
 
     function LMM(model, data; contrasts=Dict{Symbol,Any}(), subject::Union{Nothing, Symbol, AbstractVector{Symbol}} = nothing,  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
         #need check responce - Float
+        if repeated === nothing && random === nothing
+            error("No effects specified!")
+        end
         if isa(subject, Nothing)
             subject = Vector{Symbol}(undef, 0)
         elseif isa(subject, Symbol)
@@ -45,7 +48,7 @@ struct LMM{T} <: MetidaModel
         mm     = ModelMatrix(mf)
         nfixed = nterms(mf)
         if repeated === nothing
-            repeated = VarEffect()
+            repeated = VarEffect(Metida.@covstr(1), Metida.ScaledIdentity(), subj = intersectsubj(random))
         end
         if random === nothing
             random = VarEffect(Metida.@covstr(0), Metida.RZero(), subj = repeated.subj)
