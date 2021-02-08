@@ -1,4 +1,4 @@
-## NLopt
+### NLopt
 
 Optimization with NLopt.jl.
 

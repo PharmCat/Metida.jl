@@ -1,4 +1,4 @@
-## Validation
+# Validation
 
 Validation provided with 3 sections:
 * REML validation for public datasets with Metida & SPSS

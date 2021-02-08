@@ -8,11 +8,13 @@ makedocs(
     doctest = true,
     pages = [
         "Home" => "index.md",
-        "Details" => "details.md",
+        "User guide" => [
+        "First step" => "instanduse.md",
         "Examples" => "examples.md",
-        "Options" => "options.md",
         "NLopt" => "nlopt.md",
         "CUDA" => "cuda.md",
+        ],
+        "Details" => "details.md",
         "Benchmark" => "bench.md",
         "Validation" => "validation.md",
         "API" => "api.md",

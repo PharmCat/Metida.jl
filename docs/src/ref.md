@@ -1,4 +1,4 @@
-## Citation & Reference
+# Citation & Reference
 
 ### Sweep algorithm
 

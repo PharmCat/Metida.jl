@@ -1,4 +1,4 @@
-## CUDA
+### CUDA
 
 Use CuBLAS & CuSOLVER for REML calculation. Optimization with NLopt.jl.
 
