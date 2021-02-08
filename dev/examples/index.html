@@ -8,7 +8,7 @@ connect: Connection refused
 GKS: can&#39;t connect to GKS socket application
 
 GKS: Open failed in routine OPEN_WS
-GKS: GKS not in proper state. GKS must be either in the state WSOP or WSAC in routine ACTIVATE_WS</pre><p>Model: response ~ 1 + factor*time</p><p><img src="../f-plot.svg" alt/></p><p>Metida result:</p><pre><code class="language-julia">lmm = Metida.LMM(@formula(response ~1 + factor*time), rds;
+GKS: GKS not in proper state. GKS must be either in the state WSOP or WSAC in routine ACTIVATE_WS</pre><p>Model: response ~ 1 + factor*time</p><p><img src="../plot1.svg" alt/></p><p>Metida result:</p><pre><code class="language-julia">lmm = Metida.LMM(@formula(response ~1 + factor*time), rds;
 random = Metida.VarEffect(Metida.@covstr(1 + time), Metida.CSH),
 subject = [:subject, :factor]
 )
@@ -60,57 +60,123 @@ Residual                      0.970344 0.985060
 factor: 1.0          2.00049    0.430402    4.65    &lt;1e-5
 time                 1.11853    0.0264038  42.36    &lt;1e-99
 factor: 1.0 &amp; time   0.404971   0.0373407  10.85    &lt;1e-26
-──────────────────────────────────────────────────────────</pre><h3 id="Example-2-Two-random-factors-(Penicillin-data)"><a class="docs-heading-anchor" href="#Example-2-Two-random-factors-(Penicillin-data)">Example 2 - Two random factors (Penicillin data)</a><a id="Example-2-Two-random-factors-(Penicillin-data)-1"></a><a class="docs-heading-anchor-permalink" href="#Example-2-Two-random-factors-(Penicillin-data)" title="Permalink"></a></h3><p>Metida</p><pre><code class="language-julia">df          = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;lme4&quot;, &quot;Penicillin.csv&quot;); types = [String, Float64, String, String]) |&gt; DataFrame
+──────────────────────────────────────────────────────────</pre><h3 id="Example-2-Two-random-factors-(Penicillin-data)"><a class="docs-heading-anchor" href="#Example-2-Two-random-factors-(Penicillin-data)">Example 2 - Two random factors (Penicillin data)</a><a id="Example-2-Two-random-factors-(Penicillin-data)-1"></a><a class="docs-heading-anchor-permalink" href="#Example-2-Two-random-factors-(Penicillin-data)" title="Permalink"></a></h3><p>Metida:</p><pre><code class="language-">
+df          = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;lme4&quot;, &quot;Penicillin.csv&quot;); types = [String, Float64, String, String]) |&gt; DataFrame
 df.diameter = float.(df.diameter)
 
 lmm = Metida.LMM(@formula(diameter ~ 1), df;
 random = [Metida.VarEffect(Metida.SI, subj = :plate), Metida.VarEffect(Metida.SI, subj = :sample)]
 )
-Metida.fit!(lmm)</code></pre><pre class="documenter-example-output">Linear Mixed Model: diameter ~ 1
+Metida.fit!(lmm)</code></pre><p>MixedModels:</p><pre><code class="language-">
+fm2 = @formula(diameter ~ 1 + (1|plate) + (1|sample))
+mm = fit(MixedModel, fm2, df, REML=true)</code></pre><h3 id="Example-3-Repeated-ARMA/AR/ARH"><a class="docs-heading-anchor" href="#Example-3-Repeated-ARMA/AR/ARH">Example 3 - Repeated ARMA/AR/ARH</a><a id="Example-3-Repeated-ARMA/AR/ARH-1"></a><a class="docs-heading-anchor-permalink" href="#Example-3-Repeated-ARMA/AR/ARH" title="Permalink"></a></h3><pre><code class="language-julia">rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1freparma.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame
+
+@df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)</code></pre><pre class="documenter-example-output">/home/runner/.julia/packages/GR/G9I5v/src/../deps/gr/bin/gksqt: error while loading shared libraries: libQt5Widgets.so.5: cannot open shared object file: No such file or directory
+connect: Connection refused
+GKS: can&#39;t connect to GKS socket application
+
+GKS: Open failed in routine OPEN_WS
+GKS: GKS not in proper state. GKS must be either in the state WSOP or WSAC in routine ACTIVATE_WS</pre><p><img src="../plot2.svg" alt/></p><p>ARMA:</p><pre><code class="language-julia">lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
+random = Metida.VarEffect(Metida.@covstr(factor), Metida.DIAG),
+repeated = Metida.VarEffect(Metida.ARMA),
+subject = [:subject, :factor]
+)
+Metida.fit!(lmm)</code></pre><pre class="documenter-example-output">Linear Mixed Model: response ~ 1 + factor + time + factor &amp; time
 Random 1: 
-   Model: 1
-   Type: SI (1)
-Random 2: 
-   Model: 1
-   Type: SI (1)
+   Model: factor
+   Type: DIAG (2)
 Repeated: 
    Model: 1
-   Type: SI (1)
+   Type: ARMA (3)
 
 Status: converged 
 
-   -2 logREML: 330.861
+   -2 logREML: 709.14
 
    Fixed effects:
 
-Name          Estimate   SE         z         Pr(&gt;|z|)                  
-(Intercept)   22.9722    0.808573   28.4108   1.4870599999999999e-177   
+Name                 Estimate   SE          z         Pr(&gt;|z|)       
+(Intercept)          44.3896    1.35084     32.8609   7.96589e-237   
+factor: 1.0          5.40834    1.60921     3.36087   0.000776975    
+time                 0.508736   0.0481765   10.5598   4.5749e-26     
+factor: 1.0 &amp; time   0.286837   0.0681318   4.21003   2.5534e-5      
 
 Random effects:
 
-   θ vector: [0.846704, 1.93156, 0.549923]
+   θ vector: [4.53791, 2.8059, 1.12292, 0.625323, 0.713154]
 
-Random 1   σ²    var   0.716908   
-Random 2   σ²    var   3.73092    
-Residual   σ²    var   0.302415   
-</pre><p>MixedModels</p><pre><code class="language-julia">fm2 = @formula(diameter ~ 1 + (1|plate) + (1|sample))
-mm = fit(MixedModel, fm2, df, REML=true)</code></pre><pre class="documenter-example-output">Linear mixed model fit by REML
- diameter ~ 1 + (1 | plate) + (1 | sample)
- REML criterion at convergence: 330.8605889909948
+Random 1   σ² factor: 0.0   var   20.5926    
+Random 1   σ² factor: 1.0   var   7.87307    
+Residual   σ²               var   1.26095    
+Residual   γ                rho   0.625323   
+Residual   ρ                rho   0.713154   
+</pre><p>AR:</p><pre><code class="language-julia">lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
+random = Metida.VarEffect(Metida.@covstr(factor), Metida.DIAG),
+repeated = Metida.VarEffect(Metida.AR),
+subject = [:subject, :factor]
+)
+Metida.fit!(lmm)</code></pre><pre class="documenter-example-output">Linear Mixed Model: response ~ 1 + factor + time + factor &amp; time
+Random 1: 
+   Model: factor
+   Type: DIAG (2)
+Repeated: 
+   Model: 1
+   Type: AR (2)
 
-Variance components:
-            Column   Variance Std.Dev. 
-plate    (Intercept)  0.716908 0.846704
-sample   (Intercept)  3.730909 1.931556
-Residual              0.302415 0.549923
- Number of obs: 144; levels of grouping factors: 24, 6
+Status: converged 
 
-  Fixed-effects parameters:
-─────────────────────────────────────────────────
-               Coef.  Std. Error      z  Pr(&gt;|z|)
-─────────────────────────────────────────────────
-(Intercept)  22.9722    0.808572  28.41    &lt;1e-99
-─────────────────────────────────────────────────</pre><h3 id="Other"><a class="docs-heading-anchor" href="#Other">Other</a><a id="Other-1"></a><a class="docs-heading-anchor-permalink" href="#Other" title="Permalink"></a></h3><pre><code class="language-none">using Metida, StatsBase, StatsModels, CSV, DataFrames
+   -2 logREML: 710.096
+
+   Fixed effects:
+
+Name                 Estimate   SE          z         Pr(&gt;|z|)       
+(Intercept)          44.3915    1.34686     32.9594   3.10194e-238   
+factor: 1.0          5.39757    1.60271     3.36778   0.000757757    
+time                 0.508075   0.0456524   11.1292   9.04328e-29    
+factor: 1.0 &amp; time   0.290317   0.0645622   4.4967    6.90159e-6     
+
+Random effects:
+
+   θ vector: [4.54797, 2.82342, 1.05771, 0.576979]
+
+Random 1   σ² factor: 0.0   var   20.684     
+Random 1   σ² factor: 1.0   var   7.9717     
+Residual   σ²               var   1.11875    
+Residual   ρ                rho   0.576979   
+</pre><p>ARH:</p><pre><code class="language-julia">lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
+random = Metida.VarEffect(Metida.@covstr(factor), Metida.DIAG),
+repeated = Metida.VarEffect(Metida.ARH),
+subject = [:subject, :factor]
+)
+Metida.fit!(lmm)</code></pre><pre class="documenter-example-output">Linear Mixed Model: response ~ 1 + factor + time + factor &amp; time
+Random 1: 
+   Model: factor
+   Type: DIAG (2)
+Repeated: 
+   Model: 1
+   Type: ARH (2)
+
+Status: converged 
+
+   -2 logREML: 710.096
+
+   Fixed effects:
+
+Name                 Estimate   SE          z         Pr(&gt;|z|)       
+(Intercept)          44.3915    1.34686     32.9594   3.10194e-238   
+factor: 1.0          5.39757    1.60271     3.36778   0.000757757    
+time                 0.508075   0.0456524   11.1292   9.04328e-29    
+factor: 1.0 &amp; time   0.290317   0.0645622   4.4967    6.90159e-6     
+
+Random effects:
+
+   θ vector: [4.54797, 2.82342, 1.05771, 0.576979]
+
+Random 1   σ² factor: 0.0   var   20.684     
+Random 1   σ² factor: 1.0   var   7.9717     
+Residual   σ² (Intercept)   var   1.11875    
+Residual   ρ                rho   0.576979   
+</pre><h3 id="Other"><a class="docs-heading-anchor" href="#Other">Other</a><a id="Other-1"></a><a class="docs-heading-anchor-permalink" href="#Other" title="Permalink"></a></h3><pre><code class="language-none">using Metida, StatsBase, StatsModels, CSV, DataFrames
 df0 = CSV.File(dirname(pathof(Metida))*&quot;\\..\\test\\csv\\df0.csv&quot;) |&gt; DataFrame
 
 ################################################################################
@@ -465,4 +531,4 @@ Repeated   Var              var   0.0316616
 =#
 
 ################################################################################
-</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../details/">« Details</a><a class="docs-footer-nextpage" href="../options/">Options »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 6 February 2021 20:43">Saturday 6 February 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../details/">« Details</a><a class="docs-footer-nextpage" href="../options/">Options »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 8 February 2021 15:54">Monday 8 February 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
