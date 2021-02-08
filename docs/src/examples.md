@@ -38,7 +38,7 @@ Metida:
 
 ```@example 1
 
-df          = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "lme4", "Penicillin.csv"); types = [String, Float64, String, String]) |> DataFrame
+df          = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "Penicillin.csv"); types = [String, Float64, String, String]) |> DataFrame
 df.diameter = float.(df.diameter)
 
 lmm = Metida.LMM(@formula(diameter ~ 1), df;
