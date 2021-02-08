@@ -4,8 +4,8 @@ makedocs(
     modules = [Metida],
     sitename = "Metida Documentation",
     authors = "Vladimir Arnautov",
-    linkcheck = false,
-    doctest = false,
+    linkcheck = true,
+    doctest = true,
     pages = [
         "Home" => "index.md",
         "Details" => "details.md",
