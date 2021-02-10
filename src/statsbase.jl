@@ -26,11 +26,14 @@ ML:, n = total number of observation; d = number of fixed effect parameters + nu
 """
     StatsBase.coef(lmm::LMM) = copy(lmm.result.beta)
 
+Model coefficients (β).
 """
 StatsBase.coef(lmm::LMM) = copy(lmm.result.beta)
 
 """
     StatsBase.coefnames(lmm::LMM) = StatsBase.coefnames(lmm.mf)
+
+Coefficients names.
 """
 StatsBase.coefnames(lmm::LMM) = StatsBase.coefnames(lmm.mf)
 
@@ -45,6 +48,8 @@ end
 
 """
     StatsBase.dof_residual(lmm::LMM)
+
+DOF residuals.
 """
 function StatsBase.dof_residual(lmm::LMM)
     nobs(lmm) - lmm.rankx
@@ -52,6 +57,8 @@ end
 
 """
     StatsBase.dof(lmm::LMM)
+
+DOF.
 """
 function StatsBase.dof(lmm::LMM)
     lmm.nfixed + lmm.covstr.tl
@@ -119,13 +126,29 @@ end
 function StatsBase.isfitted(lmm::LMM)
     lmm.result.fit
 end
+"""
+    StatsBase.vcov(lmm::LMM)
 
+Variance-covariance matrix of β.
+"""
 StatsBase.vcov(lmm::LMM) = copy(lmm.result.c)
+"""
+    StatsBase.stderror(lmm::LMM)
 
+Standard error
+"""
 StatsBase.stderror(lmm::LMM) = sqrt.(diag(vcov(lmm)))
+"""
+    StatsBase.modelmatrix(lmm::LMM)
 
+Fixed effects matrix.
+"""
 StatsBase.modelmatrix(lmm::LMM) = lmm.data.xv
+"""
+    StatsBase.response(lmm::LMM)
 
+Response vector.
+"""
 StatsBase.response(lmm::LMM) = lmm.data.yv
 #=
 StatsBase.mss(model::LMM) = error("mss is not defined for $(typeof(model)).")

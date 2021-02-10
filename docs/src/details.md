@@ -54,3 +54,25 @@ C = (\sum_{i=1}^{n} X_i'V_i^{-1}X_i)^{-1}
 #### Sweep
 
 Details see: https://github.com/joshday/SweepOperator.jl
+
+#### No API functions
+
+##### Metida.mulαβαt3
+```@docs
+Metida.mulαβαt3
+```
+
+##### Metida.mulαβαtinc!
+```@docs
+Metida.mulαβαtinc!
+```
+
+##### Metida.mulθ₃
+```@docs
+Metida.mulθ₃
+```
+
+##### Metida.mulαtβinc!
+```@docs
+Metida.mulαtβinc!
+```

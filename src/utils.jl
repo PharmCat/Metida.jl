@@ -1,6 +1,6 @@
-"""
-Intersect dataframe.
-"""
+################################################################################
+# Intersect dataframe.
+################################################################################
 function intersectdf(df, s)::Vector
     if isa(s, Nothing) return [collect(1:size(df, 1))] end
     if isa(s, Symbol) s = [s] end
@@ -27,9 +27,9 @@ function intersectdf(df, s)::Vector
     end
     res
 end
-"""
-Intersect subject set in effects.
-"""
+################################################################################
+# Intersect subject set in effects.
+################################################################################
 function intersectsubj(random, repeated)
     a  = Vector{Vector{Symbol}}(undef, length(random)+1)
     eq = true
@@ -53,9 +53,9 @@ function intersectsubj(random)
     end
     intersect(a...)
 end
-"""
-Variance estimate via OLS and QR decomposition.
-"""
+################################################################################
+# Variance estimate via OLS and QR decomposition.
+################################################################################
 function initvar(y::Vector, X::Matrix{T}) where T
     qrx  = qr(X)
     β    = inv(qrx.R) * qrx.Q' * y
@@ -215,7 +215,7 @@ end
 """
     hessian(lmm, theta)
 
-Calculate Hessian matrix of REML
+Calculate Hessian matrix of REML for theta.
 """
 function hessian(lmm, theta)
     if !lmm.result.fit error("Model not fitted!") end

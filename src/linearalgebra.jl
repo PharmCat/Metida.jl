@@ -1,6 +1,8 @@
 #linearalgebra.jl
 """
-
+```math
+    \\begin{bmatrix} A * B * A' & X \\\\ X' & 0 \\end{bmatrix}
+```
 """
 function mulαβαt3(A, B, X)
     q  = size(B, 1)
@@ -25,7 +27,9 @@ function mulαβαt3(A, B, X)
     mx
 end
 """
-A * B * A' -> + θ
+θ + A * B * A'
+
+Change θ.
 """
 function mulαβαtinc!(θ::AbstractVecOrMat{T}, A, B) where T
     q = size(B, 1)
@@ -63,7 +67,9 @@ function mulθ₃(y, X, β, V::AbstractMatrix{T})::T where T
     return θ
 end
 """
-A' * B  -> + θ
+θ + A' * B
+
+Change θ.
 """
 function mulαtβinc!(θ::AbstractVecOrMat{T}, A::AbstractMatrix, B::AbstractVector) where T
     if size(A, 1) != length(B) throw(DimensionMismatch("size(A, 1) should be equal length(B)")) end

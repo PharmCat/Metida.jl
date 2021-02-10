@@ -100,6 +100,26 @@ Metida.bic
 Metida.aicc
 ```
 
+### Metida.vcov
+```@docs
+Metida.vcov
+```
+
+### Metida.stderror
+```@docs
+Metida.stderror
+```
+
+### Metida.modelmatrix
+```@docs
+Metida.modelmatrix
+```
+
+### Metida.response
+```@docs
+Metida.response
+```
+
 ### Metida.gmatrix
 ```@docs
 Metida.gmatrix
@@ -113,4 +133,24 @@ Metida.rmatrix
 ### Metida.vmatrix!
 ```@docs
 Metida.vmatrix!
+```
+
+### Metida.thetalength
+```@docs
+Metida.thetalength
+```
+
+### Metida.theta
+```@docs
+Metida.theta
+```
+
+### Metida.rankx
+```@docs
+Metida.rankx
+```
+
+### Metida.hessian
+```@docs
+Metida.hessian
 ```
