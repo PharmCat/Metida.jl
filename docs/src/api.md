@@ -1,11 +1,11 @@
 # API
 
-### Metida.LMM
+### LMM
 ```@docs
 Metida.LMM
 ```
 
-### Metida.fit!
+### fit!
 ```@docs
 Metida.fit!
 ```
