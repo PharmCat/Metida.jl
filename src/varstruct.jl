@@ -275,6 +275,8 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     tl::Int
     # Parameter type :var / :rho
     ct::Vector{Symbol}
+    # Nubber of subjects in each effect
+    sn::Vector{Int}
     #--
     function CovStructure(random, repeated, data, blocks)
         alleffl =  length(random) + 1
@@ -294,6 +296,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         # Names
         rcnames = Vector{String}(undef, 0)
         #
+        sn      = zeros(Int, alleffl)
         if length(random) > 1
             for i = 2:length(random)
                 if random[i].covtype.s == :ZERO error("One of the random effect have zero type!") end
@@ -344,10 +347,11 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                 for col in eachcol(view(subjz[s], blocks[i], :))
                     if any(col) push!(sblock[i][s], sort!(findall(x->x==true, col))) end
                 end
+                sn[s] += length(sblock[i][s])
             end
         end
         #
-        new{eltype(z)}(random, repeated, schema, rcnames, block, z, sblock, zrndur, rz, q, t, tr, tl, ct)
+        new{eltype(z)}(random, repeated, schema, rcnames, block, z, sblock, zrndur, rz, q, t, tr, tl, ct, sn)
     end
 end
 ################################################################################
