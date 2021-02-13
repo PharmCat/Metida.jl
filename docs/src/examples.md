@@ -1,6 +1,11 @@
 ### Example 1 - Continuous and categorical predictors
 
-```@example 1
+```@setup lmmexample
+using Plots; gr()
+Plots.reset_defaults()
+```
+
+```@example lmmexample
 using Metida, StatsPlots, CSV, DataFrames, MixedModels;
 
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
@@ -13,7 +18,7 @@ png(p, "plot1.png"); nothing # hide
 
 Metida result:
 
-```@example 1
+```@example lmmexample
 lmm = Metida.LMM(@formula(response ~1 + factor*time), rds;
 random = Metida.VarEffect(Metida.@covstr(1 + time), Metida.CSH),
 subject = [:subject, :factor]
@@ -23,7 +28,7 @@ Metida.fit!(lmm)
 
 MixedModels result:
 
-```@example 1
+```@example lmmexample
 fm = @formula(response ~ 1 + factor*time + (1 + time|subject&factor))
 mm = fit(MixedModel, fm, rds, REML=true)
 ```
@@ -32,7 +37,7 @@ mm = fit(MixedModel, fm, rds, REML=true)
 
 Metida:
 
-```@example 1
+```@example lmmexample
 
 df          = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "Penicillin.csv"); types = [String, Float64, String, String]) |> DataFrame
 df.diameter = float.(df.diameter)
@@ -45,7 +50,7 @@ Metida.fit!(lmm)
 
 MixedModels:
 
-```@example 1
+```@example lmmexample
 
 fm2 = @formula(diameter ~ 1 + (1|plate) + (1|sample))
 mm = fit(MixedModel, fm2, df, REML=true)
@@ -53,7 +58,7 @@ mm = fit(MixedModel, fm2, df, REML=true)
 
 ### Example 3 - Repeated ARMA/AR/ARH
 
-```@example 1
+```@example lmmexample
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1freparma.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 
 p = @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false); # hide
@@ -64,7 +69,7 @@ png(p, "plot2.png"); nothing # hide
 
 ARMA:
 
-```@example 1
+```@example lmmexample
 lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
 random = Metida.VarEffect(Metida.@covstr(factor), Metida.DIAG),
 repeated = Metida.VarEffect(Metida.ARMA),
@@ -75,7 +80,7 @@ Metida.fit!(lmm)
 
 AR:
 
-```@example 1
+```@example lmmexample
 lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
 random = Metida.VarEffect(Metida.@covstr(factor), Metida.DIAG),
 repeated = Metida.VarEffect(Metida.AR),
@@ -86,7 +91,7 @@ Metida.fit!(lmm)
 
 ARH:
 
-```@example 1
+```@example lmmexample
 lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
 random = Metida.VarEffect(Metida.@covstr(factor), Metida.DIAG),
 repeated = Metida.VarEffect(Metida.ARH),

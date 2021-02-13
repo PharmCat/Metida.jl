@@ -36,17 +36,15 @@ for i = 1:30
         atol=1E-6
 
         lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), dfrds;
-        random = Metida.VarEffect(Metida.@covstr(1), Metida.SI),
-        subject = :subject
+        random = Metida.VarEffect(Metida.@covstr(1|subject), Metida.SI),
         )
         Metida.fit!(lmm)
         @test lmm.result.reml ≈ remlsb[i] atol=atol
 
         if i ∈ [13, 15] atol = 1E-4 end
         lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), dfrds;
-        random = Metida.VarEffect(Metida.@covstr(treatment), Metida.CSH),
-        repeated = Metida.VarEffect(Metida.@covstr(treatment), Metida.DIAG),
-        subject = :subject
+        random = Metida.VarEffect(Metida.@covstr(treatment|subject), Metida.CSH),
+        repeated = Metida.VarEffect(Metida.@covstr(treatment|subject), Metida.DIAG),
         )
         Metida.fit!(lmm)
         @test lmm.result.reml ≈ remls[i] atol=atol

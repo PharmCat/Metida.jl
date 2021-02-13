@@ -197,10 +197,10 @@ end
 """
 function rmatrix(lmm::LMM{T}, i::Int) where T
     if !lmm.result.fit error("Model not fitted!") end
-    if i > length(lmm.data.block) error("Invalid block number: $(i)!") end
-    q    = length(lmm.data.block[i])
+    if i > length(lmm.covstr.vcovblock) error("Invalid block number: $(i)!") end
+    q    = length(lmm.covstr.vcovblock[i])
     R    = zeros(T, q, q)
-    rmat_base_inc!(R, lmm.result.theta[lmm.covstr.tr[end]], lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
+    rmat_base_inc!(R, lmm.result.theta[lmm.covstr.tr[end]], lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
 
 end
 """
@@ -209,8 +209,8 @@ end
 Update variance-covariance matrix V for i bolock.
 """
 function vmatrix!(V, θ, lmm, i)
-    zgz_base_inc!(V, θ, lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
-    rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.data.block[i], lmm.covstr.sblock[i])
+    zgz_base_inc!(V, θ, lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
+    rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
 end
 """
     hessian(lmm, theta)

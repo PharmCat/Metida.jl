@@ -6,8 +6,8 @@ function fullzmatrix(lmm)
         l   = zeros(Int, lmm.covstr.sn[r])
         si  = 1
         rzm = Matrix{Int}(undef, 0, length(lmm.covstr.zrndur[r]) * lmm.covstr.sn[r])
-        for b = 1:length(lmm.data.block)
-            zblock    = view(lmm.covstr.z, lmm.data.block[b], lmm.covstr.zrndur[r])
+        for b = 1:length(lmm.covstr.vcovblock)
+            zblock    = view(lmm.covstr.z, lmm.covstr.vcovblock[b], lmm.covstr.zrndur[r])
             for s = 1:length(lmm.covstr.sblock[b][r])
                 zi    = view(zblock, lmm.covstr.sblock[b][r][s], :)
                 l[si] = 1

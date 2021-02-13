@@ -5,11 +5,7 @@ struct LMMData{T}
     xv::Matrix{T}
     # Responce vector
     yv::Vector{T}
-    # Global variance blocking factor (subject)
-    block::Vector{Vector{Int}}
-    # Block factor
-    subject::Vector{Symbol}
-    function LMMData(xa::Matrix{T}, ya::Vector{T}, block, subject) where T
-        new{T}(xa, ya, block, subject)
+    function LMMData(xa::Matrix{T}, ya::Vector{T}) where T
+        new{T}(xa, ya)
     end
 end

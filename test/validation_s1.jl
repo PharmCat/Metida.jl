@@ -15,8 +15,7 @@ df        = CSV.File(path*"/csv/sleepstudy.csv"; types = [String, Float64, Strin
     =#
     # Model 1
     lmm = Metida.LMM(@formula(Reaction~Days), df;
-    random = Metida.VarEffect(Metida.SI),
-    subject = :Subject
+    random = Metida.VarEffect(Metida.@covstr(1|Subject), Metida.SI),
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 1729.4925602367025 atol=1E-6
@@ -28,8 +27,7 @@ end
     # 296.693108
     # Model 2
     lmm = Metida.LMM(@formula(Reaction~1), df;
-    random = Metida.VarEffect(Metida.@covstr(Days), Metida.CS),
-    subject = :Subject
+    random = Metida.VarEffect(Metida.@covstr(Days|Subject), Metida.CS),
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 1904.3265170722132 atol=1E-6
@@ -47,7 +45,7 @@ end
     # REML 1772.095
     # Model 3
     lmm = Metida.LMM(@formula(Reaction~1), df;
-    random = Metida.VarEffect(Metida.@covstr(Days), Metida.CSH, subj = :Subject)
+    random = Metida.VarEffect(Metida.@covstr(Days|Subject), Metida.CSH)
     )
     Metida.fit!(lmm; init = [26.4881, 35.5197, 34.8287, 56.1999, 63.8281, 85.4346, 94.218, 92.8584, 113.679, 129.721, 0.959643, 22.5597])
     @test lmm.result.reml ≈ 1772.0953251997046 atol=1E-6
@@ -57,7 +55,7 @@ end
     # REML 1730.189543
     # Model 4
     lmm = Metida.LMM(@formula(Reaction~1), df;
-    random = Metida.VarEffect(Metida.@covstr(Days), Metida.ARH, subj = :Subject)
+    random = Metida.VarEffect(Metida.@covstr(Days|Subject), Metida.ARH)
     )
     Metida.fit!(lmm; init = [37.9896, 41.1392, 34.1041, 48.1435, 52.2191, 72.4237, 83.3405, 76.7782, 90.2571, 102.617, 0.900038, 6.83327])
     @test lmm.result.reml ≈ 1730.1895427398322 atol=1E-6
@@ -72,7 +70,8 @@ df        = CSV.File(path*"/csv/Pastes.csv"; types = [String, Float64, String, S
     # REML 246.990746
     # Model 5
     lmm = Metida.LMM(@formula(strength~1), df;
-    random = [Metida.VarEffect(Metida.SI, subj = :batch), Metida.VarEffect(Metida.SI, subj = [:batch,  :cask])]
+    random = [Metida.VarEffect(Metida.@covstr(1|batch), Metida.SI),
+    Metida.VarEffect(Metida.@covstr(1|batch&cask), Metida.SI)]
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 246.99074585348623 atol=1E-6
@@ -82,7 +81,7 @@ end
     # SPSS REML 246.818951
     # Model 6
     lmm = Metida.LMM(@formula(strength~1), df;
-    random = Metida.VarEffect(Metida.@covstr(cask), Metida.ARMA, subj = :batch),
+    random = Metida.VarEffect(Metida.@covstr(cask|batch), Metida.ARMA),
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 246.81895071012508 atol=1E-6
@@ -97,15 +96,16 @@ df        = CSV.File(path*"/csv/Penicillin.csv"; types = [String, Float64, Strin
     # SPSS 330.860589
     # Model 7
     lmm = Metida.LMM(@formula(diameter ~ 1), df;
-    random = [Metida.VarEffect(Metida.SI, subj = :plate), Metida.VarEffect(Metida.SI, subj = :sample)]
+    random = [Metida.VarEffect(Metida.@covstr(1|plate), Metida.SI),
+    Metida.VarEffect(Metida.@covstr(1|sample), Metida.SI)],
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 330.86058899109184 atol=1E-6
 
-    #SPSS 432.686
     #=
+    #SPSS 432.686
     lmm = Metida.LMM(@formula(diameter~1), df;
-    random = Metida.VarEffect(Metida.@covstr(plate), Metida.ARMA, subj = :sample)
+    random = Metida.VarEffect(Metida.@covstr(plate|sample), Metida.ARMA)
     )
     Metida.fit!(lmm)
     =#
@@ -125,9 +125,8 @@ sort!(df, :Day)
     REML 453.339544
     =#
     lmm = Metida.LMM(@formula(Pulse~1), df;
-    random = Metida.VarEffect(Metida.@covstr(Time), Metida.SI),
-    repeated = Metida.VarEffect(Metida.@covstr(Day), Metida.AR),
-    subject = :Time
+    random = Metida.VarEffect(Metida.@covstr(Time|Time), Metida.SI),
+    repeated = Metida.VarEffect(Metida.@covstr(Day|Time), Metida.AR),
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 453.3395435627574 atol=1E-6
@@ -138,8 +137,7 @@ end
     REML 471.851077
     =#
     lmm = Metida.LMM(@formula(Pulse~1), df;
-    repeated = Metida.VarEffect(Metida.@covstr(Day), Metida.AR),
-    subject = :Time
+    repeated = Metida.VarEffect(Metida.@covstr(Day|Time), Metida.AR),
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 471.85107712169827 atol=1E-6
@@ -150,15 +148,14 @@ end
     REML 453.339555
     =#
     lmm = Metida.LMM(@formula(Pulse~1), df;
-    random = Metida.VarEffect(Metida.@covstr(Day), Metida.AR),
-    subject = :Time
+    random = Metida.VarEffect(Metida.@covstr(Day|Time), Metida.AR),
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 453.3395560121246 atol=1E-6
 end
 
 ################################################################################
-#                             RepeatedPulse.csv
+#                             ChickWeight.csv
 ################################################################################
 #=
 SPSS
@@ -168,16 +165,14 @@ df        = CSV.File(path*"/csv/ChickWeight.csv"; types = [String, Float64, Floa
 sort!(df, :Diet)
 @testset "  ARH ChickWeight.csv                                      " begin
     lmm = Metida.LMM(@formula(weight~1 + Diet & Time), df;
-    random = Metida.VarEffect(Metida.@covstr(1), Metida.SI),
-    repeated = Metida.VarEffect(Metida.@covstr(Diet), Metida.ARH),
-    subject = :Chick
+    random = Metida.VarEffect(Metida.@covstr(1|Chick), Metida.SI),
+    repeated = Metida.VarEffect(Metida.@covstr(Diet|Chick), Metida.ARH),
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 4439.254893054906 atol=1E-6
 
     lmm = Metida.LMM(@formula(weight~1 + Diet & Time), df;
-    random = Metida.VarEffect(Metida.@covstr(Diet), Metida.ARH),
-    subject = :Chick
+    random = Metida.VarEffect(Metida.@covstr(Diet|Chick), Metida.ARH),
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 5480.751465914058 atol=1E-6

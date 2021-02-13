@@ -33,28 +33,31 @@ struct LMM{T} <: MetidaModel
     blocksolve::Bool
     log::Vector{LMMLogMsg}
 
-    function LMM(model, data; contrasts=Dict{Symbol,Any}(), subject::Union{Nothing, Symbol, AbstractVector{Symbol}} = nothing,  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
+    function LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
         #need check responce - Float
         if repeated === nothing && random === nothing
             error("No effects specified!")
         end
+        #=
         if isa(subject, Nothing)
             subject = Vector{Symbol}(undef, 0)
         elseif isa(subject, Symbol)
             subject = [subject]
         end
+        =#
         lmmlog = Vector{LMMLogMsg}(undef, 0)
         mf     = ModelFrame(model, data; contrasts = contrasts)
         mm     = ModelMatrix(mf)
         nfixed = nterms(mf)
         if repeated === nothing
-            repeated = VarEffect(Metida.@covstr(1), Metida.ScaledIdentity(), subj = intersectsubj(random))
+            repeated = VarEffect(Metida.@covstr(1|1), Metida.ScaledIdentity())
         end
         if random === nothing
-            random = VarEffect(Metida.@covstr(0), Metida.RZero(), subj = repeated.subj)
+            random = VarEffect(Metida.@covstr(0|1), Metida.RZero())
         end
         if !isa(random, Vector) random = [random] end
         #blocks
+        #=
         intsub, eq = intersectsubj(random, repeated)
         blocksolve = false
         if length(subject) > 0 blocksolve = true end
@@ -65,10 +68,11 @@ struct LMM{T} <: MetidaModel
         if length(subject) == 0
             subject = intsub
         end
-        block  = intersectdf(data, subject)
-        lmmdata = LMMData(mm.m, response(mf), block, subject)
-        covstr = CovStructure(random, repeated, data, block)
-        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, nfixed, rank(mm.m), ModelResult(), blocksolve, lmmlog)
+        =#
+        #block  = intersectdf(data, subject)
+        lmmdata = LMMData(mm.m, response(mf))
+        covstr = CovStructure(random, repeated, data)
+        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, nfixed, rank(mm.m), ModelResult(), false, lmmlog)
     end
 end
 ################################################################################

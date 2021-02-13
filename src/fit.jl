@@ -157,8 +157,8 @@ function fit!(lmm::LMM{T};
     try
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     catch
-        optmethod  = Optim.Newton(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.HagerZhang())
-        #optmethod  = Optim.LBFGS(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.MoreThuente())
+        #optmethod  = Optim.Newton(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.HagerZhang())
+        optmethod  = Optim.LBFGS(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.MoreThuente())
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     end
     #Theta (θ) vector

@@ -1,3 +1,10 @@
+v0.3.0
+  * effect model remake
+  * subject keyword removed
+  * vcov matrix block factor get from all subjects crossing
+  * changes in syntaxes
+  * less default var effects
+
 v0.2.5
   * hessian isposdef fix
   * check det(G)

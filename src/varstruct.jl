@@ -9,6 +9,10 @@ Macros for random/repeated effect model.
 macro covstr(ex)
     return :(@formula(nothing ~ $ex).rhs)
 end
+function modelparse(term::FunctionTerm{typeof(|)})
+    eff, subj = term.args_parsed
+end
+
 ################################################################################
 #                          COVARIANCE TYPE
 ################################################################################
@@ -208,40 +212,25 @@ end
 Random/repeated effect.
 """
 struct VarEffect
-    model::Union{Tuple{Vararg{AbstractTerm}}, Nothing, AbstractTerm}
+    formula::FunctionTerm
+    model::Union{Tuple{Vararg{AbstractTerm}}, AbstractTerm}
     covtype::CovarianceType
     coding::Dict{Symbol, AbstractContrasts}
-    subj::Vector{Symbol}
+    subj::AbstractTerm
     p::Int
-    function VarEffect(model, covtype::T, coding; subj = nothing) where T <: AbstractCovarianceType
-        if isa(subj, Nothing)
-            subj = Vector{Symbol}(undef, 0)
-        elseif isa(subj, Symbol)
-            subj = [subj]
-        elseif isa(subj,  AbstractVector{Symbol})
-            #
-        else
-            throw(ArgumentError("subj type should be Symbol or Vector{tymbol}"))
-        end
+    function VarEffect(formula, covtype::T, coding) where T <: AbstractCovarianceType
+        model, subj = modelparse(formula)
         p = nterms(model)
-        if coding === nothing && model !== nothing
-            coding = Dict{Symbol, AbstractContrasts}()
-        elseif coding === nothing && model === nothing
+        if coding === nothing
             coding = Dict{Symbol, AbstractContrasts}()
         end
-        new(model, covtype, coding, subj, p)
+        new(formula, model, covtype, coding, subj, p)
     end
-    function VarEffect(model, covtype::T; coding = nothing, subj = nothing) where T <: AbstractCovarianceType
-        VarEffect(model, covtype, coding;  subj = subj)
+    function VarEffect(formula, covtype::T; coding = nothing) where T <: AbstractCovarianceType
+        VarEffect(formula, covtype, coding)
     end
-    function VarEffect(model; coding = nothing)
-        VarEffect(model, SI, coding)
-    end
-    function VarEffect(covtype::T; coding = nothing, subj = nothing) where T <: AbstractCovarianceType
-        VarEffect(@covstr(1), covtype, coding; subj = subj)
-    end
-    function VarEffect()
-        VarEffect(@covstr(1), SI, Dict{Symbol, AbstractContrasts}())
+    function VarEffect(formula; coding = nothing)
+        VarEffect(formula, SI, coding)
     end
 end
 ################################################################################
@@ -256,6 +245,8 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     rcnames::Vector{String}
     # subject (local) blocks for each effect
     block::Vector{Vector{Vector{UInt32}}}
+    # blocks for vcov matrix / variance blocking factor (subject)
+    vcovblock::Vector{Vector{UInt32}}
     # Z matrix
     z::Matrix{T}
     #subjz::Vector{BitArray{2}}
@@ -278,7 +269,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     # Nubber of subjects in each effect
     sn::Vector{Int}
     #--
-    function CovStructure(random, repeated, data, blocks)
+    function CovStructure(random, repeated, data)
         alleffl =  length(random) + 1
         #
         q       = Vector{Int}(undef, alleffl)
@@ -287,8 +278,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         schema  = Vector{Union{AbstractTerm, Tuple}}(undef, alleffl)
         block   = Vector{Vector{Vector{UInt32}}}(undef, alleffl)
         z       = Matrix{Float64}(undef, size(data, 1), 0)
-        subjz   = Vector{BitArray{2}}(undef, alleffl)
-        sblock  = Vector{Vector{Vector{Vector{UInt32}}}}(undef, length(blocks))
+        subjz   = Vector{BitMatrix}(undef, alleffl)
         zrndur  = Vector{UnitRange{Int}}(undef, alleffl - 1)
         rz      = Matrix{Float64}(undef, size(data, 1), 0)
         #Theta parameter type
@@ -307,11 +297,6 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             if length(random[i].coding) == 0
                 fill_coding_dict!(random[i].model, random[i].coding, data)
             end
-            if i > 1
-                if  random[i].subj == random[i - 1].subj block[i] = block[i - 1] else block[i]  = intersectdf(data, random[i].subj) end
-            else
-                block[i]  = intersectdf(data, random[i].subj)
-            end
             schema[i] = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
             ztemp     = modelcols(MatrixTerm(schema[i]), data)
             q[i]      = size(ztemp, 2)
@@ -320,17 +305,23 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             z         = hcat(z, ztemp)
             fillur!(zrndur, i, q)
             fillur!(tr, i, t)
-            subjmatrix!(random[i].subj, data, subjz, i)
+
+            subjz[i]  = modelcols(MatrixTerm(apply_schema(random[i].subj, StatsModels.schema(data, fulldummycodingdict(random[i].subj)))), data)
+            block[i]  = makeblocks(subjz[i])
+
             updatenametype!(ct, rcnames, csp, schema[i], random[i].covtype.s)
         end
         # REPEATED EFFECTS
         if length(repeated.coding) == 0
             fill_coding_dict!(repeated.model, repeated.coding, data)
         end
-        block[end]  = intersectdf(data, repeated.subj)
+
         schema[end] = apply_schema(repeated.model, StatsModels.schema(data, repeated.coding))
         rz          = modelcols(MatrixTerm(schema[end]), data)
-        subjmatrix!(repeated.subj, data, subjz, length(subjz))
+
+        subjz[end]  = modelcols(MatrixTerm(apply_schema(repeated.subj, StatsModels.schema(data, fulldummycodingdict(repeated.subj)))), data)
+        block[end]  = makeblocks(subjz[end])
+
         q[end]      = size(rz, 2)
         csp         = covstrparam(repeated.covtype, q[end], repeated.p)
         t[end]      = csp[3]
@@ -339,6 +330,21 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         #Theta length
         tl  = sum(t)
         ########################################################################
+        if random[1].covtype.s != :ZERO
+            subjblockmat = subjz[1]
+            if length(subjz) > 2
+                for i = 2:length(subjz)-1
+                    subjblockmat = noncrossmodelmatrix(subjblockmat, subjz[2])
+                end
+            end
+            if !(repeated.covtype.s ∈ [:SI, :DIAG, :VC])
+                subjblockmat = noncrossmodelmatrix(subjblockmat, subjz[end])
+            end
+        else
+            subjblockmat = subjz[end]
+        end
+        blocks = makeblocks(subjblockmat)
+        sblock = Vector{Vector{Vector{Vector{UInt32}}}}(undef, length(blocks))
         ########################################################################
         for i = 1:length(blocks)
             sblock[i] = Vector{Vector{Vector{UInt32}}}(undef, alleffl)
@@ -351,7 +357,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             end
         end
         #
-        new{eltype(z)}(random, repeated, schema, rcnames, block, z, sblock, zrndur, rz, q, t, tr, tl, ct, sn)
+        new{eltype(z)}(random, repeated, schema, rcnames, block, blocks, z, sblock, zrndur, rz, q, t, tr, tl, ct, sn)
     end
 end
 ################################################################################
@@ -386,6 +392,39 @@ function subjmatrix!(subj, data, subjz, i)
     else
         subjz[i]    = trues(size(data, 1),1)
     end
+end
+################################################################################
+function makeblocks(subjz)
+    blocks = Vector{Vector{Int}}(undef, 0)
+    for i = 1:size(subjz, 2)
+        push!(blocks, findall(x->!iszero(x), view(subjz, :, i)))
+    end
+    blocks
+end
+################################################################################
+function noncrossmodelmatrix(mx, my)
+    mat = mx' * my
+    for n = 1:size(mat, 2)-1
+        for m = 1:size(mat, 1)
+            if mat[m, n] > 0
+                for c = n+1:size(mat, 2)
+                    if mat[m, c] > 0
+                        mat[:, n] .+= mat[:, c]
+                        mat[:, c] .= 0
+                    end
+                end
+            end
+        end
+    end
+    cols = Vector{Int}(undef, 0)
+    for i = 1:size(mat, 2)
+        if sum(mat[:, i]) > 0
+            push!(cols, i)
+        end
+    end
+    res = replace(x -> x > 0 ? 1 : 0, view(mat, :, cols))
+    result = mx * res
+    result
 end
 ################################################################################
 #                            CONTRAST CODING
@@ -424,15 +463,38 @@ function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple
         end
     end
 end
+function fulldummycodingdict(t::InteractionTerm)
+    d = Dict{Symbol, AbstractContrasts}()
+    for i in t.terms
+        d[i.sym] = StatsModels.FullDummyCoding()
+    end
+    d
+end
+function fulldummycodingdict(t::T) where T <: Union{CategoricalTerm, Term}
+    d = Dict{Symbol, AbstractContrasts}()
+    d[t.sym] = StatsModels.FullDummyCoding()
+    d
+end
+function fulldummycodingdict(t::ConstantTerm)
+    d = Dict{Symbol, AbstractContrasts}()
+    d
+end
 ################################################################################
 
 ################################################################################
 function Base.show(io::IO, e::VarEffect)
-    println(io, "Effect")
-    println(io, "Model:", e.model)
-    println(io, "Type: ", e.covtype)
-    println(io, "Coding: ", e.coding)
-    println(io, "Subject:", e.subj)
+    println(io, "  Formula: ", e.formula)
+    println(io, "  Effect model: ", e.model)
+    println(io, "  Subject model: ", e.subj)
+    println(io, "  Type: ", e.covtype.s)
+    print(io, "  User coding:")
+    if length(e.coding) > 0
+        for (k, v) in e.coding
+            print(io, " $(k) => $(v);")
+        end
+    else
+        print(io, " No")
+    end
 end
 
 function Base.show(io::IO, cs::CovStructure)
@@ -448,5 +510,5 @@ function Base.show(io::IO, cs::CovStructure)
 end
 
 function Base.show(io::IO, ct::CovarianceType)
-    println(io, "Covariance Type: $(ct.s)")
+    print(io, "Covariance Type: $(ct.s)")
 end
