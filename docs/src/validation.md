@@ -247,9 +247,9 @@ not done yet
 
 ```
 lmm =  LMM(@formula(lnpk~sequence+period+treatment), dfrds;
-    random =  VarEffect(Metida.@covstr(1|subject),  SI),
-    )
-     fit!(lmm)
+random =  VarEffect(Metida.@covstr(1|subject),  SI),
+)
+fit!(lmm)
 ```
 
 #### Model BE2
