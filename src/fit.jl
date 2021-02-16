@@ -14,7 +14,8 @@ fit_nlopt!(lmm::MetidaModel; kwargs...)  = error("MetidaNLopt not found. \n - Ru
     f_tol::Float64 = 1e-12,
     hcalck::Bool   = true,
     init = nothing,
-    io::IO = stdout) where T
+    io::IO = stdout,
+    ) where T
 
 Fit LMM model.
 
@@ -41,7 +42,8 @@ function fit!(lmm::LMM{T};
     f_tol::Float64 = 1e-8,
     hcalck::Bool   = true,
     init = nothing,
-    io::IO = stdout) where T
+    io::IO = stdout,
+    blocksolve::Bool = false) where T
 
     if lmm.result.fit lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Refit model...")) end
 
@@ -56,7 +58,7 @@ function fit!(lmm::LMM{T};
     end
 
     # Optimization function
-    if lmm.blocksolve
+    if blocksolve
         optfunc = reml_sweep_β_b
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Solving by blocks..."))
     else

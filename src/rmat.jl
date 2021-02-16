@@ -18,8 +18,6 @@ function rmat_base_inc_b!(mx::AbstractMatrix{T}, θ::AbstractVector{T}, zrv, cov
             rmatp_cs!(mx, θ, zrv, covstr.repeated.covtype)
         elseif covstr.repeated.covtype.s == :ARMA
             rmatp_arma!(mx, θ, zrv, covstr.repeated.covtype)
-        else
-            error("Unknown covariance structure!")
         end
 end
 ################################################################################

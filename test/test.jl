@@ -34,19 +34,22 @@ include("testdata.jl")
     @test aicc(lmm)             ≈ 24.241112644506067 atol=1E-6
     @test Metida.caic(lmm)      ≈ 27.558878811225412 atol=1E-6
     @test dof_residual(lmm) == 14
+    @test Metida.dof_contain(lmm) == 6
     @test Metida.dof_satter(lmm, [0, 0, 0, 0, 0, 1]) ≈ 5.81896814947982 atol=1E-2
     @test nobs(lmm) == 20
     @test Metida.thetalength(lmm) == 3
     @test Metida.rankx(lmm) == 6
-    @test Metida.gmatrix(lmm, 1)[1,1] ≈ 0.20009722409534533 atol=1E-6
-    @test Metida.rmatrix(lmm, 1)[1,1] ≈ 0.034249998413262636 atol=1E-6
+    @test sum(Metida.gmatrix(lmm, 1)) ≈ 0.3350555603325126 atol=1E-6
+    @test sum(Metida.rmatrix(lmm, 1)) ≈ 0.13699999248885292 atol=1E-6
+    @test sum(Metida.vmatrix(lmm, 1)) ≈ 1.4772222338189034 atol=1E-6
     @test dof(lmm) == 7
     @test vcov(lmm)[1,1]              ≈ 0.11203611149231425 atol=1E-6
     @test stderror(lmm)[1]            ≈ 0.33471795812641164 atol=1E-6
     @test length(modelmatrix(lmm)) == 120
     @test isa(response(lmm), Vector)
+    @test sum(Metida.hessian(lmm))    ≈ 1118.160713481362 atol=1E-6
     #AI like algo
-    Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm))
+    Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm), blocksolve = true)
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
     #Set user coding
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
@@ -137,6 +140,9 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 1300.1807598168923 atol=1E-6
+    @test coef(lmm) ≈ [22.13309710783416, 2.000486297455917, 1.1185284725578566, 0.4049714576872601] atol=1E-6
+    @test Metida.dof_satter(lmm, [0, 0, 0, 1]) ≈ 37.999999999991786 atol=1E-2
+
 end
 @testset "  Model: Function terms CSH/SI                             " begin
     ftdf.expresp = exp.(ftdf.response)
@@ -177,39 +183,38 @@ end
 #                                  ftdf3
 ################################################################################
 @testset "  Model: CS,CS/SI                                          " begin
-    lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
+    lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3; contrasts=Dict(:factor => DummyCoding(; base=1.0)),
     random = [Metida.VarEffect(Metida.@covstr(r1|subject), Metida.CS), Metida.VarEffect(Metida.@covstr(r2|subject), Metida.CS)],
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 710.4250214813896 atol=1E-8
 end
 @testset "  Model: Noblock, different subjects, AR/SI                " begin
-    lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
-    random = Metida.VarEffect(Metida.@covstr(p|s2&factor), Metida.AR),
-    repeated = Metida.VarEffect(Metida.@covstr(r2|s2), Metida.SI),
+    #SPSS 698.879
+    lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3; contrasts=Dict(:factor => DummyCoding(; base=1.0)),
+    random = Metida.VarEffect(Metida.@covstr(r1|subject), Metida.AR),
+    repeated = Metida.VarEffect(Metida.@covstr(p|subject), Metida.DIAG),
     )
     Metida.fit!(lmm)
-    # was^ @test Metida.m2logreml(lmm)  ≈ 839.5453114200564 atol=1E-8
-    @test Metida.m2logreml(lmm)  ≈ 794.4253377905591 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 698.8792511057682 atol=1E-8
 end
-#=
+
 @testset "  Model: Noblock, different subjects, ARMA/SI              " begin
-    lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
-    random = Metida.VarEffect(Metida.@covstr(p|s2&factor), Metida.ARMA),
-    repeated = Metida.VarEffect(Metida.@covstr(r1|s2), Metida.SI),
+    #SPSS 904.236!!!
+    lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3; contrasts=Dict(:factor => DummyCoding(; base=1.0)),
+    random = Metida.VarEffect(Metida.@covstr(s2|r1&r2), Metida.ARMA),
     )
-    Metida.fit!(lmm)
-    @test Metida.m2logreml(lmm)  ≈ 835.5433832876931 atol=1E-8
+    Metida.fit!(lmm;)
+    @test Metida.m2logreml(lmm)  ≈ 903.2467964711996 atol=1E-8
 end
-=#
+
 @testset "  Model: Noblock, different subjects, ARH/SI               " begin
-    lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
+    #SPSS 707.377
+    lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3; contrasts=Dict(:factor => DummyCoding(; base=1.0)),
     random = Metida.VarEffect(Metida.@covstr(r1|s2&factor), Metida.ARH),
-    repeated = Metida.VarEffect(Metida.@covstr(r2|s2), Metida.DIAG),
     )
     Metida.fit!(lmm)
-    # was: @test Metida.m2logreml(lmm)  ≈ 820.0534442753676 atol=1E-8
-    @test Metida.m2logreml(lmm)  ≈ 698.5597498682596 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 707.3765873864152 atol=1E-8
 end
 @testset "  Model: Noblock, *,  DIAG/SI                              " begin
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
@@ -217,6 +222,7 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 715.4330098488135 atol=1E-8
+    @test Metida.dof_satter(lmm, [0, 1]) ≈ 14.344012741005523 atol=1E-8
 end
 @testset "  Model: Noblock, &,  DIAG/SI                              " begin
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
@@ -236,7 +242,17 @@ end
 #                                  Errors
 ################################################################################
 @testset "  Errors                                                   " begin
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.DIAG),
+    )
+    @test_throws ErrorException Metida.fit!(lmm; init = [1.0])
+    @test_throws ErrorException Metida.hessian(lmm)
 
+    @test_throws ErrorException  Metida.LMM(@formula(var~sequence+period+formulation), df0;)
+
+    @test_throws ErrorException  Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = [Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.DIAG), Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.RZero())]
+    )
 end
 ################################################################################
 #                                  Sweep test

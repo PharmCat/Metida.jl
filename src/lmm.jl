@@ -5,7 +5,7 @@ struct LMMLogMsg
     msg::String
 end
 """
-    LMM(model, data; contrasts=Dict{Symbol,Any}(), subject::Union{Nothing, Symbol} = nothing,  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
+    LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
 
 Make Linear-Mixed Model object.
 
@@ -18,8 +18,6 @@ Make Linear-Mixed Model object.
 `random`: vector of random effects or single random effect
 
 `repeated`: is a repeated effect (only one)
-
-`subject`: is a block-diagonal factor
 """
 struct LMM{T} <: MetidaModel
     model::FormulaTerm
@@ -30,7 +28,6 @@ struct LMM{T} <: MetidaModel
     nfixed::Int
     rankx::UInt32
     result::ModelResult
-    blocksolve::Bool
     log::Vector{LMMLogMsg}
 
     function LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
@@ -38,13 +35,7 @@ struct LMM{T} <: MetidaModel
         if repeated === nothing && random === nothing
             error("No effects specified!")
         end
-        #=
-        if isa(subject, Nothing)
-            subject = Vector{Symbol}(undef, 0)
-        elseif isa(subject, Symbol)
-            subject = [subject]
-        end
-        =#
+
         lmmlog = Vector{LMMLogMsg}(undef, 0)
         mf     = ModelFrame(model, data; contrasts = contrasts)
         mm     = ModelMatrix(mf)
@@ -56,23 +47,13 @@ struct LMM{T} <: MetidaModel
             random = VarEffect(Metida.@covstr(0|1), Metida.RZero())
         end
         if !isa(random, Vector) random = [random] end
-        #blocks
-        #=
-        intsub, eq = intersectsubj(random, repeated)
-        blocksolve = false
-        if length(subject) > 0 blocksolve = true end
-        if eq blocksolve = true end
-        if (length(subject) > 0 && !eq && length(intsub) > 0) || (length(subject) > 0 && !issetequal(subject, intsub) && length(intsub) > 0)
-            lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Global subject variable is specified, but variance effect(s) have different subject's values!"))
+
+        if repeated.covtype.s == :SI && !isa(repeated.model, ConstantTerm)
+            lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Repeated effect not a constant, but covariance type is SI. "))
         end
-        if length(subject) == 0
-            subject = intsub
-        end
-        =#
-        #block  = intersectdf(data, subject)
         lmmdata = LMMData(mm.m, response(mf))
         covstr = CovStructure(random, repeated, data)
-        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, nfixed, rank(mm.m), ModelResult(), false, lmmlog)
+        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, nfixed, rank(mm.m), ModelResult(), lmmlog)
     end
 end
 ################################################################################

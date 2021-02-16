@@ -20,7 +20,11 @@ function fullzmatrix(lmm)
     end
     fzm
 end
+"""
+    dof_contain(lmm)
 
+Return the containment denominator degrees of freedom: rank(XZ) - rank(X)
+"""
 function dof_contain(lmm)
     rank(hcat(lmm.data.xv, fullzmatrix(lmm))) - lmm.rankx
 end

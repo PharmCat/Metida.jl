@@ -113,6 +113,7 @@ function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
     try
         logdetθ₂ = logdet(θ₂)
     catch
+        lmmlog!(lmm, LMMLogMsg(:ERROR, "logdet(θ₂) not estimated during REML calculation"))
         return (Inf, nothing, nothing, Inf)
     end
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃ #REML, β, iC, θ₃

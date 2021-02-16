@@ -29,8 +29,6 @@ function gmat_switch!(G, θ, covstr, r)
         gmat_cs!(G, θ[covstr.tr[r]], covstr.q[r], covstr.random[r].covtype)
     elseif covstr.random[r].covtype.s == :ARMA
         gmat_arma!(G, θ[covstr.tr[r]], covstr.q[r], covstr.random[r].covtype)
-    else
-        error("Unknown covariance structure!")
     end
     G
 end

@@ -19,11 +19,10 @@ png(p, "plot1.png"); nothing # hide
 Metida result:
 
 ```@example lmmexample
-lmm = Metida.LMM(@formula(response ~1 + factor*time), rds;
-random = Metida.VarEffect(Metida.@covstr(1 + time), Metida.CSH),
-subject = [:subject, :factor]
+lmm = LMM(@formula(response ~1 + factor*time), rds;
+random = VarEffect(@covstr(1 + time|subject&factor), CSH),
 )
-Metida.fit!(lmm)
+fit!(lmm)
 ```
 
 MixedModels result:
@@ -42,10 +41,10 @@ Metida:
 df          = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "Penicillin.csv"); types = [String, Float64, String, String]) |> DataFrame
 df.diameter = float.(df.diameter)
 
-lmm = Metida.LMM(@formula(diameter ~ 1), df;
-random = [Metida.VarEffect(Metida.SI, subj = :plate), Metida.VarEffect(Metida.SI, subj = :sample)]
+lmm = LMM(@formula(diameter ~ 1), df;
+random = [VarEffect(@covstr(1|plate), SI), VarEffect(@covstr(1|sample), SI)]
 )
-Metida.fit!(lmm)
+fit!(lmm)
 ```
 
 MixedModels:
@@ -70,34 +69,31 @@ png(p, "plot2.png"); nothing # hide
 ARMA:
 
 ```@example lmmexample
-lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
-random = Metida.VarEffect(Metida.@covstr(factor), Metida.DIAG),
-repeated = Metida.VarEffect(Metida.ARMA),
-subject = [:subject, :factor]
+lmm = LMM(@formula(response ~ 1 + factor*time), rds;
+random = VarEffect(@covstr(factor|subject&factor), DIAG),
+repeated = VarEffect(@covstr(1|subject&factor), ARMA),
 )
-Metida.fit!(lmm)
+fit!(lmm)
 ```
 
 AR:
 
 ```@example lmmexample
 lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
-random = Metida.VarEffect(Metida.@covstr(factor), Metida.DIAG),
-repeated = Metida.VarEffect(Metida.AR),
-subject = [:subject, :factor]
+random = VarEffect(@covstr(factor|subject&factor), DIAG),
+repeated = VarEffect(@covstr(1|subject&factor), AR,
 )
-Metida.fit!(lmm)
+fit!(lmm)
 ```
 
 ARH:
 
 ```@example lmmexample
 lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
-random = Metida.VarEffect(Metida.@covstr(factor), Metida.DIAG),
-repeated = Metida.VarEffect(Metida.ARH),
-subject = [:subject, :factor]
+random = VarEffect(@covstr(factor|subject&factor), DIAG),
+repeated = VarEffect(@covstr(1|subject&factor), ARH),
 )
-Metida.fit!(lmm)
+fit!(lmm)
 ```
 
 ### Example 4 - SAS relation
@@ -108,9 +104,9 @@ Metida.fit!(lmm)
 df0 = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "df0.csv")) |> DataFrame
 
 lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
-random   = VarEffect(@covstr(formulation), CSH),
-repeated = VarEffect(@covstr(formulation), DIAG),
-subject  = :subject)
+random   = VarEffect(@covstr(formulation|subject), CSH),
+repeated = VarEffect(@covstr(formulation|subject), DIAG),
+)
 fit!(lmm)
 ```
 
@@ -130,9 +126,8 @@ RUN;
 ```
 lmm = LMM(
     @formula(var ~ sequence + period + formulation), df0;
-    random   = VarEffect(@covstr(formulation), SI),
-    repeated = VarEffect(@covstr(formulation), DIAG),
-    subject  = :subject,
+    random   = VarEffect(@covstr(formulation|subject), SI),
+    repeated = VarEffect(@covstr(formulation|subject), DIAG),
 )
 fit!(lmm)
 ```
@@ -152,7 +147,7 @@ RUN;
 
 ```
 lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
-    random = VarEffect(@covstr(subject), SI)
+    random = VarEffect(@covstr(subject|1), SI)
     )
 fit!(lmm)
 ```

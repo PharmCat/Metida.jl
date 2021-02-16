@@ -5,6 +5,8 @@
     @covstr(ex)
 
 Macros for random/repeated effect model.
+
+Example: @covstr(factor|subject)
 """
 macro covstr(ex)
     return :(@formula(nothing ~ $ex).rhs)
@@ -207,9 +209,17 @@ end
 #                  EFFECT
 ################################################################################
 """
-    VarEffect(model, covtype::T, coding; fulldummy = true, subj = nothing) where T <: AbstractCovarianceType
+    VarEffect(formula, covtype::T, coding) where T <: AbstractCovarianceType
+
+    VarEffect(formula, covtype::T; coding = nothing) where T <: AbstractCovarianceType
+
+    VarEffect(formula; coding = nothing)
 
 Random/repeated effect.
+
+* `formula` from @covstr(ex) macros.
+
+* `covtype` - covariance type (SI, DIAG, CS, CSH, AR, ARH, ARMA)
 """
 struct VarEffect
     formula::FunctionTerm
@@ -224,6 +234,7 @@ struct VarEffect
         if coding === nothing
             coding = Dict{Symbol, AbstractContrasts}()
         end
+        #if !isa(subj, Union{CategoricalTerm,ConstantTerm,InteractionTerm{<:NTuple{N,CategoricalTerm} where {N}},}) error("subject (blocking) variables must be Categorical") end
         new(formula, model, covtype, coding, subj, p)
     end
     function VarEffect(formula, covtype::T; coding = nothing) where T <: AbstractCovarianceType
@@ -351,7 +362,8 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             for s = 1:alleffl
                 sblock[i][s] = Vector{Vector{UInt32}}(undef, 0)
                 for col in eachcol(view(subjz[s], blocks[i], :))
-                    if any(col) push!(sblock[i][s], sort!(findall(x->x==true, col))) end
+                    #if any(col) push!(sblock[i][s], sort!(findall(x->x==true, col))) end
+                    if any(col) push!(sblock[i][s], findall(x->x==true, col)) end
                 end
                 sn[s] += length(sblock[i][s])
             end
@@ -397,7 +409,8 @@ end
 function makeblocks(subjz)
     blocks = Vector{Vector{Int}}(undef, 0)
     for i = 1:size(subjz, 2)
-        push!(blocks, findall(x->!iszero(x), view(subjz, :, i)))
+        b = findall(x->!iszero(x), view(subjz, :, i))
+        if length(b) > 0 push!(blocks, b) end
     end
     blocks
 end

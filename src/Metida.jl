@@ -21,7 +21,7 @@ AR, Autoregressive,
 ARH, HeterogeneousAutoregressive,
 CS, CompoundSymmetry,
 CSH, HeterogeneousCompoundSymmetry,
-fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, rankx, caic,
+fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, dof_contain, rankx, caic,
 gmatrix, rmatrix, vmatrix!
 
 include("abstracttype.jl")
@@ -42,6 +42,7 @@ include("statsbase.jl")
 include("initg.jl")
 include("utils.jl")
 include("dof_satter.jl")
+include("dof_contain.jl")
 
 function __init__()
 

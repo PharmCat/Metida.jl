@@ -1,6 +1,7 @@
 ################################################################################
 # Intersect dataframe.
 ################################################################################
+#=
 function intersectdf(df, s)::Vector
     if isa(s, Nothing) return [collect(1:size(df, 1))] end
     if isa(s, Symbol) s = [s] end
@@ -53,6 +54,7 @@ function intersectsubj(random)
     end
     intersect(a...)
 end
+=#
 ################################################################################
 # Variance estimate via OLS and QR decomposition.
 ################################################################################
@@ -212,15 +214,32 @@ function vmatrix!(V, θ, lmm, i)
     zgz_base_inc!(V, θ, lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
     rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
 end
+function vmatrix(θ, lmm, i)
+    V = zeros(length(lmm.covstr.vcovblock[i]), length(lmm.covstr.vcovblock[i]))
+    vmatrix!(V, θ, lmm, i)
+    V
+end
+function vmatrix(lmm, i)
+    V = vmatrix(lmm.result.theta, lmm, i)
+    V
+end
+
+function nblocks(lmm)
+    return length.covstr.vcovblock
+end
 """
     hessian(lmm, theta)
 
 Calculate Hessian matrix of REML for theta.
 """
 function hessian(lmm, theta)
-    if !lmm.result.fit error("Model not fitted!") end
+    #if !lmm.result.fit error("Model not fitted!") end
     vloptf(x) = reml_sweep_β(lmm, x, lmm.result.beta)[1]
     chunk  = ForwardDiff.Chunk{1}()
     hcfg   = ForwardDiff.HessianConfig(vloptf, theta, chunk)
     ForwardDiff.hessian(vloptf, theta, hcfg, Val{false}())
+end
+function hessian(lmm)
+    if !lmm.result.fit error("Model not fitted!") end
+    hessian(lmm, lmm.result.theta)
 end

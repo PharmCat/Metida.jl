@@ -27,11 +27,10 @@ Validation provided with 3 sections:
 ##### Model 1
 
 ```
-lmm = Metida.LMM(@formula(Reaction~Days), df;
-  random = Metida.VarEffect(Metida.SI),
-  subject = :Subject
+lmm = LMM(@formula(Reaction~Days), df;
+  random = VarEffect(@covstr(1|Subject), SI),
   )
-  Metida.fit!(lmm)
+  fit!(lmm)
 ```
 
 SPSS:
@@ -46,11 +45,10 @@ MIXED Reaction BY Days
 ##### Model 2
 
 ```
-lmm = Metida.LMM(@formula(Reaction~1), df;
-  random = Metida.VarEffect(Metida.@covstr(Days), Metida.CS),
-  subject = :Subject
+lmm = LMM(@formula(Reaction~1), df;
+  random = VarEffect(Metida.@covstr(Days|Subject), CS),
   )
-  Metida.fit!(lmm)
+  fit!(lmm)
 ```
 
 SPSS:
@@ -66,10 +64,10 @@ MIXED Reaction BY Days
 ##### Model 3
 
 ```
-lmm = Metida.LMM(@formula(Reaction~1), df;
-  random = Metida.VarEffect(Metida.@covstr(Days), Metida.CSH, subj = :Subject)
+lmm = LMM(@formula(Reaction~1), df;
+  random = VarEffect(@covstr(Days|Subject), CSH)
   )
-  Metida.fit!(lmm)
+  fit!(lmm)
 ```
 
 SPSS:
@@ -85,10 +83,10 @@ MIXED Reaction BY Days
 ##### Model 4
 
 ```
-lmm = Metida.LMM(@formula(Reaction~1), df;
-  random = Metida.VarEffect(Metida.@covstr(Days), Metida.ARH, subj = :Subject)
+lmm = LMM(@formula(Reaction~1), df;
+  random = VarEffect(@covstr(Days|Subject), ARH)
   )
-  Metida.fit!(lmm)
+   fit!(lmm)
 ```
 
 SPSS:
@@ -106,10 +104,10 @@ MIXED Reaction BY Days
 ##### Model 5
 
 ```
-lmm = Metida.LMM(@formula(strength~1), df;
-random = [Metida.VarEffect(Metida.SI, subj = :batch), Metida.VarEffect(Metida.SI, subj = [:batch,  :cask])]
+lmm =  LMM(@formula(strength~1), df;
+random = [VarEffect(@covstr(1|batch), SI),  VarEffect(@covstr(1|batch & cask), SI)]
 )
-Metida.fit!(lmm)
+fit!(lmm)
 ```
 
 SPSS:
@@ -126,10 +124,10 @@ MIXED strength
 ##### Model 6
 
 ```
-lmm = Metida.LMM(@formula(strength~1), df;
-random = Metida.VarEffect(Metida.@covstr(cask), Metida.ARMA, subj = :batch),
+lmm =  LMM(@formula(strength~1), df;
+random = VarEffect(Metida.@covstr(cask|batch),  ARMA),
 )
-Metida.fit!(lmm)
+fit!(lmm)
 ```
 
 SPSS:
@@ -147,10 +145,10 @@ MIXED strength by cask
 ##### Model 7
 
 ```
-lmm = Metida.LMM(@formula(diameter~1), df;
-random = [Metida.VarEffect(Metida.SI, subj = :plate), Metida.VarEffect(Metida.SI, subj = :sample)]
+lmm =  LMM(@formula(diameter ~ 1), df;
+random = [VarEffect(@covstr(1|plate), SI), VarEffect(@covstr(1|sample), SI)]
 )
-Metida.fit!(lmm)
+fit!(lmm)
 ```
 
 SPSS:
@@ -170,12 +168,11 @@ MIXED diameter
 
 ```
 sort!(df, :Day)
-lmm = Metida.LMM(@formula(Pulse~1), df;
-random = Metida.VarEffect(Metida.@covstr(Time), Metida.SI),
-repeated = Metida.VarEffect(Metida.@covstr(Day), Metida.AR),
-subject = :Time
+lmm =  LMM(@formula(Pulse~1), df;
+random =  VarEffect(Metida.@covstr(Time|Time),  SI),
+repeated =  VarEffect(Metida.@covstr(Day|Time),  AR),
 )
-Metida.fit!(lmm)
+fit!(lmm)
 ```
 
 SPSS:
@@ -187,11 +184,10 @@ SPSS:
 
 ```
 sort!(df, :Day)
-lmm = Metida.LMM(@formula(Pulse~1), df;
-repeated = Metida.VarEffect(Metida.@covstr(Day), Metida.AR),
-subject = :Time
+lmm =  LMM(@formula(Pulse~1), df;
+repeated = VarEffect(Metida.@covstr(Day|Time),  AR),
 )
-Metida.fit!(lmm)
+ fit!(lmm)
 ```
 
 SPSS:
@@ -203,11 +199,10 @@ SPSS:
 
 ```
 sort!(df, :Day)
-lmm = Metida.LMM(@formula(Pulse~1), df;
-random = Metida.VarEffect(Metida.@covstr(Day), Metida.AR),
-subject = :Time
+lmm =  LMM(@formula(Pulse~1), df;
+random =  VarEffect(Metida.@covstr(Day|Time),  AR),
 )
-Metida.fit!(lmm)
+ fit!(lmm)
 ```
 
 SPSS:
@@ -226,22 +221,20 @@ not done yet
 #### Model BE1
 
 ```
-lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), dfrds;
-    random = Metida.VarEffect(Metida.@covstr(1), Metida.SI),
-    subject = :subject
+lmm =  LMM(@formula(lnpk~sequence+period+treatment), dfrds;
+    random =  VarEffect(Metida.@covstr(1|subject),  SI),
     )
-    Metida.fit!(lmm)
+     fit!(lmm)
 ```
 
 #### Model BE2
 
 ```
-lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), dfrds;
-    random = Metida.VarEffect(Metida.@covstr(treatment), Metida.CSH),
-    repeated = Metida.VarEffect(Metida.@covstr(treatment), Metida.DIAG),
-    subject = :subject
+lmm =  LMM(@formula(lnpk~sequence+period+treatment), dfrds;
+    random =  VarEffect(Metida.@covstr(treatment|subject),  CSH),
+    repeated =  VarEffect(Metida.@covstr(treatment|subject),  DIAG),
     )
-    Metida.fit!(lmm)
+     fit!(lmm)
 ```
 
 #### Typical SPSS code
@@ -265,7 +258,7 @@ MIXED lnpk BY period treatment sequence subject
   /EMMEANS=TABLES(treatment) COMPARE REFCAT(FIRST) ADJ(LSD).
 ```
 
-Full SPSS code provided in validation folder ([here](https://github.com/PharmCat/Metida.jl/blob/master/validation/spssrdscode.sps.txt)).
+Full SPSS code provided in validation folder ([here](https://github.com/PharmCat/ jl/blob/master/validation/spssrdscode.sps.txt)).
 
 Validation dataset available [here](https://link.springer.com/article/10.1208%2Fs12248-020-0427-6), [12248_2020_427_MOESM2_ESM.xls](https://static-content.springer.com/esm/art%3A10.1208%2Fs12248-020-0427-6/MediaObjects/12248_2020_427_MOESM2_ESM.xls).
 
