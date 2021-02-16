@@ -67,7 +67,7 @@ function _precompile_()
 
     precompile(Tuple{typeof(Metida.initvar),  Array{Float64, 1},  Array{Float64, 2}})
 
-    precompile(Tuple{typeof(Metida.intersectsubj),  Array{VarEffect, 1},  VarEffect})
+    #precompile(Tuple{typeof(Metida.intersectsubj),  Array{VarEffect, 1},  VarEffect})
 
 end
 _precompile_()
