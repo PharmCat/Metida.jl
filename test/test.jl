@@ -48,6 +48,7 @@ include("testdata.jl")
     @test length(modelmatrix(lmm)) == 120
     @test isa(response(lmm), Vector)
     @test sum(Metida.hessian(lmm))    ≈ 1118.160713481362 atol=1E-2
+    @test Metida.nblocks(lmm) == 5
     #AI like algo
     Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm), blocksolve = true)
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
@@ -200,11 +201,13 @@ end
 end
 
 @testset "  Model: Noblock, different subjects, ARMA/SI              " begin
+    io = IOBuffer();
     #SPSS 904.236!!!
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3; contrasts=Dict(:factor => DummyCoding(; base=1.0)),
     random = Metida.VarEffect(Metida.@covstr(s2|r1&r2), Metida.ARMA),
     )
-    Metida.fit!(lmm;)
+    Metida.fit!(lmm; verbose = 3, io = io)
+    println(io, lmm.log)
     @test Metida.m2logreml(lmm)  ≈ 903.2467964711996 atol=1E-8
 end
 

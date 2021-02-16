@@ -40,7 +40,7 @@ fit!(lmm)
 
 ### Model construction
 
-[Metida.LMM](@ref)
+[`LMM`](@ref)
 
 * `model` - example: `@formula(var ~ sequence + period + formulation)`
 
@@ -51,7 +51,7 @@ fit!(lmm)
 
 ### Fitting
 
-[Metida.fit!](@ref)
+[`fit!`](@ref)
 
 * `solver` - `:default` solving with Optim.jl, for `:nlopt` and `:cuda` MetidaNLopt.jl and MetidaCu.jl should be installed.
 

@@ -225,7 +225,7 @@ function vmatrix(lmm, i)
 end
 
 function nblocks(lmm)
-    return length.covstr.vcovblock
+    return length(lmm.covstr.vcovblock)
 end
 """
     hessian(lmm, theta)

@@ -21,6 +21,7 @@ AR, Autoregressive,
 ARH, HeterogeneousAutoregressive,
 CS, CompoundSymmetry,
 CSH, HeterogeneousCompoundSymmetry,
+ARMA, AutoregressiveMovingAverage,
 fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, dof_contain, rankx, caic,
 gmatrix, rmatrix, vmatrix!
 

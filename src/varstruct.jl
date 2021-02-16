@@ -391,6 +391,7 @@ function updatenametype!(ct, rcnames, csp, schema, s)
     append!(rcnames, rcoefnames(schema, csp[3], s))
 end
 ################################################################################
+#=
 function subjmatrix!(subj, data, subjz, i)
     if length(subj) > 0
         if length(subj) == 1
@@ -405,6 +406,7 @@ function subjmatrix!(subj, data, subjz, i)
         subjz[i]    = trues(size(data, 1),1)
     end
 end
+=#
 ################################################################################
 function makeblocks(subjz)
     blocks = Vector{Vector{Int}}(undef, 0)
