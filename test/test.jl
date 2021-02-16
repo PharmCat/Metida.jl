@@ -222,7 +222,7 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 715.4330098488135 atol=1E-8
-    @test Metida.dof_satter(lmm, [0, 1]) ≈ 14.344012741005523 atol=1E-8
+    @test Metida.dof_satter(lmm, [0, 1]) ≈ 14.344012741005523 atol=1E-2
 end
 @testset "  Model: Noblock, &,  DIAG/SI                              " begin
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
