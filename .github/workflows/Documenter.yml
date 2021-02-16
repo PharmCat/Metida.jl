@@ -1,7 +1,9 @@
 name: Documenter
 on:
+  release:
+    types: [published]
   push:
-    tags: [v*]
+    tags: [doc*]
   pull_request:
     branches:
       - master
