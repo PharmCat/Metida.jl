@@ -1,9 +1,15 @@
 name: Documenter
 on:
+  push:
+    branches:
+      - master
+    tags: [doc*]
+    paths-ignore:
+      - 'LICENSE.md'
+      - 'README.md'
+      - '.github/**' 
   release:
     types: [published]
-  push:
-    tags: [doc*]
   pull_request:
     branches:
       - master
