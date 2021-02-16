@@ -47,7 +47,7 @@ include("testdata.jl")
     @test stderror(lmm)[1]            ≈ 0.33471795812641164 atol=1E-6
     @test length(modelmatrix(lmm)) == 120
     @test isa(response(lmm), Vector)
-    @test sum(Metida.hessian(lmm))    ≈ 1118.160713481362 atol=1E-6
+    @test sum(Metida.hessian(lmm))    ≈ 1118.160713481362 atol=1E-2
     #AI like algo
     Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm), blocksolve = true)
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6

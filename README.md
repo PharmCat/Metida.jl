@@ -18,8 +18,8 @@ import Pkg; Pkg.add("Metida")
 Using:
 
 ```
-using Metida, StatsBase, StatsModels, CSV, DataFrames
-df = CSV.File(dirname(pathof(Metida))*"\\..\\test\\csv\\df0.csv") |> DataFrame
+using Metida, CSV, DataFrames
+df = CSV.File(joinpath(dirname(pathof(Metida)),"..","test","csv","df0.csv")) |> DataFrame
 categorical!(df, :subject);
 categorical!(df, :period);
 categorical!(df, :sequence);

@@ -5,6 +5,12 @@ Validation provided with 3 sections:
 * Parameters validation for public datasets Metida & SPSS & MixedModels
 * Validation with bioequivalence datasets with Metida & SPSS
 
+To run validation:
+
+```
+using Metida; include(joinpath(dirname(pathof(Metida)), "..", "test", "validation.jl"))
+```
+
 ## Section 1: REML validation for public datasets Metida & SPSS
 
 #### REML result table
@@ -212,7 +218,26 @@ SPSS:
 
 ## Section 2: Parameters validation for public datasets Metida & SPSS & MixedModels
 
-not done yet
+##### Model 7
+```
+lmm = LMM(@formula(diameter ~ 1), df;
+random = [VarEffect(@covstr(1|plate), SI), VarEffect(@covstr(1|sample), SI)]
+)
+fit!(lmm)
+```
+
+| Model | Parameter  | Value Metida | Value MM | Value SPSS |
+|--------|--------|--------|--------|-------|
+| 7 | (Intercept) estimate | 22.9722 |  |  |
+| 7 | (Intercept) SE | 0.808573 |  |  |
+| 7 | plate   σ² | 0.716908 |  |  |
+| 7 | sample   σ² | 3.73092 |  |  |
+| 7 | Residual   σ²| 0.302415 |  |  |
+|    |  |  |  |  |
+|    |  |  |  |  |
+|    |  |  |  |  |
+|    |  |  |  |  |
+|    |  |  |  |  |
 
 ## Section 3: Validation with bioequivalence datasets with Metida & SPSS
 
@@ -257,6 +282,40 @@ MIXED lnpk BY period treatment sequence subject
   /REPEATED=treatment | SUBJECT(subject*period) COVTYPE(DIAG)
   /EMMEANS=TABLES(treatment) COMPARE REFCAT(FIRST) ADJ(LSD).
 ```
+#### Results
+
+| DatasSet | REML Model 1  |
+|--------|--------|
+| 01 | 530.1445193510292 |
+| 02 | -30.67455875307806  |
+| 03 | 425.44656318173423 |
+| 04 | 314.22176883261096 |
+| 05 | -74.87997706595712 |
+| 06 | 530.1445193182162 |
+| 07 | 1387.0928273412144 |
+| 08 | 2342.5993980030553 |
+| 09 |  2983.26033032097 |
+| 10 |  -16.41729812792036 |
+| 11 | 250.94514897106058 |
+| 12 |  1140.3816624784859 |
+| 13 |  2087.481017283834  |
+| 14 |  1012.351698923092 |
+| 15 |  2087.481017283834  |
+| 16 |  323.99767383075243 |
+| 17 |  77.56902301272578 |
+| 18 |  904.8743799636109  |
+| 19 |  782.9395904949903  |
+| 20 | 796.3124436472704 |
+| 21 |470.59083255259935 |
+| 22 | 248.99027587947566 |
+| 23 | 119.80621157945501 |
+| 24 | 274.3063623684229 |
+| 25 | 660.046543272457 |
+| 26 | 433.84147581860896 |
+| 27 | 1123.6556434756412 |
+| 28 | 329.2574937705332 |
+| 29 | 26.96606070210349 |
+| 30 | 26.316526650535426 |
 
 Full SPSS code provided in validation folder ([here](https://github.com/PharmCat/ jl/blob/master/validation/spssrdscode.sps.txt)).
 
