@@ -8,7 +8,6 @@ This program comes with absolutely no warranty. No liability is accepted for any
 
 Metida.jl is Julia package for fitting mixed-effects models with flexible covariance structure. At this moment package is in development stage.
 
-
 Install:
 
 ```
