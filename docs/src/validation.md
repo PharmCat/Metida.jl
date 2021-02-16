@@ -241,8 +241,6 @@ fit!(lmm)
 
 ## Section 3: Validation with bioequivalence datasets with Metida & SPSS
 
-not done yet
-
 #### Model BE1
 
 ```
