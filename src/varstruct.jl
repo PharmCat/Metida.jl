@@ -168,39 +168,78 @@ end
 
 #UNST
 
-#ARMA
+"""
+    CustomCovarianceStruct(nparamf::Function, xmat!::Function)
 
-function covstrparam(ct::CovarianceType, q::Int, p::Int)::Tuple{Int, Int, Int}
+* `nparamf` - function type (q, p) -> (a, b)
+where:
+q - size(z, 2) - number of levels for effect (number of columns of individual z matriz);
+p - number of factors in the effect model;
+a - number of variance parameters;
+b - number of ρ parameters;
+
+Tuple{Int, Int} should be returned.
+
+* `xmat!` - construction function
+
+G matrix function should update mx, where mx is zero matrix, example:
+
+function gmat_diag!(mx, θ::Vector{T}, ::Int) where T
+    for i = 1:size(mx, 1)
+            mx[i, i] = θ[i] ^ 2
+    end
+    nothing
+end
+
+R matrix function should add R part to mx, rz - is repeated effect matrix, example:
+
+function rmatp_diag!(mx, θ::Vector{T}, rz) where T
+    for i = 1:size(mx, 1)
+        for c = 1:length(θ)
+            mx[i, i] += rz[i, c] * θ[c] * θ[c]
+        end
+    end
+    nothing
+end
+"""
+struct CustomCovarianceStruct
+    nparamf::Function
+    xmat!::Function
+end
+
+CustomCovarianceType(ccs) = CovarianceType(:FUNC, ccs)
+
+function covstrparam(ct::CovarianceType, q::Int, p::Int)::Tuple{Int, Int}
     if ct.s == :SI
-        return (1, 0, 1)
+        return (1, 0)
     elseif ct.s == :DIAG
-        return (q, 0, q)
+        return (q, 0)
     elseif ct.s == :VC
-        return (p, 0, p)
+        return (p, 0)
     elseif ct.s == :AR
-        return (1, 1, 2)
+        return (1, 1)
     elseif ct.s == :ARH
-        return (q, 1, q + 1)
+        return (q, 1)
     elseif ct.s == :ARMA
-        return (1, 2, 3)
+        return (1, 2)
     elseif ct.s == :CS
-        return (1, 1, 2)
+        return (1, 1)
     elseif ct.s == :CSH
-        return (q, 1, q + 1)
+        return (q, 1)
     elseif ct.s == :TOEP
-        return (1, q - 1, q)
+        return (1, q - 1)
     elseif ct.s == :TOEPH
-        return (q, q - 1, 2 * q - 1)
+        return (q, q - 1)
     elseif ct.s == :TOEPB
-        return (1, ct.t - 1, ct.t)
+        return (1, ct.t - 1)
     elseif ct.s == :TOEPHB
-        return (q, ct.t - 1, q + ct.t - 1)
+        return (q, ct.t - 1)
     elseif ct.s == :UN
-        return (q, q * (q + 1) / 2 - q, q * (q + 1) / 2)
+        return (q, q * (q + 1) / 2 - q)
     elseif ct.s == :ZERO
-        return (0, 0, 0)
+        return (0, 0)
     elseif ct.s == :FUNC
-        error("Not implemented!")
+        return ct.t.nparamf(q, p)
     else
         error("Unknown covariance type!")
     end
@@ -312,7 +351,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             ztemp     = modelcols(MatrixTerm(schema[i]), data)
             q[i]      = size(ztemp, 2)
             csp       = covstrparam(random[i].covtype, q[i], random[i].p)
-            t[i]      = csp[3]
+            t[i]      = csp[1] + csp[2]
             z         = hcat(z, ztemp)
             fillur!(zrndur, i, q)
             fillur!(tr, i, t)
@@ -335,7 +374,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
 
         q[end]      = size(rz, 2)
         csp         = covstrparam(repeated.covtype, q[end], repeated.p)
-        t[end]      = csp[3]
+        t[end]      = csp[1] + csp[2]
         tr[end]     = UnitRange(sum(t[1:end-1]) + 1, sum(t[1:end-1]) + t[end])
         updatenametype!(ct, rcnames, csp, schema[end], repeated.covtype.s)
         #Theta length
@@ -388,7 +427,7 @@ end
 function updatenametype!(ct, rcnames, csp, schema, s)
     append!(ct, fill!(Vector{Symbol}(undef, csp[1]), :var))
     append!(ct, fill!(Vector{Symbol}(undef, csp[2]), :rho))
-    append!(rcnames, rcoefnames(schema, csp[3], s))
+    append!(rcnames, rcoefnames(schema, csp[1]+csp[2], s))
 end
 ################################################################################
 #=

@@ -132,6 +132,19 @@ end
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 10.065239006121315 atol=1E-6
 end
+@testset "  Model: Custom covariance type                            " begin
+    ccsg = Metida.CustomCovarianceStruct((q,p) -> (q, 1), Metida.gmat_csh!)
+    ccsr = Metida.CustomCovarianceStruct((q,p) -> (q, 0), Metida.rmatp_diag!)
+    CCTG = Metida.CustomCovarianceType(ccsg)
+    CCTR = Metida.CustomCovarianceType(ccsr)
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation|subject), CCTG),
+    repeated = Metida.VarEffect(Metida.@covstr(formulation|subject), CCTR),
+    )
+
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 10.065239006121315 atol=1E-6
+end
 ################################################################################
 #                                  ftdf
 ################################################################################

@@ -1,24 +1,20 @@
 # API
 
 ### LMM
-```@docs
-Metida.LMM
-```
 
-### fit!
-```@docs
-Metida.fit!
-```
+[`LMM`](@ref)
 
 ### Metida.@covstr
-```@docs
-Metida.@covstr
-```
+
+[`Metida.@covstr`](@ref)
 
 ### Metida.VarEffect
-```@docs
-Metida.VarEffect
-```
+
+[`Metida.VarEffect`](@ref)
+
+### fit!
+
+[`fit!`](@ref)
 
 ### Metida.ScaledIdentity
 ```@docs

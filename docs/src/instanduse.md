@@ -6,6 +6,11 @@ import Pkg; Pkg.add("Metida")
 
 ### Simple example
 
+[`LMM`](@ref)
+[`Metida.@covstr`](@ref)
+[`Metida.VarEffect`](@ref)
+[`fit!`](@ref)
+
 #### Step 1: Load data
 
 Load provided data with CSV and DataFrames:
@@ -15,7 +20,10 @@ using CSV, DataFrames
 df = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "df0.csv")) |> DataFrame
 ```
 
-Check that all categorical variables is categorical.
+!!! note
+
+    Check that all categorical variables is categorical.
+
 
 ```
 categorical!(df, :subject);
@@ -40,7 +48,9 @@ fit!(lmm)
 
 ### Model construction
 
-[`LMM`](@ref)
+```@docs
+Metida.LMM
+```
 
 * `model` - example: `@formula(var ~ sequence + period + formulation)`
 
@@ -48,10 +58,23 @@ fit!(lmm)
 
 * `repeated` - can be specified like random effect. If not specified `VarEffect(@covstr(1|1), SI)` used. If no repeated effects specified vector of ones used.
 
+### Random/repeated model
+
+```@docs
+Metida.@covstr
+```
+
+### Random/repeated effect construction
+
+```@docs
+Metida.VarEffect
+```
 
 ### Fitting
 
-[`fit!`](@ref)
+```@docs
+Metida.fit!
+```
 
 * `solver` - `:default` solving with Optim.jl, for `:nlopt` and `:cuda` MetidaNLopt.jl and MetidaCu.jl should be installed.
 
