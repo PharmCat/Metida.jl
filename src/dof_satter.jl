@@ -25,7 +25,7 @@ end
     dof_satter(lmm::LMM{T}, l) where T
 
 Return Satterthwaite approximation for the denominator degrees of freedom, where l is a contrast vector (estimable linear combination
-of β).
+of fixed effect coefficients vector).
 
 l is a contrast vector (L).
 

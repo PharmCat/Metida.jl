@@ -209,15 +209,17 @@ Tuple{Int, Int} should be returned.
 
 G matrix function should update mx, where mx is zero matrix, p - parameter of CovarianceType structure, example:
 
+```julia
 function gmat_diag!(mx, θ::Vector{T}, p) where T
     for i = 1:size(mx, 1)
             mx[i, i] = θ[i] ^ 2
-    end
+        end
     nothing
 end
-
+```
 R matrix function should add R part to mx, rz - is repeated effect matrix, example:
 
+```julia
 function rmatp_diag!(mx, θ::Vector{T}, rz, p) where T
     for i = 1:size(mx, 1)
         for c = 1:length(θ)
@@ -226,6 +228,7 @@ function rmatp_diag!(mx, θ::Vector{T}, rz, p) where T
     end
     nothing
 end
+```
 """
 struct CustomCovarianceStruct
     nparamf::Function
