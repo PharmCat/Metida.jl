@@ -8,6 +8,7 @@ function addspace(s::String, n::Int; first = false)::String
     end
     return s
 end
+#=
 function makepmatrix(m::Matrix)
     sm = string.(m)
     lv = maximum(length.(sm), dims = 1)
@@ -17,6 +18,7 @@ function makepmatrix(m::Matrix)
         end
     end
 end
+=#
 function printmatrix(io::IO, m::Matrix)
     sm = string.(m)
     lv = maximum(length.(sm), dims = 1)
@@ -34,7 +36,7 @@ function rcoefnames(s, t, ve)
     elseif ve == :DIAG
         return fill!(Vector{String}(undef, length(coefnames(s))), "σ² ") .* string.(coefnames(s))
     elseif ve == :CS || ve == :AR
-        return ["σ² ", "ρ"]
+        return ["σ² ", "ρ "]
     elseif ve == :CSH || ve == :ARH
         cn = coefnames(s)
         if isa(cn, Vector)
@@ -44,10 +46,19 @@ function rcoefnames(s, t, ve)
         end
         v  = Vector{String}(undef, t)
         view(v, 1:l) .= (fill!(Vector{String}(undef, l), "σ² ") .*string.(cn))
-        v[end] = "ρ"
+        v[end] = "ρ "
         return v
     elseif ve == :ARMA
-        return ["σ² ", "γ", "ρ"]
+        return ["σ² ", "γ ", "ρ "]
+    elseif ve == :TOEP || ve == :TOEPP
+        v = Vector{String}(undef, t)
+        v[1] = "σ² "
+        if length(v) > 1
+            for i = 2:length(v)
+                v[i] = "ρ band $(i-1) "
+            end
+        end
+        return v
     else
         v = Vector{String}(undef, t)
         v .= "NA"

@@ -5,21 +5,23 @@
 ################################################################################
 function rmat_base_inc_b!(mx::AbstractMatrix{T}, θ::AbstractVector{T}, zrv, covstr::CovStructure{T2}) where T where T2
         if covstr.repeated.covtype.s == :SI
-            rmatp_si!(mx, θ, zrv)
+            rmatp_si!(mx, θ, zrv, covstr.repeated.covtype.p)
         elseif covstr.repeated.covtype.s == :DIAG
-            rmatp_diag!(mx, θ, zrv)
+            rmatp_diag!(mx, θ, zrv, covstr.repeated.covtype.p)
         elseif covstr.repeated.covtype.s == :AR
-            rmatp_ar!(mx, θ, zrv)
+            rmatp_ar!(mx, θ, zrv, covstr.repeated.covtype.p)
         elseif covstr.repeated.covtype.s == :ARH
-            rmatp_arh!(mx, θ, zrv)
+            rmatp_arh!(mx, θ, zrv, covstr.repeated.covtype.p)
         elseif covstr.repeated.covtype.s == :CSH
-            rmatp_csh!(mx, θ, zrv)
+            rmatp_csh!(mx, θ, zrv, covstr.repeated.covtype.p)
         elseif covstr.repeated.covtype.s == :CS
-            rmatp_cs!(mx, θ, zrv)
+            rmatp_cs!(mx, θ, zrv, covstr.repeated.covtype.p)
         elseif covstr.repeated.covtype.s == :ARMA
-            rmatp_arma!(mx, θ, zrv)
+            rmatp_arma!(mx, θ, zrv, covstr.repeated.covtype.p)
+        elseif covstr.repeated.covtype.s == :TOEPP
+            rmatp_toepp!(mx, θ, zrv, covstr.repeated.covtype.p)
         elseif covstr.repeated.covtype.s == :FUNC
-            covstr.repeated.covtype.t.xmat!(mx, θ, zrv)
+            covstr.repeated.covtype.p.xmat!(mx, θ, zrv, covstr.repeated.covtype.p)
         end
 end
 ################################################################################
@@ -32,14 +34,14 @@ function rmat_base_inc!(mx, θ::AbstractVector{T}, covstr, block, sblock) where 
     mx
 end
 ################################################################################
-function rmatp_si!(mx::AbstractMatrix{T}, θ::Vector{T}, ::AbstractMatrix) where T
+function rmatp_si!(mx::AbstractMatrix{T}, θ::Vector{T}, ::AbstractMatrix, p) where T
     θsq = θ[1]*θ[1]
     for i = 1:size(mx, 1)
             mx[i, i] += θsq
     end
     nothing
 end
-function rmatp_diag!(mx::AbstractMatrix{T}, θ::Vector{T}, rz) where T
+function rmatp_diag!(mx::AbstractMatrix{T}, θ::Vector{T}, rz, p) where T
     for i = 1:size(mx, 1)
         for c = 1:length(θ)
             mx[i, i] += rz[i, c] * θ[c] * θ[c]
@@ -47,7 +49,7 @@ function rmatp_diag!(mx::AbstractMatrix{T}, θ::Vector{T}, rz) where T
     end
     nothing
 end
-function rmatp_ar!(mx, θ::Vector{T}, ::AbstractMatrix) where T
+function rmatp_ar!(mx, θ::Vector{T}, ::AbstractMatrix, p) where T
     rn  = size(mx, 1)
     de  = θ[1] ^ 2
     for m = 1:rn
@@ -64,7 +66,7 @@ function rmatp_ar!(mx, θ::Vector{T}, ::AbstractMatrix) where T
     end
     nothing
 end
-function rmatp_arh!(mx, θ::Vector{T}, rz) where T
+function rmatp_arh!(mx, θ::Vector{T}, rz, p) where T
     vec   = rz * (θ[1:end-1])
     rn    = size(mx, 1)
     if rn > 1
@@ -80,7 +82,7 @@ function rmatp_arh!(mx, θ::Vector{T}, rz) where T
     end
     nothing
 end
-function rmatp_cs!(mx, θ::Vector{T}, ::AbstractMatrix) where T
+function rmatp_cs!(mx, θ::Vector{T}, ::AbstractMatrix, p) where T
     rn    = size(mx, 1)
     θsq   =  θ[1]*θ[1]
     θsqp  =  θsq*θ[2]
@@ -97,7 +99,7 @@ function rmatp_cs!(mx, θ::Vector{T}, ::AbstractMatrix) where T
     end
     nothing
 end
-function rmatp_csh!(mx, θ::Vector{T}, rz) where T
+function rmatp_csh!(mx, θ::Vector{T}, rz, p) where T
     vec   = rz * (θ[1:end-1])
     rn    = size(mx, 1)
     if rn > 1
@@ -114,7 +116,7 @@ function rmatp_csh!(mx, θ::Vector{T}, rz) where T
     nothing
 end
 ################################################################################
-function rmatp_arma!(mx, θ::Vector{T}, ::AbstractMatrix) where T
+function rmatp_arma!(mx, θ::Vector{T}, ::AbstractMatrix, p) where T
     rn  = size(mx, 1)
     de  = θ[1] ^ 2
     for m = 1:rn
@@ -126,6 +128,25 @@ function rmatp_arma!(mx, θ::Vector{T}, ::AbstractMatrix) where T
                 ode = de * θ[2] * θ[3] ^ (n - m - 1)
                 @inbounds mx[m, n] += ode
                 @inbounds mx[n, m] = mx[m, n]
+            end
+        end
+    end
+    nothing
+end
+################################################################################
+function rmatp_toepp!(mx, θ::Vector{T}, ::AbstractMatrix, p) where T
+    de  = θ[1] ^ 2    #diagonal element
+    s   = size(mx, 1) #size
+    b   = s - 1       #band
+    for i = 1:s
+        mx[i, i] += de
+    end
+    if s > 1 && p > 1
+        for m = 1:s - 1
+            for n = m + 1:(m + p - 1 > s ? s : m + p - 1)
+                ode = de * θ[n - m + 1]
+                mx[m, n] += ode
+                mx[n, m] = mx[m, n]
             end
         end
     end

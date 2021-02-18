@@ -12,6 +12,7 @@ include("testdata.jl")
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.DIAG),
     )
+    Base.show(io, lmm)
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
     #Rholink function
@@ -80,6 +81,7 @@ end
     repeated = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
     )
     Metida.fit!(lmm)
+    Base.show(io, lmm)
     @test Metida.m2logreml(lmm) ≈ 25.000777869122338 atol=1E-8
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     repeated = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG)
@@ -253,6 +255,35 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 713.0655862252027 atol=1E-8
+end
+@testset "  Model:  TOEP/SI                                          " begin
+    #SPSS 710.200
+    io = IOBuffer();
+    lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
+    random = Metida.VarEffect(Metida.@covstr(r1|subject), Metida.TOEP),
+    )
+    Metida.fit!(lmm)
+    Base.show(io, lmm)
+    @test Metida.m2logreml(lmm)  ≈ 710.1998669150806 atol=1E-8
+end
+@testset "  Model:  TOEPP/SI                                         " begin
+    io = IOBuffer();
+    lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
+    random = Metida.VarEffect(Metida.@covstr(r1|subject), Metida.TOEPP(4)),
+    )
+    Metida.fit!(lmm)
+    Base.show(io, lmm)
+    @test Metida.m2logreml(lmm)  ≈ 715.2410264030134 atol=1E-8
+end
+@testset "  Model:  DIAG/TOEPP                                       " begin
+    io = IOBuffer();
+    lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
+    random = Metida.VarEffect(Metida.@covstr(r2|subject), Metida.DIAG),
+    repeated = Metida.VarEffect(Metida.@covstr(p|subject), Metida.TOEPP(7)),
+    )
+    Metida.fit!(lmm)
+    Base.show(io, lmm)
+    @test Metida.m2logreml(lmm)  ≈ 744.4335055304225 atol=1E-8
 end
 ################################################################################
 #                                  Errors

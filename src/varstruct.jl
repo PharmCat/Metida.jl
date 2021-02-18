@@ -20,12 +20,12 @@ end
 ################################################################################
 struct CovarianceType{T} <: AbstractCovarianceType
     s::Symbol          #Covtype name
-    t::T
-    function CovarianceType(s, t)
-        new{typeof(t)}(s, t)
+    p::T
+    function CovarianceType(s, p)
+        new{typeof(p)}(s, p)
     end
     function CovarianceType(s)
-        CovarianceType(s, 0)
+        CovarianceType(s, zero(Int))
     end
 end
 ################################################################################
@@ -162,7 +162,17 @@ function RZero()
     CovarianceType(:ZERO)
 end
 
-#TOE
+#TOEP
+function Toeplitz()
+    CovarianceType(:TOEP)
+end
+const TOEP = Toeplitz()
+
+#TOEPP
+function ToeplitzParameterized(p::Int)
+    CovarianceType(:TOEPP, p)
+end
+const TOEPP(p) = ToeplitzParameterized(p)
 
 #TOEH
 
@@ -171,10 +181,10 @@ end
 """
     CustomCovarianceStruct(nparamf::Function, xmat!::Function)
 
-* `nparamf` - function type (q, p) -> (a, b)
+* `nparamf` - function type (t, q) -> (a, b)
 where:
-q - size(z, 2) - number of levels for effect (number of columns of individual z matriz);
-p - number of factors in the effect model;
+t - size(z, 2) - number of levels for effect (number of columns of individual z matriz);
+q - number of factors in the effect model;
 a - number of variance parameters;
 b - number of ρ parameters;
 
@@ -182,9 +192,9 @@ Tuple{Int, Int} should be returned.
 
 * `xmat!` - construction function
 
-G matrix function should update mx, where mx is zero matrix, example:
+G matrix function should update mx, where mx is zero matrix, p - parameter of CovarianceType structure, example:
 
-function gmat_diag!(mx, θ::Vector{T}, ::Int) where T
+function gmat_diag!(mx, θ::Vector{T}, p) where T
     for i = 1:size(mx, 1)
             mx[i, i] = θ[i] ^ 2
     end
@@ -193,7 +203,7 @@ end
 
 R matrix function should add R part to mx, rz - is repeated effect matrix, example:
 
-function rmatp_diag!(mx, θ::Vector{T}, rz) where T
+function rmatp_diag!(mx, θ::Vector{T}, rz, p) where T
     for i = 1:size(mx, 1)
         for c = 1:length(θ)
             mx[i, i] += rz[i, c] * θ[c] * θ[c]
@@ -209,37 +219,37 @@ end
 
 CustomCovarianceType(ccs) = CovarianceType(:FUNC, ccs)
 
-function covstrparam(ct::CovarianceType, q::Int, p::Int)::Tuple{Int, Int}
+function covstrparam(ct::CovarianceType, t::Int, q::Int)::Tuple{Int, Int}
     if ct.s == :SI
         return (1, 0)
     elseif ct.s == :DIAG
-        return (q, 0)
+        return (t, 0)
     elseif ct.s == :VC
-        return (p, 0)
+        return (q, 0)
     elseif ct.s == :AR
         return (1, 1)
     elseif ct.s == :ARH
-        return (q, 1)
+        return (t, 1)
     elseif ct.s == :ARMA
         return (1, 2)
     elseif ct.s == :CS
         return (1, 1)
     elseif ct.s == :CSH
-        return (q, 1)
+        return (t, 1)
     elseif ct.s == :TOEP
-        return (1, q - 1)
+        return (1, t - 1)
     elseif ct.s == :TOEPH
-        return (q, q - 1)
-    elseif ct.s == :TOEPB
-        return (1, ct.t - 1)
-    elseif ct.s == :TOEPHB
-        return (q, ct.t - 1)
+        return (t, t - 1)
+    elseif ct.s == :TOEPP
+        return (1, ct.p - 1)
+    elseif ct.s == :TOEPHP
+        return (t, ct.p - 1)
     elseif ct.s == :UN
-        return (q, q * (q + 1) / 2 - q)
+        return (t, t * (t + 1) / 2 - t)
     elseif ct.s == :ZERO
         return (0, 0)
     elseif ct.s == :FUNC
-        return ct.t.nparamf(q, p)
+        return ct.p.nparamf(t, q)
     else
         error("Unknown covariance type!")
     end
@@ -464,7 +474,7 @@ function noncrossmodelmatrix(mx, my)
                 for c = n+1:size(mat, 2)
                     if mat[m, c] > 0
                         mat[:, n] .+= mat[:, c]
-                        mat[:, c] .= 0
+                        mat[:, c] .= zero(eltype(mat))
                     end
                 end
             end

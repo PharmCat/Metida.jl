@@ -315,7 +315,7 @@ MIXED lnpk BY period treatment sequence subject
 | 29 | 26.96606070210349 |
 | 30 | 26.316526650535426 |
 
-Full SPSS code provided in validation folder ([here](https://github.com/PharmCat/ jl/blob/master/validation/spssrdscode.sps.txt)).
+Full SPSS code provided in validation folder ([here](https://github.com/PharmCat/Metida.jl/blob/master/validation/spssrdscode.sps.txt)).
 
 Validation dataset available [here](https://link.springer.com/article/10.1208%2Fs12248-020-0427-6), [12248_2020_427_MOESM2_ESM.xls](https://static-content.springer.com/esm/art%3A10.1208%2Fs12248-020-0427-6/MediaObjects/12248_2020_427_MOESM2_ESM.xls).
 

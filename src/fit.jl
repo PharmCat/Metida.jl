@@ -169,18 +169,19 @@ function fit!(lmm::LMM{T};
 
         #-2 LogREML, β, iC
     lmm.result.reml, lmm.result.beta, iC, θ₃ = optfunc(lmm, lmm.result.theta)
-        #Variance-vovariance matrix of β
-    lmm.result.c            = pinv(iC)
-        #SE
-    lmm.result.se           = sqrt.(diag(lmm.result.c))
         #Fit true
     if !isnan(lmm.result.reml) && !isinf(lmm.result.reml)
+        #Variance-vovariance matrix of β
+        lmm.result.c            = pinv(iC)
+        #SE
+        lmm.result.se           = sqrt.(diag(lmm.result.c))
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model fitted."))
         lmm.result.fit      = true
     else
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model NOT fitted."))
         lmm.result.fit      = false
     end
+
     #Check G
     if lmm.covstr.random[1].covtype.s != :ZERO
         for i = 1:length(lmm.covstr.random)
