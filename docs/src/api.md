@@ -46,6 +46,26 @@ Metida.CompoundSymmetry
 Metida.HeterogeneousCompoundSymmetry
 ```
 
+### Metida.HeterogeneousCompoundSymmetry
+```@docs
+Metida.HeterogeneousCompoundSymmetry
+```
+
+### Metida.AutoregressiveMovingAverage
+```@docs
+Metida.AutoregressiveMovingAverage
+```
+
+### Metida.Toeplitz
+```@docs
+Metida.Toeplitz
+```
+
+### Metida.ToeplitzParameterized
+```@docs
+Metida.ToeplitzParameterized
+```
+
 ### Metida.coef
 ```@docs
 Metida.coef

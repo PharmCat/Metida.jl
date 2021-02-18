@@ -22,6 +22,9 @@ ARH, HeterogeneousAutoregressive,
 CS, CompoundSymmetry,
 CSH, HeterogeneousCompoundSymmetry,
 ARMA, AutoregressiveMovingAverage,
+TOEP, Toeplitz,
+TOEPP, ToeplitzParameterized,
+CustomCovarianceStruct, CustomCovarianceType,
 fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, dof_contain, rankx, caic,
 gmatrix, rmatrix, vmatrix!
 

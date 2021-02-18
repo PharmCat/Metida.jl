@@ -269,7 +269,7 @@ end
 @testset "  Model:  TOEPP/SI                                         " begin
     io = IOBuffer();
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
-    random = Metida.VarEffect(Metida.@covstr(r1|subject), Metida.TOEPP(4)),
+    random = Metida.VarEffect(Metida.@covstr(r1|subject), Metida.TOEPP(2)),
     )
     Metida.fit!(lmm)
     Base.show(io, lmm)
@@ -279,11 +279,11 @@ end
     io = IOBuffer();
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
     random = Metida.VarEffect(Metida.@covstr(r2|subject), Metida.DIAG),
-    repeated = Metida.VarEffect(Metida.@covstr(p|subject), Metida.TOEPP(7)),
+    repeated = Metida.VarEffect(Metida.@covstr(p|subject), Metida.TOEPP(3)),
     )
     Metida.fit!(lmm)
     Base.show(io, lmm)
-    @test Metida.m2logreml(lmm)  ≈ 744.4335055304225 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 773.9575538254085 atol=1E-8
 end
 ################################################################################
 #                                  Errors

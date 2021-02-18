@@ -162,13 +162,27 @@ function RZero()
     CovarianceType(:ZERO)
 end
 
-#TOEP
+"""
+    Toeplitz()
+
+Toeplitz covariance type. Only for G matrix.
+
+TOEP = Toeplitz()
+
+"""
 function Toeplitz()
     CovarianceType(:TOEP)
 end
 const TOEP = Toeplitz()
 
-#TOEPP
+"""
+    ToeplitzParameterized(p::Int)
+
+Toeplitz covariance type with parameter p, (number of bands = p - 1, if p = 1 its equal SI structure).
+
+TOEPP(p) = ToeplitzParameterized(p)
+
+"""
 function ToeplitzParameterized(p::Int)
     CovarianceType(:TOEPP, p)
 end
@@ -187,6 +201,8 @@ t - size(z, 2) - number of levels for effect (number of columns of individual z 
 q - number of factors in the effect model;
 a - number of variance parameters;
 b - number of ρ parameters;
+
+Example: (t, q) -> (t, 1) for CSH structure; (t, q) -> (1, 1) for AR, ets.
 
 Tuple{Int, Int} should be returned.
 
@@ -217,7 +233,12 @@ struct CustomCovarianceStruct
     xmat!::Function
 end
 
-CustomCovarianceType(ccs) = CovarianceType(:FUNC, ccs)
+"""
+    CustomCovarianceType(ccs::CustomCovarianceStruct)
+
+Make custom covariance type with CustomCovarianceStruct.
+"""
+CustomCovarianceType(ccs::CustomCovarianceStruct) = CovarianceType(:FUNC, ccs)
 
 function covstrparam(ct::CovarianceType, t::Int, q::Int)::Tuple{Int, Int}
     if ct.s == :SI
