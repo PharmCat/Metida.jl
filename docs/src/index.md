@@ -20,6 +20,9 @@ Implemented covariance structures:
   * Compound Symmetry (CS)
   * Heterogeneous Compound Symmetry (CSH)
   * Autoregressive Moving Average (ARMA)
+  * Toeplitz (TOEP)
+  * ToeplitzParameterized (TOEPP)
+  * CustomCovarianceType
 
 ## Contents
 
