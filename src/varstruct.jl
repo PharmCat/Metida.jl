@@ -155,12 +155,6 @@ function AutoregressiveMovingAverage()
     CovarianceType(:ARMA)
 end
 const ARMA = AutoregressiveMovingAverage()
-"""
-    RZero()
-"""
-function RZero()
-    CovarianceType(:ZERO)
-end
 
 """
     Toeplitz()
@@ -188,9 +182,14 @@ function ToeplitzParameterized(p::Int)
 end
 const TOEPP(p) = ToeplitzParameterized(p)
 
-#TOEH
-
-#UNST
+#=
+"""
+    RZero()
+"""
+=#
+function RZero()
+    CovarianceType(:ZERO)
+end
 
 """
     CustomCovarianceStruct(nparamf::Function, xmat!::Function)

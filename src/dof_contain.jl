@@ -23,6 +23,9 @@ end
 """
     dof_contain(lmm)
 
+!!! warning
+    Experimental
+
 Return the containment denominator degrees of freedom: rank(XZ) - rank(X)
 """
 function dof_contain(lmm)

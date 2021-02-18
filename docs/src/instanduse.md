@@ -6,10 +6,10 @@ import Pkg; Pkg.add("Metida")
 
 ### Simple example
 
-[`LMM`](@ref)
-[`Metida.@covstr`](@ref)
-[`Metida.VarEffect`](@ref)
-[`fit!`](@ref)
+* [`LMM`](@ref)
+* [`Metida.@covstr`](@ref)
+* [`Metida.VarEffect`](@ref)
+* [`fit!`](@ref)
 
 #### Step 1: Load data
 
@@ -99,7 +99,7 @@ Metida.CustomCovarianceType
 ```@example lmmexample
 using Metida, StatsPlots, CSV, DataFrames, MixedModels; #hide
 
-rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "df0.csv"); types = [String, String, String, String, Float64, Float64]) |> DataFrame
+df0 = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "df0.csv"); types = [String, String, String, String, Float64, Float64]) |> DataFrame
 
 #Make struct for G and R matrix
 ccsg = CustomCovarianceStruct((q,p) -> (q, 1), Metida.gmat_csh!)

@@ -25,12 +25,12 @@ end
     dof_satter(lmm::LMM{T}, l) where T
 
 Return Satterthwaite approximation for the denominator degrees of freedom, where l is a contrast vector (estimable linear combination
-ofβ).
+of β).
 
 l is a contrast vector (L).
 
 ```math
-df = \frac{2(LCL')^{2}}{g'Ag}
+df = \\frac{2(LCL')^{2}}{g'Ag}
 ```
 
 ```math
@@ -38,7 +38,7 @@ A = 2H^{-1}
 ```
 
 ```math
-g = \triangledown_{\theta}(LC^{-1}_{\theta}L')
+g = \\triangledown_{\\theta}(LC^{-1}_{\\theta}L')
 ```
 """
 function dof_satter(lmm::LMM{T}, l) where T

@@ -46,11 +46,6 @@ Metida.CompoundSymmetry
 Metida.HeterogeneousCompoundSymmetry
 ```
 
-### Metida.HeterogeneousCompoundSymmetry
-```@docs
-Metida.HeterogeneousCompoundSymmetry
-```
-
 ### Metida.AutoregressiveMovingAverage
 ```@docs
 Metida.AutoregressiveMovingAverage
@@ -64,6 +59,11 @@ Metida.Toeplitz
 ### Metida.ToeplitzParameterized
 ```@docs
 Metida.ToeplitzParameterized
+```
+
+### Metida.isfitted
+```@docs
+Metida.isfitted
 ```
 
 ### Metida.coef
@@ -94,6 +94,11 @@ Metida.dof_residual
 ### Metida.dof_satter
 ```@docs
 Metida.dof_satter
+```
+
+### Metida.dof_contain
+```@docs
+Metida.dof_contain
 ```
 
 ### Metida.caic
@@ -134,6 +139,11 @@ Metida.modelmatrix
 ### Metida.response
 ```@docs
 Metida.response
+```
+
+### Metida.loglikelihood
+```@docs
+Metida.loglikelihood
 ```
 
 ### Metida.gmatrix
