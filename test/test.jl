@@ -77,6 +77,7 @@ end
 #                                  df0
 ################################################################################
 @testset "  Model: Only repeated 0/DIAG                              " begin
+    io = IOBuffer();
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     repeated = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
     )
