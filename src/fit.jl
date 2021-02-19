@@ -48,9 +48,9 @@ function fit!(lmm::LMM{T};
     if lmm.result.fit lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Refit model...")) end
 
     if solver == :nlopt
-        return fit_nlopt!(lmm; solver = :nlopt, verbose = verbose, varlinkf = varlinkf, rholinkf = rholinkf, aifirst = aifirst, g_tol = g_tol, x_tol = x_tol, f_tol = f_tol, hcalck = false, init = init)
+        return fit_nlopt!(lmm; solver = :nlopt, verbose = verbose, varlinkf = varlinkf, rholinkf = rholinkf, aifirst = aifirst, g_tol = g_tol, x_tol = x_tol, f_tol = f_tol, hcalck = false, init = init, io = io)
     elseif solver == :cuda
-        return fit_nlopt!(lmm; solver = :cuda,  verbose = verbose, varlinkf = varlinkf, rholinkf = rholinkf, aifirst = aifirst, g_tol = g_tol, x_tol = x_tol, f_tol = f_tol, hcalck = false, init = init)
+        return fit_nlopt!(lmm; solver = :cuda,  verbose = verbose, varlinkf = varlinkf, rholinkf = rholinkf, aifirst = aifirst, g_tol = g_tol, x_tol = x_tol, f_tol = f_tol, hcalck = false, init = init, io = io)
     end
 
     if verbose == :auto
@@ -190,7 +190,7 @@ function fit!(lmm::LMM{T};
         end
     end
 
-    if hcalck
+    if hcalck && lmm.result.fit
             #Hessian
         lmm.result.h      = hessian(lmm, lmm.result.theta)
             #H positive definite check
