@@ -57,7 +57,6 @@ function _precompile_()
     isdefined(Metida, Symbol("#@covstr")) && precompile(Tuple{getfield(Metida, Symbol("#@covstr")), LineNumberNode, Module, Int})
 
     precompile(Tuple{typeof(Metida.reml_sweep_β), Metida.LMM{Float64}, Array{Float64, 1}})
-    precompile(Tuple{typeof(Metida.reml_sweep_β_b), Metida.LMM{Float64}, Array{Float64, 1}})
 
     precompile(Tuple{typeof(Metida.rholinkpsigmoid), Float64})
     precompile(Tuple{typeof(Metida.rholinkpsigmoidr), Float64})
