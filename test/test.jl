@@ -51,7 +51,7 @@ include("testdata.jl")
     @test sum(Metida.hessian(lmm))    ≈ 1118.160713481362 atol=1E-2
     @test Metida.nblocks(lmm) == 5
     #AI like algo
-    Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm), blocksolve = true)
+    Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm))
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
     #Set user coding
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;

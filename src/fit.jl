@@ -12,7 +12,7 @@ fit_nlopt!(lmm::MetidaModel; kwargs...)  = error("MetidaNLopt not found. \n - Ru
     g_tol::Float64 = 1e-12,
     x_tol::Float64 = 1e-12,
     f_tol::Float64 = 1e-12,
-    hcalck::Bool   = true,
+    hes::Bool   = true,
     init = nothing,
     io::IO = stdout,
     ) where T
@@ -27,7 +27,7 @@ Fit LMM model.
 * `g_tol` - absolute tolerance in the gradient
 * `x_tol` - absolute tolerance of theta vector
 * `f_tol` - absolute tolerance in changes of the REML
-* `hcalck` - calculate REML Hessian
+* `hes` - calculate REML Hessian
 * `init` - initial theta values
 * `io` - uotput IO
 """
@@ -40,17 +40,17 @@ function fit!(lmm::LMM{T};
     g_tol::Float64 = 1e-8,
     x_tol::Float64 = 1e-8,
     f_tol::Float64 = 1e-8,
-    hcalck::Bool   = true,
+    hes::Bool   = true,
     init = nothing,
-    io::IO = stdout,
-    blocksolve::Bool = false) where T
+    io::IO = stdout
+    ) where T
 
     if lmm.result.fit lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Refit model...")) end
 
     if solver == :nlopt
-        return fit_nlopt!(lmm; solver = :nlopt, verbose = verbose, varlinkf = varlinkf, rholinkf = rholinkf, aifirst = aifirst, g_tol = g_tol, x_tol = x_tol, f_tol = f_tol, hcalck = false, init = init, io = io)
+        return fit_nlopt!(lmm; solver = :nlopt, verbose = verbose, varlinkf = varlinkf, rholinkf = rholinkf, aifirst = aifirst, g_tol = g_tol, x_tol = x_tol, f_tol = f_tol, hes = false, init = init, io = io)
     elseif solver == :cuda
-        return fit_nlopt!(lmm; solver = :cuda,  verbose = verbose, varlinkf = varlinkf, rholinkf = rholinkf, aifirst = aifirst, g_tol = g_tol, x_tol = x_tol, f_tol = f_tol, hcalck = false, init = init, io = io)
+        return fit_nlopt!(lmm; solver = :cuda,  verbose = verbose, varlinkf = varlinkf, rholinkf = rholinkf, aifirst = aifirst, g_tol = g_tol, x_tol = x_tol, f_tol = f_tol, hes = false, init = init, io = io)
     end
 
     if verbose == :auto
@@ -58,13 +58,9 @@ function fit!(lmm::LMM{T};
     end
 
     # Optimization function
-    if blocksolve
-        optfunc = reml_sweep_β_b
-        lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Solving by blocks..."))
-    else
-        optfunc = reml_sweep_β
-    end
-
+    optfunc = reml_sweep_β
+    # Make data views
+    data = LMMDataViews(lmm)
     #Optim options
     #alphaguess = InitialHagerZhang(α0=1.0) #25s
     #linesearch =  LineSearches.MoreThuente()
@@ -111,10 +107,9 @@ function fit!(lmm::LMM{T};
     chunk  = ForwardDiff.Chunk{1}()
     ############################################################################
     if aifirst
-
-        beta = reml_sweep_β_c(lmm, θ)
-        aif(x) = reml_sweep_ai(lmm, x, beta)
-        grf(x) = optfunc(lmm, x)[1]
+        beta   = sweep_β(lmm, data, θ)
+        aif(x) = sweep_ai(lmm, data, x, beta)
+        grf(x) = optfunc(lmm, data, x)[1]
         aihcfg = ForwardDiff.HessianConfig(aif, θ, chunk)
         aigcfg = ForwardDiff.GradientConfig(grf, θ, chunk)
         ai = ForwardDiff.hessian(aif, θ, aihcfg, Val{false}())
@@ -143,7 +138,7 @@ function fit!(lmm::LMM{T};
 
     #Twice differentiable object
 
-    vloptf(x) = optfunc(lmm, varlinkvecapply(x, lmm.covstr.ct; rholinkf = rholinkf))[1]
+    vloptf(x) = optfunc(lmm, data, varlinkvecapply(x, lmm.covstr.ct; rholinkf = rholinkf))[1]
     gcfg   = ForwardDiff.GradientConfig(vloptf, θ, chunk)
     hcfg   = ForwardDiff.HessianConfig(vloptf, θ, chunk)
     gfunc!(g, x) = ForwardDiff.gradient!(g, vloptf, x, gcfg, Val{false}())
@@ -168,7 +163,7 @@ function fit!(lmm::LMM{T};
     lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Resulting θ: "*string(lmm.result.theta)))
 
         #-2 LogREML, β, iC
-    lmm.result.reml, lmm.result.beta, iC, θ₃ = optfunc(lmm, lmm.result.theta)
+    lmm.result.reml, lmm.result.beta, iC, θ₃ = optfunc(lmm, data, lmm.result.theta)
         #Fit true
     if !isnan(lmm.result.reml) && !isinf(lmm.result.reml)
         #Variance-vovariance matrix of β
@@ -190,7 +185,7 @@ function fit!(lmm::LMM{T};
         end
     end
 
-    if hcalck && lmm.result.fit
+    if hes && lmm.result.fit
             #Hessian
         lmm.result.h      = hessian(lmm, lmm.result.theta)
             #H positive definite check

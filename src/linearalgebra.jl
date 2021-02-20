@@ -1,4 +1,5 @@
 #linearalgebra.jl
+#=
 """
 ```math
     \\begin{bmatrix} A * B * A' & X \\\\ X' & 0 \\end{bmatrix}
@@ -26,6 +27,7 @@ function mulαβαt3(A, B, X)
     mx[p+1:end, 1:p] = X'
     mx
 end
+=#
 """
 θ + A * B * A'
 

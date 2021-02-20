@@ -15,9 +15,9 @@ import Pkg; Pkg.add("Metida")
 
 Load provided data with CSV and DataFrames:
 
-```
-using CSV, DataFrames
-df = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "df0.csv")) |> DataFrame
+```@example lmmexample
+using Metida, CSV, DataFrames
+df = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "df0.csv")) |> DataFrame;
 ```
 
 !!! note
@@ -25,7 +25,7 @@ df = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "df0.csv"))
     Check that all categorical variables is categorical.
 
 
-```
+```@example lmmexample
 categorical!(df, :subject);
 categorical!(df, :period);
 categorical!(df, :sequence);
@@ -34,16 +34,22 @@ categorical!(df, :formulation);
 
 #### Step 2: Make model
 
-```
+```@example lmmexample
 lmm = LMM(@formula(var~sequence+period+formulation), df;
 random = VarEffect(@covstr(formulation|subject), CSH),
-repeated = VarEffect(@covstr(formulation|subject), DIAG))
+repeated = VarEffect(@covstr(formulation|subject), DIAG));
 ```
 
 #### Step 3: Fit
 
-```
+```@example lmmexample
 fit!(lmm)
+```
+
+##### Check warnings and errors in log.
+
+```@example lmmexample
+lmm.log
 ```
 
 ### Model construction

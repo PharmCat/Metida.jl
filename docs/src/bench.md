@@ -1,7 +1,5 @@
 # Benchmark
 
-### Metida v0.4.0: Model 1
-
 * Data
 
 ```
@@ -31,7 +29,7 @@ BenchmarkTools.Trial:
   evals/sample:     1
 ```
 
-* Metida
+* Metida v0.4.0
 
 ```
 lmm = LMM(@formula(response ~1 + factor*time), rds;
@@ -54,7 +52,7 @@ BenchmarkTools.Trial:
   evals/sample:     1
 ```
 
-* MetidaNLopt
+* MetidaNLopt v0.4.0
 
 ```
 @benchmark fit!($lmm, solver = :nlopt) seconds = 15
@@ -74,7 +72,7 @@ BenchmarkTools.Trial:
   evals/sample:     1
 ```
 
-* MetidaCu
+* MetidaCu v0.4.0
 
 ```
 @benchmark fit!($lmm, solver = :cuda) seconds = 15
@@ -94,6 +92,29 @@ BenchmarkTools.Trial:
   evals/sample:     1
 ```
 
+* Metida v0.5.0
+
+```
+lmm = LMM(@formula(response ~1 + factor*time), rds;
+random = VarEffect(@covstr(1 + time|subject&factor), CSH),
+)
+@benchmark fit!($lmm, hes = false) seconds = 15
+```
+
+```
+BenchmarkTools.Trial:
+  memory estimate:  74.93 MiB
+  allocs estimate:  111421
+  --------------
+  minimum time:     196.160 ms (0.00% GC)
+  median time:      218.341 ms (0.00% GC)
+  mean time:        225.815 ms (3.55% GC)
+  maximum time:     305.821 ms (19.83% GC)
+  --------------
+  samples:          67
+  evals/sample:     1
+```
+
 ### Conclusion
 
-MixedModels.jl faser than Metida.jl in similar cases, but Metida.jl can be used with different covariance structures for random and repeated effects. MetidaCu have advantage only for big observation pes subject number.
+MixedModels.jl faster than Metida.jl in similar cases, but Metida.jl can be used with different covariance structures for random and repeated effects. MetidaNLopt have better performance but not estimate Hessian matrix of REML. MetidaCu have advantage only for big observation-pes-subject number.
