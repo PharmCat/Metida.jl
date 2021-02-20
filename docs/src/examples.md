@@ -4,8 +4,10 @@
 using Plots, StatsPlots;
 gr()
 Plots.reset_defaults()
+rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame;
 p = @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false); # hide
 png(p, "plot1.png");
+df          = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "Penicillin.csv"); types = [String, Float64, String, String]) |> DataFrame
 p = @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false); # hide
 png(p, "plot2.png");
 ```
