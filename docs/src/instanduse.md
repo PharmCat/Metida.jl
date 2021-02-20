@@ -17,7 +17,9 @@ Load provided data with CSV and DataFrames:
 
 ```@example lmmexample
 using Metida, CSV, DataFrames
-df = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "df0.csv")) |> DataFrame; nothing # hide
+
+df = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "df0.csv")) |> DataFrame;
+nothing # hide
 ```
 
 !!! note
@@ -29,7 +31,8 @@ df = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "df0.csv"))
 categorical!(df, :subject);
 categorical!(df, :period);
 categorical!(df, :sequence);
-categorical!(df, :formulation); nothing # hide
+categorical!(df, :formulation);
+nothing # hide
 ```
 
 #### Step 2: Make model
@@ -103,7 +106,7 @@ Metida.CustomCovarianceType
 #### Step 3 Fit your model
 
 ```@example lmmexample
-using Metida, StatsPlots, CSV, DataFrames, MixedModels; #hide
+using Metida, CSV, DataFrames # hide
 
 df0 = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "df0.csv"); types = [String, String, String, String, Float64, Float64]) |> DataFrame
 

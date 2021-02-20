@@ -1,17 +1,20 @@
 ### Example 1 - Continuous and categorical predictors
 
 ```@setup lmmexample
-using Plots; gr()
+using Plots, StatsPlots;
+gr()
 Plots.reset_defaults()
+p = @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false); # hide
+png(p, "plot1.png");
+p = @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false); # hide
+png(p, "plot2.png");
 ```
 
 ```@example lmmexample
-using Metida, StatsPlots, CSV, DataFrames, MixedModels;
+using Metida, CSV, DataFrames, MixedModels;
 
-rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
-
-p = @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false); # hide
-png(p, "plot1.png"); nothing # hide
+rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame;
+nothing # hide
 ```
 
 ![](plot1.png)
@@ -60,8 +63,7 @@ mm = fit(MixedModel, fm2, df, REML=true)
 ```@example lmmexample
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1freparma.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 
-p = @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false); # hide
-png(p, "plot2.png"); nothing # hide
+nothing # hide
 ```
 
 ![](plot2.png)
