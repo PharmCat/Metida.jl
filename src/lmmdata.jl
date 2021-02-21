@@ -1,4 +1,4 @@
-
+abstract type AbstractLMMDataBlocks end
 
 struct LMMData{T <: AbstractFloat}
     # Fixed effect matrix
@@ -10,7 +10,7 @@ struct LMMData{T <: AbstractFloat}
     end
 end
 
-struct LMMDataViews{T1, T2}
+struct LMMDataViews{T1, T2} <: AbstractLMMDataBlocks
     # Fixed effect matrix views
     xv::T1
     # Responce vector views

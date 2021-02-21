@@ -66,7 +66,7 @@ function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
     data = LMMDataViews(lmm)
     reml_sweep_β(lmm, data, θ)
 end
-function reml_sweep_β(lmm, data::LMMDataViews, θ::Vector{T}) where T <: Number
+function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T <: Number
     n             = length(lmm.covstr.vcovblock)
     #maxn          = maximum(length.(lmm.covstr.vcovblock))
     N             = length(lmm.data.yv)
@@ -131,7 +131,7 @@ function reml_sweep_β(lmm, θ::Vector{T}, β::Vector) where T <: Number
     data = LMMDataViews(lmm)
     reml_sweep_β(lmm, data, θ, β)
 end
-function reml_sweep_β(lmm, data::LMMDataViews, θ::Vector{T}, β::Vector) where T <: Number
+function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector) where T <: Number
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)
@@ -178,7 +178,7 @@ end
 ################################################################################
 #                     REML AI-like part
 ################################################################################
-function sweep_ai(lmm, data, θ::Vector{T}, β::Vector) where T <: Number
+function sweep_ai(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector) where T <: Number
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)
@@ -203,7 +203,7 @@ end
 ################################################################################
 #                     β calculation
 ################################################################################
-function sweep_β(lmm, data, θ::Vector{T}) where T <: Number
+function sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T <: Number
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)

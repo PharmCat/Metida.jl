@@ -327,14 +327,14 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     schema::Vector{Union{Tuple, AbstractTerm}}
     rcnames::Vector{String}
     # subject (local) blocks for each effect
-    block::Vector{Vector{Vector{Int}}}
+    block::Vector{Vector{Vector{UInt32}}}
     # blocks for vcov matrix / variance blocking factor (subject)
-    vcovblock::Vector{Vector{Int}}
+    vcovblock::Vector{Vector{UInt32}}
     # Z matrix
     z::Matrix{T}
     #subjz::Vector{BitArray{2}}
     # Blocks for each blocking subject, each effect, each effect subject
-    sblock::Vector{Vector{Vector{Vector{Int}}}}
+    sblock::Vector{Vector{Vector{Vector{UInt32}}}}
     #unit range z column range for each random effect
     zrndur::Vector{UnitRange{Int}}
     # repeated effect parametrization matrix
@@ -359,7 +359,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         t       = Vector{Int}(undef, alleffl)
         tr      = Vector{UnitRange{Int}}(undef, alleffl)
         schema  = Vector{Union{AbstractTerm, Tuple}}(undef, alleffl)
-        block   = Vector{Vector{Vector{Int}}}(undef, alleffl)
+        block   = Vector{Vector{Vector{UInt32}}}(undef, alleffl)
         z       = Matrix{Float64}(undef, size(data, 1), 0)
         subjz   = Vector{BitMatrix}(undef, alleffl)
         zrndur  = Vector{UnitRange{Int}}(undef, alleffl - 1)
@@ -481,7 +481,7 @@ end
 =#
 ################################################################################
 function makeblocks(subjz)
-    blocks = Vector{Vector{Int}}(undef, 0)
+    blocks = Vector{Vector{UInt32}}(undef, 0)
     for i = 1:size(subjz, 2)
         b = findall(x->!iszero(x), view(subjz, :, i))
         if length(b) > 0 push!(blocks, b) end
