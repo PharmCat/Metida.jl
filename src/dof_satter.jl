@@ -34,7 +34,12 @@ g = \\triangledown_{\\theta}(LC^{-1}_{\\theta}L')
 ```
 """
 function dof_satter(lmm::LMM{T}, l) where T
-    H     = copy(lmm.result.h)
+    if isnothing(lmm.result.h)
+        lmm.result.h = hessian(lmm)
+        H = copy(lmm.result.h)
+    else
+        H = copy(lmm.result.h)
+    end
     theta = copy(lmm.result.theta)
     qrd   = qr(H, Val(true))
     vals  = falses(thetalength(lmm))
