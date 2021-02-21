@@ -24,6 +24,7 @@ using Metida, CSV, DataFrames, MixedModels;
 
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 
+nothing; # hide
 ```
 
 ![](plot1.png)
