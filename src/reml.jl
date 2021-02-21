@@ -101,7 +101,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T 
             θ₁  += logdetv(V)
         catch
             lmmlog!(lmm, LMMLogMsg(:ERROR, "θ₁ not estimated during REML calculation, V isn't positive definite or |V| less zero."))
-            return (Inf, nothing, nothing, Inf)
+            return (1e100, nothing, nothing, 1e100)
         end
         #sweepb!(view(akk, 1:qswm), Vp, 1:q)
         sweep!(Vp, 1:q)
@@ -120,7 +120,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T 
         logdetθ₂ = logdet(θ₂)
     catch
         lmmlog!(lmm, LMMLogMsg(:ERROR, "logdet(θ₂) not estimated during REML calculation"))
-        return (Inf, nothing, nothing, Inf)
+        return (1e100, nothing, nothing, 1e100)
     end
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃ #REML, β, iC, θ₃
 end
@@ -158,7 +158,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vect
             θ₁  += logdetv(V)
         catch
             lmmlog!(lmm, LMMLogMsg(:ERROR, "θ₁ not estimated during REML calculation, V isn't positive definite or |V| less zero."))
-            return (Inf, nothing, nothing, Inf)
+            return (1e100, nothing, nothing, 1e100)
         end
         sweep!(Vp, 1:q)
         V⁻¹ = Symmetric(utriaply!(x -> -x, V))
@@ -171,7 +171,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vect
     try
         logdetθ₂ = logdet(θ₂)
     catch
-        return (Inf, nothing, nothing, Inf)
+        return (1e100, nothing, nothing, 1e100)
     end
     return   θ₁ + logdetθ₂ + θ₃ + c, θ₂, θ₃ #REML, iC, θ₃
 end
