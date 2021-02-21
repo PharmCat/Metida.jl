@@ -2,10 +2,8 @@ using Documenter, Metida
 
 makedocs(
     modules = [Metida],
-    sitename = "Metida Documentation",
+    sitename = "Metida.jl",
     authors = "Vladimir Arnautov",
-    linkcheck = true,
-    doctest = true,
     pages = [
         "Home" => "index.md",
         "User guide" => [
@@ -22,7 +20,5 @@ makedocs(
     ],
 )
 
-deploydocs(repo = "github.com/PharmCat/Metida.jl.git",
-    devurl = "dev",
-    versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
+deploydocs(repo = "github.com/PharmCat/Metida.jl.git", push_preview = true,
 )
