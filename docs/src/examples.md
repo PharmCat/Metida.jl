@@ -1,7 +1,7 @@
 ### Example 1 - Continuous and categorical predictors
 
 ```@setup lmmexample
-using Plots, StatsPlots, Metida;
+using Plots, StatsPlots, Metida, CSV, DataFrames;
 gr()
 
 Plots.reset_defaults()

@@ -1,3 +1,6 @@
+v0.5.1
+  * UInt32 -> Int
+
 v0.5.0
   * data views structure
   * api changes

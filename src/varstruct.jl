@@ -327,14 +327,14 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     schema::Vector{Union{Tuple, AbstractTerm}}
     rcnames::Vector{String}
     # subject (local) blocks for each effect
-    block::Vector{Vector{Vector{UInt32}}}
+    block::Vector{Vector{Vector{Int}}}
     # blocks for vcov matrix / variance blocking factor (subject)
-    vcovblock::Vector{Vector{UInt32}}
+    vcovblock::Vector{Vector{Int}}
     # Z matrix
     z::Matrix{T}
     #subjz::Vector{BitArray{2}}
     # Blocks for each blocking subject, each effect, each effect subject
-    sblock::Vector{Vector{Vector{Vector{UInt32}}}}
+    sblock::Vector{Vector{Vector{Vector{Int}}}}
     #unit range z column range for each random effect
     zrndur::Vector{UnitRange{Int}}
     # repeated effect parametrization matrix
@@ -344,7 +344,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     # total number of parameters in each effect
     t::Vector{Int}
     # range of each parameters in θ vector
-    tr::Vector{UnitRange{UInt32}}
+    tr::Vector{UnitRange{Int}}
     # θ Parameter count
     tl::Int
     # Parameter type :var / :rho
@@ -357,9 +357,9 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         #
         q       = Vector{Int}(undef, alleffl)
         t       = Vector{Int}(undef, alleffl)
-        tr      = Vector{UnitRange{UInt32}}(undef, alleffl)
+        tr      = Vector{UnitRange{Int}}(undef, alleffl)
         schema  = Vector{Union{AbstractTerm, Tuple}}(undef, alleffl)
-        block   = Vector{Vector{Vector{UInt32}}}(undef, alleffl)
+        block   = Vector{Vector{Vector{Int}}}(undef, alleffl)
         z       = Matrix{Float64}(undef, size(data, 1), 0)
         subjz   = Vector{BitMatrix}(undef, alleffl)
         zrndur  = Vector{UnitRange{Int}}(undef, alleffl - 1)
