@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - master
-      tags: '*'
+    tags: '*'
     paths-ignore:
       - 'LICENSE.md'
       - 'README.md'
