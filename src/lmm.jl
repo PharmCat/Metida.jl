@@ -116,35 +116,35 @@ function Base.show(io::IO, lmm::LMM)
             println(io, "   No")
             continue
         end
-        println(io, "   Model: $(lmm.covstr.random[i].model === nothing ? "nothing" : lmm.covstr.random[i].model)")
-        println(io, "   Type: $(lmm.covstr.random[i].covtype.s) ($(lmm.covstr.t[i]))")
+        println(io, "    Model: $(lmm.covstr.random[i].model === nothing ? "nothing" : string(lmm.covstr.random[i].model, "|", lmm.covstr.random[i].subj))")
+        println(io, "    Type: $(lmm.covstr.random[i].covtype.s) ($(lmm.covstr.t[i])), Subjects: $(length(lmm.covstr.block[i]))")
         #println(io, "   Coefnames: $(coefnames(lmm.covstr.schema[i]))")
     end
     println(io, "Repeated: ")
-    println(io, "   Model: $(lmm.covstr.repeated.model === nothing ? "nothing" : lmm.covstr.repeated.model)")
-    println(io, "   Type: $(lmm.covstr.repeated.covtype.s) ($(lmm.covstr.t[end]))")
-    #println(io, "   Coefnames: $(lmm.covstr.repeated.model === nothing ? "-" : coefnames(lmm.covstr.schema[end]))")
+    println(io, "    Model: $(lmm.covstr.repeated.model === nothing ? "nothing" : string(lmm.covstr.repeated.model, "|", lmm.covstr.repeated.subj))")
+    println(io, "    Type: $(lmm.covstr.repeated.covtype.s) ($(lmm.covstr.t[end]))")
+    println(io, "    Blocks: $(length(lmm.covstr.vcovblock)), Maximum block size: $(maximum(length.(lmm.covstr.vcovblock)))")
     println(io, "")
     if lmm.result.fit
         print(io, "Status: ")
         printresult(io, lmm.result.optim)
         #Optim.converged(lmm.result.optim) ? printstyled(io, "converged \n"; color = :green) : printstyled(io, "not converged \n"; color = :red)
         #if length(lmm.log) > 0  printstyled(io, "Warnings! See lmm.log \n"; color = :yellow) end
+        ##println(io, "")
+        println(io, "    -2 logREML: ", round(lmm.result.reml, sigdigits = 6), "    BIC: ", round(bic(lmm), sigdigits = 6))
         println(io, "")
-        println(io, "   -2 logREML: ", round(lmm.result.reml, sigdigits = 6))
-        println(io, "")
-        println(io, "   Fixed effects:")
-        println(io, "")
+        println(io, "    Fixed effects:")
+        #println(io, "")
         #chl = '─'
         z = lmm.result.beta ./ lmm.result.se
         mx  = hcat(coefnames(lmm.mf), round.(lmm.result.beta, sigdigits = 6), round.(lmm.result.se, sigdigits = 6), round.(z, sigdigits = 6), round.(ccdf.(Chisq(1), abs2.(z)), sigdigits = 6))
         mx  = vcat(["Name" "Estimate" "SE" "z" "Pr(>|z|)"], mx)
         printmatrix(io, mx)
         println(io, "")
-        println(io, "Random effects:")
-        println(io, "")
-        println(io, "   θ vector: ", round.(lmm.result.theta, sigdigits = 6))
-        println(io, "")
+        println(io, "    Random effects:")
+        #println(io, "")
+        println(io, "    θ vector: ", round.(lmm.result.theta, sigdigits = 6))
+        #println(io, "")
 
         mx = hcat(Matrix{Any}(undef, lmm.covstr.tl, 1), lmm.covstr.rcnames, lmm.covstr.ct, round.(lmm.result.theta, sigdigits = 6))
 
@@ -164,7 +164,7 @@ function Base.show(io::IO, lmm::LMM)
 end
 
 function printresult(io, res::T) where T <: Optim.MultivariateOptimizationResults
-    Optim.converged(res) ? printstyled(io, "converged \n"; color = :green) : printstyled(io, "not converged \n"; color = :red)
+    Optim.converged(res) ? printstyled(io, "converged"; color = :green) : printstyled(io, "not converged"; color = :red)
 end
 function printresult(io, res)
     if res[3] == :FTOL_REACHED || res[3] == :XTOL_REACHED || res[3] == :SUCCESS

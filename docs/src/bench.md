@@ -52,7 +52,7 @@ BenchmarkTools.Trial:
   evals/sample:     1
 ```
 
-* MetidaNLopt v0.4.0
+* MetidaNLopt v0.1.*
 
 ```
 @benchmark fit!($lmm, solver = :nlopt) seconds = 15
@@ -72,7 +72,7 @@ BenchmarkTools.Trial:
   evals/sample:     1
 ```
 
-* MetidaCu v0.4.0
+* MetidaCu v0.1.*
 
 ```
 @benchmark fit!($lmm, solver = :cuda) seconds = 15
@@ -112,6 +112,161 @@ BenchmarkTools.Trial:
   maximum time:     305.821 ms (19.83% GC)
   --------------
   samples:          67
+  evals/sample:     1
+```
+
+### Cancer data:
+
+File: [hdp.csv](https://stats.idre.ucla.edu/stat/data/hdp.csv) , 8525 observations.
+
+#### Model 1: maximum 377 observation-per-subject (35 subjects)
+
+```
+lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
+random = Metida.VarEffect(Metida.@covstr(1|HID), Metida.DIAG),
+)
+```
+
+* MetidaNLopt v0.2.0 (Metida 0.5.1)
+
+```
+julia> @benchmark  Metida.fit!(lmm; solver = :nlopt)
+BenchmarkTools.Trial:
+  memory estimate:  1.03 GiB
+  allocs estimate:  32925
+  --------------
+  minimum time:     7.882 s (0.75% GC)
+  median time:      7.882 s (0.75% GC)
+  mean time:        7.882 s (0.75% GC)
+  maximum time:     7.882 s (0.75% GC)
+  --------------
+  samples:          1
+  evals/sample:     1
+```
+
+* MetidaCu v0.2.0 (Metida 0.5.1)
+
+```
+julia> @benchmark  Metida.fit!(lmm; solver = :cuda)
+BenchmarkTools.Trial:
+  memory estimate:  1.02 GiB
+  allocs estimate:  541438
+  --------------
+  minimum time:     6.935 s (1.07% GC)
+  median time:      6.935 s (1.07% GC)
+  mean time:        6.935 s (1.07% GC)
+  maximum time:     6.935 s (1.07% GC)
+  --------------
+  samples:          1
+  evals/sample:     1
+```
+
+#### Model 2: maximum 875 observation-per-subject (20 subjects)
+
+```
+lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
+random = Metida.VarEffect(Metida.@covstr(1|Experience), Metida.SI),
+)
+```
+
+* MetidaNLopt v0.2.0 (Metida 0.5.1)
+
+```
+julia> @benchmark  Metida.fit!(lmm; solver = :nlopt)
+BenchmarkTools.Trial:
+  memory estimate:  1.79 GiB
+  allocs estimate:  17215
+  --------------
+  minimum time:     12.168 s (2.24% GC)
+  median time:      12.168 s (2.24% GC)
+  mean time:        12.168 s (2.24% GC)
+  maximum time:     12.168 s (2.24% GC)
+  --------------
+  samples:          1
+  evals/sample:     1
+```
+
+* MetidaCu v0.2.0 (Metida 0.5.1)
+
+```
+julia> @benchmark  Metida.fit!(lmm; solver = :cuda)
+BenchmarkTools.Trial:
+  memory estimate:  1.77 GiB
+  allocs estimate:  274940
+  --------------
+  minimum time:     8.926 s (2.83% GC)
+  median time:      8.926 s (2.83% GC)
+  mean time:        8.926 s (2.83% GC)
+  maximum time:     8.926 s (2.83% GC)
+  --------------
+  samples:          1
+  evals/sample:     1
+```
+
+#### Model 3: maximum 1437 observation-per-subject (10 subjects)
+
+```
+lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
+random = Metida.VarEffect(Metida.@covstr(1|ntumors), Metida.SI),
+)
+```
+
+* MetidaNLopt v0.2.0 (Metida 0.5.1)
+
+```
+julia> @benchmark  Metida.fit!(lmm; solver = :nlopt)
+BenchmarkTools.Trial:
+  memory estimate:  5.28 GiB
+  allocs estimate:  12951
+  --------------
+  minimum time:     32.109 s (2.24% GC)
+  median time:      32.109 s (2.24% GC)
+  mean time:        32.109 s (2.24% GC)
+  maximum time:     32.109 s (2.24% GC)
+  --------------
+  samples:          1
+  evals/sample:     1
+```
+
+* MetidaCu v0.2.0 (Metida 0.5.1)
+
+```
+julia> @benchmark  Metida.fit!(lmm; solver = :cuda)
+BenchmarkTools.Trial:
+  memory estimate:  4.36 GiB
+  allocs estimate:  174131
+  --------------
+  minimum time:     22.690 s (2.89% GC)
+  median time:      22.690 s (2.89% GC)
+  mean time:        22.690 s (2.89% GC)
+  maximum time:     22.690 s (2.89% GC)
+  --------------
+  samples:          1
+  evals/sample:     1
+```
+
+#### Model 4: maximum 3409 observation-per-subject (4 subjects)
+
+* MetidaCu v0.2.0 (Metida 0.5.1)
+
+```
+lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
+random = Metida.VarEffect(Metida.@covstr(1|CancerStage), Metida.SI),
+)
+```
+
+```
+julia> @benchmark  Metida.fit!(lmm; solver = :cuda)
+BenchmarkTools.Trial:
+  memory estimate:  5.69 GiB
+  allocs estimate:  43924
+  --------------
+  minimum time:     28.227 s (2.73% GC)
+  median time:      28.227 s (2.73% GC)
+  mean time:        28.227 s (2.73% GC)
+  maximum time:     28.227 s (2.73% GC)
+  --------------
+  samples:          1
   evals/sample:     1
 ```
 

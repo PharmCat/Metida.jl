@@ -24,6 +24,12 @@ Implemented covariance structures:
   * ToeplitzParameterized (TOEPP)
   * CustomCovarianceType
 
+## Limitations
+
+  * Maximum length of block more than ~400 (observation-per-subject)
+  * Observation number more than 160 000 
+  * For MetidaCu number of blocks more than 40  (maximum length of block more than 4000)
+
 ## Contents
 
 ```@contents

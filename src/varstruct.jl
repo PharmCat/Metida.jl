@@ -489,6 +489,7 @@ function makeblocks(subjz)
     blocks
 end
 ################################################################################
+#=
 function noncrossmodelmatrix(mx, my)
     mat = mx' * my
     for n = 1:size(mat, 2)-1
@@ -511,6 +512,32 @@ function noncrossmodelmatrix(mx, my)
     end
     res = replace(x -> x > 0 ? 1 : 0, view(mat, :, cols))
     result = mx * res
+    result
+end
+=#
+function noncrossmodelmatrix(mx::BitMatrix, my::BitMatrix)
+    size(mx, 2) > size(my, 2) ?  (mat = mx' * my; a = mx) : (mat = my' * mx; a = my)
+    mat = mat * mat'
+    @inbounds for n = 1:size(mat, 2)-1
+        @inbounds for m = 1:size(mat, 1)
+            if !iszero(mat[m, n])
+                @inbounds for c = n+1:size(mat, 2)
+                    if mat[m, c] > zero(Int)
+                        view(mat, :, n) .+= view(mat, :, c)
+                        fill!(view(mat, :, c), zero(Int))
+                    end
+                end
+            end
+        end
+    end
+    cols = Vector{Int}(undef, 0)
+    @inbounds for i = 1:size(mat, 2)
+        if !iszero(sum(view(mat,:, i)))
+            push!(cols, i)
+        end
+    end
+    res = replace(x -> iszero(x) ?  zero(Int) : one(Int), view(mat, :, cols))
+    result = a * res
     result
 end
 ################################################################################
