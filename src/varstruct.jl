@@ -489,32 +489,38 @@ function makeblocks(subjz)
     blocks
 end
 ################################################################################
-#=
 function noncrossmodelmatrix(mx, my)
-    mat = mx' * my
-    for n = 1:size(mat, 2)-1
-        for m = 1:size(mat, 1)
-            if mat[m, n] > 0
-                for c = n+1:size(mat, 2)
-                    if mat[m, c] > 0
-                        mat[:, n] .+= mat[:, c]
-                        mat[:, c] .= zero(eltype(mat))
+    size(mx, 2) > size(my, 2) ?  (mat = mx' * my; a = mx) : (mat = my' * mx; a = my)
+    #mat = mat * mat'
+    @inbounds for n = 1:size(mat, 2)-1
+        fr = findfirst(x->!iszero(x), view(mat, n, :))
+        if !isnothing(fr)
+            @inbounds for m = fr:size(mat, 1)
+                if !iszero(mat[m, n])
+                    fc = findfirst(x->!iszero(x), view(mat, m, n+1:size(mat, 2)))
+                    if !isnothing(fc)
+                        @inbounds for c = n+fc:size(mat, 2)
+                            if !iszero(mat[m, c])
+                                view(mat, :, n) .+= view(mat, :, c)
+                                fill!(view(mat, :, c), 0)
+                            end
+                        end
                     end
                 end
             end
         end
     end
     cols = Vector{Int}(undef, 0)
-    for i = 1:size(mat, 2)
-        if sum(mat[:, i]) > 0
+    @inbounds for i = 1:size(mat, 2)
+        if !iszero(sum(view(mat,:, i)))
             push!(cols, i)
         end
     end
-    res = replace(x -> x > 0 ? 1 : 0, view(mat, :, cols))
-    result = mx * res
+    res = replace(x -> iszero(x) ?  0 : 1, view(mat, :, cols))
+    result = a * res
     result
 end
-=#
+#=
 function noncrossmodelmatrix(mx::BitMatrix, my::BitMatrix)
     size(mx, 2) > size(my, 2) ?  (mat = mx' * my; a = mx) : (mat = my' * mx; a = my)
     mat = mat * mat'
@@ -540,6 +546,7 @@ function noncrossmodelmatrix(mx::BitMatrix, my::BitMatrix)
     result = a * res
     result
 end
+=#
 ################################################################################
 #                            CONTRAST CODING
 ################################################################################

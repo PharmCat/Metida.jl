@@ -1,6 +1,7 @@
 ###############################################################################
 #                       G MATRIX FUNCTIONS
 ################################################################################
+#=
 function gmat_base(θ::Vector{T}, covstr) where T
     q = size(covstr.z, 2)
     mx = zeros(T, q, q)
@@ -13,6 +14,7 @@ function gmat_base(θ::Vector{T}, covstr) where T
     end
     mx
 end
+=#
 ################################################################################
 function gmat_switch!(G, θ, covstr, r)
     if covstr.random[r].covtype.s == :SI
