@@ -67,6 +67,7 @@ function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
     reml_sweep_β(lmm, data, θ)
 end
 function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T <: Number
+    noerrors      = true
     n             = length(lmm.covstr.vcovblock)
     #maxn          = maximum(length.(lmm.covstr.vcovblock))
     N             = length(lmm.data.yv)
@@ -100,8 +101,9 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T 
         try
             θ₁  += logdetv(V)
         catch
+            noerrors = false
             lmmlog!(lmm, LMMLogMsg(:ERROR, "θ₁ not estimated during REML calculation, V isn't positive definite or |V| less zero."))
-            return (1e100, nothing, nothing, 1e100)
+            return (1e100, nothing, nothing, 1e100, noerrors)
         end
         #sweepb!(view(akk, 1:qswm), Vp, 1:q)
         sweep!(Vp, 1:q)
@@ -119,10 +121,11 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T 
     try
         logdetθ₂ = logdet(θ₂)
     catch
+        noerrors = false
         lmmlog!(lmm, LMMLogMsg(:ERROR, "logdet(θ₂) not estimated during REML calculation"))
-        return (1e100, nothing, nothing, 1e100)
+        return (1e100, nothing, nothing, 1e100, noerrors)
     end
-    return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃ #REML, β, iC, θ₃
+    return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃, noerrors #REML, β, iC, θ₃, errors
 end
 ################################################################################
 #                     REML with provided β

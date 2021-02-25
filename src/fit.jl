@@ -22,7 +22,7 @@ Fit LMM model.
 * `solver` - :default / :nlopt / :cuda
 * `verbose` - :auto / 1 / 2 / 3
 * `varlinkf` - not implemented
-* `rholinkf` - :sigm / :atan
+* `rholinkf` - :sigm / :atan / :sqsigm / :psigm
 * `aifirst` - first iteration with AI-like method
 * `g_tol` - absolute tolerance in the gradient
 * `x_tol` - absolute tolerance of theta vector
@@ -95,7 +95,7 @@ function fit!(lmm::LMM{T};
         θ                      .= initθ
         for i = 1:length(θ)
             if lmm.covstr.ct[i] == :rho
-                θ[i] = 0.0
+                θ[i] = 0.001
                 #lx[i] = -1.0
                 #ux[i] = 1.0
             end
@@ -125,7 +125,7 @@ function fit!(lmm::LMM{T};
                 if θ[i] > 0.99
                     θ[i] = 0.9
                 elseif θ[i] < 0.0
-                    θ[i] = 0.0
+                    θ[i] = 0.001
                 end
             else
                 if θ[i] < 0.01 θ[i] = initθ[i] / 2 end
@@ -163,9 +163,9 @@ function fit!(lmm::LMM{T};
     lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Resulting θ: "*string(lmm.result.theta)))
 
         #-2 LogREML, β, iC
-    lmm.result.reml, lmm.result.beta, iC, θ₃ = optfunc(lmm, data, lmm.result.theta)
+    lmm.result.reml, lmm.result.beta, iC, θ₃, noerrors = optfunc(lmm, data, lmm.result.theta)
         #Fit true
-    if !isnan(lmm.result.reml) && !isinf(lmm.result.reml)
+    if !isnan(lmm.result.reml) && !isinf(lmm.result.reml) && noerrors
         #Variance-vovariance matrix of β
         lmm.result.c            = pinv(iC)
         #SE

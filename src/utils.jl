@@ -91,16 +91,23 @@ function vlinkr(σ::T) where T <: Real
 end
 
 function rholinkpsigmoid(ρ::T) where T <: Real
-    return 1.0/(1.0 + exp(ρ))
+    return 1.0/(1.0 + exp(-ρ * 0.5))
 end
 function rholinkpsigmoidr(ρ::T) where T <: Real
-    return log(1.0/ρ - 1.0)
+    return - log(1.0/ρ - 1.0) / 0.5
 end
 
 function rholinksigmoid(ρ::T) where T <: Real
-    return ρ/sqrt(1.0 + ρ^2)
+    return 1.0/(1.0 + exp(- ρ * 0.1)) * 2.0 - 1.0
 end
 function rholinksigmoidr(ρ::T) where T <: Real
+    return - log(1.0/(ρ+1.0)*2.0 - 1.0) / 0.1
+end
+
+function rholinksqsigmoid(ρ::T) where T <: Real
+    return ρ/sqrt(1.0 + (ρ)^2)
+end
+function rholinksqsigmoidr(ρ::T) where T <: Real
     return sign(ρ)*sqrt(ρ^2/(1.0 - ρ^2))
 end
 
@@ -138,6 +145,10 @@ function varlinkvecapply!(v, p; varlinkf = :exp, rholinkf = :sigm)
                 v[i] = rholinksigmoid(v[i])
             elseif rholinkf == :atan
                 v[i] = rholinksigmoidatan(v[i])
+            elseif rholinkf == :sqsigm
+                v[i] = rholinksqsigmoid(v[i])
+            elseif rholinkf == :psigm
+                v[i] = rholinkpsigmoid(v[i])
             end
         end
     end
@@ -152,6 +163,10 @@ function varlinkrvecapply!(v, p; varlinkf = :exp, rholinkf = :sigm)
                 v[i] = rholinksigmoidr(v[i])
             elseif rholinkf == :atan
                 v[i] = rholinksigmoidatanr(v[i])
+            elseif rholinkf == :sqsigm
+                v[i] = rholinksqsigmoidr(v[i])
+            elseif rholinkf == :psigm
+                v[i] = rholinkpsigmoidr(v[i])
             end
         end
     end
@@ -167,6 +182,10 @@ function varlinkvecapply(v, p; varlinkf = :exp, rholinkf = :sigm)
                 s[i] = rholinksigmoid(v[i])
             elseif rholinkf == :atan
                 s[i] = rholinksigmoidatan(v[i])
+            elseif rholinkf == :sqsigm
+                s[i] = rholinksqsigmoid(v[i])
+            elseif rholinkf == :psigm
+                s[i] = rholinkpsigmoid(v[i])
             end
         end
     end
@@ -189,7 +208,7 @@ end
     gmatrix(lmm::LMM{T}, r::Int) where T
 """
 function gmatrix(lmm::LMM{T}, r::Int) where T
-    if !lmm.result.fit error("Model not fitted!") end
+    if isnothing(lmm.result.theta) error("No results or model not fitted!") end
     if r > length(lmm.covstr.random) error("Invalid random effect number: $(r)!") end
     G = zeros(T, lmm.covstr.q[r], lmm.covstr.q[r])
     gmat_switch!(G, lmm.result.theta, lmm.covstr, r)

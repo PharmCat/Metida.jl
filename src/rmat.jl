@@ -20,6 +20,8 @@ function rmat_base_inc_b!(mx::AbstractMatrix{T}, θ::AbstractVector{T}, zrv, cov
             rmatp_arma!(mx, θ, zrv, covstr.repeated.covtype.p)
         elseif covstr.repeated.covtype.s == :TOEPP
             rmatp_toepp!(mx, θ, zrv, covstr.repeated.covtype.p)
+        elseif covstr.repeated.covtype.s == :TOEPHP
+            rmatp_toephp!(mx, θ, zrv, covstr.repeated.covtype.p)
         elseif covstr.repeated.covtype.s == :FUNC
             covstr.repeated.covtype.p.xmat!(mx, θ, zrv, covstr.repeated.covtype.p)
         end
@@ -137,7 +139,6 @@ end
 function rmatp_toepp!(mx, θ::Vector{T}, ::AbstractMatrix, p) where T
     de  = θ[1] ^ 2    #diagonal element
     s   = size(mx, 1) #size
-    b   = s - 1       #band
     for i = 1:s
         mx[i, i] += de
     end
@@ -149,6 +150,24 @@ function rmatp_toepp!(mx, θ::Vector{T}, ::AbstractMatrix, p) where T
                 mx[n, m] = mx[m, n]
             end
         end
+    end
+    nothing
+end
+################################################################################
+function rmatp_toephp!(mx, θ::Vector{T}, rz, p) where T
+    l     = size(rz, 2)
+    vec   = rz * (θ[1:l])
+    s   = size(mx, 1) #size
+    if s > 1 && p > 1
+        for m = 1:s - 1
+            for n = m + 1:(m + p - 1 > s ? s : m + p - 1)
+                mx[m, n] += vec[m] * vec[n] * θ[n - m + l]
+                mx[n, m] = mx[m, n]
+            end
+        end
+    end
+    for m = 1:s
+        @inbounds mx[m, m] += vec[m] * vec[m]
     end
     nothing
 end

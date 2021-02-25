@@ -151,7 +151,8 @@ end
     random = Metida.VarEffect(Metida.@covstr(Day|Time), Metida.AR),
     )
     Metida.fit!(lmm)
-    @test lmm.result.reml ≈ 453.3395560121246 atol=1E-6
+    #@test lmm.result.reml ≈ 453.3395560121246 atol=1E-6
+    @test lmm.result.reml ≈ 453.3395546358513 atol=1E-6
 end
 
 ################################################################################

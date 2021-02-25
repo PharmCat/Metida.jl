@@ -59,6 +59,21 @@ function rcoefnames(s, t, ve)
             end
         end
         return v
+    elseif ve == :TOEPH || ve == :TOEPHP
+        cn = coefnames(s)
+        if isa(cn, Vector)
+            l  = length(cn)
+        else
+            l  = 1
+        end
+        v  = Vector{String}(undef, t)
+        view(v, 1:l) .= (fill!(Vector{String}(undef, l), "σ² ") .*string.(cn))
+        if length(v) > l
+            for i = l+1:length(v)
+                v[i] = "ρ band $(i-l) "
+            end
+        end
+        return v
     else
         v = Vector{String}(undef, t)
         v .= "NA"

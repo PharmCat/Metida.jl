@@ -24,6 +24,8 @@ CSH, HeterogeneousCompoundSymmetry,
 ARMA, AutoregressiveMovingAverage,
 TOEP, Toeplitz,
 TOEPP, ToeplitzParameterized,
+TOEPH, HeterogeneousToeplitz,
+TOEPHP, HeterogeneousToeplitzParameterized,
 CustomCovarianceStruct, CustomCovarianceType,
 fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, dof_contain, rankx, caic,
 gmatrix, rmatrix, vmatrix!

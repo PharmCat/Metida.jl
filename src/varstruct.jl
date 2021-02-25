@@ -182,6 +182,33 @@ function ToeplitzParameterized(p::Int)
 end
 const TOEPP(p) = ToeplitzParameterized(p)
 
+"""
+    HeterogeneousToeplitz()
+
+Heterogeneous toeplitz covariance type. Only for G matrix.
+
+TOEPH = HeterogeneousToeplitz()
+
+"""
+function HeterogeneousToeplitz()
+    CovarianceType(:TOEPH)
+end
+const TOEPH = HeterogeneousToeplitz()
+
+"""
+    HeterogeneousToeplitzParameterized(p::Int)
+
+Heterogeneous toeplitz covariance type with parameter p, (number of bands = p - 1, if p = 1 its equal DIAG structure).
+
+TOEPHP(p) = HeterogeneousToeplitzParameterized(p)
+
+"""
+function HeterogeneousToeplitzParameterized(p::Int)
+    CovarianceType(:TOEPHP, p)
+end
+const TOEPHP(p) = HeterogeneousToeplitzParameterized(p)
+
+#Spatial Power ?
 #=
 """
     RZero()

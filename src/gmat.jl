@@ -35,6 +35,10 @@ function gmat_switch!(G, θ, covstr, r)
         gmat_toep!(G, θ[covstr.tr[r]],  covstr.random[r].covtype.p)
     elseif covstr.random[r].covtype.s == :TOEPP
         gmat_toepp!(G, θ[covstr.tr[r]],  covstr.random[r].covtype.p)
+    elseif covstr.random[r].covtype.s == :TOEPH
+        gmat_toeph!(G, θ[covstr.tr[r]],  covstr.random[r].covtype.p)
+    elseif covstr.random[r].covtype.s == :TOEPHP
+        gmat_toephp!(G, θ[covstr.tr[r]],  covstr.random[r].covtype.p)
     elseif covstr.random[r].covtype.s == :FUNC
          covstr.random[r].covtype.p.xmat!(G, θ[covstr.tr[r]], covstr.random[r].covtype.p)
     end
@@ -165,14 +169,13 @@ end
 function gmat_toep!(mx, θ::Vector{T}, p) where T
     de  = θ[1] ^ 2    #diagonal element
     s   = size(mx, 1) #size
-    b   = s - 1       #band
     for i = 1:s
         mx[i, i] = de
     end
     if s > 1
         for m = 1:s - 1
             for n = m + 1:s
-                ode = de * θ[n-m+1]
+                @inbounds ode = de * θ[n-m+1]
                 @inbounds mx[m, n] = ode
                 @inbounds mx[n, m] = mx[m, n]
             end
@@ -183,18 +186,53 @@ end
 function gmat_toepp!(mx, θ::Vector{T}, p) where T
     de  = θ[1] ^ 2    #diagonal element
     s   = size(mx, 1) #size
-    b   = s - 1       #band
     for i = 1:s
         mx[i, i] = de
     end
     if s > 1 && p > 1
         for m = 1:s - 1
             for n = m + 1:(m + p - 1 > s ? s : m + p - 1)
-                ode = de * θ[n - m + 1]
+                @inbounds ode = de * θ[n - m + 1]
                 @inbounds mx[m, n] = ode
                 @inbounds mx[n, m] = mx[m, n]
             end
         end
+    end
+    nothing
+end
+function gmat_toeph!(mx, θ::Vector{T}, p) where T
+    s = size(mx, 2)
+    for m = 1:s
+        @inbounds mx[m, m] = θ[m]
+    end
+    if s > 1
+        for m = 1:s - 1
+            for n = m + 1:s
+                @inbounds mx[m, n] = mx[m, m] * mx[n, n] * θ[n-m+s]
+                @inbounds mx[n, m] = mx[m, n]
+            end
+        end
+    end
+    for m = 1:s
+        @inbounds mx[m, m] = mx[m, m] * mx[m, m]
+    end
+    nothing
+end
+function gmat_toephp!(mx, θ::Vector{T}, p) where T
+    s = size(mx, 2)
+    for m = 1:s
+        @inbounds mx[m, m] = θ[m]
+    end
+    if s > 1 && p > 1
+        for m = 1:s - 1
+            for n = m + 1:(m + p - 1 > s ? s : m + p - 1)
+                @inbounds mx[m, n] = mx[m, m] * mx[n, n] * θ[n - m + s]
+                @inbounds mx[n, m] = mx[m, n]
+            end
+        end
+    end
+    for m = 1:s
+        @inbounds mx[m, m] = mx[m, m] * mx[m, m]
     end
     nothing
 end
