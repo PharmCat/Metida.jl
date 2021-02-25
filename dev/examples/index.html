@@ -18,15 +18,15 @@ Status: converged    -2 logREML: 1300.18    BIC: 1324.12
     Fixed effects:
 Name                 Estimate   SE          z         Pr(&gt;|z|)      
 (Intercept)          22.1331    0.304339    72.7251   0.0           
-factor: 1.0          2.00049    0.430401    4.64796   3.35228e-6    
+factor: 1.0          2.00049    0.430401    4.64796   3.35229e-6    
 time                 1.11853    0.0264038   42.3624   0.0           
 factor: 1.0 &amp; time   0.404971   0.0373406   10.8453   2.09844e-27   
 
     Random effects:
-    θ vector: [1.2401, 0.101122, -0.0427208, 0.985061]
+    θ vector: [1.2401, 0.101122, -0.0427207, 0.985061]
 Random 1   σ² (Intercept)   var   1.53785      
 Random 1   σ² time          var   0.0102257    
-Random 1   ρ                rho   -0.0427208   
+Random 1   ρ                rho   -0.0427207   
 Residual   σ²               var   0.970345     
 </pre><p>MixedModels result:</p><pre><code class="language-julia">fm = @formula(response ~ 1 + factor*time + (1 + time|subject&amp;factor))
 mm = fit(MixedModel, fm, rds, REML=true)</code></pre><pre class="documenter-example-output">Linear mixed model fit by REML
@@ -183,4 +183,4 @@ fit!(lmm)</code></pre><p>SAS code:</p><pre><code class="language-none">PROC MIXE
 CLASSES subject sequence period formulation;
 MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
 RANDOM  subject/TYPE=VC G V;
-RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../nlopt/">NLopt »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 23 February 2021 19:19">Tuesday 23 February 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../nlopt/">NLopt »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 25 February 2021 21:44">Thursday 25 February 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
