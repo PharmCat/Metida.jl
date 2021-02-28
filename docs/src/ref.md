@@ -39,6 +39,8 @@ More:
 
 * Wolfinger, Russ. (1993). Covariance structure selection in general mixed models. Communications in Statistics-simulation and Computation - COMMUN STATIST-SIMULAT COMPUT. 22. 1079-1106. 10.1080/03610919308813143.
 
+* Wolfinger, Russ. (1996). Heterogeneous Variance: Covariance Structures for Repeated Measures. Journal of Agricultural, Biological, and Environmental Statistics. 1. 205. 10.2307/1400366. 
+
 * Littell, Ramon & Pendergast, Jane & Natarajan, Ranjini. (2000). Modelling covariance structure in the analysis of repeated measures data. Statistics in Medicine. 19. 1793-1819. 10.1002/1097-0258(20000715)19:13%3C1793::AID-SIM482%3E3.0.CO;2-Q.
 
 * QUINTAL, SILVANA SILVA RED, VIANA, ALEXANDRE PIO, CAMPOS, BIANCA MACHADO, VIVAS, MARCELO, & AMARAL JÚNIOR, ANTONIO TEIXEIRA DO. (2017). ANALYSIS OF STRUCTURES OF COVARIANCE AND REPEATABILITY IN GUAVA SEGREGANTING POPULATION. Revista Caatinga, 30(4), 885-891. https://doi.org/10.1590/1983-21252017v30n408rc

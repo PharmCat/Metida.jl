@@ -163,6 +163,14 @@ Toeplitz covariance type. Only for G matrix.
 
 TOEP = Toeplitz()
 
+```math
+\\begin{bmatrix} 1 & \\rho_1 & \\rho_2 & \\rho_3 \\\\
+\\rho_1 & 1 & \\rho_1 & \\rho_2 \\\\
+\\rho_2 & \\rho_1 & 1 & \\rho_1 \\\\
+\\rho_3 & \\rho_2 & \\rho_1 & 1
+\\end{bmatrix}\\sigma^2
+```
+
 """
 function Toeplitz()
     CovarianceType(:TOEP)
@@ -172,7 +180,7 @@ const TOEP = Toeplitz()
 """
     ToeplitzParameterized(p::Int)
 
-Toeplitz covariance type with parameter p, (number of bands = p - 1, if p = 1 its equal SI structure).
+Toeplitz covariance type with parameter p, (number of bands = p - 1, if p = 1 it's equal SI structure).
 
 TOEPP(p) = ToeplitzParameterized(p)
 
@@ -189,6 +197,15 @@ Heterogeneous toeplitz covariance type. Only for G matrix.
 
 TOEPH = HeterogeneousToeplitz()
 
+```math
+\\begin{bmatrix}
+\\sigma_a^2 & \\rho_1 \\sigma_a \\sigma_b & \\rho_2 \\sigma_a \\sigma_c & \\rho_3 \\sigma_a \\sigma_d \\\\
+\\rho_1 \\sigma_b \\sigma_a & \\sigma_b^2 & \\rho_1 \\sigma_b \\sigma_c & \\rho_2 \\sigma_b \\sigma_d \\\\
+\\rho_2 \\sigma_c \\sigma_a & \\rho_1 \\sigma_c \\sigma_b & \\sigma_c^2 & \\rho_1 \\sigma_c \\sigma_d \\\\
+\\rho_3 \\sigma_d \\sigma_a & \\rho_2 \\sigma_d \\sigma_b & \\rho_1 \\sigma_d \\sigma_c & \\sigma_d^2
+\\end{bmatrix}
+```
+
 """
 function HeterogeneousToeplitz()
     CovarianceType(:TOEPH)
@@ -198,7 +215,7 @@ const TOEPH = HeterogeneousToeplitz()
 """
     HeterogeneousToeplitzParameterized(p::Int)
 
-Heterogeneous toeplitz covariance type with parameter p, (number of bands = p - 1, if p = 1 its equal DIAG structure).
+Heterogeneous toeplitz covariance type with parameter p, (number of bands = p - 1, if p = 1 it's equal DIAG structure).
 
 TOEPHP(p) = HeterogeneousToeplitzParameterized(p)
 

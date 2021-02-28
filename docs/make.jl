@@ -11,6 +11,7 @@ makedocs(
         "Examples" => "examples.md",
         "NLopt" => "nlopt.md",
         "CUDA" => "cuda.md",
+        "F.A.Q." => "faq.md",
         ],
         "Details" => "details.md",
         "Benchmark" => "bench.md",

@@ -1,5 +1,9 @@
 # Validation
 
+```@setup validation
+using  Metida, StatsBase, PrettyTables, Test, CSV, DataFrames;
+```
+
 Validation provided with 3 sections:
 * REML validation for public datasets with Metida & SPSS
 * Parameters validation for public datasets Metida & SPSS & MixedModels
@@ -241,7 +245,7 @@ fit!(lmm)
 
 ## Section 3: Validation with bioequivalence datasets with Metida & SPSS
 
-#### Model BE1
+#### Model BE-B
 
 ```
 lmm =  LMM(@formula(lnpk~sequence+period+treatment), dfrds;
@@ -250,7 +254,7 @@ random =  VarEffect(Metida.@covstr(1|subject),  SI),
 fit!(lmm)
 ```
 
-#### Model BE2
+#### Model BE-C
 
 ```
 lmm =  LMM(@formula(lnpk~sequence+period+treatment), dfrds;
@@ -282,39 +286,9 @@ MIXED lnpk BY period treatment sequence subject
 ```
 #### Results
 
-| DatasSet | REML Model 1  |
-|--------|--------|
-| 01 | 530.1445193510292 |
-| 02 | -30.67455875307806  |
-| 03 | 425.44656318173423 |
-| 04 | 314.22176883261096 |
-| 05 | -74.87997706595712 |
-| 06 | 530.1445193182162 |
-| 07 | 1387.0928273412144 |
-| 08 | 2342.5993980030553 |
-| 09 |  2983.26033032097 |
-| 10 |  -16.41729812792036 |
-| 11 | 250.94514897106058 |
-| 12 |  1140.3816624784859 |
-| 13 |  2087.481017283834  |
-| 14 |  1012.351698923092 |
-| 15 |  2087.481017283834  |
-| 16 |  323.99767383075243 |
-| 17 |  77.56902301272578 |
-| 18 |  904.8743799636109  |
-| 19 |  782.9395904949903  |
-| 20 | 796.3124436472704 |
-| 21 |470.59083255259935 |
-| 22 | 248.99027587947566 |
-| 23 | 119.80621157945501 |
-| 24 | 274.3063623684229 |
-| 25 | 660.046543272457 |
-| 26 | 433.84147581860896 |
-| 27 | 1123.6556434756412 |
-| 28 | 329.2574937705332 |
-| 29 | 26.96606070210349 |
-| 30 | 26.316526650535426 |
-
+```@example validation
+include(joinpath(dirname(pathof(Metida)), "..", "test", "validation.jl"))
+```
 Full SPSS code provided in validation folder ([here](https://github.com/PharmCat/Metida.jl/blob/master/validation/spssrdscode.sps.txt)).
 
 Validation dataset available [here](https://link.springer.com/article/10.1208%2Fs12248-020-0427-6), [12248_2020_427_MOESM2_ESM.xls](https://static-content.springer.com/esm/art%3A10.1208%2Fs12248-020-0427-6/MediaObjects/12248_2020_427_MOESM2_ESM.xls).
