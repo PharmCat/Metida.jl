@@ -1,10 +1,8 @@
-path    = dirname(@__FILE__)
-
 ################################################################################
 #                             sleepstudy.csv
 ################################################################################
 
-df        = CSV.File(path*"/csv/sleepstudy.csv"; types = [String, Float64, String, String]) |> DataFrame
+df        = CSV.File(joinpath(path, "csv", "sleepstudy.csv"); types = [String, Float64, String, String]) |> DataFrame
 
 @testset "  Model 1: sleepstudy.csv SI/SI                            " begin
     #=

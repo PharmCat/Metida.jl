@@ -2,6 +2,7 @@
 
 ```@setup validation
 using  Metida, StatsBase, PrettyTables, Test, CSV, DataFrames;
+include(joinpath(dirname(pathof(Metida)), "..", "test", "validation_init.jl"))
 ```
 
 Validation provided with 3 sections:
@@ -287,7 +288,7 @@ MIXED lnpk BY period treatment sequence subject
 #### Results
 
 ```@example validation
-include(joinpath(dirname(pathof(Metida)), "..", "test", "validation.jl"))
+include(joinpath(dirname(pathof(Metida)), "..", "test", "validation_s3.jl"))
 ```
 Full SPSS code provided in validation folder ([here](https://github.com/PharmCat/Metida.jl/blob/master/validation/spssrdscode.sps.txt)).
 
