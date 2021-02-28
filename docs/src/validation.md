@@ -291,6 +291,8 @@ include(joinpath(dirname(pathof(Metida)), "..", "test", "validation.jl"))
 ```
 Full SPSS code provided in validation folder ([here](https://github.com/PharmCat/Metida.jl/blob/master/validation/spssrdscode.sps.txt)).
 
+SPSS [output](https://github.com/PharmCat/Metida.jl/blob/master/validation/RDS-OUTPUT.docx) in DOCX format.
+
 Validation dataset available [here](https://link.springer.com/article/10.1208%2Fs12248-020-0427-6), [12248_2020_427_MOESM2_ESM.xls](https://static-content.springer.com/esm/art%3A10.1208%2Fs12248-020-0427-6/MediaObjects/12248_2020_427_MOESM2_ESM.xls).
 
 ## Discussion

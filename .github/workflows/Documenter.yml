@@ -9,6 +9,9 @@ on:
       - 'README.md'
       - '.github/**'
       - 'test/**'
+      - 'validation/**'
+      - 'change.log'
+      - '.gitignore'
   release:
     types: [published]
   pull_request:

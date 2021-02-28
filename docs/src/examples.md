@@ -93,7 +93,7 @@ AR:
 ```@example lmmexample
 lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
 random = VarEffect(@covstr(factor|subject&factor), DIAG),
-repeated = VarEffect(@covstr(1|subject&factor), AR,
+repeated = VarEffect(@covstr(1|subject&factor), AR),
 )
 fit!(lmm)
 ```

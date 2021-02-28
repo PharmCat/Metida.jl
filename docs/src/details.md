@@ -57,10 +57,6 @@ Details see: https://github.com/joshday/SweepOperator.jl
 
 #### Not API functions
 
-##### Metida.mulαβαt3
-```@docs
-Metida.mulαβαt3
-```
 
 ##### Metida.mulαβαtinc!
 ```@docs

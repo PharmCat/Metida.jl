@@ -8,6 +8,9 @@ on:
       - 'README.md'
       - '.github/**'
       - 'docs/**'
+      - 'validation/**'
+      - 'change.log'
+      - '.gitignore'
   pull_request:
     branches:
       - master
