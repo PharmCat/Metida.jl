@@ -29,7 +29,7 @@ Random 1   σ² time          var   0.0102257
 Random 1   ρ                rho   -0.0427207   
 Residual   σ²               var   0.970345     
 </pre><p>MixedModels result:</p><pre><code class="language-julia">fm = @formula(response ~ 1 + factor*time + (1 + time|subject&amp;factor))
-mm = fit(MixedModel, fm, rds, REML=true)</code></pre><p>|                  |     Est.|       SE|    z|     p|σ_subject &amp; factor | |:––––––––-|––––:|––––:|––:|––-:|–––––––––:| |(Intercept)       |22.133097|0.3043399|72.72|&lt;1e-99|           1.240108| |factor: 1.0       | 2.000486|0.4304017| 4.65|&lt;1e-5 |                   | |time              | 1.118528|0.0264038|42.36|&lt;1e-99|           0.101123| |factor: 1.0 &amp; time| 0.404971|0.0373407|10.85|&lt;1e-26|                   | |Residual          |0.9850604|||||</p><h3 id="Example-2-Two-random-factors-(Penicillin-data)"><a class="docs-heading-anchor" href="#Example-2-Two-random-factors-(Penicillin-data)">Example 2 - Two random factors (Penicillin data)</a><a id="Example-2-Two-random-factors-(Penicillin-data)-1"></a><a class="docs-heading-anchor-permalink" href="#Example-2-Two-random-factors-(Penicillin-data)" title="Permalink"></a></h3><p>Metida:</p><pre><code class="language-julia">df          = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;Penicillin.csv&quot;); types = [String, Float64, String, String]) |&gt; DataFrame
+mm = fit(MixedModel, fm, rds, REML=true)</code></pre><p>|                  |     Est.|       SE|    z|     p|σ_subject &amp; factor | |:––––––––-|––––:|––––:|––:|––-:|–––––––––:| |(Intercept)       |22.133097|0.3043395|72.73|&lt;1e-99|           1.240106| |factor: 1.0       | 2.000486|0.4304010| 4.65|&lt;1e-5 |                   | |time              | 1.118528|0.0264039|42.36|&lt;1e-99|           0.101123| |factor: 1.0 &amp; time| 0.404971|0.0373408|10.85|&lt;1e-26|                   | |Residual          |0.9850601|||||</p><h3 id="Example-2-Two-random-factors-(Penicillin-data)"><a class="docs-heading-anchor" href="#Example-2-Two-random-factors-(Penicillin-data)">Example 2 - Two random factors (Penicillin data)</a><a id="Example-2-Two-random-factors-(Penicillin-data)-1"></a><a class="docs-heading-anchor-permalink" href="#Example-2-Two-random-factors-(Penicillin-data)" title="Permalink"></a></h3><p>Metida:</p><pre><code class="language-julia">df          = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;Penicillin.csv&quot;); types = [String, Float64, String, String]) |&gt; DataFrame
 df.diameter = float.(df.diameter)
 
 lmm = LMM(@formula(diameter ~ 1), df;
@@ -59,7 +59,7 @@ Random 1   σ²    var   0.716908
 Random 2   σ²    var   3.73092    
 Residual   σ²    var   0.302415   
 </pre><p>MixedModels:</p><pre><code class="language-julia">fm2 = @formula(diameter ~ 1 + (1|plate) + (1|sample))
-mm = fit(MixedModel, fm2, df, REML=true)</code></pre><p>|           |   Est.|      SE|    z|     p|σ<em>plate  |σ</em>sample | |:–––––|–––:|–––-:|––:|––-:|––––:|––––:| |(Intercept)|22.9722|0.808572|28.41|&lt;1e-99| 0.846704| 1.931556| |Residual   |0.54992||||||</p><h3 id="Example-3-Repeated-ARMA/AR/ARH"><a class="docs-heading-anchor" href="#Example-3-Repeated-ARMA/AR/ARH">Example 3 - Repeated ARMA/AR/ARH</a><a id="Example-3-Repeated-ARMA/AR/ARH-1"></a><a class="docs-heading-anchor-permalink" href="#Example-3-Repeated-ARMA/AR/ARH" title="Permalink"></a></h3><pre><code class="language-julia">rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1freparma.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame</code></pre><p><img src="../plot2.png" alt/></p><p>ARMA:</p><pre><code class="language-julia">lmm = LMM(@formula(response ~ 1 + factor*time), rds;
+mm = fit(MixedModel, fm2, df, REML=true)</code></pre><p>|           |   Est.|      SE|    z|     p|σ<em>plate  |σ</em>sample | |:–––––|–––:|–––-:|––:|––-:|––––:|––––:| |(Intercept)|22.9722|0.808572|28.41|&lt;1e-99| 0.846704| 1.931554| |Residual   |0.54992||||||</p><h3 id="Example-3-Repeated-ARMA/AR/ARH"><a class="docs-heading-anchor" href="#Example-3-Repeated-ARMA/AR/ARH">Example 3 - Repeated ARMA/AR/ARH</a><a id="Example-3-Repeated-ARMA/AR/ARH-1"></a><a class="docs-heading-anchor-permalink" href="#Example-3-Repeated-ARMA/AR/ARH" title="Permalink"></a></h3><pre><code class="language-julia">rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1freparma.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame</code></pre><p><img src="../plot2.png" alt/></p><p>ARMA:</p><pre><code class="language-julia">lmm = LMM(@formula(response ~ 1 + factor*time), rds;
 random = VarEffect(@covstr(factor|subject&amp;factor), DIAG),
 repeated = VarEffect(@covstr(1|subject&amp;factor), ARMA),
 )
@@ -90,9 +90,33 @@ Residual   γ                rho   0.625323
 Residual   ρ                rho   0.713154   
 </pre><p>AR:</p><pre><code class="language-julia">lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
 random = VarEffect(@covstr(factor|subject&amp;factor), DIAG),
-repeated = VarEffect(@covstr(1|subject&amp;factor), AR,
+repeated = VarEffect(@covstr(1|subject&amp;factor), AR),
 )
-fit!(lmm)</code></pre><p>ARH:</p><pre><code class="language-julia">lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
+fit!(lmm)</code></pre><pre class="documenter-example-output">Linear Mixed Model: response ~ 1 + factor + time + factor &amp; time
+Random 1: 
+    Model: factor|subject &amp; factor
+    Type: DIAG (2), Subjects: 24
+Repeated: 
+    Model: 1|subject &amp; factor
+    Type: AR (2)
+    Blocks: 24, Maximum block size: 10
+
+Status: converged    -2 logREML: 710.096    BIC: 731.968
+
+    Fixed-effects parameters:
+Name                 Estimate   SE          z         Pr(&gt;|z|)       
+(Intercept)          44.3915    1.34686     32.9594   3.10194e-238   
+factor: 1.0          5.39757    1.60271     3.36778   0.000757757    
+time                 0.508075   0.0456524   11.1292   9.04328e-29    
+factor: 1.0 &amp; time   0.290317   0.0645622   4.4967    6.90159e-6     
+
+    Variance components:
+    θ vector: [4.54797, 2.82342, 1.05771, 0.576979]
+Random 1   σ² factor: 0.0   var   20.684     
+Random 1   σ² factor: 1.0   var   7.9717     
+Residual   σ²               var   1.11875    
+Residual   ρ                rho   0.576979   
+</pre><p>ARH:</p><pre><code class="language-julia">lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
 random = VarEffect(@covstr(factor|subject&amp;factor), DIAG),
 repeated = VarEffect(@covstr(1|subject&amp;factor), ARH),
 )
@@ -148,4 +172,4 @@ fit!(lmm)</code></pre><p>SAS code:</p><pre><code class="language-none">PROC MIXE
 CLASSES subject sequence period formulation;
 MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
 RANDOM  subject/TYPE=VC G V;
-RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../nlopt/">NLopt »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 28 February 2021 18:10">Sunday 28 February 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../nlopt/">NLopt »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 28 February 2021 18:34">Sunday 28 February 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
