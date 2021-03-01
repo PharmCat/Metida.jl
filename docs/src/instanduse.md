@@ -97,13 +97,13 @@ Metida.fit!
 Metida.CovmatMethod
 ```
 
-See: [`Metida.CovmatMethod`](@ref)
-
 #### Step 2: make custom CovarianceType
 
 ```
   CovarianceType(cm::AbstractCovmatMethod)
 ```
+
+See: [`Metida.CovarianceType`](@ref)
 
 #### Step 3 Fit your model
 

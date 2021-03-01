@@ -28,10 +28,13 @@ remlsrc= [530.14451859,-30.67456491,425.44656047,314.22176883,-74.87997833,
 commentsc1 = [1,3,6,13,15,16,24,25]
 commentsc2 = [2,5,7,10,22,30]
 
-c1 = "The final Hessian matrix is not positive definite although all convergence criteria are satisfied.
-The MIXED procedure continues despite this warning. Validity of subsequent results cannot be ascertained."
-c2 = "Iteration was terminated but convergence has not been achieved.
-The MIXED procedure continues despite this warning. Subsequent results produced are based on the last iteration.
+c1 =
+"The final Hessian matrix is not positive definite although all convergence criteria
+are satisfied. The MIXED procedure continues despite this warning. Validity of subsequent
+results cannot be ascertained."
+c2 =
+"Iteration was terminated but convergence has not been achieved. The MIXED procedure
+continues despite this warning. Subsequent results produced are based on the last iteration.
 Validity of the model fit is uncertain."
 #8, 9, 12
 #15?
@@ -104,12 +107,13 @@ fm2 = @formula(lnpk~sequence+period+treatment+(1|subject))
 mm  = fit(MixedModel, fm2, dfrds, REML=true)
 
 println("")
-pretty_table(dftable, ["RDS" "REML B" "REML B" "DIFF B" "REML C" "REML C" "DIFF C" "Comment C";
-                       " N " "Metida" " SPSS " "      " "Metida" " SPSS " "      " "         "])
+pretty_table(dftable, ["RDS" "REML B" "REML B" "DIFF B" "REML C" "REML C" "DIFF C" "Comm.";
+                       " N " "Metida" " SPSS " "      " "Metida" " SPSS " "      " "     "])
 println("")
 println("*  - ", c1)
 println("")
 println("** - ", c2)
 println("")
 println("DataSet 27 - MixedModels.jl result:")
+println("")
 println(mm)
