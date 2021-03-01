@@ -94,13 +94,15 @@ Metida.fit!
 #### Step 1: make CustomCovarianceStruct
 
 ```@docs
-Metida.CustomCovarianceStruct
+Metida.CovmatMethod
 ```
 
-#### Step 2: make CustomCovarianceType
+See: [`Metida.CovmatMethod`](@ref)
 
-```@docs
-Metida.CustomCovarianceType
+#### Step 2: make custom CovarianceType
+
+```
+  CovarianceType(cm::AbstractCovmatMethod)
 ```
 
 #### Step 3 Fit your model

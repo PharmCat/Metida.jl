@@ -282,7 +282,7 @@ end
 """
     CovarianceType(cm::AbstractCovmatMethod)
 
-Make custom covariance type with CustomCovarianceStruct.
+Make custom covariance type with CovmatMethod.
 """
 CovarianceType(cm::AbstractCovmatMethod) = CovarianceType(:FUNC, cm)
 

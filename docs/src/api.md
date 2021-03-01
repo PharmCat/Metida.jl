@@ -16,6 +16,11 @@
 
 [`fit!`](@ref)
 
+### Metida.CovarianceType
+```@docs
+Metida.CovarianceType
+```
+
 ### Metida.ScaledIdentity
 ```@docs
 Metida.ScaledIdentity

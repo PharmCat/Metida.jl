@@ -43,6 +43,7 @@ MixedModels result:
 ```@example lmmexample
 fm = @formula(response ~ 1 + factor*time + (1 + time|subject&factor))
 mm = fit(MixedModel, fm, rds, REML=true)
+println(mm) #hide
 ```
 
 ### Example 2 - Two random factors (Penicillin data)
@@ -66,6 +67,7 @@ MixedModels:
 
 fm2 = @formula(diameter ~ 1 + (1|plate) + (1|sample))
 mm = fit(MixedModel, fm2, df, REML=true)
+println(mm) #hide
 ```
 
 ### Example 3 - Repeated ARMA/AR/ARH

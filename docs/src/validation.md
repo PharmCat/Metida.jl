@@ -238,11 +238,6 @@ fit!(lmm)
 | 7 | plate   σ² | 0.716908 |  |  |
 | 7 | sample   σ² | 3.73092 |  |  |
 | 7 | Residual   σ²| 0.302415 |  |  |
-|    |  |  |  |  |
-|    |  |  |  |  |
-|    |  |  |  |  |
-|    |  |  |  |  |
-|    |  |  |  |  |
 
 ## Section 3: Validation with bioequivalence datasets with Metida & SPSS
 
