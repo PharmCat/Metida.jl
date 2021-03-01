@@ -2,6 +2,9 @@ v0.6.0
   * rho link change
   * TOEPH
   * TOEPHP
+  * Custom covariance type - rename
+  * validation & documentation
+
 
 v0.5.1
   * dof_satter fix

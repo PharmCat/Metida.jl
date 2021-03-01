@@ -236,7 +236,7 @@ function RZero()
 end
 
 """
-    CustomCovarianceStruct(nparamf::Function, xmat!::Function)
+    CovmatMethod(nparamf::Function, xmat!::Function)
 
 * `nparamf` - function type (t, q) -> (a, b)
 where:
@@ -274,17 +274,17 @@ function rmatp_diag!(mx, θ::Vector{T}, rz, p) where T
 end
 ```
 """
-struct CustomCovarianceStruct
+struct CovmatMethod <: AbstractCovmatMethod
     nparamf::Function
     xmat!::Function
 end
 
 """
-    CustomCovarianceType(ccs::CustomCovarianceStruct)
+    CovarianceType(cm::AbstractCovmatMethod)
 
 Make custom covariance type with CustomCovarianceStruct.
 """
-CustomCovarianceType(ccs::CustomCovarianceStruct) = CovarianceType(:FUNC, ccs)
+CovarianceType(cm::AbstractCovmatMethod) = CovarianceType(:FUNC, cm)
 
 function covstrparam(ct::CovarianceType, t::Int, q::Int)::Tuple{Int, Int}
     if ct.s == :SI

@@ -110,13 +110,10 @@ using Metida, CSV, DataFrames # hide
 
 df0 = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "df0.csv"); types = [String, String, String, String, Float64, Float64]) |> DataFrame
 
-#Make struct for G and R matrix
-ccsg = CustomCovarianceStruct((q,p) -> (q, 1), Metida.gmat_csh!)
-ccsr = CustomCovarianceStruct((q,p) -> (q, 0), Metida.rmatp_diag!)
 
-#Make type struct
-CCTG = CustomCovarianceType(ccsg)
-CCTR = CustomCovarianceType(ccsr)
+#Make methods for G and R matrix and CovarianceType struct
+CCTG = CovarianceType(CovmatMethod((q,p) -> (q, 1), Metida.gmat_csh!))
+CCTR = CovarianceType(CovmatMethod((q,p) -> (q, 0), Metida.rmatp_diag!))
 
 #Make model
 lmm = LMM(@formula(var~sequence+period+formulation), df0;

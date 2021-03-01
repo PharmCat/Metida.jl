@@ -26,9 +26,10 @@ TOEP, Toeplitz,
 TOEPP, ToeplitzParameterized,
 TOEPH, HeterogeneousToeplitz,
 TOEPHP, HeterogeneousToeplitzParameterized,
-CustomCovarianceStruct, CustomCovarianceType,
+CovmatMethod,
 fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, dof_contain, rankx, caic,
-gmatrix, rmatrix, vmatrix!
+gmatrix, rmatrix, vmatrix!,
+AbstractCovarianceType, AbstractCovmatMethod, MetidaModel
 
 include("abstracttype.jl")
 include("sweep.jl")
@@ -45,7 +46,7 @@ include("ml.jl")
 include("fit.jl")
 include("showutils.jl")
 include("statsbase.jl")
-include("initg.jl")
+#include("initg.jl")
 include("utils.jl")
 include("dof_satter.jl")
 include("dof_contain.jl")

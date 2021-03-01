@@ -295,7 +295,3 @@ Full SPSS code provided in validation folder ([here](https://github.com/PharmCat
 SPSS [output](https://github.com/PharmCat/Metida.jl/blob/master/validation/RDS-OUTPUT.docx) in DOCX format.
 
 Validation dataset available [here](https://link.springer.com/article/10.1208%2Fs12248-020-0427-6), [12248_2020_427_MOESM2_ESM.xls](https://static-content.springer.com/esm/art%3A10.1208%2Fs12248-020-0427-6/MediaObjects/12248_2020_427_MOESM2_ESM.xls).
-
-## Discussion
-
-Optimization of REML function can depend on many factors. Most of all in some cases covariance parameters can be correlated (ill-conditioned/singular covariance matrix). So hypersurface in the maximum area can be very flat, that why the result can be different for different starting values (or for different software even REML is near equal). Also, some models can not be fitted for specific data at all. If the model not fitted try to check how meaningful and reasonable is the model or try to guess more robust initial conditions.

@@ -28,8 +28,11 @@ remlsrc= [530.14451859,-30.67456491,425.44656047,314.22176883,-74.87997833,
 commentsc1 = [1,3,6,13,15,16,24,25]
 commentsc2 = [2,5,7,10,22,30]
 
-c1 = "The final Hessian matrix is not positive definite although all convergence criteria are satisfied. The MIXED procedure continues despite this warning. Validity of subsequent results cannot be ascertained."
-c2 = "Iteration was terminated but convergence has not been achieved. The MIXED procedure continues despite this warning. Subsequent results produced are based on the last iteration. Validity of the model fit is uncertain."
+c1 = "The final Hessian matrix is not positive definite although all convergence criteria are satisfied.
+The MIXED procedure continues despite this warning. Validity of subsequent results cannot be ascertained."
+c2 = "Iteration was terminated but convergence has not been achieved.
+The MIXED procedure continues despite this warning. Subsequent results produced are based on the last iteration.
+Validity of the model fit is uncertain."
 #8, 9, 12
 #15?
 #! 16, 27
@@ -49,7 +52,7 @@ REML G - SI, R - SI
 30 - 32.418048
 
 =#
-
+@testset "  RDS Test                                                 " begin
 for i = 1:30
     dfrds        = CSV.File(joinpath(path, "csv", "berds", "rds"*string(i)*".csv"), types = Dict(:PK => Float64, :subject => String, :period => String, :sequence => String, :treatment => String )) |> DataFrame
     dropmissing!(dfrds)
@@ -76,17 +79,18 @@ for i = 1:30
         remlsc[i] = Metida.m2logreml(lmm)
     end
 end
+end
 remlsrc[30] = 14.94403807
-dftable = DataFrame(a = remlsb, b = remlsrb, c = Vector{Any}(undef, 30), d = remlsc, e = remlsrc, f = Vector{Any}(undef, 30), g = fill!(Vector{String}(undef, 30),""))
+dftable = DataFrame(n = collect(1:30), a = remlsb, b = remlsrb, c = Vector{Any}(undef, 30), d = remlsc, e = remlsrc, f = Vector{Any}(undef, 30), g = fill!(Vector{String}(undef, 30),""))
 
 for i = 1:30
-    if isapprox(dftable[i, 1], dftable[i, 2]; atol=1E-6)  dftable[i, 3] = "OK" else dftable[i, 3] = dftable[i, 1] - dftable[i, 2] end
-    if isapprox(dftable[i, 4], dftable[i, 5]; atol=1E-6)  dftable[i, 6] = "OK" else dftable[i, 6] = dftable[i, 4] - dftable[i, 5] end
+    if isapprox(dftable.a[i], dftable.b[i]; atol=1E-6)  dftable.c[i] = "OK" else dftable.c[i] = dftable.a[i] - dftable.b[i] end
+    if isapprox(dftable.d[i], dftable.e[i]; atol=1E-6)  dftable.f[i] = "OK" else dftable.f[i] = dftable.d[i] - dftable.e[i] end
     if i in commentsc1
-        dftable[i, 7] = "*"
+        dftable.g[i] = "*"
     end
     if i in commentsc2
-        dftable[i, 7] = "**"
+        dftable.g[i] = "**"
     end
 end
 
@@ -99,10 +103,13 @@ dfrds.lnpk = log.(dfrds.PK)
 fm2 = @formula(lnpk~sequence+period+treatment+(1|subject))
 mm  = fit(MixedModel, fm2, dfrds, REML=true)
 
-
-pretty_table(dftable, ["REML B Metida", "REML B SPSS", "REML B RESULT","REML C Metida", "REML C SPSS", "REML C RESULT", "Comment C"])
+println("")
+pretty_table(dftable, ["RDS" "REML B" "REML B" "DIFF B" "REML C" "REML C" "DIFF C" "Comment C";
+                       " N " "Metida" " SPSS " "      " "Metida" " SPSS " "      " "         "])
+println("")
 println("*  - ", c1)
+println("")
 println("** - ", c2)
-
-println("DataSet 27 MixedModels.jl result:")
+println("")
+println("DataSet 27 - MixedModels.jl result:")
 println(mm)
