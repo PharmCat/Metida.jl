@@ -8,17 +8,7 @@ function addspace(s::String, n::Int; first = false)::String
     end
     return s
 end
-#=
-function makepmatrix(m::Matrix)
-    sm = string.(m)
-    lv = maximum(length.(sm), dims = 1)
-    for r = 1:size(sm, 1)
-        for c = 1:size(sm, 2)
-            sm[r,c] = addspace(sm[r,c], lv[c] - length(sm[r,c]))*"   "
-        end
-    end
-end
-=#
+
 function printmatrix(io::IO, m::Matrix)
     sm = string.(m)
     lv = maximum(length.(sm), dims = 1)

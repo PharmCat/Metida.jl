@@ -36,13 +36,15 @@ function fit!(lmm::LMM{T};
     verbose = :auto,
     varlinkf = :exp,
     rholinkf = :sigm,
-    aifirst::Bool = false,
+    aifirst        = :default,
     g_tol::Float64 = 1e-8,
     x_tol::Float64 = 1e-8,
     f_tol::Float64 = 1e-8,
     hes::Bool   = true,
     init = nothing,
-    io::IO = stdout
+    io::IO = stdout,
+    time_limit = 120,
+    iterations = 300
     ) where T
 
     if lmm.result.fit lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Refit model...")) end
@@ -69,8 +71,8 @@ function fit!(lmm::LMM{T};
     optmethod  = Optim.Newton(;alphaguess = LineSearches.InitialHagerZhang(), linesearch = LineSearches.HagerZhang())
     #optmethod  = IPNewton()
     optoptions = Optim.Options(g_tol = g_tol, x_tol = x_tol, f_abstol = f_tol,
-        iterations = 300,
-        time_limit = 120,
+        iterations = iterations,
+        time_limit = time_limit,
         store_trace = true,
         show_trace = false,
         allow_f_increases = true,
@@ -91,7 +93,8 @@ function fit!(lmm::LMM{T};
             error("init length $(length(init)) != θ length $(length(θ))")
         end
     else
-        initθ = sqrt(initvar(lmm.data.yv, lmm.mm.m)[1]/4)
+        #initθ = sqrt(initvar(lmm.data.yv, lmm.mm.m)[1]/(length(lmm.covstr.random) + 1))
+        initθ = sqrt(initvar(lmm.data.yv, lmm.mm.m)[1])/(length(lmm.covstr.random) + 1)
         θ                      .= initθ
         for i = 1:length(θ)
             if lmm.covstr.ct[i] == :rho
@@ -105,10 +108,15 @@ function fit!(lmm::LMM{T};
     #dfc = TwiceDifferentiableConstraints(lx, ux)
     #Initial step with modified Newton method
     chunk  = ForwardDiff.Chunk{1}()
+    #remove at 0.7
+    if isa(aifirst, Bool)
+        if aifirst aifirst == :ai else aifirst == :default end
+    end
     ############################################################################
-    if aifirst
+    if aifirst == :ai || aifirst == :score
+        if aifirst == :ai ai_func = sweep_ai else ai_func = sweep_score end
         beta   = sweep_β(lmm, data, θ)
-        aif(x) = sweep_ai(lmm, data, x, beta)
+        aif(x) = ai_func(lmm, data, x, beta)
         grf(x) = optfunc(lmm, data, x)[1]
         aihcfg = ForwardDiff.HessianConfig(aif, θ, chunk)
         aigcfg = ForwardDiff.GradientConfig(grf, θ, chunk)
@@ -116,9 +124,9 @@ function fit!(lmm::LMM{T};
         gr = ForwardDiff.gradient(grf, θ, aigcfg, Val{false}())
         initθ = copy(θ)
         try
-            θ .-= (inv(ai) ./4 )*gr
+            θ .-= (inv(ai) ./2 )*gr
         catch
-            θ .-= (pinv(ai) ./4 )*gr
+            θ .-= (pinv(ai) ./2 )*gr
         end
         for i = 1:length(θ)
             if lmm.covstr.ct[i] == :rho
@@ -128,11 +136,11 @@ function fit!(lmm::LMM{T};
                     θ[i] = 0.001
                 end
             else
-                if θ[i] < 0.01 θ[i] = initθ[i] / 2 end
-                if θ[i] > initθ[i] * 1.25 θ[i] = initθ[i] * 1.25 end
+                if θ[i] < 0.01 θ[i] = initθ[i] / 4.0 end
+                if θ[i] > initθ[i] * 2.5 θ[i] = initθ[i] * 2.5 end
             end
         end
-        lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "First step with AI-like method, θ: "*string(θ)))
+        lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "First step with AI-like method ($aifirst), θ: "*string(θ)))
     end
     varlinkrvecapply!(θ, lmm.covstr.ct; rholinkf = rholinkf)
 
@@ -160,7 +168,7 @@ function fit!(lmm::LMM{T};
     end
     #Theta (θ) vector
     lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), lmm.covstr.ct; rholinkf = rholinkf)
-    lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Resulting θ: "*string(lmm.result.theta)))
+    lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Resulting θ: "*string(lmm.result.theta)*"; $(Optim.iterations(lmm.result.optim)) iterations."))
 
         #-2 LogREML, β, iC
     lmm.result.reml, lmm.result.beta, iC, θ₃, noerrors = optfunc(lmm, data, lmm.result.theta)

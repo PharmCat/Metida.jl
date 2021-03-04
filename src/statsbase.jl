@@ -19,6 +19,23 @@ StatsBase.score(model::LMM) = error("score is not defined for $(typeof(model))."
 
 =#
 
+function StatsBase.confint(lmm::LMM{T}; level::Real=0.95, ddf::Symbol = :satter) where T
+    alpha = 1.0 - level
+    if ddf == :satter
+        ddfv = dof_satter(lmm)
+    elseif ddf == :contain
+        ddfv = fill!(Vector{Float64}(undef, coefn(lmm)), dof_contain(lmm))
+    elseif ddf == :residual
+        ddfv = fill!(Vector{Float64}(undef, coefn(lmm)), dof_residual(lmm))
+    end
+    cis = Vector{Tuple{T, T}}(undef, coefn(lmm))
+    for i = 1:coefn(lmm)
+        cis[i] = (lmm.result.beta[i] - lmm.result.se[i] * quantile(TDist(ddfv[i]), 1.0 - alpha / 2), lmm.result.beta[i] + lmm.result.se[i] * quantile(TDist(ddfv[i]), 1.0 - alpha / 2))
+    end
+    cis
+end
+
+
 #=
 REML: n = total number of observation - number fixed effect parameters; d = number of covariance parameters
 ML:, n = total number of observation; d = number of fixed effect parameters + number of covariance parameters.

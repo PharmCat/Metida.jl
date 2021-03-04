@@ -1,3 +1,10 @@
+v0.6.1
+  * add methods for dof_satter
+  * add settings for fit!
+  * first step scoring
+  * initial values minor changes
+  * validation & documentation
+
 v0.6.0
   * rho link change
   * TOEPH

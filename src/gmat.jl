@@ -60,12 +60,6 @@ function zgz_base_inc!(mx, θ::Vector{T}, covstr, block, sblock) where T
     mx
 end
 ################################################################################
-#=
-function gmat_zero!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
-    mx .= zero(T)
-    nothing
-end
-=#
 function gmat_si!(mx, θ::Vector{T}, p) where T
     val = θ[1] ^ 2
     for i = 1:size(mx, 1)

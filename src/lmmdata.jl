@@ -1,4 +1,4 @@
-abstract type AbstractLMMDataBlocks end
+#lmmdata.jl
 
 struct LMMData{T <: AbstractFloat}
     # Fixed effect matrix

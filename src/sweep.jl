@@ -1,22 +1,7 @@
 #sweep.jl
 #Based on https://github.com/joshday/SweepOperator.jl
 #Thanks to @joshday and @Hua-Zhou
-#=
-function nsyrk!(alpha, A, C)
-    q = size(C, 1)
-    p = size(A, 2)
-    for n = 1:q
-        for m = n:q
-            c = zero(eltype(C))
-            for i = 1:p
-                @inbounds c += A[n, i] * A[m, i]
-            end
-            @inbounds C[n, m] = C[n, m] + c * alpha
-        end
-    end
-    C
-end
-=#
+
 function nsyrk!(alpha, A, C)
     q = size(C, 1)
     p = size(A, 2)

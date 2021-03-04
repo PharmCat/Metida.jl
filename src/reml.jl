@@ -1,4 +1,5 @@
 #reml.jl
+
 function logdetv(V)
     if isposdef(V)
         return logdet(cholesky(V))
@@ -39,7 +40,8 @@ function reml_sweep_β_b(lmm, θ::Vector{T}) where T <: Number
             return (Inf, nothing, nothing, Inf)
         end
         sweep!(Vp, 1:q)
-        V⁻¹[i] = Symmetric(utriaply!(x -> -x, V))
+        #V⁻¹[i] = Symmetric(utriaply!(x -> -x, V))
+        V⁻¹[i] = Symmetric(V)
         #-----------------------------------------------------------------------
         qswm = size(Vp, 1)
         θ₂ -= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
@@ -107,7 +109,8 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T 
         end
         #sweepb!(view(akk, 1:qswm), Vp, 1:q)
         sweep!(Vp, 1:q)
-        V⁻¹[i] = Symmetric(utriaply!(x -> -x, V))
+        #V⁻¹[i] = Symmetric(utriaply!(x -> -x, V))
+        V⁻¹[i] = Symmetric(V)
         #-----------------------------------------------------------------------
         qswm = size(Vp, 1)
         θ₂ .-= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
@@ -164,7 +167,8 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vect
             return (1e100, nothing, nothing, 1e100)
         end
         sweep!(Vp, 1:q)
-        V⁻¹ = Symmetric(utriaply!(x -> -x, V))
+        #V⁻¹ = Symmetric(utriaply!(x -> -x, V))
+        V⁻¹ = Symmetric(V)
         #-----------------------------------------------------------------------
         qswm = size(Vp, 1)
         θ₂ .-= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
@@ -179,7 +183,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vect
     return   θ₁ + logdetθ₂ + θ₃ + c, θ₂, θ₃ #REML, iC, θ₃
 end
 ################################################################################
-#                     REML AI-like part
+#                     REML AI-like / scoring part
 ################################################################################
 function sweep_ai(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector) where T <: Number
     n             = length(lmm.covstr.vcovblock)
@@ -198,10 +202,41 @@ function sweep_ai(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector) w
         Vx  .= data.xv[i]
         vmatrix!(V, θ, lmm, i)
         sweep!(Vp, 1:q)
-        V⁻¹ = Symmetric(utriaply!(x -> -x, V))
+        V⁻¹ = Symmetric(V)
         @inbounds θ₃  += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹)
     end
     return  θ₃
+end
+function sweep_score(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector) where T <: Number
+    n             = length(lmm.covstr.vcovblock)
+    #---------------------------------------------------------------------------
+    # Vector log determinant of V matrix
+    θ₁            = zero(T)
+    θ₃            = zero(T)
+    #---------------------------------------------------------------------------
+    q             = zero(Int)
+    qswm          = zero(Int)
+    Vp            = Matrix{T}(undef, 0, 0)
+
+    @inbounds for i = 1:n
+        q    = length(lmm.covstr.vcovblock[i])
+        qswm = q + lmm.rankx
+        Vp  = zeros(T, q + lmm.rankx, q + lmm.rankx)
+        V   = view(Vp, 1:q, 1:q)
+        Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
+        Vx  .= data.xv[i]
+        vmatrix!(V, θ, lmm, i)
+        #-----------------------------------------------------------------------
+        try
+            θ₁  += logdetv(V)
+        catch
+            return nothing
+        end
+        sweep!(Vp, 1:q)
+        V⁻¹ = Symmetric(V)
+        @inbounds θ₃  += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹)
+    end
+    return   -θ₁ + θ₃
 end
 ################################################################################
 #                     β calculation
@@ -260,7 +295,7 @@ function sweep_β_cov(lmm, θ::Vector{T}, β::Vector) where T <: Number
         vmatrix!(V, θ, lmm, i)
         #-----------------------------------------------------------------------
         sweep!(Vp, 1:q)
-        V⁻¹ = Symmetric(utriaply!(x -> -x, V))
+        #V⁻¹ = Symmetric(utriaply!(x -> -x, V))
         #-----------------------------------------------------------------------
         qswm = size(Vp, 1)
         θ₂ .-= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))

@@ -24,7 +24,7 @@ nothing # hide
 
 !!! note
 
-    Check that all categorical variables is categorical.
+    Check that all categorical variables are categorical.
 
 
 ```@example lmmexample
@@ -91,7 +91,7 @@ Metida.fit!
 
 ### Custom structure
 
-#### Step 1: make CustomCovarianceStruct
+#### Step 1: make custom CovarianceMethod for R and G matrix
 
 ```@docs
 Metida.CovmatMethod

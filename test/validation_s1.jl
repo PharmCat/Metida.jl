@@ -100,6 +100,9 @@ df        = CSV.File(path*"/csv/Penicillin.csv"; types = [String, Float64, Strin
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 330.86058899109184 atol=1E-6
 
+    #fm = @formula(diameter ~ 1 + (1|plate) + (1|sample))
+    #mm  = fit(MixedModel, fm, df, REML=true)
+
     #=
     #SPSS 432.686
     lmm = Metida.LMM(@formula(diameter~1), df;

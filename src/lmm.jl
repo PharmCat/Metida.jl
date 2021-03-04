@@ -67,6 +67,15 @@ function thetalength(lmm)
 end
 
 """
+    coefn(lmm)
+
+Coef number.
+"""
+function coefn(lmm)
+    length(lmm.result.beta)
+end
+
+"""
     theta(lmm::LMM)
 
 Return theta vector.

@@ -1,4 +1,94 @@
 #=
+function gmat_zero!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
+    mx .= zero(T)
+    nothing
+end
+=#
+################################################################################
+# Intersect dataframe.
+################################################################################
+#=
+function intersectdf(df, s)::Vector
+    if isa(s, Nothing) return [collect(1:size(df, 1))] end
+    if isa(s, Symbol) s = [s] end
+    if length(s) == 0 return [collect(1:size(df, 1))] end
+    u   = unique(@view df[:, s])
+    sort!(u, s)
+    res = Vector{Vector{Int}}(undef, size(u, 1))
+    v   = Vector{Dict{}}(undef, size(u, 2))
+    v2  = Vector{Vector{Int}}(undef, size(u, 2))
+    for i2 = 1:size(u, 2)
+        uv = unique(@view u[:, i2])
+        v[i2] = Dict{Any, Vector{Int}}()
+        for i = 1:length(uv)
+            v[i2][uv[i]] = findall(x -> x == uv[i], @view df[:,  s[i2]])
+        end
+    end
+    for i2 = 1:size(u, 1)
+        for i = 1:length(s)
+            v2[i] = v[i][u[i2, i]]
+        end
+        res[i2] = collect(intersect(Set.(v2)...))
+        #res[i2] = intersect(v2...)
+        sort!(res[i2])
+    end
+    res
+end
+################################################################################
+# Intersect subject set in effects.
+################################################################################
+function intersectsubj(random, repeated)
+    a  = Vector{Vector{Symbol}}(undef, length(random)+1)
+    eq = true
+    for i = 1:length(random)
+        a[i] = random[i].subj
+    end
+    a[end] = repeated.subj
+    for i = 2:length(a)
+        if !(issetequal(a[1], a[i]))
+            eq = false
+            break
+        end
+    end
+    intersect(a...), eq
+end
+function intersectsubj(random)
+    if !isa(random, Vector) return random.subj end
+    a  = Vector{Vector{Symbol}}(undef, length(random))
+    for i = 1:length(random)
+        a[i] = random[i].subj
+    end
+    intersect(a...)
+end
+=#
+#=
+function varlinkvec(v)
+    fv = Vector{Function}(undef, length(v))
+    for i = 1:length(v)
+        if v[i] == :var fv[i] = vlink else fv[i] = rholinksigmoid end
+    end
+    fv
+end
+function varlinkrvec(v)
+    fv = Vector{Function}(undef, length(v))
+    for i = 1:length(v)
+        if v[i] == :var fv[i] = vlinkr else fv[i] = rholinksigmoidr end
+    end
+    fv
+end
+=#
+#=
+function makepmatrix(m::Matrix)
+    sm = string.(m)
+    lv = maximum(length.(sm), dims = 1)
+    for r = 1:size(sm, 1)
+        for c = 1:size(sm, 2)
+            sm[r,c] = addspace(sm[r,c], lv[c] - length(sm[r,c]))*"   "
+        end
+    end
+end
+=#
+#=
 function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:SI}) where T
     Matrix{T}(I(zn)*(θ[1] ^ 2))
     #I(zn)*(θ[1] ^ 2)

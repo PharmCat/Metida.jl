@@ -11,6 +11,11 @@ remlsb = zeros(Float64, 30)
 
 remlsc = zeros(Float64, 30)
 
+mblcic = zeros(Float64, 30)
+mbucic = zeros(Float64, 30)
+mclcic = zeros(Float64, 30)
+mcucic = zeros(Float64, 30)
+
 remlsrb = [536.20114880,-28.58817102,436.51167656,316.05056716,-74.54174147,
            536.20114880,1388.53679067,2345.96274074,2985.72416979,-15.89382595,
            253.05107869,1143.36304904,2090.10396024,1050.30945494,2090.10396024,
@@ -69,6 +74,8 @@ for i = 1:30
         Metida.fit!(lmm)
         @test lmm.result.reml ≈ remlsrb[i] atol=atol
         remlsb[i] = Metida.m2logreml(lmm)
+        mblcic[i] =  coef(lmm)[end] - stderror(lmm)[end]*quantile(TDist(Metida.dof_satter(lmm)[end]), 1.0-0.1/2)
+        mbucic[i] =  coef(lmm)[end] + stderror(lmm)[end]*quantile(TDist(Metida.dof_satter(lmm)[end]), 1.0-0.1/2)
 
         atol=1E-6
         if i ∈ [2, 13, 15] atol = 1E-4 end
@@ -80,6 +87,8 @@ for i = 1:30
         Metida.fit!(lmm)
         @test lmm.result.reml ≈ remlsrc[i] atol=atol
         remlsc[i] = Metida.m2logreml(lmm)
+        mclcic[i] =  coef(lmm)[end] - stderror(lmm)[end]*quantile(TDist(Metida.dof_satter(lmm)[end]), 1.0-0.1/2)
+        mcucic[i] =  coef(lmm)[end] + stderror(lmm)[end]*quantile(TDist(Metida.dof_satter(lmm)[end]), 1.0-0.1/2)
     end
 end
 end
@@ -107,6 +116,7 @@ fm2 = @formula(lnpk~sequence+period+treatment+(1|subject))
 mm  = fit(MixedModel, fm2, dfrds, REML=true)
 
 println("")
+println("Bioequivalence Reference Datasets - REML")
 pretty_table(dftable, ["RDS" "REML B" "REML B" "DIFF B" "REML C" "REML C" "DIFF C" "Comm.";
                        " N " "Metida" " SPSS " "      " "Metida" " SPSS " "      " "     "])
 println("")
@@ -117,3 +127,25 @@ println("")
 println("DataSet 27 - MixedModels.jl result:")
 println("")
 println(mm)
+println("")
+println("Bioequivalence Reference Datasets - 90% Confidence intervals")
+lci = [107.17, 97.32, 113.31, 117.90, 103.82,  80.02,  86.46, 75.69, 75.69, 96.27,
+        80.64, 90.35,  72.87,  69.21,  72.87,  69.54, 115.97, 59.13, 53.85, 50.92,
+       111.72, 77.98,  97.13,  87.24,  77.93, 133.51,  78.86, 87.86, 88.43, 79.58]
+uci = [124.97, 107.46, 136.73, 159.69, 112.04,  93.31,  92.81,  87.60,  87.60, 107.59,
+       100.38, 157.88,  85.51, 121.27,  85.51,  89.37, 155.09, 107.20,  98.77,  95.62,
+       127.73, 106.09, 128.41, 109.85,  98.10, 171.42,  89.30, 100.07, 121.59, 108.07]
+
+citable = DataFrame(n = collect(1:30),
+a = round.(exp.(mblcic) .* 100.0, digits = 2),
+b = round.(exp.(mbucic) .* 100.0, digits = 2),
+c = round.(exp.(mclcic) .* 100.0, digits = 2),
+d = round.(exp.(mcucic) .* 100.0, digits = 2),
+e = lci, f = uci)
+pretty_table(citable, ["RDS" "Metida B" "Metida B" "Metida C" "Metida C" "REF*" "REF*";
+                       " N " "LCI"      "UCI"      "LCI"      " UCI "    "LCI" "UCI"])
+println("")
+println("* Reference: Schütz, H., Labes, D., Tomashevskiy, M. et al.
+Reference Datasets for Studies in a Replicate Design Intended for
+Average Bioequivalence with Expanding Limits.
+Table II, Method B, SPSS section.")

@@ -36,7 +36,8 @@ include("testdata.jl")
     @test Metida.caic(lmm)      ≈ 27.558878811225412 atol=1E-6
     @test dof_residual(lmm) == 14
     @test Metida.dof_contain(lmm) == 6
-    @test Metida.dof_satter(lmm, [0, 0, 0, 0, 0, 1]) ≈ 5.81896814947982 atol=1E-2
+    @test Metida.dof_satter(lmm, 6)   ≈ 5.81896814947982 atol=1E-2
+    @test Metida.dof_satter(lmm)[end] ≈ 5.81896814947982 atol=1E-2
     @test nobs(lmm) == 20
     @test Metida.thetalength(lmm) == 3
     @test Metida.rankx(lmm) == 6
@@ -51,8 +52,13 @@ include("testdata.jl")
     @test sum(Metida.hessian(lmm))    ≈ 1118.160713481362 atol=1E-2
     @test Metida.nblocks(lmm) == 5
     @test length(coefnames(lmm)) == 6
+    @test Metida.confint(lmm)[end][1] ≈ -0.7630380758015894 atol=1E-4
     #AI like algo
     Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm))
+    @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
+    Metida.fit!(lmm; aifirst = :score)
+    @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
+    Metida.fit!(lmm; aifirst = :ai)
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
     #Set user coding
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;

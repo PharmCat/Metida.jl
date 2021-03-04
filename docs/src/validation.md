@@ -188,7 +188,13 @@ fit!(lmm)
 
 SPSS:
 ```
-
+MIXED Pulse BY Day Time
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=| SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=Time | SUBJECT(Time) COVTYPE(ID)
+  /REPEATED = Day | SUBJCET(Time) COVTYPE(AR1).
 ```
 
 ##### Model 9
@@ -203,7 +209,12 @@ repeated = VarEffect(Metida.@covstr(Day|Time),  AR),
 
 SPSS:
 ```
-
+MIXED Pulse BY Day Time
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=| SSTYPE(3)
+  /METHOD=REML
+  /REPEATED = Day | SUBJCET(Time) COVTYPE(AR1).
 ```
 
 ##### Model 10
@@ -218,12 +229,18 @@ random =  VarEffect(Metida.@covstr(Day|Time),  AR),
 
 SPSS:
 ```
-
+MIXED Pulse BY Day Time
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=| SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=Day | SUBJECT(Time) COVTYPE(AR1).
 ```
 
 ## Section 2: Parameters validation for public datasets Metida & SPSS & MixedModels
 
 ##### Model 7
+Metida:
 ```
 lmm = LMM(@formula(diameter ~ 1), df;
 random = [VarEffect(@covstr(1|plate), SI), VarEffect(@covstr(1|sample), SI)]
@@ -231,13 +248,31 @@ random = [VarEffect(@covstr(1|plate), SI), VarEffect(@covstr(1|sample), SI)]
 fit!(lmm)
 ```
 
+MixedModels:
+```
+fm = @formula(diameter ~ 1 + (1|plate) + (1|sample))
+mm  = fit(MixedModel, fm, df, REML=true)
+```
+
+SPSS:
+```
+MIXED diameter
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=| SSTYPE(3)
+  /METHOD=REML
+  /EMMEANS=TABLES(OVERALL)
+  /RANDOM=INTERCEPT | SUBJECT(plate) COVTYPE(ID)
+  /RANDOM=INTERCEPT | SUBJECT(sample) COVTYPE(ID).
+```
+
 | Model | Parameter  | Value Metida | Value MM | Value SPSS |
 |--------|--------|--------|--------|-------|
-| 7 | (Intercept) estimate | 22.9722 |  |  |
-| 7 | (Intercept) SE | 0.808573 |  |  |
-| 7 | plate   σ² | 0.716908 |  |  |
-| 7 | sample   σ² | 3.73092 |  |  |
-| 7 | Residual   σ²| 0.302415 |  |  |
+| 7 | (Intercept) estimate | 22.9722 | 22.9722 | 22.972 |
+| 7 | (Intercept) SE | 0.808573 | 0.808572 | 0.809 |
+| 7 | plate   σ² | 0.716908 | 0.716908 | 0.716908 |
+| 7 | sample   σ² | 3.73092 | 3.730901 | 3.730918 |
+| 7 | Residual   σ² | 0.302415 | 0.302416 | 0.302415 |
 
 ## Section 3: Validation with bioequivalence datasets with Metida & SPSS
 

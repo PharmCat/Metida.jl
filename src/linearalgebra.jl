@@ -49,7 +49,7 @@ function mulαβαtinc!(θ::AbstractVecOrMat{T}, A, B) where T
     θ
 end
 """
-(y - X * β)' * V * (y - X * β)
+(y - X * β)' * (-V) * (y - X * β)
 """
 function mulθ₃(y, X, β, V::AbstractMatrix{T})::T where T
     q = size(V, 1)
@@ -63,7 +63,7 @@ function mulθ₃(y, X, β, V::AbstractMatrix{T})::T where T
     end
     @simd for n = 1:q
         @simd for m = 1:q
-            @inbounds θ += V[m, n] * (y[m] - c[m]) * (y[n] - c[n])
+            @inbounds θ -= V[m, n] * (y[m] - c[m]) * (y[n] - c[n])
         end
     end
     return θ
@@ -86,6 +86,7 @@ function mulαtβinc!(θ::AbstractVecOrMat{T}, A::AbstractMatrix, B::AbstractVec
 end
 
 ################################################################################
+#=
 function utriaply!(f, m)
     if size(m, 1) != size(m, 2) error() end
     @simd for p = 1:size(m, 1)
@@ -95,3 +96,4 @@ function utriaply!(f, m)
     end
     m
 end
+=#

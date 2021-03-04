@@ -4,11 +4,11 @@
 
 [`LMM`](@ref)
 
-### Metida.@covstr
+### @covstr
 
 [`Metida.@covstr`](@ref)
 
-### Metida.VarEffect
+### VarEffect
 
 [`Metida.VarEffect`](@ref)
 
