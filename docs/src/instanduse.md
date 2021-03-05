@@ -1,6 +1,5 @@
 ### Installation
 
-
 ```
 import Pkg; Pkg.add("Metida")
 ```
@@ -16,8 +15,8 @@ import Pkg; Pkg.add("Metida")
 
 Load provided data with CSV and DataFrames:
 
-```@example instuse
-using Metida, CSV, DataFrames
+```@example lmmexample
+#using Metida, CSV, DataFrames
 
 df = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "df0.csv")) |> DataFrame;
 nothing # hide
@@ -28,7 +27,7 @@ nothing # hide
     Check that all categorical variables are categorical.
 
 
-```@example instuse
+```@example lmmexample
 transform!(df, :subject => categorical, renamecols=false)
 transform!(df, :period => categorical, renamecols=false)
 transform!(df, :sequence => categorical, renamecols=false)
@@ -38,7 +37,7 @@ nothing # hide
 
 #### Step 2: Make model
 
-```@example instuse
+```@example lmmexample
 lmm = LMM(@formula(var~sequence+period+formulation), df;
 random = VarEffect(@covstr(formulation|subject), CSH),
 repeated = VarEffect(@covstr(formulation|subject), DIAG));
@@ -46,13 +45,13 @@ repeated = VarEffect(@covstr(formulation|subject), DIAG));
 
 #### Step 3: Fit
 
-```@example instuse
+```@example lmmexample
 fit!(lmm)
 ```
 
 ##### Check warnings and errors in log.
 
-```@example instuse
+```@example lmmexample
 lmm.log
 ```
 
@@ -108,7 +107,7 @@ See: [`Metida.CovarianceType`](@ref)
 
 #### Step 3 Fit your model
 
-```@example instuse
+```@example lmmexample
 
 #Make methods for G and R matrix and CovarianceType struct
 CCTG = CovarianceType(CovmatMethod((q,p) -> (q, 1), Metida.gmat_csh!))

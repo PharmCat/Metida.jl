@@ -1,10 +1,5 @@
 # Validation
 
-```@setup validation
-using  Metida, StatsBase, PrettyTables, Test, CSV, DataFrames;
-include(joinpath(dirname(pathof(Metida)), "..", "test", "validation_init.jl"))
-```
-
 Validation provided with 3 sections:
 * REML validation for public datasets with Metida & SPSS
 * Parameters validation for public datasets Metida & SPSS & MixedModels
@@ -317,7 +312,8 @@ MIXED lnpk BY period treatment sequence subject
 ```
 #### Results
 
-```@example validation
+```@example lmmexample
+include(joinpath(dirname(pathof(Metida)), "..", "test", "validation_init.jl")) # hide
 include(joinpath(dirname(pathof(Metida)), "..", "test", "validation_s3.jl"))
 ```
 Full SPSS code provided in validation folder ([here](https://github.com/PharmCat/Metida.jl/blob/master/validation/spssrdscode.sps.txt)).
