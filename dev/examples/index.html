@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Examples · Metida.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">Metida.jl</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="../instanduse/">First step</a></li><li class="is-active"><a class="tocitem" href>Examples</a></li><li><a class="tocitem" href="../bioequivalence/">Bioequivalence</a></li><li><a class="tocitem" href="../nlopt/">NLopt</a></li><li><a class="tocitem" href="../cuda/">CUDA</a></li><li><a class="tocitem" href="../faq/">F.A.Q.</a></li></ul></li><li><a class="tocitem" href="../details/">Details</a></li><li><a class="tocitem" href="../bench/">Benchmark</a></li><li><a class="tocitem" href="../validation/">Validation</a></li><li><a class="tocitem" href="../api/">API</a></li><li><a class="tocitem" href="../ref/">Citation &amp; Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User guide</a></li><li class="is-active"><a href>Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Examples</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/PharmCat/Metida.jl/blob/master/docs/src/examples.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h3 id="Example-1-Continuous-and-categorical-predictors"><a class="docs-heading-anchor" href="#Example-1-Continuous-and-categorical-predictors">Example 1 - Continuous and categorical predictors</a><a id="Example-1-Continuous-and-categorical-predictors-1"></a><a class="docs-heading-anchor-permalink" href="#Example-1-Continuous-and-categorical-predictors" title="Permalink"></a></h3><pre><code class="language-julia">using Metida, CSV, DataFrames, MixedModels;
 
-rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1fptime.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame</code></pre><p><img src="../plot1.png" alt/></p><p>Metida result:</p><pre><code class="language-julia">lmm = LMM(@formula(response ~1 + factor*time), rds;
+rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1fptime.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame</code></pre><p><img src="plot1.png" alt/></p><p>Metida result:</p><pre><code class="language-julia">lmm = LMM(@formula(response ~1 + factor*time), rds;
 random = VarEffect(@covstr(1 + time|subject&amp;factor), CSH),
 )
 fit!(lmm)</code></pre><pre class="documenter-example-output">Linear Mixed Model: response ~ 1 + factor + time + factor &amp; time
@@ -31,23 +31,23 @@ Residual   σ²               var   0.970345
 </pre><p>MixedModels result:</p><pre><code class="language-julia">fm = @formula(response ~ 1 + factor*time + (1 + time|subject&amp;factor))
 mm = fit(MixedModel, fm, rds, REML=true)</code></pre><pre class="documenter-example-output">Linear mixed model fit by REML
  response ~ 1 + factor + time + factor &amp; time + (1 + time | subject &amp; factor)
- REML criterion at convergence: 1300.1807598200558
+ REML criterion at convergence: 1300.1807598192281
 
 Variance components:
                     Column   Variance Std.Dev.   Corr.
-subject &amp; factor (Intercept)  1.537863 1.240106
+subject &amp; factor (Intercept)  1.537868 1.240108
                  time         0.010226 0.101123 -0.04
-Residual                      0.970343 0.985060
+Residual                      0.970344 0.985060
  Number of obs: 400; levels of grouping factors: 40
 
   Fixed-effects parameters:
 ──────────────────────────────────────────────────────────
                         Coef.  Std. Error      z  Pr(&gt;|z|)
 ──────────────────────────────────────────────────────────
-(Intercept)         22.1331     0.30434    72.73    &lt;1e-99
-factor: 1.0          2.00049    0.430401    4.65    &lt;1e-5
-time                 1.11853    0.0264039  42.36    &lt;1e-99
-factor: 1.0 &amp; time   0.404971   0.0373408  10.85    &lt;1e-26
+(Intercept)         22.1331     0.30434    72.72    &lt;1e-99
+factor: 1.0          2.00049    0.430402    4.65    &lt;1e-5
+time                 1.11853    0.0264038  42.36    &lt;1e-99
+factor: 1.0 &amp; time   0.404971   0.0373407  10.85    &lt;1e-26
 ──────────────────────────────────────────────────────────</pre><h3 id="Example-2-Two-random-factors-(Penicillin-data)"><a class="docs-heading-anchor" href="#Example-2-Two-random-factors-(Penicillin-data)">Example 2 - Two random factors (Penicillin data)</a><a id="Example-2-Two-random-factors-(Penicillin-data)-1"></a><a class="docs-heading-anchor-permalink" href="#Example-2-Two-random-factors-(Penicillin-data)" title="Permalink"></a></h3><p>Metida:</p><pre><code class="language-julia">df          = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;Penicillin.csv&quot;); types = [String, Float64, String, String]) |&gt; DataFrame
 df.diameter = float.(df.diameter)
 
@@ -80,13 +80,13 @@ Residual   σ²    var   0.302415
 </pre><p>MixedModels:</p><pre><code class="language-julia">fm2 = @formula(diameter ~ 1 + (1|plate) + (1|sample))
 mm = fit(MixedModel, fm2, df, REML=true)</code></pre><pre class="documenter-example-output">Linear mixed model fit by REML
  diameter ~ 1 + (1 | plate) + (1 | sample)
- REML criterion at convergence: 330.86058899102966
+ REML criterion at convergence: 330.8605889909948
 
 Variance components:
             Column   Variance Std.Dev.
 plate    (Intercept)  0.716908 0.846704
-sample   (Intercept)  3.730901 1.931554
-Residual              0.302416 0.549923
+sample   (Intercept)  3.730909 1.931556
+Residual              0.302415 0.549923
  Number of obs: 144; levels of grouping factors: 24, 6
 
   Fixed-effects parameters:
@@ -94,7 +94,7 @@ Residual              0.302416 0.549923
                Coef.  Std. Error      z  Pr(&gt;|z|)
 ─────────────────────────────────────────────────
 (Intercept)  22.9722    0.808572  28.41    &lt;1e-99
-─────────────────────────────────────────────────</pre><h3 id="Example-3-Repeated-ARMA/AR/ARH"><a class="docs-heading-anchor" href="#Example-3-Repeated-ARMA/AR/ARH">Example 3 - Repeated ARMA/AR/ARH</a><a id="Example-3-Repeated-ARMA/AR/ARH-1"></a><a class="docs-heading-anchor-permalink" href="#Example-3-Repeated-ARMA/AR/ARH" title="Permalink"></a></h3><pre><code class="language-julia">rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1freparma.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame</code></pre><p><img src="../plot2.png" alt/></p><p>ARMA:</p><pre><code class="language-julia">lmm = LMM(@formula(response ~ 1 + factor*time), rds;
+─────────────────────────────────────────────────</pre><h3 id="Example-3-Repeated-ARMA/AR/ARH"><a class="docs-heading-anchor" href="#Example-3-Repeated-ARMA/AR/ARH">Example 3 - Repeated ARMA/AR/ARH</a><a id="Example-3-Repeated-ARMA/AR/ARH-1"></a><a class="docs-heading-anchor-permalink" href="#Example-3-Repeated-ARMA/AR/ARH" title="Permalink"></a></h3><pre><code class="language-julia">rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1freparma.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame</code></pre><p><img src="plot2.png" alt/></p><p>ARMA:</p><pre><code class="language-julia">lmm = LMM(@formula(response ~ 1 + factor*time), rds;
 random = VarEffect(@covstr(factor|subject&amp;factor), DIAG),
 repeated = VarEffect(@covstr(1|subject&amp;factor), ARMA),
 )
@@ -207,4 +207,4 @@ fit!(lmm)</code></pre><p>SAS code:</p><pre><code class="language-none">PROC MIXE
 CLASSES subject sequence period formulation;
 MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
 RANDOM  subject/TYPE=VC G V;
-RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../bioequivalence/">Bioequivalence »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 5 March 2021 12:18">Friday 5 March 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../bioequivalence/">Bioequivalence »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 5 March 2021 12:38">Friday 5 March 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

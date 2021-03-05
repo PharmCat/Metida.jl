@@ -119,5 +119,116 @@ MIXED lnpk BY period treatment sequence subject
   /METHOD=REML
   /RANDOM=treatment | SUBJECT(subject) COVTYPE(CSH)
   /REPEATED=treatment | SUBJECT(subject*period) COVTYPE(DIAG)
-  /EMMEANS=TABLES(treatment) COMPARE REFCAT(FIRST) ADJ(LSD).</code></pre><h4 id="Results"><a class="docs-heading-anchor" href="#Results">Results</a><a id="Results-1"></a><a class="docs-heading-anchor-permalink" href="#Results" title="Permalink"></a></h4><pre><code class="language-">include(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;validation_init.jl&quot;)); # hide
-include(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;validation_s3.jl&quot;))</code></pre><p>Full SPSS code provided in validation folder (<a href="https://github.com/PharmCat/Metida.jl/blob/master/validation/spssrdscode.sps.txt">here</a>).</p><p>SPSS <a href="https://github.com/PharmCat/Metida.jl/blob/master/validation/RDS-OUTPUT.docx">output</a> in DOCX format.</p><p>Validation dataset available <a href="https://link.springer.com/article/10.1208%2Fs12248-020-0427-6">here</a>, <a href="https://static-content.springer.com/esm/art%3A10.1208%2Fs12248-020-0427-6/MediaObjects/12248_2020_427_MOESM2_ESM.xls">12248<em>2020</em>427<em>MOESM2</em>ESM.xls</a>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../bench/">« Benchmark</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 5 March 2021 12:18">Friday 5 March 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  /EMMEANS=TABLES(treatment) COMPARE REFCAT(FIRST) ADJ(LSD).</code></pre><h4 id="Results"><a class="docs-heading-anchor" href="#Results">Results</a><a id="Results-1"></a><a class="docs-heading-anchor-permalink" href="#Results" title="Permalink"></a></h4><pre><code class="language-julia">include(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;validation_s3.jl&quot;))</code></pre><pre class="documenter-example-output">Test Summary:                                               | Pass  Total
+  RDS Test                                                  |   60     60
+
+Bioequivalence Reference Datasets - REML
+.-----.----------.----------.-------------.----------.----------.-------------.-------.
+| RDS |   REML B |   REML B |        DIFF |   REML C |   REML C |        DIFF | Comm. |
+|  N  |   Metida |    SPSS  |        B    |   Metida |    SPSS  |        C    |       |
+:-----+----------+----------+-------------+----------+----------+-------------+-------:
+|   1 |  536.201 |  536.201 |          OK |  530.145 |  530.145 |          OK |     * |
+|   2 | -28.5882 | -28.5882 |          OK | -30.6746 | -30.6746 |  6.15692e-6 |    ** |
+|   3 |  436.512 |  436.512 |          OK |  425.447 |  425.447 |          OK |     * |
+|   4 |  316.051 |  316.051 |          OK |  314.222 |  314.222 |          OK |       |
+|   5 | -74.5417 | -74.5417 |          OK |   -74.88 |   -74.88 |          OK |    ** |
+|   6 |  536.201 |  536.201 |          OK |  530.145 |  530.145 |          OK |     * |
+|   7 |  1388.54 |  1388.54 |          OK |  1387.09 |  1387.09 |          OK |    ** |
+|   8 |  2345.96 |  2345.96 |          OK |   2342.6 |   2342.6 |          OK |       |
+|   9 |  2985.72 |  2985.72 |          OK |  2983.26 |  2983.26 |          OK |       |
+|  10 | -15.8938 | -15.8938 |          OK | -16.4173 | -16.4173 |          OK |    ** |
+|  11 |  253.051 |  253.051 |          OK |  250.945 |  250.945 |          OK |       |
+|  12 |  1143.36 |  1143.36 |          OK |  1140.38 |  1140.38 |          OK |       |
+|  13 |   2090.1 |   2090.1 |          OK |  2087.48 |  2087.48 |          OK |     * |
+|  14 |  1050.31 |  1050.31 |          OK |  1012.35 |  1012.35 |          OK |       |
+|  15 |   2090.1 |   2090.1 |          OK |  2087.48 |  2087.48 |          OK |     * |
+|  16 |  326.536 |  326.536 |          OK |  323.998 |  323.998 |          OK |     * |
+|  17 |  78.8447 |  78.8447 |          OK |   77.569 |   77.569 |          OK |       |
+|  18 |  937.986 |  937.986 |          OK |  904.874 |  904.874 |          OK |       |
+|  19 |  815.225 |  815.225 |          OK |   782.94 |   782.94 |          OK |       |
+|  20 |  827.985 |  827.985 |          OK |  796.312 |  796.312 |          OK |       |
+|  21 |  474.088 |  474.088 |          OK |  470.591 |  470.591 |          OK |       |
+|  22 |  249.254 |  249.254 |          OK |   248.99 |   248.99 |          OK |    ** |
+|  23 |  129.163 |  129.163 |          OK |  119.806 |  119.806 |          OK |       |
+|  24 |  283.595 |  283.595 |          OK |  274.306 |  274.306 |          OK |     * |
+|  25 |  678.745 |  678.745 |          OK |  660.047 |  660.047 |          OK |     * |
+|  26 |  435.445 |  435.445 |          OK |  433.841 |  433.841 |          OK |       |
+|  27 |  1125.08 |  1125.09 | -0.00895071 |  1123.66 |  1123.66 | -0.00870748 |       |
+|  28 |  331.808 |  331.808 |          OK |  329.257 |  329.257 |          OK |       |
+|  29 |  45.3049 |  45.3049 |          OK |  26.9661 |  26.9661 |          OK |       |
+|  30 |   32.418 |   32.418 |          OK |  26.3165 |   14.944 |     11.3725 |    ** |
+&#39;-----&#39;----------&#39;----------&#39;-------------&#39;----------&#39;----------&#39;-------------&#39;-------&#39;
+
+*  - The final Hessian matrix is not positive definite although all convergence criteria
+are satisfied. The MIXED procedure continues despite this warning. Validity of subsequent
+results cannot be ascertained.
+
+** - Iteration was terminated but convergence has not been achieved. The MIXED procedure
+continues despite this warning. Subsequent results produced are based on the last iteration.
+Validity of the model fit is uncertain.
+
+DataSet 27 - MixedModels.jl result:
+
+Linear mixed model fit by REML
+ lnpk ~ 1 + sequence + period + treatment + (1 | subject)
+ REML criterion at convergence: 1125.0834323640142
+
+Variance components:
+            Column   Variance Std.Dev.
+subject  (Intercept)  0.489831 0.699879
+Residual              0.110231 0.332011
+ Number of obs: 623; levels of grouping factors: 312
+
+  Fixed-effects parameters:
+─────────────────────────────────────────────────────
+                   Coef.  Std. Error      z  Pr(&gt;|z|)
+─────────────────────────────────────────────────────
+(Intercept)    4.58171     0.0846385  54.13    &lt;1e-99
+sequence: RT   0.135734    0.119701    1.13    0.2568
+sequence: TR  -0.0165249   0.119701   -0.14    0.8902
+sequence: TT   0.103687    0.124075    0.84    0.4033
+period: 2     -0.010685    0.0266212  -0.40    0.6881
+treatment: T  -0.175322    0.0377032  -4.65    &lt;1e-5
+─────────────────────────────────────────────────────
+
+Bioequivalence Reference Datasets - 90% Confidence intervals
+.-----.----------.----------.----------.----------.--------.--------.
+| RDS | Metida B | Metida B | Metida C | Metida C |   REF* |   REF* |
+|  N  |      LCI |      UCI |      LCI |     UCI  |    LCI |    UCI |
+:-----+----------+----------+----------+----------+--------+--------:
+|   1 |   107.17 |   124.97 |    107.1 |   124.89 | 107.17 | 124.97 |
+|   2 |    97.32 |   107.46 |    97.02 |   107.79 |  97.32 | 107.46 |
+|   3 |   113.31 |   136.73 |   113.17 |   136.49 | 113.31 | 136.73 |
+|   4 |    117.9 |   159.69 |   118.67 |   158.65 |  117.9 | 159.69 |
+|   5 |   103.82 |   112.04 |    103.8 |   112.06 | 103.82 | 112.04 |
+|   6 |    80.02 |    93.31 |    80.07 |    93.37 |  80.02 |  93.31 |
+|   7 |    86.46 |    92.81 |    86.44 |    92.83 |  86.46 |  92.81 |
+|   8 |    75.69 |     87.6 |    75.57 |    87.74 |  75.69 |   87.6 |
+|   9 |    75.69 |     87.6 |    75.57 |    87.74 |  75.69 |   87.6 |
+|  10 |    96.27 |   107.59 |    95.96 |   107.94 |  96.27 | 107.59 |
+|  11 |    80.64 |   100.38 |    79.55 |   101.75 |  80.64 | 100.38 |
+|  12 |    90.35 |   157.88 |    89.13 |   159.16 |  90.35 | 157.88 |
+|  13 |    72.87 |    85.51 |    72.94 |     85.6 |  72.87 |  85.51 |
+|  14 |    69.21 |   121.27 |    65.23 |   137.67 |  69.21 | 121.27 |
+|  15 |    72.87 |    85.51 |    72.94 |     85.6 |  72.87 |  85.51 |
+|  16 |    69.54 |    89.37 |    69.32 |    89.66 |  69.54 |  89.37 |
+|  17 |   115.97 |   155.09 |   113.64 |   158.87 | 115.97 | 155.09 |
+|  18 |    59.13 |    107.2 |    59.84 |   130.49 |  59.13 |  107.2 |
+|  19 |    53.85 |    98.77 |    49.86 |   112.63 |  53.85 |  98.77 |
+|  20 |    50.92 |    95.62 |    47.26 |   109.53 |  50.92 |  95.62 |
+|  21 |   111.72 |   127.73 |   111.35 |   128.69 | 111.72 | 127.73 |
+|  22 |    77.98 |   106.09 |    77.97 |   106.11 |  77.98 | 106.09 |
+|  23 |    97.13 |   128.41 |    95.76 |   130.01 |  97.13 | 128.41 |
+|  24 |    87.24 |   109.85 |    86.64 |   110.54 |  87.24 | 109.85 |
+|  25 |    77.93 |     98.1 |    77.93 |     98.1 |  77.93 |   98.1 |
+|  26 |   133.51 |   171.42 |   132.26 |   172.37 | 133.51 | 171.42 |
+|  27 |    78.86 |     89.3 |    78.75 |    89.49 |  78.86 |   89.3 |
+|  28 |    87.86 |   100.07 |    87.49 |    100.5 |  87.86 | 100.07 |
+|  29 |    88.43 |   121.59 |    81.12 |   128.18 |  88.43 | 121.59 |
+|  30 |    79.58 |   108.07 |    79.08 |   108.41 |  79.58 | 108.07 |
+&#39;-----&#39;----------&#39;----------&#39;----------&#39;----------&#39;--------&#39;--------&#39;
+
+* Reference: Schütz, H., Labes, D., Tomashevskiy, M. et al.
+Reference Datasets for Studies in a Replicate Design Intended for
+Average Bioequivalence with Expanding Limits.
+Table II, Method B, SPSS section.</pre><p>Full SPSS code provided in validation folder (<a href="https://github.com/PharmCat/Metida.jl/blob/master/validation/spssrdscode.sps.txt">here</a>).</p><p>SPSS <a href="https://github.com/PharmCat/Metida.jl/blob/master/validation/RDS-OUTPUT.docx">output</a> in DOCX format.</p><p>Validation dataset available <a href="https://link.springer.com/article/10.1208%2Fs12248-020-0427-6">here</a>, <a href="https://static-content.springer.com/esm/art%3A10.1208%2Fs12248-020-0427-6/MediaObjects/12248_2020_427_MOESM2_ESM.xls">12248<em>2020</em>427<em>MOESM2</em>ESM.xls</a>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../bench/">« Benchmark</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 5 March 2021 12:38">Friday 5 March 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
