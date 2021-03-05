@@ -117,8 +117,8 @@ mm  = fit(MixedModel, fm2, dfrds, REML=true)
 
 println("")
 println("Bioequivalence Reference Datasets - REML")
-pretty_table(dftable, ["RDS" "REML B" "REML B" "DIFF B" "REML C" "REML C" "DIFF C" "Comm.";
-                       " N " "Metida" " SPSS " "      " "Metida" " SPSS " "      " "     "])
+pretty_table(dftable, ["RDS" "REML B" "REML B" "DIFF" "REML C" "REML C" "DIFF" "Comm.";
+                       " N " "Metida" " SPSS " "B   " "Metida" " SPSS " "C   " "     "])
 println("")
 println("*  - ", c1)
 println("")

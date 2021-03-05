@@ -4,7 +4,7 @@ df        = CSV.File(joinpath(path, "csv", "Penicillin.csv"); types = [String, F
 
 @testset "  Model 7: Penicillin.csv parameters                       " begin
     lmm = Metida.LMM(@formula(diameter ~ 1), df;
-    random = [Metida.VarEffect(@covstr(1|plate), Metida.SI), Metida.VarEffect(@covstr(1|sample), Metida.SI)]
+    random = [Metida.VarEffect(Metida.@covstr(1|plate), Metida.SI), Metida.VarEffect(Metida.@covstr(1|sample), Metida.SI)]
     )
     Metida.fit!(lmm)
     @test Metida.coef(lmm)[1]     ≈ 22.9722 atol = 1E-4

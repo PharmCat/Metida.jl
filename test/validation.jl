@@ -1,5 +1,5 @@
 using Metida
-using  Test, CSV, DataFrames, StatsBase, PrettyTables, MixedModels
+using  Test, CSV, DataFrames, StatsBase, PrettyTables, MixedModels, Distributions
 path    = dirname(@__FILE__)
 include(joinpath(path, "validation_s1.jl"))
 include(joinpath(path, "validation_s2.jl"))

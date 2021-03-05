@@ -1,6 +1,7 @@
 ### Example 1 - Continuous and categorical predictors
 
 ```@setup lmmexample
+ENV["GKSwstype"] = "nul"
 using Plots, StatsPlots, Metida, CSV, DataFrames;
 gr()
 
