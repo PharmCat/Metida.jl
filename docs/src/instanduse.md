@@ -1,5 +1,24 @@
 ### Installation
 
+```@setup lmmexample
+using Plots, StatsPlots, Metida, CSV, DataFrames;
+gr()
+
+Plots.reset_defaults()
+
+rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
+
+p = @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
+
+png(p, "plot1.png")
+
+rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1freparma.csv"); types = [String, String, Float64, Float64]) |> DataFrame
+
+p = @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
+
+png(p, "plot2.png")
+```
+
 ```
 import Pkg; Pkg.add("Metida")
 ```
