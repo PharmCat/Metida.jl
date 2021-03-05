@@ -1,23 +1,5 @@
 ### Installation
 
-```@setup lmmexample
-using Plots, StatsPlots, Metida, CSV, DataFrames;
-gr()
-
-Plots.reset_defaults()
-
-rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
-
-p = @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
-
-png(p, "plot1.png")
-
-rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1freparma.csv"); types = [String, String, Float64, Float64]) |> DataFrame
-
-p = @df rds plot(:time, :response, group = (:subject, :factor), colour = [:red :blue], legend = false)
-
-png(p, "plot2.png")
-```
 
 ```
 import Pkg; Pkg.add("Metida")
@@ -34,7 +16,7 @@ import Pkg; Pkg.add("Metida")
 
 Load provided data with CSV and DataFrames:
 
-```@example lmmexample
+```@example instuse
 using Metida, CSV, DataFrames
 
 df = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "df0.csv")) |> DataFrame;
@@ -46,7 +28,7 @@ nothing # hide
     Check that all categorical variables are categorical.
 
 
-```@example lmmexample
+```@example instuse
 transform!(df, :subject => categorical, renamecols=false)
 transform!(df, :period => categorical, renamecols=false)
 transform!(df, :sequence => categorical, renamecols=false)
@@ -56,7 +38,7 @@ nothing # hide
 
 #### Step 2: Make model
 
-```@example lmmexample
+```@example instuse
 lmm = LMM(@formula(var~sequence+period+formulation), df;
 random = VarEffect(@covstr(formulation|subject), CSH),
 repeated = VarEffect(@covstr(formulation|subject), DIAG));
@@ -64,13 +46,13 @@ repeated = VarEffect(@covstr(formulation|subject), DIAG));
 
 #### Step 3: Fit
 
-```@example lmmexample
+```@example instuse
 fit!(lmm)
 ```
 
 ##### Check warnings and errors in log.
 
-```@example lmmexample
+```@example instuse
 lmm.log
 ```
 
@@ -126,18 +108,14 @@ See: [`Metida.CovarianceType`](@ref)
 
 #### Step 3 Fit your model
 
-```@example lmmexample
-using Metida, CSV, DataFrames # hide
-
-df0 = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "df0.csv"); types = [String, String, String, String, Float64, Float64]) |> DataFrame
-
+```@example instuse
 
 #Make methods for G and R matrix and CovarianceType struct
 CCTG = CovarianceType(CovmatMethod((q,p) -> (q, 1), Metida.gmat_csh!))
 CCTR = CovarianceType(CovmatMethod((q,p) -> (q, 0), Metida.rmatp_diag!))
 
 #Make model
-lmm = LMM(@formula(var~sequence+period+formulation), df0;
+lmm = LMM(@formula(var~sequence+period+formulation), df;
 random = VarEffect(@covstr(formulation|subject), CCTG),
 repeated = VarEffect(@covstr(formulation|subject), CCTR),
 )
