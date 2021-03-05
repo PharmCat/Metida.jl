@@ -2,7 +2,7 @@
 
 ```@setup lmmexample
 ENV["GKSwstype"] = "nul"
-using Plots, StatsPlots, CSV, DataFrames
+using Plots, StatsPlots, CSV, DataFrames, Metida
 
 gr()
 
