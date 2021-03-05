@@ -313,6 +313,7 @@ MIXED lnpk BY period treatment sequence subject
 #### Results
 
 ```@example lmmexample
+using Metida; # hide
 include(joinpath(dirname(pathof(Metida)), "..", "test", "validation_init.jl")); # hide
 include(joinpath(dirname(pathof(Metida)), "..", "test", "validation_s3.jl"))
 ```
