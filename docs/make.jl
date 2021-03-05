@@ -9,6 +9,7 @@ makedocs(
         "User guide" => [
         "First step" => "instanduse.md",
         "Examples" => "examples.md",
+        "Bioequivalence" => "bioequivalence.md",
         "NLopt" => "nlopt.md",
         "CUDA" => "cuda.md",
         "F.A.Q." => "faq.md",

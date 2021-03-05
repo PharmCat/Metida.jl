@@ -16,7 +16,7 @@ import Pkg; Pkg.add("Metida")
 Load provided data with CSV and DataFrames:
 
 ```@example lmmexample
-#using Metida, CSV, DataFrames
+using Metida, CSV, DataFrames
 
 df = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "df0.csv")) |> DataFrame;
 nothing # hide

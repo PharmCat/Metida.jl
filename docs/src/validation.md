@@ -313,7 +313,7 @@ MIXED lnpk BY period treatment sequence subject
 #### Results
 
 ```@example lmmexample
-include(joinpath(dirname(pathof(Metida)), "..", "test", "validation_init.jl")) # hide
+include(joinpath(dirname(pathof(Metida)), "..", "test", "validation_init.jl")); # hide
 include(joinpath(dirname(pathof(Metida)), "..", "test", "validation_s3.jl"))
 ```
 Full SPSS code provided in validation folder ([here](https://github.com/PharmCat/Metida.jl/blob/master/validation/spssrdscode.sps.txt)).

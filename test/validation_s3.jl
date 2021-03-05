@@ -118,7 +118,7 @@ mm  = fit(MixedModel, fm2, dfrds, REML=true)
 println("")
 println("Bioequivalence Reference Datasets - REML")
 pretty_table(dftable, ["RDS" "REML B" "REML B" "DIFF" "REML C" "REML C" "DIFF" "Comm.";
-                       " N " "Metida" " SPSS " "B   " "Metida" " SPSS " "C   " "     "])
+                       " N " "Metida" " SPSS " "B   " "Metida" " SPSS " "C   " "     "], tf = tf_ascii_rounded)
 println("")
 println("*  - ", c1)
 println("")
@@ -143,7 +143,7 @@ c = round.(exp.(mclcic) .* 100.0, digits = 2),
 d = round.(exp.(mcucic) .* 100.0, digits = 2),
 e = lci, f = uci)
 pretty_table(citable, ["RDS" "Metida B" "Metida B" "Metida C" "Metida C" "REF*" "REF*";
-                       " N " "LCI"      "UCI"      "LCI"      " UCI "    "LCI" "UCI"])
+                       " N " "LCI"      "UCI"      "LCI"      " UCI "    "LCI" "UCI"], tf = tf_ascii_rounded)
 println("")
 println("* Reference: Schütz, H., Labes, D., Tomashevskiy, M. et al.
 Reference Datasets for Studies in a Replicate Design Intended for
