@@ -11,7 +11,7 @@ using Optim, LineSearches
 
 import LinearAlgebra:checksquare
 import StatsModels: @formula
-import StatsBase: fit, fit!, coef, coefnames, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
+import StatsBase: fit, fit!, coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
 import Base:show
 
 export @formula, @covstr,

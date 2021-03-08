@@ -3,8 +3,6 @@
 
 StatsBase.coeftable(model::LMM) = error("coeftable is not defined for $(typeof(model)).")
 
-StatsBase.confint(model::LMM) = error("confint is not defined for $(typeof(model)).")
-
 StatsBase.deviance(model::LMM) = error("deviance is not defined for $(typeof(model)).")
 
 StatsBase.islinear(model::LMM) = error("islinear is not defined for $(typeof(model)).")
@@ -18,7 +16,13 @@ StatsBase.nullloglikelihood(model::LMM) =
 StatsBase.score(model::LMM) = error("score is not defined for $(typeof(model)).")
 
 =#
+"""
+    StatsBase.confint(lmm::LMM{T}; level::Real=0.95, ddf::Symbol = :satter) where T
 
+Confidece interval for coefficients.
+
+ddf = :satter/:residual/:contain
+"""
 function StatsBase.confint(lmm::LMM{T}; level::Real=0.95, ddf::Symbol = :satter) where T
     alpha = 1.0 - level
     if ddf == :satter
@@ -167,6 +171,9 @@ StatsBase.modelmatrix(lmm::LMM) = lmm.data.xv
 Response vector.
 """
 StatsBase.response(lmm::LMM) = lmm.data.yv
+
+#StatsBase.crossmodelmatrix(model::LMM) = (x = modelmatrix(model); Symmetric(x' * x))
+
 #=
 StatsBase.mss(model::LMM) = error("mss is not defined for $(typeof(model)).")
 
@@ -229,8 +236,6 @@ const adjr² = adjr2
 StatsBase.responsename(model::LMM) = error("responsename is not defined for $(typeof(model)).")
 
 StatsBase.meanresponse(model::LMM) = error("meanresponse is not defined for $(typeof(model)).")
-
-StatsBase.crossmodelmatrix(model::LMM) = (x = modelmatrix(model); Symmetric(x' * x))
 
 StatsBase.leverage(model::LMM) = error("leverage is not defined for $(typeof(model)).")
 

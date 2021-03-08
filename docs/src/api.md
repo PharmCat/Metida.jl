@@ -91,6 +91,11 @@ Metida.coef
 Metida.coefnames
 ```
 
+### Metida.confint
+```@docs
+Metida.confint
+```
+
 ### Metida.nobs
 ```@docs
 Metida.nobs

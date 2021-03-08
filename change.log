@@ -1,6 +1,7 @@
 v0.6.1
   * add methods for dof_satter
   * add settings for fit!
+  * add confint
   * first step scoring
   * initial values minor changes
   * validation & documentation
