@@ -1,0 +1,126 @@
+---
+title: Metida validation report
+author: 
+date: `j import Dates; Dates.Date(Dates.now())`
+mainfont: Arial.ttf
+mathfont: texgyredejavu-math.otf
+---
+
+```julia; echo = false
+using Dates
+```
+\pagebreak
+
+# Introduction and package description
+Multilevel models (also known as hierarchical linear models, linear mixed-effect model, mixed models, nested data models, random coefficient, random-effects models, random parameter models, or split-plot designs) are statistical models of parameters that vary at more than one level. An example could be a model of student performance that contains measures for individual students as well as measures for classrooms within which the students are grouped. These models can be seen as generalizations of linear models (in particular, linear regression), although they can also extend to non-linear models. These models became much more popular after sufficient computing power and software became available.
+Metida.jl is Julia package for fitting mixed-effects models with flexible covariance structure.
+Stable documentation: https://pharmcat.github.io/Metida.jl/stable/
+
+# Glossary
+
+  * Installation qualification (IQ) - Establishing confidence that process equipment and ancillary systems are compliant with appropriate codes and approved design intentions, and that manufacturer's recommendations are suitably considered.
+  * Operational qualification (OQ) Establishing confidence that process equipment and sub-systems are capable of consistently operating within established limits and tolerances.
+  * Product performance qualification (PQ) - Establishing confidence through appropriate testing that the finished product produced by a specified process meets all release requirements for functionality and safety.
+  * Repository - GitHub repository: https://github.com/PharmCat/Metida.jl
+  * Master branch - main branch on GitHub ([link](https://github.com/PharmCat/Metida.jl/tree/master)).
+  * Current machine - pc that used for validation report generating.
+
+
+# Requirements
+
+  * Julia 1.5.* (or higher) installed
+  * Julia packages from dependence list installed (see [Project.toml](https://github.com/PharmCat/Metida.jl/blob/master/Project.toml))
+
+# Developer software life cycle
+
+  * Development stage
+  * Testing procedures development
+  * Performing testing procedures on local machine
+  * Push to master branch
+  * Performing testing procedures with GitHub Actions
+  * Make pull request to the official registry of general Julia packages (if nessesary)
+  * Make release (if previous completed)
+
+## Versions
+
+  * X.Y.Z - patch release (no breaking changes)
+  * X.Y.# - minor release (may include breaking changes)
+  * X.#.# - major release (breaking changes, changes in public API)
+  * 0.#.# - no stable public API
+  * ≥1.#.# - stable public API
+
+
+## Build support
+
+### Tier 1
+
+  * julia-version: 1.5
+  * julia-arch: x64
+  * os: ubuntu-18.04, macos-10.15, windows-2019
+
+\pagebreak
+
+# Installation
+
+## System information
+
+ * Julia version: `j Sys.VERSION`
+ * Current machine: `j Sys.MACHINE`
+
+## Installation method
+
+```julia; eval = false
+import Pkg; Pkg.add("Metida")
+```
+
+## Version check
+
+The installation process is checking within each testing job via GitHub Actions. Also GitHub Action [chek](https://github.com/JuliaRegistries/General/blob/master/.github/workflows/automerge.yml) performed before merging into JuliaRegistries/General repository (see [Automatic merging of pull requests](https://github.com/JuliaRegistries/General#automatic-merging-of-pull-requests)).
+
+```julia; echo = false; results = "hidden"
+using Metida, Pkg
+pkgversion(m::Module) = Pkg.TOML.parsefile(joinpath(dirname(string(first(methods(m.eval)).file)), "..", "Project.toml"))["version"]
+ver = pkgversion(Metida)
+```
+
+Current package version:
+```julia; echo = false; results = "tex"
+ver
+```
+
+\pagebreak
+
+# Operation qualification
+
+## Coverage
+
+Code coverage report available on [Codecov.io](https://app.codecov.io/gh/PharmCat/Metida.jl). Test procedures include all  public API methods check.
+
+* Coverage goal: ≥ 90.0%
+
+## Testing results
+
+```julia
+Pkg.test("Metida")
+```
+
+\pagebreak
+
+# Performance qualification
+
+## Bioequivalence
+
+Bioequivalence reference datasets used to validate performance for this task.
+
+```julia; echo = false
+include(joinpath(dirname(pathof(Metida)), "..", "test", "validation_init.jl"));
+include(joinpath(dirname(pathof(Metida)), "..", "test", "validation_s3.jl"))
+```
+
+\pagebreak
+
+# Reference
+
+* [General Principles of Software Validation; Final Guidance for Industry and FDA Staff](https://www.fda.gov/media/73141/download)
+* [Guidance for Industry Process Validation: General Principles and Practices](https://www.fda.gov/files/drugs/published/Process-Validation--General-Principles-and-Practices.pdf)
+* [Glossary of Computer System Software Development Terminology](https://www.fda.gov/inspections-compliance-enforcement-and-criminal-investigations/inspection-guides/glossary-computer-system-software-development-terminology-895)

@@ -116,9 +116,13 @@ fm2 = @formula(lnpk~sequence+period+treatment+(1|subject))
 mm  = fit(MixedModel, fm2, dfrds, REML=true)
 
 println("")
-println("Bioequivalence Reference Datasets - REML")
-pretty_table(dftable, ["RDS" "REML B" "REML B" "DIFF" "REML C" "REML C" "DIFF" "Comm.";
-                       " N " "Metida" " SPSS " "B   " "Metida" " SPSS " "C   " "     "], tf = tf_ascii_rounded)
+println("Bioequivalence Reference Datasets - REML - type B")
+pretty_table(dftable[!, [1,2,3,4]], ["RDS" "Metida" " SPSS " "DIFF" ;
+                                     " N " "REML B" "REML B" "    " ], tf = tf_ascii_rounded)
+println("")
+println("Bioequivalence Reference Datasets - REML - type C")
+pretty_table(dftable[!,[1,5,6,7,8]], ["RDS" "Metida" " SPSS " "DIFF" "Comm.";
+                                      " N " "REML C" "REML C" "    " "     "], tf = tf_ascii_rounded)
 println("")
 println("*  - ", c1)
 println("")

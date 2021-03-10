@@ -313,7 +313,7 @@ end
 ################################################################################
 #                                  Errors
 ################################################################################
-@testset "  Errors                                                   " begin
+@testset "  Errors test                                              " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.DIAG),
     )

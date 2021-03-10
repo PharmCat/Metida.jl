@@ -1,3 +1,6 @@
+v0.6.2
+  * minor changes in validation report
+
 v0.6.1
   * add methods for dof_satter
   * add settings for fit!

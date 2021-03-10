@@ -322,3 +322,17 @@ Full SPSS code provided in validation folder ([here](https://github.com/PharmCat
 SPSS [output](https://github.com/PharmCat/Metida.jl/blob/master/validation/RDS-OUTPUT.docx) in DOCX format.
 
 Validation dataset available [here](https://link.springer.com/article/10.1208%2Fs12248-020-0427-6), [12248_2020_427_MOESM2_ESM.xls](https://static-content.springer.com/esm/art%3A10.1208%2Fs12248-020-0427-6/MediaObjects/12248_2020_427_MOESM2_ESM.xls).
+
+#### Validation report
+
+Validation and report can be done on local machine with Weave.jl and Pandoc.
+
+```julia
+using Weave, Metida
+weave(joinpath(dirname(pathof(Metida)), "..", "test", "validation_report.jmd");
+doctype = "pandoc2pdf",
+out_path = :pwd,
+pandoc_options=["--toc", "-V colorlinks=true" , "-V linkcolor=blue", "-V urlcolor=red", "-V toccolor=gray"])
+```   
+
+Report will be saved in Julia working directory. For your own purpose you can edit validation_report.jmd template.
