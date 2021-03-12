@@ -175,7 +175,7 @@ function fit!(lmm::LMM{T};
         #Fit true
     if !isnan(lmm.result.reml) && !isinf(lmm.result.reml) && noerrors
         #Variance-vovariance matrix of β
-        lmm.result.c            = pinv(iC)
+        lmm.result.c            = pinv(Matrix(iC))
         #SE
         lmm.result.se           = sqrt.(diag(lmm.result.c))
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model fitted."))

@@ -139,6 +139,7 @@ function gmatrix(lmm::LMM{T}, r::Int) where T
     if r > length(lmm.covstr.random) error("Invalid random effect number: $(r)!") end
     G = zeros(T, lmm.covstr.q[r], lmm.covstr.q[r])
     gmat_switch!(G, lmm.result.theta, lmm.covstr, r)
+    Symmetric(G)
 end
 """
     rmatrix(lmm::LMM{T}, i::Int) where T
@@ -149,7 +150,7 @@ function rmatrix(lmm::LMM{T}, i::Int) where T
     q    = length(lmm.covstr.vcovblock[i])
     R    = zeros(T, q, q)
     rmat_base_inc!(R, lmm.result.theta[lmm.covstr.tr[end]], lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
-
+    Symmetric(R)
 end
 """
     vmatrix!(V, θ, lmm, i)
@@ -163,11 +164,10 @@ end
 function vmatrix(θ, lmm, i)
     V = zeros(length(lmm.covstr.vcovblock[i]), length(lmm.covstr.vcovblock[i]))
     vmatrix!(V, θ, lmm, i)
-    V
+    Symmetric(V)
 end
 function vmatrix(lmm, i)
-    V = vmatrix(lmm.result.theta, lmm, i)
-    V
+    vmatrix(lmm.result.theta, lmm, i)
 end
 
 function nblocks(lmm)

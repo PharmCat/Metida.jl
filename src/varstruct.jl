@@ -374,6 +374,8 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     block::Vector{Vector{Vector{UInt32}}}
     # blocks for vcov matrix / variance blocking factor (subject)
     vcovblock::Vector{Vector{UInt32}}
+    # number of random effect
+    rn::Int
     # Z matrix
     z::Matrix{T}
     #subjz::Vector{BitArray{2}}
@@ -395,6 +397,8 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     ct::Vector{Symbol}
     # Nubber of subjects in each effect
     sn::Vector{Int}
+    # Maximum number per block
+    maxn::Int
     #--
     function CovStructure(random, repeated, data)
         alleffl =  length(random) + 1
@@ -408,19 +412,20 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         subjz   = Vector{BitMatrix}(undef, alleffl)
         zrndur  = Vector{UnitRange{Int}}(undef, alleffl - 1)
         rz      = Matrix{Float64}(undef, size(data, 1), 0)
+        rn      = length(random)
         #Theta parameter type
         ct  = Vector{Symbol}(undef, 0)
         # Names
         rcnames = Vector{String}(undef, 0)
         #
         sn      = zeros(Int, alleffl)
-        if length(random) > 1
-            for i = 2:length(random)
+        if rn > 1
+            for i = 2:rn
                 if random[i].covtype.s == :ZERO error("One of the random effect have zero type!") end
             end
         end
         # RANDOM EFFECTS
-        for i = 1:length(random)
+        for i = 1:rn
             if length(random[i].coding) == 0
                 fill_coding_dict!(random[i].model, random[i].coding, data)
             end
@@ -470,7 +475,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         else
             subjblockmat = subjz[end]
         end
-        blocks = makeblocks(subjblockmat)
+        blocks = makeblocks(subjblockmat) #vcovblock
         sblock = Vector{Vector{Vector{Vector{UInt32}}}}(undef, length(blocks))
         ########################################################################
         for i = 1:length(blocks)
@@ -485,7 +490,12 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             end
         end
         #
-        new{eltype(z)}(random, repeated, schema, rcnames, block, blocks, z, sblock, zrndur, rz, q, t, tr, tl, ct, sn)
+        maxn = 0
+        for i in blocks
+            lvcb = length(i)
+            if lvcb > maxn maxn = lvcb end
+        end
+        new{eltype(z)}(random, repeated, schema, rcnames, block, blocks, rn, z, sblock, zrndur, rz, q, t, tr, tl, ct, sn, maxn)
     end
 end
 ################################################################################

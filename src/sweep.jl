@@ -14,10 +14,10 @@ function nsyrk!(alpha, A, C)
     end
     C
 end
-function sweep!(A::AbstractMatrix, k::Integer, inv::Bool = false; syrkblas::Bool = false)
+function sweep!(A::AbstractArray, k::Integer, inv::Bool = false; syrkblas::Bool = false)
     sweepb!(Vector{eltype(A)}(undef, size(A, 2)), A, k, inv; syrkblas = syrkblas)
 end
-function sweepb!(akk::AbstractVector{T}, A::AbstractMatrix{T}, k::Integer, inv::Bool = false; syrkblas::Bool = false) where T <: Number
+function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, inv::Bool = false; syrkblas::Bool = false) where T <: Number
     p = checksquare(A)
     p == length(akk) || throw(DimensionError("incorrect buffer size"))
     @inbounds d = one(T) / A[k, k]
@@ -42,7 +42,7 @@ function sweepb!(akk::AbstractVector{T}, A::AbstractMatrix{T}, k::Integer, inv::
     @inbounds A[k, k] = -d
     A
 end
-function sweep!(A::AbstractMatrix{T}, ks::AbstractVector{I}, inv::Bool = false; syrkblas::Bool = false) where
+function sweep!(A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; syrkblas::Bool = false) where
     {T <: Number, I <: Integer}
     akk = zeros(T, size(A, 1))
     for k in ks
@@ -50,7 +50,7 @@ function sweep!(A::AbstractMatrix{T}, ks::AbstractVector{I}, inv::Bool = false; 
     end
     A
 end
-function sweepb!(akk::AbstractVector{T}, A::AbstractMatrix{T}, ks::AbstractVector{I}, inv::Bool = false; syrkblas::Bool = false) where
+function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; syrkblas::Bool = false) where
         {T <: Number, I<:Integer}
     for k in ks
         sweepb!(akk, A, k, inv; syrkblas = syrkblas)

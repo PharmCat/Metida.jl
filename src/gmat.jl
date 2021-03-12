@@ -46,14 +46,20 @@ function gmat_switch!(G, θ, covstr, r)
 end
 ################################################################################
 function zgz_base_inc!(mx, θ::Vector{T}, covstr, block, sblock) where T
-    q = sum(length.(covstr.block[1]))
+    #q = sum(length.(covstr.block[1]))
+    #q = 0
+    #for i in covstr.block[1]
+    #    q += length(i)
+    #end
     if covstr.random[1].covtype.s != :ZERO
-        for r = 1:length(covstr.random)
+        #length of random to covstr
+        for r = 1:covstr.rn
             G = zeros(T, covstr.q[r], covstr.q[r])
             gmat_switch!(G, θ, covstr, r)
             zblock    = view(covstr.z, block, covstr.zrndur[r])
             for i = 1:length(sblock[r])
-                mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i]), view(zblock, sblock[r][i], :), G)
+                #unsafe view?
+                mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i]), view(zblock, sblock[r][i], :), Symmetric(G))
             end
         end
     end
@@ -87,7 +93,7 @@ function gmat_ar!(mx, θ::Vector{T}, p) where T
             for n = m + 1:s
                 ode = de * θ[2] ^ (n - m)
                 @inbounds mx[m, n] = ode
-                @inbounds mx[n, m] = mx[m, n]
+                #@inbounds mx[n, m] = mx[m, n]
             end
         end
     end
@@ -102,11 +108,11 @@ function gmat_arh!(mx, θ::Vector{T}, p) where T
         for m = 1:s - 1
             for n = m + 1:s
                 @inbounds mx[m, n] = mx[m, m] * mx[n, n] * θ[end] ^ (n - m)
-                @inbounds mx[n, m] = mx[m, n]
+                #@inbounds mx[n, m] = mx[m, n]
             end
         end
     end
-    for m = 1:s
+    @simd for m = 1:s
         @inbounds mx[m, m] = mx[m, m] * mx[m, m]
     end
     nothing
@@ -118,7 +124,7 @@ function gmat_cs!(mx, θ::Vector{T}, p) where T
         for m = 1:s - 1
             for n = m + 1:s
                 @inbounds mx[m, n] = mx[m, m] * θ[2]
-                @inbounds mx[n, m] = mx[m, n]
+                #@inbounds mx[n, m] = mx[m, n]
             end
         end
     end
@@ -133,11 +139,11 @@ function gmat_csh!(mx::AbstractMatrix{T}, θ::Vector{T}, p) where T
         for m = 1:s - 1
             for n = m + 1:s
                 @inbounds mx[m, n] = mx[m, m] * mx[n, n] * θ[end]
-                @inbounds mx[n, m] = mx[m, n]
+                #@inbounds mx[n, m] = mx[m, n]
             end
         end
     end
-    for m = 1:s
+    @simd for m = 1:s
         @inbounds mx[m, m] = mx[m, m] * mx[m, m]
     end
     nothing
@@ -154,7 +160,7 @@ function gmat_arma!(mx, θ::Vector{T}, p) where T
             for n = m + 1:s
                 ode = de * θ[2] * θ[3] ^ (n - m - 1)
                 @inbounds mx[m, n] = ode
-                @inbounds mx[n, m] = mx[m, n]
+                #@inbounds mx[n, m] = mx[m, n]
             end
         end
     end
@@ -171,7 +177,7 @@ function gmat_toep!(mx, θ::Vector{T}, p) where T
             for n = m + 1:s
                 @inbounds ode = de * θ[n-m+1]
                 @inbounds mx[m, n] = ode
-                @inbounds mx[n, m] = mx[m, n]
+                #@inbounds mx[n, m] = mx[m, n]
             end
         end
     end
@@ -188,7 +194,7 @@ function gmat_toepp!(mx, θ::Vector{T}, p) where T
             for n = m + 1:(m + p - 1 > s ? s : m + p - 1)
                 @inbounds ode = de * θ[n - m + 1]
                 @inbounds mx[m, n] = ode
-                @inbounds mx[n, m] = mx[m, n]
+                #@inbounds mx[n, m] = mx[m, n]
             end
         end
     end
@@ -203,11 +209,11 @@ function gmat_toeph!(mx, θ::Vector{T}, p) where T
         for m = 1:s - 1
             for n = m + 1:s
                 @inbounds mx[m, n] = mx[m, m] * mx[n, n] * θ[n-m+s]
-                @inbounds mx[n, m] = mx[m, n]
+                #@inbounds mx[n, m] = mx[m, n]
             end
         end
     end
-    for m = 1:s
+    @simd for m = 1:s
         @inbounds mx[m, m] = mx[m, m] * mx[m, m]
     end
     nothing
@@ -221,11 +227,11 @@ function gmat_toephp!(mx, θ::Vector{T}, p) where T
         for m = 1:s - 1
             for n = m + 1:(m + p - 1 > s ? s : m + p - 1)
                 @inbounds mx[m, n] = mx[m, m] * mx[n, n] * θ[n - m + s]
-                @inbounds mx[n, m] = mx[m, n]
+                #@inbounds mx[n, m] = mx[m, n]
             end
         end
     end
-    for m = 1:s
+    @simd for m = 1:s
         @inbounds mx[m, m] = mx[m, m] * mx[m, m]
     end
     nothing

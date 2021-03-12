@@ -31,6 +31,7 @@ end
 function rmat_base_inc!(mx, θ::AbstractVector{T}, covstr, block, sblock) where T
     zblock    = view(covstr.rz, block, :)
     for i = 1:length(sblock[end])
+        #unsafe array uview() ?
         rmat_base_inc_b!(view(mx, sblock[end][i],  sblock[end][i]), θ, view(zblock,  sblock[end][i], :), covstr)
     end
     mx
@@ -62,7 +63,7 @@ function rmatp_ar!(mx, θ::Vector{T}, ::AbstractMatrix, p) where T
             for n = m + 1:rn
                 ode = de * θ[2] ^ (n - m)
                 @inbounds mx[m, n] += ode
-                @inbounds mx[n, m] = mx[m, n]
+                #@inbounds mx[n, m] = mx[m, n]
             end
         end
     end
@@ -75,7 +76,7 @@ function rmatp_arh!(mx, θ::Vector{T}, rz, p) where T
         for m = 1:rn - 1
             for n = m + 1:rn
                 @inbounds mx[m, n] += vec[m] * vec[n] * θ[end] ^ (n - m)
-                @inbounds mx[n, m] = mx[m, n]
+                #@inbounds mx[n, m] = mx[m, n]
             end
         end
     end
@@ -95,7 +96,7 @@ function rmatp_cs!(mx, θ::Vector{T}, ::AbstractMatrix, p) where T
         for m = 1:rn - 1
             for n = m + 1:rn
                 @inbounds mx[m, n] += θsqp
-                @inbounds mx[n, m] = mx[m, n]
+                #@inbounds mx[n, m] = mx[m, n]
             end
         end
     end
@@ -108,7 +109,7 @@ function rmatp_csh!(mx, θ::Vector{T}, rz, p) where T
         for m = 1:rn - 1
             for n = m + 1:rn
                 @inbounds mx[m, n] += vec[m] * vec[n] * θ[end]
-                @inbounds mx[n, m] = mx[m, n]
+                #@inbounds mx[n, m] = mx[m, n]
             end
         end
     end
@@ -129,7 +130,7 @@ function rmatp_arma!(mx, θ::Vector{T}, ::AbstractMatrix, p) where T
             for n = m + 1:rn
                 ode = de * θ[2] * θ[3] ^ (n - m - 1)
                 @inbounds mx[m, n] += ode
-                @inbounds mx[n, m] = mx[m, n]
+                #@inbounds mx[n, m] = mx[m, n]
             end
         end
     end
@@ -146,8 +147,8 @@ function rmatp_toepp!(mx, θ::Vector{T}, ::AbstractMatrix, p) where T
         for m = 1:s - 1
             for n = m + 1:(m + p - 1 > s ? s : m + p - 1)
                 ode = de * θ[n - m + 1]
-                mx[m, n] += ode
-                mx[n, m] = mx[m, n]
+                @inbounds mx[m, n] += ode
+                #mx[n, m] = mx[m, n]
             end
         end
     end
@@ -161,8 +162,8 @@ function rmatp_toephp!(mx, θ::Vector{T}, rz, p) where T
     if s > 1 && p > 1
         for m = 1:s - 1
             for n = m + 1:(m + p - 1 > s ? s : m + p - 1)
-                mx[m, n] += vec[m] * vec[n] * θ[n - m + l]
-                mx[n, m] = mx[m, n]
+                @inbounds mx[m, n] += vec[m] * vec[n] * θ[n - m + l]
+                #mx[n, m] = mx[m, n]
             end
         end
     end
