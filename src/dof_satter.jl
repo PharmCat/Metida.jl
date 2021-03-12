@@ -59,7 +59,7 @@ end
 Return Satterthwaite approximation for the denominator degrees of freedom, where l is a contrast vector (estimable linear combination
 offixed effect coefficients vector).
 
-l is a contrast vector (L).
+l is a contrast vector (L) -  linear combination of β.
 
 ```math
 df = \\frac{2(LCL')^{2}}{g'Ag}
@@ -119,4 +119,33 @@ function dof_satter(lmm::LMM{T}) where T
         if df < 1.0 dof[gi] = 1.0 elseif df > dof_residual(lmm) dof[gi] = dof_residual(lmm) else dof[gi] = df end
     end
     dof
+end
+
+"""
+    dof_satter(lmm::LMM{T}, l::Matrix) where T
+
+Return Satterthwaite approximation for the denominator degrees of freedom for conrast matrix l.
+"""
+function dof_satter(lmm::LMM{T}, l::Matrix) where T
+    A, theta = getinvhes(lmm)
+    grad  = gradc(lmm, theta)
+    g     = Vector{T}(undef, length(grad))
+    lcl   = l*lmm.result.c*l'
+    lclr  = rank(lcl)
+    #if lclr != size(l, 1) error() end
+    lcle  = eigen(lcl)
+    pl    = lcle.vectors'*l
+    vm    = Vector{T}(undef, lclr)
+    em    = 0
+    for i = 1:lclr
+        plm = pl[i,:]
+        for i2 = 1:length(grad)
+            g[i2] = (plm' * grad[i2] * plm)[1]
+        end
+        d = g' * A * g
+        vm[i] = 2*lcle.values[i]^2 / d
+        if vm[i] > 2.0 em += vm[i] / (vm[i] - 2.0) end
+    end
+    df = 2em/(em - lclr)
+    if df < 1.0 return 1.0 elseif df > dof_residual(lmm) return dof_residual(lmm) else return df end
 end

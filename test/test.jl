@@ -38,6 +38,9 @@ include("testdata.jl")
     @test Metida.dof_contain(lmm) == 6
     @test Metida.dof_satter(lmm, 6)   ≈ 5.81896814947982 atol=1E-2
     @test Metida.dof_satter(lmm)[end] ≈ 5.81896814947982 atol=1E-2
+    @test Metida.dof_satter(lmm, [0 0 0 0 0 1]) ≈ 5.81896814947982 atol=1E-2
+    @test Metida.dof_satter(lmm, [0 0 1 0 0 0; 0 0 0 1 0 0; 0 0 0 0 1 0]) ≈ 7.575447546211385 atol=1E-2
+
     @test nobs(lmm) == 20
     @test Metida.thetalength(lmm) == 3
     @test Metida.rankx(lmm) == 6
@@ -111,7 +114,7 @@ end
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 10.862124583312674 atol=1E-8
 end
-@testset "  Model: Only random, Int SI/SI                            " begin
+@testset "  Model: Only random, INT SI/SI                            " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(1|subject), Metida.SI),
     )
@@ -126,7 +129,7 @@ end
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 10.3039977509049 atol=1E-6 #need check
 end
-@testset "  Model: different subjects, random int,  CSH/DIAG         " begin
+@testset "  Model: Different subjects, random INT,  CSH/DIAG         " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(1 + formulation|subject), Metida.CSH; coding = Dict(:formulation => DummyCoding())),
     repeated = Metida.VarEffect(Metida.@covstr(formulation|subject&period), Metida.DIAG),
