@@ -8,7 +8,7 @@ using Metida, CSV, DataFrames, MixedModels;
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 ```
 
-* MixedModels
+### MixedModels
 
 ```
 fm = @formula(response ~ 1 + factor*time + (1 + time|subject&factor))
@@ -29,7 +29,7 @@ BenchmarkTools.Trial:
   evals/sample:     1
 ```
 
-* Metida v0.4.0
+### Metida
 
 ```
 lmm = LMM(@formula(response ~1 + factor*time), rds;
@@ -37,6 +37,8 @@ random = VarEffect(@covstr(1 + time|subject&factor), CSH),
 )
 @benchmark fit!($lmm, hcalck = false) seconds = 15
 ```
+
+* Metida v0.4.0
 
 ```
 BenchmarkTools.Trial:
@@ -49,6 +51,38 @@ BenchmarkTools.Trial:
   maximum time:     225.154 ms (4.37% GC)
   --------------
   samples:          71
+  evals/sample:     1
+```
+
+* Metida v0.5.0
+
+```
+BenchmarkTools.Trial:
+  memory estimate:  74.93 MiB
+  allocs estimate:  111421
+  --------------
+  minimum time:     196.160 ms (0.00% GC)
+  median time:      218.341 ms (0.00% GC)
+  mean time:        225.815 ms (3.55% GC)
+  maximum time:     305.821 ms (19.83% GC)
+  --------------
+  samples:          67
+  evals/sample:     1
+```
+
+* Metida v0.7.0
+
+```
+BenchmarkTools.Trial:
+  memory estimate:  67.61 MiB
+  allocs estimate:  227070
+  --------------
+  minimum time:     138.072 ms (5.11% GC)
+  median time:      145.728 ms (5.09% GC)
+  mean time:        146.193 ms (5.34% GC)
+  maximum time:     172.337 ms (4.47% GC)
+  --------------
+  samples:          103
   evals/sample:     1
 ```
 
@@ -89,29 +123,6 @@ BenchmarkTools.Trial:
   maximum time:     4.183 s (1.20% GC)
   --------------
   samples:          4
-  evals/sample:     1
-```
-
-* Metida v0.5.0
-
-```
-lmm = LMM(@formula(response ~1 + factor*time), rds;
-random = VarEffect(@covstr(1 + time|subject&factor), CSH),
-)
-@benchmark fit!($lmm, hes = false) seconds = 15
-```
-
-```
-BenchmarkTools.Trial:
-  memory estimate:  74.93 MiB
-  allocs estimate:  111421
-  --------------
-  minimum time:     196.160 ms (0.00% GC)
-  median time:      218.341 ms (0.00% GC)
-  mean time:        225.815 ms (3.55% GC)
-  maximum time:     305.821 ms (19.83% GC)
-  --------------
-  samples:          67
   evals/sample:     1
 ```
 

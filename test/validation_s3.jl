@@ -149,7 +149,8 @@ e = lci, f = uci)
 pretty_table(citable, ["RDS" "Metida B" "Metida B" "Metida C" "Metida C" "REF*" "REF*";
                        " N " "LCI"      "UCI"      "LCI"      " UCI "    "LCI" "UCI"], tf = tf_ascii_rounded)
 println("")
-println("* Reference: Schütz, H., Labes, D., Tomashevskiy, M. et al.
-Reference Datasets for Studies in a Replicate Design Intended for
-Average Bioequivalence with Expanding Limits.
+println("* Reference: Schütz H, Labes D, Tomashevskiy M, la Parra MG, Shitova A,
+Fuglsang A. Reference Datasets for Studies in a Replicate Design Intended for
+Average Bioequivalence with Expanding Limits. AAPS J. 2020 Feb 7;22(2):44.
+doi: 10.1208/s12248-020-0427-6. PMID: 32034551.
 Table II, Method B, SPSS section.")

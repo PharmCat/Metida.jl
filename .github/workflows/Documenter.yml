@@ -12,6 +12,7 @@ on:
       - 'validation/**'
       - 'change.log'
       - '.gitignore'
+      - 'Project.toml'
   release:
     types: [published]
   pull_request:
