@@ -49,6 +49,7 @@ include("statsbase.jl")
 include("utils.jl")
 include("dof_satter.jl")
 include("dof_contain.jl")
+include("fvalue.jl")
 
 function __init__()
 
