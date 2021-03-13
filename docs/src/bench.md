@@ -35,7 +35,7 @@ BenchmarkTools.Trial:
 lmm = LMM(@formula(response ~1 + factor*time), rds;
 random = VarEffect(@covstr(1 + time|subject&factor), CSH),
 )
-@benchmark fit!($lmm, hcalck = false) seconds = 15
+@benchmark fit!($lmm, hes = false) seconds = 15
 ```
 
 * Metida v0.4.0
@@ -74,15 +74,15 @@ BenchmarkTools.Trial:
 
 ```
 BenchmarkTools.Trial:
-  memory estimate:  67.61 MiB
-  allocs estimate:  227070
+  memory estimate:  46.25 MiB
+  allocs estimate:  118271
   --------------
-  minimum time:     138.072 ms (5.11% GC)
-  median time:      145.728 ms (5.09% GC)
-  mean time:        146.193 ms (5.34% GC)
-  maximum time:     172.337 ms (4.47% GC)
+  minimum time:     92.129 ms (0.00% GC)
+  median time:      99.525 ms (0.00% GC)
+  mean time:        105.830 ms (4.89% GC)
+  maximum time:     184.984 ms (0.00% GC)
   --------------
-  samples:          103
+  samples:          142
   evals/sample:     1
 ```
 
