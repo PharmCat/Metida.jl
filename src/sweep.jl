@@ -42,18 +42,24 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, i
     @inbounds A[k, k] = -d
     A
 end
-function sweep!(A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; syrkblas::Bool = false) where
+function sweep!(A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; syrkblas::Bool = false, logdet::Bool = false) where
     {T <: Number, I <: Integer}
-    akk = zeros(T, size(A, 1))
-    for k in ks
-        sweepb!(akk, A, k, inv; syrkblas = syrkblas)
-    end
-    A
+    akk = Vector{T}(undef, size(A,2))
+    sweepb!(akk, A, ks, inv; syrkblas = syrkblas, logdet = logdet)
 end
-function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; syrkblas::Bool = false) where
+function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; syrkblas::Bool = false, logdet::Bool = false) where
         {T <: Number, I<:Integer}
-    for k in ks
-        sweepb!(akk, A, k, inv; syrkblas = syrkblas)
+    ld = NaN
+    if logdet
+        ld = 0
+        for k in ks
+            ld += log(A[k,k])
+            sweepb!(akk, A, k, inv; syrkblas = syrkblas)
+        end
+    else
+        for k in ks
+            sweepb!(akk, A, k, inv; syrkblas = syrkblas)
+        end
     end
-    A
+    A, ld
 end

@@ -55,13 +55,13 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T 
         vmatrix!(V, θ, lmm, i)
         #-----------------------------------------------------------------------
         try
-            θ₁  += logdetv(Symmetric(V))
+            swr = sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q; logdet = true)
+            θ₁ += swr[2]
         catch
             noerrors = false
             lmmlog!(lmm, LMMLogMsg(:ERROR, "θ₁ not estimated during REML calculation, V isn't positive definite or |V| less zero."))
             return (1e100, nothing, nothing, 1e100, noerrors)
         end
-        sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q)
         #sweep!(Vp, 1:q)
         V⁻¹[i] = V
         #-----------------------------------------------------------------------
@@ -118,14 +118,13 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vect
         vmatrix!(V, θ, lmm, i)
         #-----------------------------------------------------------------------
         try
-            θ₁  += logdetv(Symmetric(V))
+            swr = sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q; logdet = true)
+            θ₁ += swr[2]
         catch
+            noerrors = false
             lmmlog!(lmm, LMMLogMsg(:ERROR, "θ₁ not estimated during REML calculation, V isn't positive definite or |V| less zero."))
-            return (1e100, nothing, nothing, 1e100)
+            return (1e100, nothing, nothing, 1e100, noerrors)
         end
-        #-----------------------------------------------------------------------
-        #provide zeros
-        sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q)
         #sweep!(Vp, 1:q)
         #V⁻¹ = Symmetric(utriaply!(x -> -x, V))
         V⁻¹ = Symmetric(V)
@@ -194,11 +193,13 @@ function sweep_score(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector
         vmatrix!(V, θ, lmm, i)
         #-----------------------------------------------------------------------
         try
-            θ₁  += logdetv(Symmetric(V))
+            swr = sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q; logdet = true)
+            θ₁ += swr[2]
         catch
-            return nothing
+            noerrors = false
+            lmmlog!(lmm, LMMLogMsg(:ERROR, "θ₁ not estimated during REML calculation, V isn't positive definite or |V| less zero."))
+            return (1e100, nothing, nothing, 1e100, noerrors)
         end
-        sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q)
         #sweep!(Vp, 1:q)
         V⁻¹ = Symmetric(V)
         @inbounds θ₃  += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹)
