@@ -86,12 +86,21 @@ include("testdata.jl")
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 25.129480634331063 atol=1E-6
-    #
+
+    #BE like
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.CSH),
     repeated = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
     )
     Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 10.065238626765524 atol=1E-6
+    #incomplete
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df1;
+    random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.CSH),
+    repeated = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
+    )
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 14.819463206995163 atol=1E-6
 end
 ################################################################################
 #                                  df0

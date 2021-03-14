@@ -113,6 +113,19 @@ Test procedures include all  public API methods check.
 
 * Coverage goal: ≥ 90.0%
 
+## Data
+
+For operation checks generated data used. For any purpose,
+this data available in the repository and included in the package.
+
+Datasets:
+
+    * df0 - 20 obs, 5 subjects, complete
+    * df1 - 24 obs, 8 subjects, incomplete
+    * 1fptime - 400 obs, 40 subjects
+    * 1freparma - 240 obs, 24 subjects
+    * 2f2rand - 168 obs, 24 subjects
+
 ## Testing results
 
 ```julia
