@@ -19,7 +19,7 @@ function sweep!(A::AbstractArray, k::Integer, inv::Bool = false; syrkblas::Bool 
 end
 function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, inv::Bool = false; syrkblas::Bool = false) where T <: Number
     p = checksquare(A)
-    p == length(akk) || throw(DimensionError("incorrect buffer size"))
+    #p == length(akk) || throw(DimensionError("incorrect buffer size"))
     @inbounds d = one(T) / A[k, k]
     @simd for j in 1:k
         @inbounds akk[j] = A[j, k]

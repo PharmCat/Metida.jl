@@ -17,6 +17,16 @@ function subutri!(a, b)
     end
     a
 end
+function fillzeroutri!(a::AbstractArray{T}) where T
+    s = size(a,1)
+    if s == 1 return @inbounds a[1,1] = zero(T) end
+    @simd for m = 1:s
+        @simd for n = m:s
+            @inbounds a[m,n] = zero(T)
+        end
+    end
+    a
+end
 ################################################################################
 #                     REML without provided β
 ################################################################################
@@ -25,33 +35,31 @@ function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
     reml_sweep_β(lmm, data, θ)
 end
 function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T <: Number
+    set_zero_subnormals(true)
     noerrors      = true
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)
     #---------------------------------------------------------------------------
     V⁻¹           = Vector{AbstractArray{T}}(undef, n)
-    # Vector log determinant of V matrix
     θ₁            = zero(T)
     θ₂            = zeros(T, lmm.rankx, lmm.rankx)
     θ₃            = zero(T)
     βm            = zeros(T, lmm.rankx)
     β             = Vector{T}(undef, lmm.rankx)
     #---------------------------------------------------------------------------
-    #q             = zero(Int)
-    #qswm          = zero(Int)
-    #Vp            = Matrix{T}(undef, 0, 0)
-    #logdetθ₂      = zero(T)
     local logdetθ₂::T
-    akk           = zeros(T, lmm.covstr.maxn + lmm.rankx) #temp for sweep
-
-    @inbounds for i = 1:n
+    akk           = Vector{T}(undef, lmm.covstr.maxn + lmm.rankx) #temp for sweep
+    @inbounds @simd for i = 1:n #@fastmath
         q    = length(lmm.covstr.vcovblock[i])
         qswm = q + lmm.rankx
-        Vp  = zeros(T, qswm, qswm)
+        Vp  = Matrix{T}(undef, qswm, qswm)
         V   = view(Vp, 1:q, 1:q)
-        Vx   = view(Vp, 1:q, q+1:qswm)
-        Vx  .= data.xv[i]
+        Vx  = view(Vp, 1:q, q+1:qswm)
+        Vc  = view(Vp, q + 1:qswm, q + 1:qswm)
+        fillzeroutri!(V)
+        copyto!(Vx, data.xv[i])
+        fillzeroutri!(Vc)
         vmatrix!(V, θ, lmm, i)
         #-----------------------------------------------------------------------
         try
@@ -62,19 +70,17 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T 
             lmmlog!(lmm, LMMLogMsg(:ERROR, "θ₁ not estimated during REML calculation, V isn't positive definite or |V| less zero."))
             return (1e100, nothing, nothing, 1e100, noerrors)
         end
-        #sweep!(Vp, 1:q)
         V⁻¹[i] = V
         #-----------------------------------------------------------------------
-        #θ₂ .-= view(Vp, q + 1:qswm, q + 1:qswm)
-        subutri!(θ₂, view(Vp, q + 1:qswm, q + 1:qswm))
+        subutri!(θ₂, Vc)
         #θ₂ -= UpperTriangular(view(Vp, q + 1:qswm, q + 1:qswm))
-        mulαtβinc!(βm, view(Vp, 1:q, q + 1:qswm), data.yv[i])
+        mulαtβinc!(βm, Vx, data.yv[i])
         #-----------------------------------------------------------------------
     end
     θs₂ = Symmetric(θ₂)
     mul!(β, inv(θs₂), βm)
-    @simd for i = 1:n
-        @inbounds θ₃  += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹[i])
+    @inbounds @simd for i = 1:n
+        θ₃   += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹[i])
     end
     try
         logdetθ₂ = logdet(θs₂)
@@ -97,24 +103,23 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vect
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)
     #---------------------------------------------------------------------------
-    # Vector log determinant of V matrix
     θ₁            = zero(T)
     θ₂            = zeros(T, lmm.rankx, lmm.rankx)
     θ₃            = zero(T)
     #---------------------------------------------------------------------------
-    #q             = zero(Int)
-    #qswm          = zero(Int)
-    #Vp            = Matrix{T}(undef, 0, 0)
     logdetθ₂      = zero(T)
     akk           = zeros(T, lmm.covstr.maxn + lmm.rankx) #temp for sweep
-
-    @inbounds for i = 1:n
+    Vm            = Matrix{T}(undef, lmm.covstr.maxn + lmm.rankx, lmm.covstr.maxn + lmm.rankx) #!!
+    @inbounds @simd for i = 1:n
         q    = length(lmm.covstr.vcovblock[i])
         qswm = q + lmm.rankx
-        Vp  = zeros(T, q + lmm.rankx, q + lmm.rankx)
-        V   = view(Vp, 1:q, 1:q)
-        Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
-        Vx  .= data.xv[i]
+        Vp  = view(Vm, 1:q + lmm.rankx, 1:q + lmm.rankx)
+        V   = view(Vm, 1:q, 1:q)
+        fillzeroutri!(V)
+        Vx   = view(Vm, 1:q, q+1:q+lmm.rankx)
+        copyto!(Vx, data.xv[i])
+        Vc  = view(Vm, q + 1:qswm, q + 1:qswm)
+        fillzeroutri!(Vc)
         vmatrix!(V, θ, lmm, i)
         #-----------------------------------------------------------------------
         try
@@ -125,15 +130,10 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vect
             lmmlog!(lmm, LMMLogMsg(:ERROR, "θ₁ not estimated during REML calculation, V isn't positive definite or |V| less zero."))
             return (1e100, nothing, nothing, 1e100, noerrors)
         end
-        #sweep!(Vp, 1:q)
-        #V⁻¹ = Symmetric(utriaply!(x -> -x, V))
-        V⁻¹ = Symmetric(V)
+        #V⁻¹ = Symmetric(V)
         #-----------------------------------------------------------------------
-        #qswm = size(Vp, 1)
-        #θ₂ .-= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
         subutri!(θ₂, view(Vp, q + 1:qswm, q + 1:qswm))
-        #-----------------------------------------------------------------------
-        @inbounds θ₃  += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹)
+        θ₃  += mulθ₃(data.yv[i], data.xv[i], β, V)
     end
     θs₂ = Symmetric(θ₂)
     try
@@ -148,48 +148,44 @@ end
 ################################################################################
 function sweep_ai(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector) where T <: Number
     n             = length(lmm.covstr.vcovblock)
-    N             = length(lmm.data.yv)
-    c             = (N - lmm.rankx)*log(2π)
     θ₃            = zero(T)
-    #q             = zero(Int)
-    #qswm          = zero(Int)
-    #Vp            = Matrix{T}(undef, 0, 0)
     akk           = zeros(T, lmm.covstr.maxn + lmm.rankx) #temp for sweep
-
-    @inbounds for i = 1:n
+    Vm            = Matrix{T}(undef, lmm.covstr.maxn + lmm.rankx, lmm.covstr.maxn + lmm.rankx) #!!
+    @inbounds @simd for i = 1:n
         q    = length(lmm.covstr.vcovblock[i])
         qswm = q + lmm.rankx
-        Vp  = zeros(T, q + lmm.rankx, q + lmm.rankx)
-        V   = view(Vp, 1:q, 1:q)
-        Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
-        Vx  .= data.xv[i]
+        Vp  = view(Vm, 1:q + lmm.rankx, 1:q + lmm.rankx)
+        V   = view(Vm, 1:q, 1:q)
+        fillzeroutri!(V)
+        Vx   = view(Vm, 1:q, q+1:q+lmm.rankx)
+        copyto!(Vx, data.xv[i])
+        Vc  = view(Vm, q + 1:qswm, q + 1:qswm)
+        fillzeroutri!(Vc)
         vmatrix!(V, θ, lmm, i)
+
         sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q)
-        #sweep!(Vp, 1:q)
-        V⁻¹ = Symmetric(V)
-        @inbounds θ₃  += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹)
+        #V⁻¹ = Symmetric(V)
+        θ₃  += mulθ₃(data.yv[i], data.xv[i], β, V)
     end
     return  θ₃
 end
 function sweep_score(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector) where T <: Number
     n             = length(lmm.covstr.vcovblock)
-    #---------------------------------------------------------------------------
-    # Vector log determinant of V matrix
     θ₁            = zero(T)
     θ₃            = zero(T)
     #---------------------------------------------------------------------------
-    q             = zero(Int)
-    #qswm          = zero(Int)
-    #Vp            = Matrix{T}(undef, 0, 0)
     akk           = zeros(T, lmm.covstr.maxn + lmm.rankx) #temp for sweep
-
-    @inbounds for i = 1:n
+    Vm            = Matrix{T}(undef, lmm.covstr.maxn + lmm.rankx, lmm.covstr.maxn + lmm.rankx) #!!
+    @inbounds @simd for i = 1:n
         q    = length(lmm.covstr.vcovblock[i])
         qswm = q + lmm.rankx
-        Vp  = zeros(T, q + lmm.rankx, q + lmm.rankx)
-        V   = view(Vp, 1:q, 1:q)
-        Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
-        Vx  .= data.xv[i]
+        Vp  = view(Vm, 1:q + lmm.rankx, 1:q + lmm.rankx)
+        V   = view(Vm, 1:q, 1:q)
+        fillzeroutri!(V)
+        Vx   = view(Vm, 1:q, q+1:q+lmm.rankx)
+        copyto!(Vx, data.xv[i])
+        Vc  = view(Vm, q + 1:qswm, q + 1:qswm)
+        fillzeroutri!(Vc)
         vmatrix!(V, θ, lmm, i)
         #-----------------------------------------------------------------------
         try
@@ -200,9 +196,8 @@ function sweep_score(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector
             lmmlog!(lmm, LMMLogMsg(:ERROR, "θ₁ not estimated during REML calculation, V isn't positive definite or |V| less zero."))
             return (1e100, nothing, nothing, 1e100, noerrors)
         end
-        #sweep!(Vp, 1:q)
-        V⁻¹ = Symmetric(V)
-        @inbounds θ₃  += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹)
+        #V⁻¹ = Symmetric(V)
+        θ₃  += mulθ₃(data.yv[i], data.xv[i], β, V)
     end
     return   -θ₁ + θ₃
 end
@@ -211,35 +206,27 @@ end
 ################################################################################
 function sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T <: Number
     n             = length(lmm.covstr.vcovblock)
-    N             = length(lmm.data.yv)
-    c             = (N - lmm.rankx)*log(2π)
-    #---------------------------------------------------------------------------
     θ₂            = zeros(T, lmm.rankx, lmm.rankx)
     βm            = zeros(T, lmm.rankx)
     β             = Vector{T}(undef, lmm.rankx)
     #---------------------------------------------------------------------------
-    #q             = zero(Int)
-    #qswm          = zero(Int)
-    #Vp            = Matrix{T}(undef, 0, 0)
     akk           = zeros(T, lmm.covstr.maxn + lmm.rankx) #temp for sweep
-
-    @inbounds for i = 1:n
+    Vm            = Matrix{T}(undef, lmm.covstr.maxn + lmm.rankx, lmm.covstr.maxn + lmm.rankx) #!!
+    @inbounds @simd for i = 1:n
         q    = length(lmm.covstr.vcovblock[i])
         qswm = q + lmm.rankx
-        Vp  = zeros(T, q + lmm.rankx, q + lmm.rankx)
-        V   = view(Vp, 1:q, 1:q)
-        Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
-        Vx  .= data.xv[i]
+        Vp  = view(Vm, 1:q + lmm.rankx, 1:q + lmm.rankx)
+        V   = view(Vm, 1:q, 1:q)
+        fillzeroutri!(V)
+        Vx   = view(Vm, 1:q, q+1:q+lmm.rankx)
+        copyto!(Vx, data.xv[i])
+        Vc  = view(Vm, q + 1:qswm, q + 1:qswm)
+        fillzeroutri!(Vc)
         vmatrix!(V, θ, lmm, i)
         #-----------------------------------------------------------------------
         sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q)
-        #sweep!(Vp, 1:q)
-        #-----------------------------------------------------------------------
-        #qswm = size(Vp, 1)
-        #θ₂ .-= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
         subutri!(θ₂, view(Vp, q + 1:qswm, q + 1:qswm))
         mulαtβinc!(βm, view(Vp, 1:q, q + 1:qswm), data.yv[i])
-        #-----------------------------------------------------------------------
     end
     mul!(β, inv(Symmetric(θ₂)), βm)
     return  β
@@ -249,33 +236,23 @@ end
 ################################################################################
 function sweep_β_cov(lmm, θ::Vector{T}, β::Vector) where T <: Number
     n             = length(lmm.covstr.vcovblock)
-    N             = length(lmm.data.yv)
-    c             = (N - lmm.rankx)*log(2π)
-    #---------------------------------------------------------------------------
     θ₂            = zeros(T, lmm.rankx, lmm.rankx)
-    #---------------------------------------------------------------------------
-    #q             = zero(Int)
-    #qswm          = zero(Int)
-    #Vp            = Matrix{T}(undef, 0, 0)
     akk           = zeros(T, lmm.covstr.maxn + lmm.rankx) #temp for sweep
-
-    @inbounds for i = 1:n
+    Vm            = Matrix{T}(undef, lmm.covstr.maxn + lmm.rankx, lmm.covstr.maxn + lmm.rankx) #!!
+    @inbounds @simd for i = 1:n
         q    = length(lmm.covstr.vcovblock[i])
         qswm = q + lmm.rankx
-        Vp  = zeros(T, q + lmm.rankx, q + lmm.rankx)
-        V   = view(Vp, 1:q, 1:q)
-        Vx   = view(Vp, 1:q, q+1:q+lmm.rankx)
-        Vx  .= view(lmm.data.xv,  lmm.covstr.vcovblock[i],:)
+        Vp  = view(Vm, 1:q + lmm.rankx, 1:q + lmm.rankx)
+        V   = view(Vm, 1:q, 1:q)
+        fillzeroutri!(V)
+        Vx   = view(Vm, 1:q, q+1:q+lmm.rankx)
+        copyto!(Vx,  view(lmm.data.xv,  lmm.covstr.vcovblock[i],:))
+        Vc  = view(Vm, q + 1:qswm, q + 1:qswm)
+        fillzeroutri!(Vc)
         vmatrix!(V, θ, lmm, i)
         #-----------------------------------------------------------------------
         sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q)
-        #sweep!(Vp, 1:q)
-        #V⁻¹ = Symmetric(utriaply!(x -> -x, V))
-        #-----------------------------------------------------------------------
-        #qswm = size(Vp, 1)
-        #θ₂ .-= Symmetric(view(Vp, q + 1:qswm, q + 1:qswm))
         subutri!(θ₂, view(Vp, q + 1:qswm, q + 1:qswm))
-        #-----------------------------------------------------------------------
     end
     return Symmetric(θ₂)
 end

@@ -31,7 +31,7 @@ end
 """
 θ + A * B * A'
 
-Change θ.
+Change θ (only upper triangle).
 """
 function mulαβαtinc!(θ::AbstractArray{T}, A, B) where T
     q  = size(B, 1)
@@ -43,8 +43,10 @@ function mulαβαtinc!(θ::AbstractArray{T}, A, B) where T
             c[n] += B[m, n] * A[i, m]
         end
         #upper triangular n = i:p
-        @inbounds for n = 1:p, m = 1:q
-            θ[i, n] += A[n, m] * c[m]
+        @inbounds for n = i:p
+            @inbounds for m = 1:q
+                θ[i, n] += A[n, m] * c[m]
+            end
         end
     end
     θ
@@ -56,7 +58,7 @@ end
 
 use only upper triangle of V
 """
-function mulθ₃(y, X, β, V::AbstractArray{T})::T where T
+function mulθ₃(y, X, β, V::AbstractArray{T}) where T
     q = size(V, 1)
     p = size(X, 2)
     θ = zero(T)
