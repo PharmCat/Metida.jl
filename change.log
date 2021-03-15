@@ -1,6 +1,9 @@
 v0.7.0
   * optimizations
   * dof_satter multidim method
+  * lcontrast
+  * add test
+  * documentation
 
 v0.6.2
   * minor changes in validation report

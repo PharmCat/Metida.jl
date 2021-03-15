@@ -1,33 +1,5 @@
 #linearalgebra.jl
-#=
-"""
-```math
-    \\begin{bmatrix} A * B * A' & X \\\\ X' & 0 \\end{bmatrix}
-```
-"""
-function mulαβαt3(A, B, X)
-    q  = size(B, 1)
-    p  = size(A, 1)
-    c  = zeros(eltype(B), q)
-    mx = zeros(eltype(B), p + size(X, 2), p + size(X, 2))
-    for i = 1:p
-        fill!(c, zero(eltype(c)))
-        @simd for n = 1:q
-            @simd for m = 1:q
-                @inbounds c[n] +=  A[i, m] * B[n, m]
-            end
-        end
-        @simd for n = 1:p
-            @simd for m = 1:q
-                 @inbounds mx[i, n] += A[n, m] * c[m]
-            end
-        end
-    end
-    mx[1:p, p+1:end] = X
-    mx[p+1:end, 1:p] = X'
-    mx
-end
-=#
+
 """
 θ + A * B * A'
 
@@ -112,16 +84,4 @@ function mulαtβinc!(θ, A, B)
     end
     θ
 end
-
 ################################################################################
-#=
-function utriaply!(f, m)
-    if size(m, 1) != size(m, 2) error() end
-    @simd for p = 1:size(m, 1)
-        @simd for q = p:size(m, 2)
-            @inbounds m[p, q] = f(m[p, q])
-        end
-    end
-    m
-end
-=#

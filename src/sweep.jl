@@ -7,8 +7,8 @@ function nsyrk!(alpha, A, C)
     p = size(A, 2)
     @simd for n = 1:q
         @simd for m = n:q
-            @simd for i = 1:p
-                @inbounds C[n, m] += A[n, i] * A[m, i] * alpha
+            @inbounds @simd for i = 1:p
+                C[n, m] += A[n, i] * A[m, i] * alpha
             end
         end
     end

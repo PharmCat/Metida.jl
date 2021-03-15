@@ -335,7 +335,7 @@ Random/repeated effect.
 
 * `formula` from @covstr(ex) macros.
 
-* `covtype` - covariance type (SI, DIAG, CS, CSH, AR, ARH, ARMA)
+* `covtype` - covariance type (SI, DIAG, CS, CSH, AR, ARH, ARMA, TOEP, TOEPH, TOEPP, TOEPHP)
 """
 struct VarEffect
     formula::FunctionTerm
@@ -543,7 +543,7 @@ function makeblocks(subjz)
     blocks
 end
 ################################################################################
-function noncrossmodelmatrix(mx, my)
+function noncrossmodelmatrix(mx::AbstractArray{T}, my::AbstractArray{T}) where T
     size(mx, 2) > size(my, 2) ?  (mat = mx' * my; a = mx) : (mat = my' * mx; a = my)
     #mat = mat * mat'
     @inbounds for n = 1:size(mat, 2)-1
@@ -555,8 +555,10 @@ function noncrossmodelmatrix(mx, my)
                     if !isnothing(fc)
                         @inbounds for c = n+fc:size(mat, 2)
                             if !iszero(mat[m, c])
-                                view(mat, :, n) .+= view(mat, :, c)
-                                fill!(view(mat, :, c), 0)
+                                #view(mat, :, n) .+= view(mat, :, c)
+                                A = view(mat, :, n)
+                                broadcast!(+, A, A, view(mat, :, c))
+                                fill!(view(mat, :, c), zero(T))
                             end
                         end
                     end
@@ -577,22 +579,19 @@ end
 ################################################################################
 #                            CONTRAST CODING
 ################################################################################
-function fill_coding_dict!(t::FunctionTerm{T}, d::Dict, data) where T
-end
-function fill_coding_dict!(t::T, d::Dict, data) where T <: ConstantTerm
-end
-function fill_coding_dict!(t::T, d::Dict, data) where T <: Type{InterceptTerm}
+
+function fill_coding_dict!(t::T, d::Dict, data) where T <: Union{ConstantTerm, InterceptTerm, FunctionTerm}
 end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Term
     if typeof(data[!, t.sym]) <: CategoricalArray || !(typeof(data[!, t.sym]) <: Vector{T} where T <: Real)
         d[t.sym] = StatsModels.FullDummyCoding()
     end
 end
-function fill_coding_dict!(t::T, d::Dict, data) where T <: CategoricalTerm
-    if typeof(data[!, t.sym])  <: CategoricalArray
-        d[t.sym] = StatsModels.FullDummyCoding()
-    end
-end
+#function fill_coding_dict!(t::T, d::Dict, data) where T <: CategoricalTerm
+#    if typeof(data[!, t.sym])  <: CategoricalArray
+#        d[t.sym] = StatsModels.FullDummyCoding()
+#    end
+#end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: InteractionTerm
     for i in t.terms
         if typeof(data[!, i.sym])  <: CategoricalArray || !(typeof(data[!, i.sym]) <: Vector{T} where T <: Real)
@@ -600,7 +599,7 @@ function fill_coding_dict!(t::T, d::Dict, data) where T <: InteractionTerm
         end
     end
 end
-function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple
+function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple{Vararg{AbstractTerm}}
     for i in t
         if isa(i, Term)
             if typeof(data[!, i.sym]) <: CategoricalArray || !(typeof(data[!, i.sym]) <: Vector{T} where T <: Real)
@@ -623,7 +622,7 @@ function fulldummycodingdict(t::T) where T <: Union{CategoricalTerm, Term}
     d[t.sym] = StatsModels.FullDummyCoding()
     d
 end
-function fulldummycodingdict(t::ConstantTerm)
+function fulldummycodingdict(t::T) where T <: Union{ConstantTerm, InterceptTerm}
     d = Dict{Symbol, AbstractContrasts}()
     d
 end

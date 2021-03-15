@@ -166,6 +166,11 @@ Metida.response
 Metida.loglikelihood
 ```
 
+### Metida.lcontrast
+```@docs
+Metida.lcontrast
+```
+
 ### Metida.gmatrix
 ```@docs
 Metida.gmatrix

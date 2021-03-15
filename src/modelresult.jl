@@ -9,7 +9,7 @@ mutable struct ModelResult
     h::Union{Matrix, Nothing}
     c::Union{Matrix, Nothing}
     se::Union{Vector, Nothing}
-    hsvds
+    #=
     function ModelResult(
     optim,
     theta,
@@ -29,8 +29,9 @@ mutable struct ModelResult
         se,
         hsvds)
     end
+    =#
     function ModelResult()
-        new(false, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
+        new(false, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
     end
 end
 
