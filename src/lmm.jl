@@ -56,6 +56,21 @@ struct LMM{T} <: MetidaModel
         new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, nfixed, rank(mm.m), ModelResult(), lmmlog)
     end
 end
+"""
+    lcontrast(lmm::LMM, i::Int)
+
+L-contrast matrix for i fixed effect.
+"""
+function lcontrast(lmm::LMM, i::Int)
+    n = nterms(lmm.mf)
+    if i > n || n < 1 error("Factor number out of range 1-$(n)") end
+    inds = findall(x -> x==i, lmm.mm.assign)
+    mx = zeros(length(inds), size(lmm.mm.m, 2))
+    for i = 1:length(inds)
+        mx[i, inds[i]] = 1
+    end
+    mx
+end
 ################################################################################
 """
     thetalength(lmm::LMM)
@@ -109,9 +124,9 @@ end
 function lmmlog!(io, lmm::LMM, verbose, vmsg)
     lmmlog!(io, lmm.log, verbose, vmsg)
 end
-function lmmlog!(lmm::LMM, verbose, vmsg)
-    lmmlog!(stdout, lmm, verbose, vmsg)
-end
+#function lmmlog!(lmm::LMM, verbose, vmsg)
+#    lmmlog!(stdout, lmm, verbose, vmsg)
+#end
 function lmmlog!(lmm::LMM, vmsg)
     lmmlog!(stdout, lmm, 1, vmsg)
 end

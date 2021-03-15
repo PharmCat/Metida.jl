@@ -7,6 +7,7 @@ include("testdata.jl")
 
 @testset "  Publick API basic tests                                  " begin
     io = IOBuffer();
+    transform!(df0, :formulation => categorical, renamecols=false)
     # Basic, no block
     df0.nosubj = ones(size(df0, 1))
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
@@ -47,6 +48,7 @@ include("testdata.jl")
     @test Metida.dof_satter(lmm)[end] ≈ 5.81896814947982 atol=1E-2
     @test Metida.dof_satter(lmm, [0 0 0 0 0 1]) ≈ 5.81896814947982 atol=1E-2
     @test Metida.dof_satter(lmm, [0 0 1 0 0 0; 0 0 0 1 0 0; 0 0 0 0 1 0]) ≈ 7.575447546211385 atol=1E-2
+    @test Metida.dof_satter(lmm, Metida.lcontrast(lmm,3)) ≈ 7.575447546211385 atol=1E-2
     @test nobs(lmm) == 20
     @test Metida.thetalength(lmm) == 3
     @test Metida.rankx(lmm) == 6
@@ -99,8 +101,9 @@ include("testdata.jl")
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.CSH),
     repeated = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
     )
-    Metida.fit!(lmm)
+    Metida.fit!(lmm; hes = false)
     @test Metida.m2logreml(lmm) ≈ 14.819463206995163 atol=1E-6
+    @test Metida.dof_satter(lmm, 6)   ≈ 3.981102548214154 atol=1E-2
 end
 ################################################################################
 #                                  df0
@@ -201,11 +204,13 @@ end
 #                                  ftdf2
 ################################################################################
 @testset "  Model: Categorical * Continuous predictor, DIAG/ARMA     " begin
+    io = IOBuffer();
     lmm = Metida.LMM(@formula(response ~ 1 + factor*time), ftdf2;
     random = Metida.VarEffect(Metida.@covstr(factor|subject&factor), Metida.DIAG),
     repeated = Metida.VarEffect(Metida.@covstr(1|subject&factor), Metida.ARMA),
     )
     Metida.fit!(lmm)
+    println(io, lmm.log)
     #[4.53791, 2.8059, 1.12292, 0.625323, 0.713154]
     @test Metida.m2logreml(lmm) ≈ 709.1400046571733 atol=1E-6
 end

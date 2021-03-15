@@ -22,6 +22,10 @@ StatsBase.score(model::LMM) = error("score is not defined for $(typeof(model))."
 Confidece interval for coefficients.
 
 ddf = :satter/:residual/:contain
+
+```math
+CI_{U/L} = β ± SE * t_{ddf, 1-α/2}
+```
 """
 function StatsBase.confint(lmm::LMM{T}; level::Real=0.95, ddf::Symbol = :satter) where T
     alpha = 1.0 - level
@@ -172,7 +176,7 @@ Response vector.
 """
 StatsBase.response(lmm::LMM) = lmm.data.yv
 
-#StatsBase.crossmodelmatrix(model::LMM) = (x = modelmatrix(model); Symmetric(x' * x))
+StatsBase.crossmodelmatrix(lmm::LMM) = (x = modelmatrix(lmm); Symmetric(x' * x))
 
 #=
 StatsBase.mss(model::LMM) = error("mss is not defined for $(typeof(model)).")
