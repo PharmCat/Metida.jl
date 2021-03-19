@@ -48,6 +48,7 @@ function fit!(lmm::LMM{T};
     ) where T
 
     if lmm.result.fit lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Refit model...")) end
+    lmm.result.fit = false
 
     if solver == :nlopt
         return fit_nlopt!(lmm; solver = :nlopt, verbose = verbose, varlinkf = varlinkf, rholinkf = rholinkf, aifirst = aifirst, g_tol = g_tol, x_tol = x_tol, f_tol = f_tol, hes = false, init = init, io = io)
@@ -79,12 +80,8 @@ function fit!(lmm::LMM{T};
         extended_trace = true,
         callback = optim_callback)
     ############################################################################
-    #Initial variance
+    # Initial variance
     θ  = zeros(T, lmm.covstr.tl)
-    #lx = similar(θ)
-    #ux = similar(θ)
-    #lx .= 0.0
-    #ux .= Inf
     if isa(init, Vector{T})
         if length(θ) == length(init)
             copyto!(θ, init)
@@ -93,54 +90,28 @@ function fit!(lmm::LMM{T};
             error("init length $(length(init)) != θ length $(length(θ))")
         end
     else
-        initθ = sqrt(initvar(lmm.data.yv, lmm.mm.m)[1])/(length(lmm.covstr.random) + 1)
+        initθ = sqrt(initvar(lmm.data.yv, lmm.mm.m)[1])/(length(lmm.covstr.random)+1)
         θ                      .= initθ
         for i = 1:length(θ)
             if lmm.covstr.ct[i] == :rho
-                θ[i] = 1e-8
+                θ[i] = 1e-4
             end
         end
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Initial θ: "*string(θ)))
     end
-    #dfc = TwiceDifferentiableConstraints(lx, ux)
-    #Initial step with modified Newton method
+    # Initial step with modified Newton method
     chunk  = ForwardDiff.Chunk{1}()
     if isa(aifirst, Bool)
         if aifirst aifirst == :ai else aifirst == :default end
     end
     ############################################################################
     if aifirst == :ai || aifirst == :score
-        if aifirst == :ai ai_func = sweep_ai else ai_func = sweep_score end
-        beta   = sweep_β(lmm, data, θ)
-        aif(x) = ai_func(lmm, data, x, beta)
-        grf(x) = optfunc(lmm, data, x)[1]
-        aihcfg = ForwardDiff.HessianConfig(aif, θ, chunk)
-        aigcfg = ForwardDiff.GradientConfig(grf, θ, chunk)
-        ai = ForwardDiff.hessian(aif, θ, aihcfg, Val{false}())
-        gr = ForwardDiff.gradient(grf, θ, aigcfg, Val{false}())
-        initθ = copy(θ)
-        try
-            θ .-= (inv(ai) ./2 )*gr
-        catch
-            θ .-= (pinv(ai) ./2 )*gr
-        end
-        for i = 1:length(θ)
-            if lmm.covstr.ct[i] == :rho
-                if θ[i] > 0.99
-                    θ[i] = 0.9
-                elseif θ[i] < 0.0
-                    θ[i] = 0.001
-                end
-            else
-                if θ[i] < 0.01 θ[i] = initθ[i] / 4.0 end
-                if θ[i] > initθ[i] * 2.5 θ[i] = initθ[i] * 2.5 end
-            end
-        end
+        optstep!(lmm, data, θ; method = aifirst, maxopt = 10)
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "First step with AI-like method ($aifirst), θ: "*string(θ)))
     end
     varlinkrvecapply!(θ, lmm.covstr.ct; rholinkf = rholinkf)
 
-    #Twice differentiable object
+    # Twice differentiable object
     vloptf(x) = optfunc(lmm, data, varlinkvecapply(x, lmm.covstr.ct; rholinkf = rholinkf))[1]
     gcfg   = ForwardDiff.GradientConfig(vloptf, θ, chunk)
     hcfg   = ForwardDiff.HessianConfig(vloptf, θ, chunk)
@@ -149,51 +120,46 @@ function fit!(lmm::LMM{T};
         ForwardDiff.hessian!(h, vloptf, x, hcfg, Val{false}())
     end
     td = TwiceDifferentiable(vloptf, gfunc!, hfunc!, θ)
-    #td = TwiceDifferentiable(x ->optfunc(lmm, varlinkvecapply2(x, lmm.covstr.ct))[1], θ; autodiff = :forward)
-
-    #Optimization object
-    #td = TwiceDifferentiable(x ->optfunc(lmm, x)[1], θ; autodiff = :forward)
-    #lmm.result.optim  = Optim.optimize(td, dfc, θ, optmethod, optoptions)
+    # Optimization object
     try
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
-    catch
-        lmmlog!(lmm, LMMLogMsg(:ERROR, "Newton method failed, try LBFGS."))
+    catch e
+        lmmlog!(lmm, LMMLogMsg(:ERROR, "Newton method failed, try LBFGS. Error: $e"))
         #optmethod  = Optim.Newton(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.HagerZhang())
         #optmethod  = Optim.LBFGS(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.MoreThuente())
         optmethod  = Optim.LBFGS(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.Static())
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     end
-    #Theta (θ) vector
+        # Theta (θ) vector
     lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), lmm.covstr.ct; rholinkf = rholinkf)
     lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Resulting θ: "*string(lmm.result.theta)*"; $(Optim.iterations(lmm.result.optim)) iterations."))
 
-        #-2 LogREML, β, iC
+        # -2 LogREML, β, iC
     lmm.result.reml, lmm.result.beta, iC, θ₃, noerrors = optfunc(lmm, data, lmm.result.theta)
-        #Fit true
+        # Fit true
     if !isnan(lmm.result.reml) && !isinf(lmm.result.reml) && noerrors
-        #Variance-vovariance matrix of β
+        # Variance-vovariance matrix of β
         lmm.result.c            = inv(Matrix(iC))
-        #SE
-        lmm.result.se           = sqrt.(diag(lmm.result.c)) #ERROR: DomainError with -1.9121111845919027e-54
-        lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model fitted."))
-        lmm.result.fit      = true
-    else
-        lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model NOT fitted."))
-        lmm.result.fit      = false
+        # SE
+        if  !any(x-> x < 0.0, diag(lmm.result.c))
+            lmm.result.se           = sqrt.(diag(lmm.result.c)) #ERROR: DomainError with -1.9121111845919027e-54
+            if any(x-> x < 1e-8, lmm.result.se) && minimum(lmm.result.se)/maximum(lmm.result.se) < 1e-8 lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Some of the SE parameters is suspicious.")) end
+            lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model fitted."))
+            lmm.result.fit      = true
+        end
     end
-
-    #Check G
+    # Check G
     if lmm.covstr.random[1].covtype.s != :ZERO
         for i = 1:length(lmm.covstr.random)
             dg = det(gmatrix(lmm, i))
-            if dg < 1e-08 lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "det(G) of random effect $(i) is less 1e-08.")) end
+            if dg < 1e-8 lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "det(G) of random effect $(i) is less 1e-08.")) end
         end
     end
-
+    # Check Hessian
     if hes && lmm.result.fit
-            #Hessian
+            # Hessian
         lmm.result.h      = hessian(lmm, lmm.result.theta)
-            #H positive definite check
+            # H positive definite check
         if !isposdef(Symmetric(lmm.result.h))
             lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian is not positive definite."))
         end
@@ -208,5 +174,45 @@ function fit!(lmm::LMM{T};
             end
         end
     end
+    #
+    if !lmm.result.fit
+        lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model NOT fitted."))
+    end
+    # return
     lmm
+end
+
+function optstep!(lmm, data, θ; method::Symbol = :ai, maxopt::Int=10)
+    if method == :ai ai_func = sweep_ai else ai_func = sweep_score end
+    reml, beta, θs₂, θ₃, rt = reml_sweep_β(lmm, data, θ)
+    rt || error("Wrong initial conditions.")
+    chunk  = ForwardDiff.Chunk{1}()
+    aif(x) = ai_func(lmm, data, x, beta)
+    grf(x) = reml_sweep_β(lmm, data, x, beta)[1]
+    aihcfg = ForwardDiff.HessianConfig(aif, θ, chunk)
+    aigcfg = ForwardDiff.GradientConfig(grf, θ, chunk)
+    ai = ForwardDiff.hessian(aif, θ, aihcfg, Val{false}())
+    gr = ForwardDiff.gradient(grf, θ, aigcfg, Val{false}())
+    θt = similar(θ)
+    try
+        mul!(θt, inv(ai), gr)
+    catch
+        mul!(θt, pinv(ai), gr)
+    end
+    for i = 1:length(θ)
+        if lmm.covstr.ct[i] == :rho
+            if θ[i] - θt[i] > 1.0 - eps() θt[i] = θ[i] - 1.0 + eps() elseif θ[i] - θt[i] < -1.0 + eps() θt[i] = θ[i] + 1.0 - eps() end
+        else
+            if θ[i] - θt[i] < eps() θt[i] = θ[i] / 2.0 end
+        end
+    end
+    local maxopti = maxopt
+    local remlc
+    while maxopti > 0
+        θr = θ - θt
+        remlc, beta, θs₂, θ₃, rt = reml_sweep_β(lmm, data, θr)
+        maxopti -= 1
+        if rt && remlc < reml return copyto!(θ, θr), remlc, maxopt-maxopti, true else θt ./= 2.0 end
+    end
+    return θ, remlc, maxopt-maxopti, false
 end

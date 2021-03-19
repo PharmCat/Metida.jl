@@ -143,9 +143,9 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vect
         logdetθ₂ = logdet(θs₂)
     catch e
         logerror!(e, lmm)
-        return (1e100, nothing, nothing, 1e100, false)
+        return (1e100, nothing, 1e100, false)
     end
-    return   θ₁ + logdetθ₂ + θ₃ + c, θs₂, θ₃ #REML, iC, θ₃
+    return   θ₁ + logdetθ₂ + θ₃ + c, θs₂, θ₃, true #REML, iC, θ₃
 end
 ################################################################################
 #                     REML AI-like / scoring part

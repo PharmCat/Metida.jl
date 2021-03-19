@@ -1,6 +1,7 @@
 v0.7.1
   * change error handling in REML
   * change rho initial
+  * score / ai opt function
   * F value (test)
   * C matrix - pinv to inv
   * documentation

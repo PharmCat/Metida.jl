@@ -112,6 +112,7 @@ end
 #                                  df0
 ################################################################################
 @testset "  Model: Only repeated, 0/DIAG                             " begin
+    # nowarn
     io = IOBuffer();
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     repeated = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
@@ -126,6 +127,7 @@ end
     @test Metida.m2logreml(lmm) ≈ 25.000777869122338 atol=1E-8
 end
 @testset "  Model: Only repeated, noblock, 0/CSH (rholinkf = :atan)  " begin
+    # nowarn
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     repeated = Metida.VarEffect(Metida.@covstr(period|subject), Metida.CSH),
     )
@@ -133,6 +135,7 @@ end
     @test Metida.m2logreml(lmm) ≈ 8.740095378772942 atol=1E-8
 end
 @testset "  Model: Only random, noblock, SI/SI                       " begin
+    # nowarn
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(subject|nosubj), Metida.SI),
     )
@@ -140,6 +143,7 @@ end
     @test Metida.m2logreml(lmm) ≈ 10.862124583312674 atol=1E-8
 end
 @testset "  Model: Only random, INT, SI/SI                           " begin
+    # nowarn
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(1|subject), Metida.SI),
     )
@@ -185,6 +189,7 @@ end
 #                                  ftdf
 ################################################################################
 @testset "  Model: Categorical * Continuous predictor, CSH/SI        " begin
+    # nowarn
     lmm = Metida.LMM(@formula(response ~1 + factor*time), ftdf;
     random = Metida.VarEffect(Metida.@covstr(1 + time|subject&factor), Metida.CSH),
     )
@@ -218,6 +223,7 @@ end
     @test Metida.m2logreml(lmm) ≈ 709.1400046571733 atol=1E-6
 end
 @testset "  Model: Categorical * Continuous predictor, DIAG/AR       " begin
+    # nowarn
     lmm = Metida.LMM(@formula(response ~ 1 + factor*time), ftdf2;
     random = Metida.VarEffect(Metida.@covstr(factor|subject&factor), Metida.DIAG),
     repeated = Metida.VarEffect(Metida.@covstr(1|subject&factor), Metida.AR),
@@ -226,6 +232,7 @@ end
     @test Metida.m2logreml(lmm) ≈ 710.0962305879676 atol=1E-6
 end
 @testset "  Model: Categorical * Continuous predictor, 0/ARH         " begin
+    # nowarn
     lmm = Metida.LMM(@formula(response ~ 1 + factor*time), ftdf2;
     repeated = Metida.VarEffect(Metida.@covstr(factor|subject&factor), Metida.ARH),
     )
@@ -242,8 +249,9 @@ end
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 710.4250214813896 atol=1E-8
 end
-@testset "  Model: Noblock, different subjects, AR/SI                " begin
-    #SPSS 698.879
+@testset "  Model: AR/SI                                             " begin
+    # SPSS 698.879
+    # nowarn
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3; contrasts=Dict(:factor => DummyCoding(; base=1.0)),
     random = Metida.VarEffect(Metida.@covstr(r1|subject), Metida.AR),
     repeated = Metida.VarEffect(Metida.@covstr(p|subject), Metida.DIAG),
@@ -252,7 +260,7 @@ end
     @test Metida.m2logreml(lmm)  ≈ 698.8792511057682 atol=1E-8
 end
 
-@testset "  Model: Noblock, different subjects, ARMA/SI              " begin
+@testset "  Model: ARMA/SI                                           " begin
     io = IOBuffer();
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3; contrasts=Dict(:factor => DummyCoding(; base=1.0)),
     random = Metida.VarEffect(Metida.@covstr(p|r1&r2), Metida.ARMA),
@@ -263,30 +271,31 @@ end
     @test Metida.m2logreml(lmm)  ≈ 913.9176298311813 atol=1E-8
 end
 
-@testset "  Model: Noblock, different subjects, ARH/SI               " begin
-    #SPSS 707.377
+@testset "  Model: ARH/SI (subjects with &)                          " begin
+    # SPSS 707.377
+    # nowarn
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3; contrasts=Dict(:factor => DummyCoding(; base=1.0)),
     random = Metida.VarEffect(Metida.@covstr(r1|s2&factor), Metida.ARH),
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 707.3765873864152 atol=1E-8
 end
-@testset "  Model: Noblock, *, DIAG/SI                               " begin
+@testset "  Model: INT, *, DIAG/SI                                   " begin
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
-    random = Metida.VarEffect(Metida.@covstr(r1 * r2|subject), Metida.DIAG)
+    random = Metida.VarEffect(Metida.@covstr(1 + r2 * r1|subject), Metida.DIAG; coding=Dict(:r1 => DummyCoding(), :r2 => DummyCoding()))
     )
     Metida.fit!(lmm)
-    @test Metida.m2logreml(lmm)  ≈ 715.4330098488135 atol=1E-8
-    @test Metida.dof_satter(lmm, [0, 1]) ≈ 14.344012741005523 atol=1E-2
+    @test Metida.m2logreml(lmm)  ≈ 713.0655862252027 atol=1E-8
+    @test Metida.dof_satter(lmm, [0, 1]) ≈ 21.931763259647315 atol=1E-2
 end
-@testset "  Model: Noblock, &, DIAG/SI                               " begin
+@testset "  Model: &, DIAG/SI                                        " begin
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
     random = Metida.VarEffect(Metida.@covstr(r1&r2|subject), Metida.DIAG),
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 719.9413776641368 atol=1E-8
 end
-@testset "  Model: Noblock, +,  TOEPHP(3)/SI                         " begin
+@testset "  Model: INT, +,  TOEPHP(3)/SI                             " begin
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
     random = Metida.VarEffect(Metida.@covstr(1 + r1 + r2|subject), Metida.TOEPHP(3); coding = Dict(:r1 => DummyCoding(), :r2 => DummyCoding())),
     )
@@ -294,7 +303,8 @@ end
     @test Metida.m2logreml(lmm)  ≈ 705.9946274598822 atol=1E-8
 end
 @testset "  Model: TOEP/SI                                           " begin
-    #SPSS 710.200
+    # SPSS 710.200
+    # nowarn
     io = IOBuffer();
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
     random = Metida.VarEffect(Metida.@covstr(r1|subject), Metida.TOEP),
@@ -304,6 +314,7 @@ end
     @test Metida.m2logreml(lmm)  ≈ 710.1998669150806 atol=1E-8
 end
 @testset "  Model: TOEPP(2)/SI                                       " begin
+    # nowarn
     io = IOBuffer();
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
     random = Metida.VarEffect(Metida.@covstr(r1|subject), Metida.TOEPP(2)),
@@ -313,6 +324,7 @@ end
     @test Metida.m2logreml(lmm)  ≈ 715.2410264030134 atol=1E-8
 end
 @testset "  Model: DIAG/TOEPP(3)                                     " begin
+    # nowarn
     io = IOBuffer();
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
     random = Metida.VarEffect(Metida.@covstr(r2|subject), Metida.DIAG),
@@ -323,6 +335,7 @@ end
     @test Metida.m2logreml(lmm)  ≈ 773.9575538254085 atol=1E-8
 end
 @testset "  Model: TOEPH/SI                                          " begin
+    # nowarn
     io = IOBuffer();
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
     random = Metida.VarEffect(Metida.@covstr(r1|subject), Metida.TOEPH),
@@ -378,7 +391,7 @@ end
     iAss = Symmetric(-B[1:4, 1:4])
     akk = zeros(5)
     iAb = Symmetric(-Metida.sweepb!(view(akk, 1:5), copy(A), 1:4)[1][1:4, 1:4])
-    @test iA  ≈ iAs atol=1E-6
+    @test iA  ≈ iAs  atol=1E-6
     @test iA  ≈ iAss atol=1E-6
-    @test iAs ≈ iAb atol=1E-6
+    @test iAs ≈ iAb  atol=1E-6
 end
