@@ -1,3 +1,10 @@
+v0.7.1
+  * change error handling in REML
+  * change rho initial
+  * F value (test)
+  * C matrix - pinv to inv
+  * documentation
+
 v0.7.0
   * optimizations
   * dof_satter multidim method

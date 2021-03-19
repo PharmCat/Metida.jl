@@ -1,7 +1,7 @@
 name = "Metida"
 uuid = "a1dec852-9fe5-11e9-361f-8d9fde67cfa2"
 authors = ["Vladimir Arnautov <mail@pharmcat.net>"]
-version = "0.7.0"
+version = "0.7.1"
 
 [deps]
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"

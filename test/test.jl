@@ -36,6 +36,7 @@ include("testdata.jl")
     ############################################################################
     # API test
     ############################################################################
+    l = [0 0 1 0 0 0; 0 0 0 1 0 0; 0 0 0 0 1 0]
     @test Metida.logreml(lmm)   ≈ -8.120556322253035 atol=1E-6
     @test isfitted(lmm) == true
     @test bic(lmm)              ≈ 24.558878811225412 atol=1E-6
@@ -47,7 +48,8 @@ include("testdata.jl")
     @test Metida.dof_satter(lmm, 6)   ≈ 5.81896814947982 atol=1E-2
     @test Metida.dof_satter(lmm)[end] ≈ 5.81896814947982 atol=1E-2
     @test Metida.dof_satter(lmm, [0 0 0 0 0 1]) ≈ 5.81896814947982 atol=1E-2
-    @test Metida.dof_satter(lmm, [0 0 1 0 0 0; 0 0 0 1 0 0; 0 0 0 0 1 0]) ≈ 7.575447546211385 atol=1E-2
+    @test Metida.dof_satter(lmm, l) ≈ 7.575447546211385 atol=1E-2
+    @test Metida.fvalue(lmm, l) ≈  0.202727915619993 atol=1E-2
     @test Metida.dof_satter(lmm, Metida.lcontrast(lmm,3)) ≈ 7.575447546211385 atol=1E-2
     @test nobs(lmm) == 20
     @test Metida.thetalength(lmm) == 3
@@ -64,6 +66,7 @@ include("testdata.jl")
     @test Metida.nblocks(lmm) == 5
     @test length(coefnames(lmm)) == 6
     @test Metida.confint(lmm)[end][1] ≈ -0.7630380758015894 atol=1E-4
+    @test size(crossmodelmatrix(lmm), 1) == 6
     ############################################################################
     # AI like algo
     Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm))
@@ -347,6 +350,8 @@ end
     )
     @test_throws ErrorException Metida.fit!(lmm; init = [1.0])
     @test_throws ErrorException Metida.hessian(lmm)
+    @test_throws ErrorException Metida.dof_satter(lmm)
+    @test_throws ErrorException Metida.confint(lmm)
 
     @test_throws ErrorException  Metida.LMM(@formula(var~sequence+period+formulation), df0;)
 

@@ -59,7 +59,7 @@ end
 """
     lcontrast(lmm::LMM, i::Int)
 
-L-contrast matrix for i fixed effect.
+L-contrast matrix for `i` fixed effect.
 """
 function lcontrast(lmm::LMM, i::Int)
     n = nterms(lmm.mf)
@@ -101,7 +101,7 @@ end
 """
     rankx(lmm::LMM)
 
-Return rank of X matrix.
+Return rank of `X` matrix.
 """
 function rankx(lmm::LMM)
     Int(lmm.rankx)

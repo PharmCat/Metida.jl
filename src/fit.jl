@@ -8,7 +8,7 @@ fit_nlopt!(lmm::MetidaModel; kwargs...)  = error("MetidaNLopt not found. \n - Ru
     verbose = :auto,
     varlinkf = :exp,
     rholinkf = :sigm,
-    aifirst::Bool = false,
+    aifirst = :default,
     g_tol::Float64 = 1e-12,
     x_tol::Float64 = 1e-12,
     f_tol::Float64 = 1e-12,
@@ -23,7 +23,7 @@ Fit LMM model.
 * `verbose` - :auto / 1 / 2 / 3
 * `varlinkf` - not implemented
 * `rholinkf` - :sigm / :atan / :sqsigm / :psigm
-* `aifirst` - first iteration with AI-like method
+* `aifirst` - first iteration with AI-like method - :default / :ai / :score
 * `g_tol` - absolute tolerance in the gradient
 * `x_tol` - absolute tolerance of theta vector
 * `f_tol` - absolute tolerance in changes of the REML
@@ -93,14 +93,11 @@ function fit!(lmm::LMM{T};
             error("init length $(length(init)) != θ length $(length(θ))")
         end
     else
-        #initθ = sqrt(initvar(lmm.data.yv, lmm.mm.m)[1]/(length(lmm.covstr.random) + 1))
         initθ = sqrt(initvar(lmm.data.yv, lmm.mm.m)[1])/(length(lmm.covstr.random) + 1)
         θ                      .= initθ
         for i = 1:length(θ)
             if lmm.covstr.ct[i] == :rho
-                θ[i] = 0.001
-                #lx[i] = -1.0
-                #ux[i] = 1.0
+                θ[i] = 1e-8
             end
         end
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Initial θ: "*string(θ)))
@@ -108,7 +105,6 @@ function fit!(lmm::LMM{T};
     #dfc = TwiceDifferentiableConstraints(lx, ux)
     #Initial step with modified Newton method
     chunk  = ForwardDiff.Chunk{1}()
-    #remove at 0.7
     if isa(aifirst, Bool)
         if aifirst aifirst == :ai else aifirst == :default end
     end
@@ -145,7 +141,6 @@ function fit!(lmm::LMM{T};
     varlinkrvecapply!(θ, lmm.covstr.ct; rholinkf = rholinkf)
 
     #Twice differentiable object
-
     vloptf(x) = optfunc(lmm, data, varlinkvecapply(x, lmm.covstr.ct; rholinkf = rholinkf))[1]
     gcfg   = ForwardDiff.GradientConfig(vloptf, θ, chunk)
     hcfg   = ForwardDiff.HessianConfig(vloptf, θ, chunk)
@@ -162,8 +157,10 @@ function fit!(lmm::LMM{T};
     try
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     catch
+        lmmlog!(lmm, LMMLogMsg(:ERROR, "Newton method failed, try LBFGS."))
         #optmethod  = Optim.Newton(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.HagerZhang())
-        optmethod  = Optim.LBFGS(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.MoreThuente())
+        #optmethod  = Optim.LBFGS(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.MoreThuente())
+        optmethod  = Optim.LBFGS(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.Static())
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     end
     #Theta (θ) vector
@@ -175,9 +172,9 @@ function fit!(lmm::LMM{T};
         #Fit true
     if !isnan(lmm.result.reml) && !isinf(lmm.result.reml) && noerrors
         #Variance-vovariance matrix of β
-        lmm.result.c            = pinv(Matrix(iC))
+        lmm.result.c            = inv(Matrix(iC))
         #SE
-        lmm.result.se           = sqrt.(diag(lmm.result.c))
+        lmm.result.se           = sqrt.(diag(lmm.result.c)) #ERROR: DomainError with -1.9121111845919027e-54
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model fitted."))
         lmm.result.fit      = true
     else

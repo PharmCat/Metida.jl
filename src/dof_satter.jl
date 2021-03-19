@@ -56,22 +56,15 @@ end
 """
     dof_satter(lmm::LMM{T}, l) where T
 
-Return Satterthwaite approximation for the denominator degrees of freedom, where l is a contrast vector (estimable linear combination
-offixed effect coefficients vector).
-
-l is a contrast vector (L) -  linear combination of β.
+Return Satterthwaite approximation for the denominator degrees of freedom, where `l` is a contrast vector (estimable linear combination
+of fixed effect coefficients vector (`β`)).
 
 ```math
 df = \\frac{2(LCL')^{2}}{g'Ag}
 ```
 
-```math
-A = 2H^{-1}
-```
+Where: ``A = 2H^{-1}``, ``g = \\triangledown_{\\theta}(LC^{-1}_{\\theta}L')``
 
-```math
-g = \\triangledown_{\\theta}(LC^{-1}_{\\theta}L')
-```
 """
 function dof_satter(lmm::LMM{T}, l::Vector) where T
     A, theta = getinvhes(lmm)
@@ -87,9 +80,7 @@ end
 """
     dof_satter(lmm::LMM{T}, n::Int) where T
 
-Return Satterthwaite approximation for the denominator degrees of freedom.
-
-n - coefficient number.
+Return Satterthwaite approximation for the denominator degrees of freedom, where `n` - coefficient number.
 """
 function dof_satter(lmm::LMM{T}, n::Int) where T
     l = zeros(Int, length(lmm.result.beta))
@@ -103,6 +94,7 @@ Return Satterthwaite approximation for the denominator degrees of freedom for al
 
 """
 function dof_satter(lmm::LMM{T}) where T
+    isfitted(lmm) || error("Model not fitted")
     lb       = length(lmm.result.beta)
     A, theta = getinvhes(lmm)
     grad     = gradc(lmm, theta)
@@ -124,7 +116,21 @@ end
 """
     dof_satter(lmm::LMM{T}, l::Matrix) where T
 
-Return Satterthwaite approximation for the denominator degrees of freedom for conrast matrix l.
+Return Satterthwaite approximation for the denominator degrees of freedom for conrast matrix `l`.
+
+For `size(l, 1)` > 1:
+
+```math
+df = \\frac{2E}{E - rank(LCL')}
+```
+
+where:
+
+    * let ``LCL' = QΛQ^{-1}``, where ``QΛQ^{-1}`` - spectral decomposition of ``LCL'``
+    * ``Lq_i`` is the i-th row of ``Q^{-1}L``
+    * ``A = 2H^{-1}``, ``g = \\triangledown_{\\theta}(Lq_i C^{-1}_{\\theta} Lq_i')``
+    * ``v_i = \\frac{2*Λ_{i,i}^2}{g' * A * g}``
+    * ``E = \\sum_{i=1}^n {\\frac{v_i}(v_i - 2)}`` for ``v_i > 2``
 """
 function dof_satter(lmm::LMM{T}, l::Matrix) where T
     A, theta = getinvhes(lmm)

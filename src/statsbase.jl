@@ -21,13 +21,16 @@ StatsBase.score(model::LMM) = error("score is not defined for $(typeof(model))."
 
 Confidece interval for coefficients.
 
-ddf = :satter/:residual/:contain
+ddf = :satter/:residual
 
 ```math
 CI_{U/L} = β ± SE * t_{ddf, 1-α/2}
 ```
+
+See also: [`dof_satter`](@ref), [`dof_residual`](@ref)
 """
 function StatsBase.confint(lmm::LMM{T}; level::Real=0.95, ddf::Symbol = :satter) where T
+    isfitted(lmm) || error("Model not fitted")
     alpha = 1.0 - level
     if ddf == :satter
         ddfv = dof_satter(lmm)
@@ -38,6 +41,7 @@ function StatsBase.confint(lmm::LMM{T}; level::Real=0.95, ddf::Symbol = :satter)
     end
     cis = Vector{Tuple{T, T}}(undef, coefn(lmm))
     for i = 1:coefn(lmm)
+        #ERROR: ArgumentError: TDist: the condition ν > zero(ν) is not satisfied
         cis[i] = (lmm.result.beta[i] - lmm.result.se[i] * quantile(TDist(ddfv[i]), 1.0 - alpha / 2), lmm.result.beta[i] + lmm.result.se[i] * quantile(TDist(ddfv[i]), 1.0 - alpha / 2))
     end
     cis

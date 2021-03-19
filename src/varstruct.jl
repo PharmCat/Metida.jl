@@ -6,7 +6,11 @@
 
 Macros for random/repeated effect model.
 
-Example: @covstr(factor|subject)
+# Example
+
+```julia
+@covstr(factor|subject)
+```
 """
 macro covstr(ex)
     return :(@formula(nothing ~ $ex).rhs)
@@ -240,18 +244,20 @@ end
 
 * `nparamf` - function type (t, q) -> (a, b)
 where:
-t - size(z, 2) - number of levels for effect (number of columns of individual z matriz);
-q - number of factors in the effect model;
-a - number of variance parameters;
-b - number of ρ parameters;
+`t` - size(z, 2) - number of levels for effect (number of columns of individual z matriz);
+`q` - number of factors in the effect model;
+`a` - number of variance parameters;
+`b` - number of ρ parameters;
 
-Example: (t, q) -> (t, 1) for CSH structure; (t, q) -> (1, 1) for AR, ets.
+Example: `(t, q) -> (t, 1)` for CSH structure; `(t, q) -> (1, 1)` for AR, ets.
 
-Tuple{Int, Int} should be returned.
+`Tuple{Int, Int}` should be returned.
 
 * `xmat!` - construction function
 
-G matrix function should update mx, where mx is zero matrix, p - parameter of CovarianceType structure, example:
+G matrix function should update `mx`, where `mx` is zero matrix, `p` - parameter of CovarianceType structure.
+
+# Exapple
 
 ```julia
 function gmat_diag!(mx, θ::Vector{T}, p) where T
@@ -261,7 +267,12 @@ function gmat_diag!(mx, θ::Vector{T}, p) where T
     nothing
 end
 ```
-R matrix function should add R part to mx, rz - is repeated effect matrix, example:
+
+# Exapple
+
+R matrix function should add R part to `mx`, `rz` - is repeated effect matrix.
+
+# Example
 
 ```julia
 function rmatp_diag!(mx, θ::Vector{T}, rz, p) where T
@@ -283,6 +294,12 @@ end
     CovarianceType(cm::AbstractCovmatMethod)
 
 Make custom covariance type with CovmatMethod.
+
+# Example
+
+```julia
+customg = CovarianceType(CovmatMethod((q,p) -> (q, 1), Metida.gmat_csh!))
+```
 """
 CovarianceType(cm::AbstractCovmatMethod) = CovarianceType(:FUNC, cm)
 
@@ -336,6 +353,18 @@ Random/repeated effect.
 * `formula` from @covstr(ex) macros.
 
 * `covtype` - covariance type (SI, DIAG, CS, CSH, AR, ARH, ARMA, TOEP, TOEPH, TOEPP, TOEPHP)
+
+!!! note
+
+    Categorical factors are coded with `FullDummyCoding()` by default, use `coding` for other contrast codeing.
+
+# Example
+
+```julia
+VarEffect(@covstr(1+factor|subject), CSH)
+
+VarEffect(@covstr(1 + formulation|subject), CSH; coding = Dict(:formulation => StatsModels.DummyCoding()))
+```
 """
 struct VarEffect
     formula::FunctionTerm
