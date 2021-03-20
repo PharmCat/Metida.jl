@@ -211,7 +211,7 @@ end
 ################################################################################
 #                                  ftdf2
 ################################################################################
-@testset "  Model: Categorical * Continuous predictor, 0/ARMA     " begin
+@testset "  Model: Categorical * Continuous predictor, 0/ARMA        " begin
     # nowarn
     io = IOBuffer();
     lmm = Metida.LMM(@formula(response ~ 1 + factor*time), ftdf2;
@@ -278,6 +278,7 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 707.3765873864152 atol=1E-8
+    @test Metida.dof_satter(lmm, [0, 1]) ≈ 21.931763259647315 atol=1E-2
 end
 @testset "  Model: INT, *, DIAG/SI                                   " begin
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
@@ -285,7 +286,6 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 713.0655862252027 atol=1E-8
-    @test Metida.dof_satter(lmm, [0, 1]) ≈ 21.931763259647315 atol=1E-2
 end
 @testset "  Model: &, DIAG/SI                                        " begin
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
