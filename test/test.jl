@@ -214,13 +214,12 @@ end
 @testset "  Model: Categorical * Continuous predictor, DIAG/ARMA     " begin
     io = IOBuffer();
     lmm = Metida.LMM(@formula(response ~ 1 + factor*time), ftdf2;
-    random = Metida.VarEffect(Metida.@covstr(factor|subject&factor), Metida.DIAG),
-    repeated = Metida.VarEffect(Metida.@covstr(1|subject&factor), Metida.ARMA),
+    random = Metida.VarEffect(Metida.@covstr(1|factor), Metida.DIAG),
+    repeated = Metida.VarEffect(Metida.@covstr(1|subject), Metida.ARMA),
     )
-    Metida.fit!(lmm; aifirst = :score)
+    Metida.fit!(lmm)
     println(io, lmm.log)
-    #[4.53791, 2.8059, 1.12292, 0.625323, 0.713154]
-    @test Metida.m2logreml(lmm) ≈ 709.1400046571733 atol=1E-6
+    @test Metida.m2logreml(lmm) ≈ 864.8227628875994 atol=1E-6
 end
 @testset "  Model: Categorical * Continuous predictor, DIAG/AR       " begin
     # nowarn

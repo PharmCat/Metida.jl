@@ -546,6 +546,58 @@ function updatenametype!(ct, rcnames, csp, schema, s)
     append!(rcnames, rcoefnames(schema, csp[1]+csp[2], s))
 end
 ################################################################################
+function rcoefnames(s, t, ve)
+    if ve == :SI
+        return ["σ² "]
+    elseif ve == :DIAG
+        if isa(coefnames(s), AbstractArray{T,1} where T) l = length(coefnames(s)) else l = 1 end
+        return fill!(Vector{String}(undef, l), "σ² ") .* string.(coefnames(s))
+    elseif ve == :CS || ve == :AR
+        return ["σ² ", "ρ "]
+    elseif ve == :CSH || ve == :ARH
+        cn = coefnames(s)
+        if isa(cn, Vector)
+            l  = length(cn)
+        else
+            l  = 1
+        end
+        v  = Vector{String}(undef, t)
+        view(v, 1:l) .= (fill!(Vector{String}(undef, l), "σ² ") .*string.(cn))
+        v[end] = "ρ "
+        return v
+    elseif ve == :ARMA
+        return ["σ² ", "γ ", "ρ "]
+    elseif ve == :TOEP || ve == :TOEPP
+        v = Vector{String}(undef, t)
+        v[1] = "σ² "
+        if length(v) > 1
+            for i = 2:length(v)
+                v[i] = "ρ band $(i-1) "
+            end
+        end
+        return v
+    elseif ve == :TOEPH || ve == :TOEPHP
+        cn = coefnames(s)
+        if isa(cn, Vector)
+            l  = length(cn)
+        else
+            l  = 1
+        end
+        v  = Vector{String}(undef, t)
+        view(v, 1:l) .= (fill!(Vector{String}(undef, l), "σ² ") .*string.(cn))
+        if length(v) > l
+            for i = l+1:length(v)
+                v[i] = "ρ band $(i-l) "
+            end
+        end
+        return v
+    else
+        v = Vector{String}(undef, t)
+        v .= "NA"
+        return v
+    end
+end
+
 #=
 function subjmatrix!(subj, data, subjz, i)
     if length(subj) > 0
