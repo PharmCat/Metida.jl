@@ -97,7 +97,7 @@ include("testdata.jl")
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.CSH),
     repeated = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
     )
-    Metida.fit!(lmm)
+    Metida.fit!(lmm; aifirst = :score)
     @test Metida.m2logreml(lmm) ≈ 10.065238626765524 atol=1E-6
     #incomplete
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df1;
@@ -217,7 +217,7 @@ end
     random = Metida.VarEffect(Metida.@covstr(factor|subject&factor), Metida.DIAG),
     repeated = Metida.VarEffect(Metida.@covstr(1|subject&factor), Metida.ARMA),
     )
-    Metida.fit!(lmm)
+    Metida.fit!(lmm; aifirst = :score)
     println(io, lmm.log)
     #[4.53791, 2.8059, 1.12292, 0.625323, 0.713154]
     @test Metida.m2logreml(lmm) ≈ 709.1400046571733 atol=1E-6
@@ -371,6 +371,14 @@ end
     @test_throws ErrorException  Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = [Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.DIAG), Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.RZero())]
     )
+    # Error messages
+    io = IOBuffer();
+    lmm = Metida.LMM(@formula(response ~ 1 + factor*time), ftdf2;
+    random = Metida.VarEffect(Metida.@covstr(factor|subject&factor), Metida.DIAG),
+    repeated = Metida.VarEffect(Metida.@covstr(1|subject&factor), Metida.ARMA),
+    )
+    Metida.fit!(lmm)
+    println(io, lmm.log)
 end
 ################################################################################
 #                                  Sweep test

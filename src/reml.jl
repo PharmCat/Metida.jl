@@ -1,13 +1,4 @@
 #reml.jl
-#=
-function logdetv(V)
-    try
-        return logdet(cholesky(V))
-    catch
-        return logdet(V)
-    end
-end
-=#
 function subutri!(a, b)
     s = size(a,1)
     if s == 1 return @inbounds a[1,1] -= b[1,1] end
@@ -33,7 +24,7 @@ function logerror!(e, lmm)
         lmmlog!(lmm, LMMLogMsg(:ERROR, "DomainError ($(e.val), $(e.msg)) during REML calculation."))
     elseif isa(e, BoundsError)
         lmmlog!(lmm, LMMLogMsg(:ERROR, "BoundsError ($(e.a), $(e.i)) during REML calculation."))
-    elseif isa(e, BoundsError)
+    elseif isa(e, ArgumentError)
         lmmlog!(lmm, LMMLogMsg(:ERROR, "ArgumentError ($(e.msg)) during REML calculation."))
     elseif isa(e, LinearAlgebra.SingularException)
         lmmlog!(lmm, LMMLogMsg(:ERROR, "SingularException ($(e.info)) during REML calculation."))
@@ -96,7 +87,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T 
         logdetθ₂ = logdet(θs₂)
     catch e
         logerror!(e, lmm)
-        return (1e100, nothing, nothing, 1e100, false)
+        return (Inf, nothing, nothing, nothing, false)
     end
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θs₂, θ₃, true #REML, β, iC, θ₃, errors
 end
@@ -143,7 +134,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vect
         logdetθ₂ = logdet(θs₂)
     catch e
         logerror!(e, lmm)
-        return (1e100, nothing, 1e100, false)
+        return (Inf, nothing, 1e100, false)
     end
     return   θ₁ + logdetθ₂ + θ₃ + c, θs₂, θ₃, true #REML, iC, θ₃
 end
@@ -197,13 +188,14 @@ function sweep_score(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector
     end
     catch
         logerror!(e, lmm)
-        return 1e100
+        return Inf
     end
     return   -θ₁ + θ₃
 end
 ################################################################################
 #                     β calculation
 ################################################################################
+#=
 function sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T <: Number
     n             = length(lmm.covstr.vcovblock)
     θ₂            = zeros(T, lmm.rankx, lmm.rankx)
@@ -231,6 +223,7 @@ function sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T <: Nu
     mul!(β, inv(Symmetric(θ₂)), βm)
     return  β
 end
+=#
 ################################################################################
 #                     variance-covariance matrix of β
 ################################################################################
