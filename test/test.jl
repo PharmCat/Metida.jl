@@ -278,7 +278,7 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 707.3765873864152 atol=1E-8
-    @test Metida.dof_satter(lmm, [0, 1]) ≈ 21.931763259647315 atol=1E-2
+    @test Metida.dof_satter(lmm, [0, 1]) ≈ 23.111983305626193 atol=1E-2
 end
 @testset "  Model: INT, *, DIAG/SI                                   " begin
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
