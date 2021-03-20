@@ -211,15 +211,15 @@ end
 ################################################################################
 #                                  ftdf2
 ################################################################################
-@testset "  Model: Categorical * Continuous predictor, DIAG/ARMA     " begin
+@testset "  Model: Categorical * Continuous predictor, 0/ARMA     " begin
+    # nowarn
     io = IOBuffer();
     lmm = Metida.LMM(@formula(response ~ 1 + factor*time), ftdf2;
-    random = Metida.VarEffect(Metida.@covstr(1|factor), Metida.DIAG),
-    repeated = Metida.VarEffect(Metida.@covstr(1|subject), Metida.ARMA),
+    repeated = Metida.VarEffect(Metida.@covstr(time|subject&factor), Metida.ARMA),
     )
     Metida.fit!(lmm)
     println(io, lmm.log)
-    @test Metida.m2logreml(lmm) ≈ 864.8227628875994 atol=1E-6
+    @test Metida.m2logreml(lmm) ≈ 715.4528559688382 atol = 1E-6
 end
 @testset "  Model: Categorical * Continuous predictor, DIAG/AR       " begin
     # nowarn
