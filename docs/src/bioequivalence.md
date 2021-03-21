@@ -28,3 +28,8 @@ fit!(lmm)
 ci = confint(lmm)[end]
 exp.(ci) .* 100.0
 ```
+
+## Reference
+
+  * [Annex](https://www.ema.europa.eu/en/documents/other/31-annex-i-statistical-analysis-methods-compatible-ema-bioequivalence-guideline_en.pdf) I for EMA’s Guideline on the Investigation of Bioequivalence
+  * [FDA Guidance for Industry: Statistical Approaches to Establishing Bioequivalence](https://www.fda.gov/media/70958/download), APPENDIX F

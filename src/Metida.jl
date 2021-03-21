@@ -29,6 +29,8 @@ fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, dof_co
 gmatrix, rmatrix, vmatrix!,
 AbstractCovarianceType, AbstractCovmatMethod, MetidaModel
 
+export coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
+
 include("abstracttype.jl")
 include("sweep.jl")
 include("varstruct.jl")
@@ -70,8 +72,6 @@ function _precompile_()
     precompile(Tuple{typeof(Metida.vlinkr), Float64})
 
     precompile(Tuple{typeof(Metida.initvar),  Array{Float64, 1},  Array{Float64, 2}})
-
-    #precompile(Tuple{typeof(Metida.intersectsubj),  Array{VarEffect, 1},  VarEffect})
 
 end
 _precompile_()

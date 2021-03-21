@@ -186,7 +186,7 @@ end
     @test Metida.m2logreml(lmm) ≈ 10.065239006121315 atol=1E-6
 end
 ################################################################################
-#                                  ftdf
+#                                  ftdf / 1fptime.csv
 ################################################################################
 @testset "  Model: Categorical * Continuous predictor, CSH/SI        " begin
     # nowarn
@@ -209,10 +209,11 @@ end
     @test Metida.m2logreml(lmm) ≈ 1300.1807598168923 atol=1E-6
 end
 ################################################################################
-#                                  ftdf2
+#                                  ftdf2 / 1freparma.csv
 ################################################################################
 @testset "  Model: Categorical * Continuous predictor, 0/ARMA        " begin
     # nowarn
+    # SPSS 715.452856
     io = IOBuffer();
     lmm = Metida.LMM(@formula(response ~ 1 + factor*time), ftdf2;
     repeated = Metida.VarEffect(Metida.@covstr(time|subject&factor), Metida.ARMA),
@@ -239,7 +240,7 @@ end
     @test Metida.m2logreml(lmm) ≈ 731.7794071577566 atol=1E-6
 end
 ################################################################################
-#                                  ftdf3
+#                                  ftdf3 / 2f2rand.csv
 ################################################################################
 @testset "  Model: CS, CS/SI                                         " begin
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3; contrasts=Dict(:factor => DummyCoding(; base=1.0)),

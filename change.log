@@ -5,6 +5,8 @@ v0.7.1
   * F value (test)
   * C matrix - pinv to inv
   * minor Show bugfix
+  * changes in tests - stable models used
+  * export StatsBase methods
   * documentation
 
 v0.7.0
