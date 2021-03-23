@@ -124,9 +124,10 @@ end
 function lmmlog!(io, lmm::LMM, verbose, vmsg)
     lmmlog!(io, lmm.log, verbose, vmsg)
 end
-#function lmmlog!(lmm::LMM, verbose, vmsg)
-#    lmmlog!(stdout, lmm, verbose, vmsg)
-#end
+#MetidaNLopt use this
+function lmmlog!(lmm::LMM, verbose, vmsg)
+    lmmlog!(stdout, lmm, verbose, vmsg)
+end
 function lmmlog!(lmm::LMM, vmsg)
     lmmlog!(stdout, lmm, 1, vmsg)
 end

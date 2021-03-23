@@ -1,3 +1,8 @@
+v0.8.0
+  * BLAS syrk REML keyword
+  * documentation fix
+  * set_zero_subnormals remove from REML function
+
 v0.7.1
   * change error handling in REML
   * change rho initial

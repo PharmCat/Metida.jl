@@ -37,12 +37,11 @@ end
 ################################################################################
 #                     REML without provided β
 ################################################################################
-function reml_sweep_β(lmm, θ::Vector{T}) where T <: Number
+function reml_sweep_β(lmm, θ::Vector{T}; syrkblas::Bool = false) where T <: Number
     data = LMMDataViews(lmm)
-    reml_sweep_β(lmm, data, θ)
+    reml_sweep_β(lmm, data, θ; syrkblas = syrkblas)
 end
-function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T <: Number
-    set_zero_subnormals(true)
+function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas::Bool = false) where T <: Number
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)
@@ -70,7 +69,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T 
             fillzeroutri!(Vc)
             vmatrix!(V, θ, lmm, i)
             #-----------------------------------------------------------------------
-            swr  = sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q; logdet = true)
+            swr  = sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q; logdet = true, syrkblas = syrkblas)
             θ₁  += swr[2]
             V⁻¹[i] = V
             #-----------------------------------------------------------------------
@@ -79,12 +78,13 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T 
             mulαtβinc!(βm, Vx, data.yv[i])
             #-----------------------------------------------------------------------
         end
-        θs₂ = Symmetric(θ₂)
-        mul!(β, inv(θs₂), βm)
+        θs₂  = Symmetric(θ₂)
+        cθs₂ = cholesky(θs₂)
+        mul!(β, inv(cθs₂), βm)
         @inbounds @simd for i = 1:n
             θ₃ += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹[i])
         end
-        logdetθ₂ = logdet(θs₂)
+        logdetθ₂ = logdet(cθs₂)
     catch e
         logerror!(e, lmm)
         return (Inf, nothing, nothing, nothing, false)
