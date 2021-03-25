@@ -142,7 +142,7 @@ function Base.show(io::IO, lmm::LMM)
             continue
         end
         println(io, "    Model: $(lmm.covstr.random[i].model === nothing ? "nothing" : string(lmm.covstr.random[i].model, "|", lmm.covstr.random[i].subj))")
-        println(io, "    Type: $(lmm.covstr.random[i].covtype.s) ($(lmm.covstr.t[i])), Subjects: $(length(lmm.covstr.block[i]))")
+        println(io, "    Type: $(lmm.covstr.random[i].covtype.s) ($(lmm.covstr.t[i])), Subjects: $(lmm.covstr.sn[i])")
         #println(io, "   Coefnames: $(coefnames(lmm.covstr.schema[i]))")
     end
     println(io, "Repeated: ")

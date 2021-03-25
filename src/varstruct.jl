@@ -399,8 +399,6 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     repeated::VarEffect
     schema::Vector{Union{Tuple, AbstractTerm}}
     rcnames::Vector{String}
-    # subject (local) blocks for each effect
-    block::Vector{Vector{Vector{UInt32}}}
     # blocks for vcov matrix / variance blocking factor (subject)
     vcovblock::Vector{Vector{UInt32}}
     # number of random effect
@@ -436,7 +434,6 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         t       = Vector{Int}(undef, alleffl)
         tr      = Vector{UnitRange{Int}}(undef, alleffl)
         schema  = Vector{Union{AbstractTerm, Tuple}}(undef, alleffl)
-        block   = Vector{Vector{Vector{UInt32}}}(undef, alleffl)
         z       = Matrix{Float64}(undef, size(data, 1), 0)
         subjz   = Vector{BitMatrix}(undef, alleffl)
         zrndur  = Vector{UnitRange{Int}}(undef, alleffl - 1)
@@ -449,12 +446,12 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         #
         sn      = zeros(Int, alleffl)
         if rn > 1
-            for i = 2:rn
+            @inbounds for i = 2:rn
                 if random[i].covtype.s == :ZERO error("One of the random effect have zero type!") end
             end
         end
         # RANDOM EFFECTS
-        for i = 1:rn
+        @inbounds for i = 1:rn
             if length(random[i].coding) == 0
                 fill_coding_dict!(random[i].model, random[i].coding, data)
             end
@@ -467,9 +464,8 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             fillur!(zrndur, i, q)
             fillur!(tr, i, t)
 
-            subjz[i]  = modelcols(MatrixTerm(apply_schema(random[i].subj, StatsModels.schema(data, fulldummycodingdict(random[i].subj)))), data)
-            block[i]  = makeblocks(subjz[i])
-
+            subjz[i]  = convert(BitMatrix, modelcols(MatrixTerm(apply_schema(random[i].subj, StatsModels.schema(data, fulldummycodingdict(random[i].subj)))), data))
+            sn[i] = size(subjz[i], 2)
             updatenametype!(ct, rcnames, csp, schema[i], random[i].covtype.s)
         end
         # REPEATED EFFECTS
@@ -480,9 +476,8 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         schema[end] = apply_schema(repeated.model, StatsModels.schema(data, repeated.coding))
         rz          = modelcols(MatrixTerm(schema[end]), data)
 
-        subjz[end]  = modelcols(MatrixTerm(apply_schema(repeated.subj, StatsModels.schema(data, fulldummycodingdict(repeated.subj)))), data)
-        block[end]  = makeblocks(subjz[end])
-
+        subjz[end]  = convert(BitMatrix, modelcols(MatrixTerm(apply_schema(repeated.subj, StatsModels.schema(data, fulldummycodingdict(repeated.subj)))), data))
+        sn[end] = size(subjz[end], 2)
         q[end]      = size(rz, 2)
         csp         = covstrparam(repeated.covtype, q[end], repeated.p)
         t[end]      = csp[1] + csp[2]
@@ -507,15 +502,13 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         blocks = makeblocks(subjblockmat) #vcovblock
         sblock = Vector{Vector{Vector{Vector{UInt32}}}}(undef, length(blocks))
         ########################################################################
-        for i = 1:length(blocks)
+        @inbounds for i = 1:length(blocks)
             sblock[i] = Vector{Vector{Vector{UInt32}}}(undef, alleffl)
-            for s = 1:alleffl
+            @inbounds for s = 1:alleffl
                 sblock[i][s] = Vector{Vector{UInt32}}(undef, 0)
-                for col in eachcol(view(subjz[s], blocks[i], :))
-                    #if any(col) push!(sblock[i][s], sort!(findall(x->x==true, col))) end
-                    if any(col) push!(sblock[i][s], findall(x->x==true, col)) end
+                @inbounds for col in eachcol(view(subjz[s], blocks[i], :))
+                    if any(col) push!(sblock[i][s], findall(col)) end
                 end
-                sn[s] += length(sblock[i][s])
             end
         end
         #
@@ -524,7 +517,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             lvcb = length(i)
             if lvcb > maxn maxn = lvcb end
         end
-        new{eltype(z)}(random, repeated, schema, rcnames, block, blocks, rn, z, sblock, zrndur, rz, q, t, tr, tl, ct, sn, maxn)
+        new{eltype(z)}(random, repeated, schema, rcnames, blocks, rn, z, sblock, zrndur, rz, q, t, tr, tl, ct, sn, maxn)
     end
 end
 ################################################################################
@@ -597,23 +590,6 @@ function rcoefnames(s, t, ve)
         return v
     end
 end
-
-#=
-function subjmatrix!(subj, data, subjz, i)
-    if length(subj) > 0
-        if length(subj) == 1
-            subjterm = Term(subj[1])
-        else
-            subjterm = InteractionTerm(Tuple(Term.(subj)))
-        end
-        subjdict = Dict{Symbol, AbstractContrasts}()
-        fill_coding_dict!(subjterm, subjdict, data)
-        subjz[i]    = BitArray(modelcols(apply_schema(subjterm, StatsModels.schema(data, subjdict)), data))
-    else
-        subjz[i]    = trues(size(data, 1),1)
-    end
-end
-=#
 ################################################################################
 function makeblocks(subjz)
     blocks = Vector{Vector{UInt32}}(undef, 0)
@@ -624,9 +600,10 @@ function makeblocks(subjz)
     blocks
 end
 ################################################################################
-function noncrossmodelmatrix(mx::AbstractArray{T}, my::AbstractArray{T}) where T
+function noncrossmodelmatrix(mx::AbstractArray, my::AbstractArray)
     size(mx, 2) > size(my, 2) ?  (mat = mx' * my; a = mx) : (mat = my' * mx; a = my)
     #mat = mat * mat'
+    T = eltype(mat)
     @inbounds for n = 1:size(mat, 2)-1
         fr = findfirst(x->!iszero(x), view(mat, n, :))
         if !isnothing(fr)
@@ -654,8 +631,7 @@ function noncrossmodelmatrix(mx::AbstractArray{T}, my::AbstractArray{T}) where T
         end
     end
     res = replace(x -> iszero(x) ?  0 : 1, view(mat, :, cols))
-    result = a * res
-    result
+    a * res
 end
 ################################################################################
 #                            CONTRAST CODING
