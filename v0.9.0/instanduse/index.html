@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>First step · Metida.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">Metida.jl</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">User guide</span><ul><li class="is-active"><a class="tocitem" href>First step</a></li><li><a class="tocitem" href="../examples/">Examples</a></li><li><a class="tocitem" href="../bioequivalence/">Bioequivalence</a></li><li><a class="tocitem" href="../nlopt/">NLopt</a></li><li><a class="tocitem" href="../cuda/">CUDA</a></li><li><a class="tocitem" href="../faq/">F.A.Q.</a></li></ul></li><li><a class="tocitem" href="../details/">Details</a></li><li><a class="tocitem" href="../bench/">Benchmark</a></li><li><a class="tocitem" href="../validation/">Validation</a></li><li><a class="tocitem" href="../api/">API</a></li><li><a class="tocitem" href="../ref/">Citation &amp; Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User guide</a></li><li class="is-active"><a href>First step</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>First step</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/PharmCat/Metida.jl/blob/master/docs/src/instanduse.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h3 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h3><pre><code class="language-none">import Pkg; Pkg.add(&quot;Metida&quot;)</code></pre><h3 id="Simple-example"><a class="docs-heading-anchor" href="#Simple-example">Simple example</a><a id="Simple-example-1"></a><a class="docs-heading-anchor-permalink" href="#Simple-example" title="Permalink"></a></h3><ul><li><a href="#Metida.LMM"><code>LMM</code></a></li><li><a href="#Metida.@covstr"><code>Metida.@covstr</code></a></li><li><a href="#Metida.VarEffect"><code>Metida.VarEffect</code></a></li><li><a href="#StatsBase.fit!"><code>fit!</code></a></li></ul><h4 id="Step-1:-Load-data"><a class="docs-heading-anchor" href="#Step-1:-Load-data">Step 1: Load data</a><a id="Step-1:-Load-data-1"></a><a class="docs-heading-anchor-permalink" href="#Step-1:-Load-data" title="Permalink"></a></h4><p>Load provided data with CSV and DataFrames:</p><pre><code class="language-julia">using Metida, CSV, DataFrames
+
+df = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;df0.csv&quot;)) |&gt; DataFrame;</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>Check that all categorical variables are categorical.</p></div></div><pre><code class="language-julia">transform!(df, :subject =&gt; categorical, renamecols=false)
+transform!(df, :period =&gt; categorical, renamecols=false)
+transform!(df, :sequence =&gt; categorical, renamecols=false)
+transform!(df, :formulation =&gt; categorical, renamecols=false)</code></pre><h4 id="Step-2:-Make-model"><a class="docs-heading-anchor" href="#Step-2:-Make-model">Step 2: Make model</a><a id="Step-2:-Make-model-1"></a><a class="docs-heading-anchor-permalink" href="#Step-2:-Make-model" title="Permalink"></a></h4><pre><code class="language-julia">lmm = LMM(@formula(var~sequence+period+formulation), df;
+random = VarEffect(@covstr(formulation|subject), CSH),
+repeated = VarEffect(@covstr(formulation|subject), DIAG));</code></pre><pre class="documenter-example-output">Linear Mixed Model: var ~ sequence + period + formulation
+Random 1: 
+    Model: formulation|subject
+    Type: CSH (3), Subjects: 5
+Repeated: 
+    Model: formulation|subject
+    Type: DIAG (2)
+    Blocks: 5, Maximum block size: 4
+
+Not fitted.
+</pre><h4 id="Step-3:-Fit"><a class="docs-heading-anchor" href="#Step-3:-Fit">Step 3: Fit</a><a id="Step-3:-Fit-1"></a><a class="docs-heading-anchor-permalink" href="#Step-3:-Fit" title="Permalink"></a></h4><pre><code class="language-julia">fit!(lmm)</code></pre><pre class="documenter-example-output">Linear Mixed Model: var ~ sequence + period + formulation
+Random 1: 
+    Model: formulation|subject
+    Type: CSH (3), Subjects: 5
+Repeated: 
+    Model: formulation|subject
+    Type: DIAG (2)
+    Blocks: 5, Maximum block size: 4
+
+Status: converged    -2 logREML: 10.0652    BIC: 23.9282
+
+    Fixed-effects parameters:
+Name             Estimate     SE          z           Pr(&gt;|z|)     
+(Intercept)      1.57749      0.334543    4.71536     2.41283e-6   
+sequence: 2      -0.170833    0.384381    -0.444437   0.656726     
+period: 2        0.195984     0.117228    1.67182     0.0945606    
+period: 3        0.145014     0.109171    1.32832     0.184073     
+period: 4        0.157363     0.117228    1.34236     0.179478     
+formulation: 2   -0.0791667   0.0903709   -0.876019   0.38102      
+
+    Variance components:
+    θ vector: [0.455584, 0.367656, 1.0, 0.143682, 0.205657]
+Random 1   σ² formulation: 1   var   0.207557    
+Random 1   σ² formulation: 2   var   0.135171    
+Random 1   ρ                   rho   1.0         
+Residual   σ² formulation: 1   var   0.0206445   
+Residual   σ² formulation: 2   var   0.0422948   
+</pre><h5 id="Check-warnings-and-errors-in-log."><a class="docs-heading-anchor" href="#Check-warnings-and-errors-in-log.">Check warnings and errors in log.</a><a id="Check-warnings-and-errors-in-log.-1"></a><a class="docs-heading-anchor-permalink" href="#Check-warnings-and-errors-in-log." title="Permalink"></a></h5><pre><code class="language-julia">lmm.log</code></pre><pre class="documenter-example-output">5-element Array{Metida.LMMLogMsg,1}:
+   INFO  : Initial θ: [0.2108585059318441, 0.2108585059318441, 0.0001, 0.2108585059318441, 0.2108585059318441]
+
+   ERROR : DomainError (-1.6225927682921336e32, log will only return a complex result if called with a complex argument. Try log(Complex(x)).) during REML calculation.
+
+   INFO  : Resulting θ: [0.45558429062258565, 0.36765619780142367, 0.9999999997954268, 0.14368242865088823, 0.20565739028506558]; 22 iterations.
+
+   INFO  : Model fitted.
+
+   WARN  : det(G) of random effect 1 is less 1e-08.
+</pre><h3 id="Model-construction"><a class="docs-heading-anchor" href="#Model-construction">Model construction</a><a id="Model-construction-1"></a><a class="docs-heading-anchor-permalink" href="#Model-construction" title="Permalink"></a></h3><article class="docstring"><header><a class="docstring-binding" id="Metida.LMM" href="#Metida.LMM"><code>Metida.LMM</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia">LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)</code></pre><p>Make Linear-Mixed Model object.</p><p><code>model</code>: is a fixed-effect model (<code>@formula</code>)</p><p><code>data</code>: tabular data</p><p><code>contrasts</code>: contrasts for fixed factors</p><p><code>random</code>: vector of random effects or single random effect</p><p><code>repeated</code>: is a repeated effect (only one)</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/PharmCat/Metida.jl/blob/ce91dc07649a4ea2c509680ea11f301ffd30a0e1/src/lmm.jl#L7-L21">source</a></section></article><ul><li><p><code>model</code> - example: <code>@formula(var ~ sequence + period + formulation)</code></p></li><li><p><code>random</code> - effects can be specified like this: <code>VarEffect(@covstr(formulation|subject), CSH)</code>. <code>@covstr</code> is a effect model: <code>@covstr(formulation|subject)</code>. <code>CSH</code> is a  CovarianceType structure. Premade constants: SI, DIAG, AR, ARH, CS, CSH, ARMA. If not specified only repeated used.</p></li><li><p><code>repeated</code> - can be specified like random effect. If not specified <code>VarEffect(@covstr(1|1), SI)</code> used. If no repeated effects specified vector of ones used.</p></li></ul><h3 id="Random/repeated-model"><a class="docs-heading-anchor" href="#Random/repeated-model">Random/repeated model</a><a id="Random/repeated-model-1"></a><a class="docs-heading-anchor-permalink" href="#Random/repeated-model" title="Permalink"></a></h3><article class="docstring"><header><a class="docstring-binding" id="Metida.@covstr" href="#Metida.@covstr"><code>Metida.@covstr</code></a> — <span class="docstring-category">Macro</span></header><section><div><pre><code class="language-julia">@covstr(ex)</code></pre><p>Macros for random/repeated effect model.</p><p><strong>Example</strong></p><pre><code class="language-julia">@covstr(factor|subject)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/PharmCat/Metida.jl/blob/ce91dc07649a4ea2c509680ea11f301ffd30a0e1/src/varstruct.jl#L4-L14">source</a></section></article><h3 id="Random/repeated-effect-construction"><a class="docs-heading-anchor" href="#Random/repeated-effect-construction">Random/repeated effect construction</a><a id="Random/repeated-effect-construction-1"></a><a class="docs-heading-anchor-permalink" href="#Random/repeated-effect-construction" title="Permalink"></a></h3><article class="docstring"><header><a class="docstring-binding" id="Metida.VarEffect" href="#Metida.VarEffect"><code>Metida.VarEffect</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia">VarEffect(formula, covtype::T, coding) where T &lt;: AbstractCovarianceType
+
+VarEffect(formula, covtype::T; coding = nothing) where T &lt;: AbstractCovarianceType
+
+VarEffect(formula; coding = nothing)</code></pre><p>Random/repeated effect.</p><ul><li><p><code>formula</code> from @covstr(ex) macros.</p></li><li><p><code>covtype</code> - covariance type (SI, DIAG, CS, CSH, AR, ARH, ARMA, TOEP, TOEPH, TOEPP, TOEPHP)</p></li></ul><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>Categorical factors are coded with <code>FullDummyCoding()</code> by default, use <code>coding</code> for other contrast codeing.</p></div></div><p><strong>Example</strong></p><pre><code class="language-julia">VarEffect(@covstr(1+factor|subject), CSH)
+
+VarEffect(@covstr(1 + formulation|subject), CSH; coding = Dict(:formulation =&gt; StatsModels.DummyCoding()))</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/PharmCat/Metida.jl/blob/ce91dc07649a4ea2c509680ea11f301ffd30a0e1/src/varstruct.jl#L344-L368">source</a></section></article><h3 id="Fitting"><a class="docs-heading-anchor" href="#Fitting">Fitting</a><a id="Fitting-1"></a><a class="docs-heading-anchor-permalink" href="#Fitting" title="Permalink"></a></h3><article class="docstring"><header><a class="docstring-binding" id="StatsBase.fit!" href="#StatsBase.fit!"><code>StatsBase.fit!</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">fit!(lmm::LMM{T};
+solver::Symbol = :default,
+verbose = :auto,
+varlinkf = :exp,
+rholinkf = :sigm,
+aifirst = :default,
+g_tol::Float64 = 1e-12,
+x_tol::Float64 = 1e-12,
+f_tol::Float64 = 1e-12,
+hes::Bool   = true,
+init = nothing,
+io::IO = stdout,
+) where T</code></pre><p>Fit LMM model.</p><ul><li><code>solver</code> - :default / :nlopt / :cuda</li><li><code>verbose</code> - :auto / 1 / 2 / 3</li><li><code>varlinkf</code> - not implemented</li><li><code>rholinkf</code> - :sigm / :atan / :sqsigm / :psigm</li><li><code>aifirst</code> - first iteration with AI-like method - :default / :ai / :score</li><li><code>g_tol</code> - absolute tolerance in the gradient</li><li><code>x_tol</code> - absolute tolerance of theta vector</li><li><code>f_tol</code> - absolute tolerance in changes of the REML</li><li><code>hes</code> - calculate REML Hessian</li><li><code>init</code> - initial theta values</li><li><code>io</code> - uotput IO</li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/PharmCat/Metida.jl/blob/ce91dc07649a4ea2c509680ea11f301ffd30a0e1/src/fit.jl#L5-L33">source</a></section></article><ul><li><p><code>solver</code> - <code>:default</code> solving with Optim.jl, for <code>:nlopt</code> and <code>:cuda</code> MetidaNLopt.jl and MetidaCu.jl should be installed.</p></li><li><p><code>verbose</code> - 1 - only log,  2 - log and print,  3 - print only errors, other log, 0 (or any other value) - no logging.</p></li></ul><h3 id="Custom-structure"><a class="docs-heading-anchor" href="#Custom-structure">Custom structure</a><a id="Custom-structure-1"></a><a class="docs-heading-anchor-permalink" href="#Custom-structure" title="Permalink"></a></h3><h4 id="Step-1:-make-custom-CovarianceMethod-for-R-and-G-matrix"><a class="docs-heading-anchor" href="#Step-1:-make-custom-CovarianceMethod-for-R-and-G-matrix">Step 1: make custom CovarianceMethod for R and G matrix</a><a id="Step-1:-make-custom-CovarianceMethod-for-R-and-G-matrix-1"></a><a class="docs-heading-anchor-permalink" href="#Step-1:-make-custom-CovarianceMethod-for-R-and-G-matrix" title="Permalink"></a></h4><article class="docstring"><header><a class="docstring-binding" id="Metida.CovmatMethod" href="#Metida.CovmatMethod"><code>Metida.CovmatMethod</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia">CovmatMethod(nparamf::Function, xmat!::Function)</code></pre><ul><li><code>nparamf</code> - function type (t, q) -&gt; (a, b)</li></ul><p>where: <code>t</code> - size(z, 2) - number of levels for effect (number of columns of individual z matriz); <code>q</code> - number of factors in the effect model; <code>a</code> - number of variance parameters; <code>b</code> - number of ρ parameters;</p><p>Example: <code>(t, q) -&gt; (t, 1)</code> for CSH structure; <code>(t, q) -&gt; (1, 1)</code> for AR, ets.</p><p><code>Tuple{Int, Int}</code> should be returned.</p><ul><li><code>xmat!</code> - construction function</li></ul><p>G matrix function should update <code>mx</code>, where <code>mx</code> is zero matrix, <code>p</code> - parameter of CovarianceType structure.</p><p><strong>Exapple</strong></p><pre><code class="language-julia">function gmat_diag!(mx, θ::Vector{T}, p) where T
+    for i = 1:size(mx, 1)
+            mx[i, i] = θ[i] ^ 2
+        end
+    nothing
+end</code></pre><p><strong>Exapple</strong></p><p>R matrix function should add R part to <code>mx</code>, <code>rz</code> - is repeated effect matrix.</p><p><strong>Example</strong></p><pre><code class="language-julia">function rmatp_diag!(mx, θ::Vector{T}, rz, p) where T
+    for i = 1:size(mx, 1)
+        for c = 1:length(θ)
+            mx[i, i] += rz[i, c] * θ[c] * θ[c]
+        end
+    end
+    nothing
+end</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/PharmCat/Metida.jl/blob/ce91dc07649a4ea2c509680ea11f301ffd30a0e1/src/varstruct.jl#L242-L287">source</a></section></article><h4 id="Step-2:-make-custom-CovarianceType"><a class="docs-heading-anchor" href="#Step-2:-make-custom-CovarianceType">Step 2: make custom CovarianceType</a><a id="Step-2:-make-custom-CovarianceType-1"></a><a class="docs-heading-anchor-permalink" href="#Step-2:-make-custom-CovarianceType" title="Permalink"></a></h4><pre><code class="language-none">  CovarianceType(cm::AbstractCovmatMethod)</code></pre><p>See: <a href="../api/#Metida.CovarianceType"><code>Metida.CovarianceType</code></a></p><h4 id="Step-3-Fit-your-model"><a class="docs-heading-anchor" href="#Step-3-Fit-your-model">Step 3 Fit your model</a><a id="Step-3-Fit-your-model-1"></a><a class="docs-heading-anchor-permalink" href="#Step-3-Fit-your-model" title="Permalink"></a></h4><pre><code class="language-julia">#Make methods for G and R matrix and CovarianceType struct
+CCTG = CovarianceType(CovmatMethod((q,p) -&gt; (q, 1), Metida.gmat_csh!))
+CCTR = CovarianceType(CovmatMethod((q,p) -&gt; (q, 0), Metida.rmatp_diag!))
+
+#Make model
+lmm = LMM(@formula(var~sequence+period+formulation), df;
+random = VarEffect(@covstr(formulation|subject), CCTG),
+repeated = VarEffect(@covstr(formulation|subject), CCTR),
+)
+
+#Fit model
+fit!(lmm)</code></pre><pre class="documenter-example-output">Linear Mixed Model: var ~ sequence + period + formulation
+Random 1: 
+    Model: formulation|subject
+    Type: FUNC (3), Subjects: 5
+Repeated: 
+    Model: formulation|subject
+    Type: FUNC (2)
+    Blocks: 5, Maximum block size: 4
+
+Status: converged    -2 logREML: 10.0652    BIC: 23.9282
+
+    Fixed-effects parameters:
+Name             Estimate     SE          z           Pr(&gt;|z|)     
+(Intercept)      1.57749      0.334543    4.71536     2.41283e-6   
+sequence: 2      -0.170833    0.384381    -0.444437   0.656726     
+period: 2        0.195984     0.117228    1.67182     0.0945606    
+period: 3        0.145014     0.109171    1.32832     0.184073     
+period: 4        0.157363     0.117228    1.34236     0.179478     
+formulation: 2   -0.0791667   0.0903709   -0.876019   0.38102      
+
+    Variance components:
+    θ vector: [0.455584, 0.367656, 1.0, 0.143682, 0.205657]
+Random 1   NA   var   0.207557    
+Random 1   NA   var   0.135171    
+Random 1   NA   rho   1.0         
+Residual   NA   var   0.0206445   
+Residual   NA   var   0.0422948   
+</pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../examples/">Examples »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 25 March 2021 18:46">Thursday 25 March 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
