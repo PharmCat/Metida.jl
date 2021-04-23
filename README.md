@@ -19,10 +19,10 @@ Using:
 ```
 using Metida, CSV, DataFrames
 df = CSV.File(joinpath(dirname(pathof(Metida)),"..","test","csv","df0.csv")) |> DataFrame
-categorical!(df, :subject);
-categorical!(df, :period);
-categorical!(df, :sequence);
-categorical!(df, :formulation);
+transform!(df, :subject => categorical, renamecols=false)
+transform!(df, :period => categorical, renamecols=false)
+transform!(df, :sequence => categorical, renamecols=false)
+transform!(df, :formulation => categorical, renamecols=false)
 
 lmm = LMM(@formula(var~sequence+period+formulation), df;
 random = VarEffect(@covstr(formulation|subject), CSH),
