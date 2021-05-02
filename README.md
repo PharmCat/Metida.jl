@@ -17,7 +17,7 @@ import Pkg; Pkg.add("Metida")
 Using:
 
 ```
-using Metida, CSV, DataFrames
+using Metida, CSV, DataFrames, CategoricalArrays
 df = CSV.File(joinpath(dirname(pathof(Metida)),"..","test","csv","df0.csv")) |> DataFrame
 transform!(df, :subject => categorical, renamecols=false)
 transform!(df, :period => categorical, renamecols=false)
