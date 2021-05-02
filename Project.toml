@@ -1,7 +1,7 @@
 name = "Metida"
 uuid = "a1dec852-9fe5-11e9-361f-8d9fde67cfa2"
 authors = ["Vladimir Arnautov <mail@pharmcat.net>"]
-version = "0.9.0"
+version = "0.9.1"
 
 [deps]
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
@@ -16,14 +16,14 @@ Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 
 [compat]
 CategoricalArrays = "0.8, 0.9"
-Distributions = "0.20, 0.21, 0.22, 0.23, 0.24"
+Distributions = "0.20, 0.21, 0.22, 0.23, 0.24, 0.25"
 ForwardDiff = "0.10"
 LineSearches = "7"
-Optim = "1.0, 1.1, 1.2, 1.3"
+Optim = "1"
 StatsBase = "0.29, 0.30, 0.31, 0.32, 0.33"
 StatsModels = "0.6"
 Tables = "1"
-julia = "1.1, 1.2, 1.3, 1.4, 1.5, 1.6"
+julia = "1"
 
 [extras]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
