@@ -33,6 +33,8 @@ include("testdata.jl")
     )
     Metida.fit!(lmm; aifirst = true)
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
+    anovatable = Metida.anova(lmm)
+    Base.show(io, anovatable)
     ############################################################################
     # API test
     ############################################################################
@@ -67,6 +69,7 @@ include("testdata.jl")
     @test length(coefnames(lmm)) == 6
     @test Metida.confint(lmm)[end][1] ≈ -0.7630380758015894 atol=1E-4
     @test size(crossmodelmatrix(lmm), 1) == 6
+    @test anovatable.pval[4]          ≈ 0.7852154468081014 atol=1E-6
     ############################################################################
     # AI like algo
     Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm))

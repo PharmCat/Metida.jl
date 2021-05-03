@@ -32,6 +32,12 @@ struct CovarianceType{T} <: AbstractCovarianceType
         CovarianceType(s, zero(Int))
     end
 end
+#=
+struct FullCovarianceType <: AbstractCovarianceType
+    g::CovarianceType
+    r::CovarianceType
+end
+=#
 ################################################################################
 """
     ScaledIdentity()
@@ -302,6 +308,8 @@ customg = CovarianceType(CovmatMethod((q,p) -> (q, 1), Metida.gmat_csh!))
 ```
 """
 CovarianceType(cm::AbstractCovmatMethod) = CovarianceType(:FUNC, cm)
+
+#CovarianceType(cmg::AbstractCovmatMethod, cmr::AbstractCovmatMethod) = FullCovarianceType(CovarianceType(:FUNC, cmg), CovarianceType(:FUNC, cmr))
 
 function covstrparam(ct::CovarianceType, t::Int, q::Int)::Tuple{Int, Int}
     if ct.s == :SI

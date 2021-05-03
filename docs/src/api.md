@@ -76,6 +76,11 @@ Metida.HeterogeneousToeplitz
 Metida.HeterogeneousToeplitzParameterized
 ```
 
+### Metida.anova
+```@docs
+Metida.anova
+```
+
 ### Metida.isfitted
 ```@docs
 Metida.isfitted

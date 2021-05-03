@@ -189,3 +189,4 @@ function hessian(lmm)
     if !lmm.result.fit error("Model not fitted!") end
     hessian(lmm, lmm.result.theta)
 end
+################################################################################
