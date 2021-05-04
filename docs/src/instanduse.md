@@ -76,6 +76,15 @@ fit!(lmm)
 lmm.log
 ```
 
+##### Type III Tests of Fixed Effects
+
+!!! warning
+    Experimental
+
+```@example lmmexample
+anova(lmm)
+```
+
 ### Model construction
 
 ```@docs
