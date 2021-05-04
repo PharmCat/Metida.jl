@@ -28,6 +28,7 @@ function anova(lmm::LMM{T}; ddf::Symbol = :satter) where T
             fac[i] = "(Intercept)"
         elseif typeof(lmm.mf.f.rhs.terms[i]) <: InterceptTerm{false}
             push!(d, i)
+            fac[i] = ""
             continue
         else
             fac[i] = string(lmm.mf.f.rhs.terms[i].sym)

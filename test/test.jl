@@ -369,6 +369,14 @@ end
     @test collect(Metida.confint(lmm)[6]) ≈  [0.05379033790060175, 0.23713821749515449] atol=1E-8
     anovatable = Metida.anova(lmm)
     @test anovatable.pval ≈ [3.087934998046721e-63, 0.9176105002577626, 0.6522549061162943, 0.002010933915677479] atol=1E-4
+
+    lmm = Metida.LMM(@formula(lnpk~0+sequence+period+treatment), dfrds;
+    random = Metida.VarEffect(Metida.@covstr(treatment|subject), Metida.CSH),
+    repeated = Metida.VarEffect(Metida.@covstr(treatment|subject), Metida.DIAG),
+    )
+    Metida.fit!(lmm)
+    anovatable = Metida.anova(lmm)
+        @test anovatable.pval ≈ [8.129457925585042e-74, 0.6522549061174356, 0.0020109339157131302] atol=1E-4
 end
 ################################################################################
 #                                  Errors
