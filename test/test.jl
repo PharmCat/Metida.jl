@@ -357,6 +357,19 @@ end
     Base.show(io, lmm)
     @test Metida.m2logreml(lmm)  ≈ 713.5850978377632 atol=1E-8
 end
+@testset "  Model: BE RDS 1, FDA model                               "  begin
+    dfrds        = CSV.File(joinpath(path, "csv", "berds", "rds1.csv"), types = Dict(:PK => Float64, :subject => String, :period => String, :sequence => String, :treatment => String )) |> DataFrame
+    dropmissing!(dfrds)
+    dfrds.lnpk = log.(dfrds.PK)
+    lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), dfrds;
+    random = Metida.VarEffect(Metida.@covstr(treatment|subject), Metida.CSH),
+    repeated = Metida.VarEffect(Metida.@covstr(treatment|subject), Metida.DIAG),
+    )
+    Metida.fit!(lmm)
+    @test collect(Metida.confint(lmm)[6]) ≈  [0.05379033790060175, 0.23713821749515449] atol=1E-8
+    anovatable = Metida.anova(lmm)
+    @test anovatable.pval ≈ [3.087934998046721e-63, 0.9176105002577626, 0.6522549061162943, 0.002010933915677479] atol=1E-4
+end
 ################################################################################
 #                                  Errors
 ################################################################################

@@ -9,13 +9,29 @@ function addspace(s::String, n::Int; first = false)::String
     return s
 end
 
-function printmatrix(io::IO, m::Matrix)
+function printmatrix(io::IO, m::Matrix; header = false)
     sm = string.(m)
     lv = maximum(length.(sm), dims = 1)
     for r = 1:size(sm, 1)
         for c = 1:size(sm, 2)
-            print(io, addspace(sm[r,c], lv[c] - length(sm[r,c]))*"   ")
+            sm[r,c] = addspace(sm[r,c], lv[c] - length(sm[r,c]))*"   "
         end
-        println(io, "")
+    end
+    i = 1
+    if header
+        line = "⎯" ^ sum(length.(sm[1,:]))
+        println(io, line)
+        for c = 1:size(sm, 2)
+            print(io, sm[1,c])
+        end
+        print(io, "\n")
+        println(io, line)
+        i = 2
+    end
+    for r = i:size(sm, 1)
+        for c = 1:size(sm, 2)
+            print(io, sm[r,c])
+        end
+        print(io, "\n")
     end
 end

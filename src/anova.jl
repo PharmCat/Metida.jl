@@ -55,7 +55,8 @@ function anova(lmm::LMM{T}; ddf::Symbol = :satter) where T
 end
 
 function Base.show(io::IO, at::ANOVATable)
-    mx = hcat(at.name,  at.f, at.ndf, at.df, at.pval)
+    println(io, "  Type III Tests of Fixed Effects")
+    mx = hcat(at.name,  round.(at.f; digits = 4), round.(at.ndf; digits = 4), round.(at.df; digits = 4), round.(at.pval; digits = 4))
     mx = vcat(["Name" "F" "ndf" "ddf" "pval"], mx)
-    printmatrix(io, mx)
+    printmatrix(io, mx; header = true)
 end
