@@ -8,6 +8,9 @@ function initvar(y::Vector, X::Matrix{T}) where T
     sum(x -> x * x, r)/(length(r) - size(X, 2)), β
 end
 ################################################################################
+function nterms(lmm::LMM)
+    nterms(lmm.mf)
+end
 function nterms(mf::ModelFrame)
     mf.schema.schema.count
 end
