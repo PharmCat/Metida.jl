@@ -41,7 +41,7 @@ function anova(lmm::LMM{T}; ddf::Symbol = :satter) where T
         elseif ddf == :contain
             df[i]  = dof_contain(lmm, i)
         elseif ddf == :residual
-            df[i]  = dof_residual(lmm, i)
+            df[i]  = dof_residual(lmm)
         end
         pval[i] = ccdf(FDist(ndf[i], df[i]), F[i])
     end

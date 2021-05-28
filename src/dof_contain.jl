@@ -15,8 +15,6 @@ function zmatrix(lmm::LMM, i)
     end
     rzm
 end
-
-
 function fullzmatrix(lmm)
     fzm = Matrix{Int}(undef, nobs(lmm), 0)
     for r = 1:length(lmm.covstr.random)
