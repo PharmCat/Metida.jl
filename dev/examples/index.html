@@ -31,23 +31,23 @@ Residual   σ²               var   0.970345
 </pre><p>MixedModels result:</p><pre><code class="language-julia">fm = @formula(response ~ 1 + factor*time + (1 + time|subject&amp;factor))
 mm = fit(MixedModel, fm, rds, REML=true)</code></pre><pre class="documenter-example-output">Linear mixed model fit by REML
  response ~ 1 + factor + time + factor &amp; time + (1 + time | subject &amp; factor)
- REML criterion at convergence: 1300.1807598192281
+ REML criterion at convergence: 1300.1807598200558
 
 Variance components:
                     Column   Variance Std.Dev.   Corr.
-subject &amp; factor (Intercept)  1.537868 1.240108
+subject &amp; factor (Intercept)  1.537863 1.240106
                  time         0.010226 0.101123 -0.04
-Residual                      0.970344 0.985060
+Residual                      0.970343 0.985060
  Number of obs: 400; levels of grouping factors: 40
 
   Fixed-effects parameters:
 ──────────────────────────────────────────────────────────
                         Coef.  Std. Error      z  Pr(&gt;|z|)
 ──────────────────────────────────────────────────────────
-(Intercept)         22.1331     0.30434    72.72    &lt;1e-99
-factor: 1.0          2.00049    0.430402    4.65    &lt;1e-5
-time                 1.11853    0.0264038  42.36    &lt;1e-99
-factor: 1.0 &amp; time   0.404971   0.0373407  10.85    &lt;1e-26
+(Intercept)         22.1331     0.30434    72.73    &lt;1e-99
+factor: 1.0          2.00049    0.430401    4.65    &lt;1e-5
+time                 1.11853    0.0264039  42.36    &lt;1e-99
+factor: 1.0 &amp; time   0.404971   0.0373408  10.85    &lt;1e-26
 ──────────────────────────────────────────────────────────</pre><h3 id="Example-2-Two-random-factors-(Penicillin-data)"><a class="docs-heading-anchor" href="#Example-2-Two-random-factors-(Penicillin-data)">Example 2 - Two random factors (Penicillin data)</a><a id="Example-2-Two-random-factors-(Penicillin-data)-1"></a><a class="docs-heading-anchor-permalink" href="#Example-2-Two-random-factors-(Penicillin-data)" title="Permalink"></a></h3><p>Metida:</p><pre><code class="language-julia">df          = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;Penicillin.csv&quot;); types = [String, Float64, String, String]) |&gt; DataFrame
 df.diameter = float.(df.diameter)
 
@@ -80,13 +80,13 @@ Residual   σ²    var   0.302415
 </pre><p>MixedModels:</p><pre><code class="language-julia">fm2 = @formula(diameter ~ 1 + (1|plate) + (1|sample))
 mm = fit(MixedModel, fm2, df, REML=true)</code></pre><pre class="documenter-example-output">Linear mixed model fit by REML
  diameter ~ 1 + (1 | plate) + (1 | sample)
- REML criterion at convergence: 330.8605889909948
+ REML criterion at convergence: 330.86058899102966
 
 Variance components:
             Column   Variance Std.Dev.
 plate    (Intercept)  0.716908 0.846704
-sample   (Intercept)  3.730909 1.931556
-Residual              0.302415 0.549923
+sample   (Intercept)  3.730901 1.931554
+Residual              0.302416 0.549923
  Number of obs: 144; levels of grouping factors: 24, 6
 
   Fixed-effects parameters:
@@ -207,4 +207,4 @@ fit!(lmm)</code></pre><p>SAS code:</p><pre><code class="language-none">PROC MIXE
 CLASSES subject sequence period formulation;
 MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
 RANDOM  subject/TYPE=VC G V;
-RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../bioequivalence/">Bioequivalence »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 7 May 2021 14:34">Friday 7 May 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../bioequivalence/">Bioequivalence »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 28 May 2021 10:35">Friday 28 May 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
