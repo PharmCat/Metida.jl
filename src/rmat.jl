@@ -24,6 +24,8 @@ function rmat_base_inc_b!(mx, θ, zrv, covstr)
             rmatp_toephp!(mx, θ, zrv, covstr.repeated.covtype.p)
         elseif covstr.repeated.covtype.s == :FUNC
             covstr.repeated.covtype.p.xmat!(mx, θ, zrv, covstr.repeated.covtype.p)
+        elseif covstr.repeated.covtype.s == :SPEXP
+            rmatp_spexp!(mx, θ, zrv, covstr.repeated.covtype.p)
         end
 end
 ################################################################################
@@ -158,6 +160,38 @@ function rmatp_toephp!(mx, θ, rz, p)
     end
     @inbounds @simd for m = 1:s
         mx[m, m] += vec[m] * vec[m]
+    end
+    nothing
+end
+################################################################################
+function edistance(i::AbstractVector{T1}, j::AbstractVector{T2}) where T1 where T2
+    sum = zero(promote_type(T1, T2))
+    for c = 1:length(i)
+        sum += (i[c]-j[c])^2
+    end
+    return sqrt(sum)
+end
+function edistance(mx::AbstractMatrix{T}, i::Int, j::Int) where T
+    sum = zero(T)
+    for c = 1:size(mx, 2)
+        sum += (mx[i,c] - mx[j,c])^2
+    end
+    return sqrt(sum)
+end
+################################################################################
+function rmatp_spexp!(mx, θ, rz, p)
+    σ²    = θ[1]^2
+    θ     = exp(θ[2])
+    rn    = size(mx, 1)
+    @inbounds @simd for i = 1:size(mx, 1)
+        mx[i, i] += σ²
+    end
+    if rn > 1
+        for m = 1:rn - 1
+            @inbounds @simd for n = m + 1:rn
+                mx[m, n] += σ² * exp(-edistance(rz, m, n) / θ)
+            end
+        end
     end
     nothing
 end

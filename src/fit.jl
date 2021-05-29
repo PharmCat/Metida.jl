@@ -89,9 +89,11 @@ function fit!(lmm::LMM{T};
         end
     else
         initθ = sqrt(initvar(lmm.data.yv, lmm.mm.m)[1])/(length(lmm.covstr.random)+1)
-        θ                      .= initθ
+        #θ                      .= initθ
         for i = 1:length(θ)
-            if lmm.covstr.ct[i] == :rho
+            if lmm.covstr.ct[i] == :var
+                θ[i] = initθ
+            elseif lmm.covstr.ct[i] == :rho
                 θ[i] = 1e-4
             end
         end

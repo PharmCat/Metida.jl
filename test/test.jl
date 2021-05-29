@@ -429,3 +429,11 @@ end
     @test iA  ≈ iAss atol=1E-6
     @test iAs ≈ iAb  atol=1E-6
 end
+
+@testset "  Experimental                                             " begin
+    lmm = Metida.LMM(@formula(response ~ 1), ftdf;
+    repeated = Metida.VarEffect(Metida.@covstr(response+time|subject), Metida.SPEXP),
+    )
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 1528.7150702624508 atol=1E-6
+end

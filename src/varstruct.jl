@@ -235,6 +235,27 @@ function HeterogeneousToeplitzParameterized(p::Int)
 end
 const TOEPHP(p) = HeterogeneousToeplitzParameterized(p)
 
+"""
+    SpatialExponential()
+
+!!! warning
+    Experimental
+
+Spatian Exponential covariance structure. Used only for repeated effect.
+
+```math
+R_{i,j} = \\sigma^{2} * exp(-dist(i,j)/exp(\\theta))
+```
+
+where `dist` - Euclidean distance between row-vector of repeated effect matrix  for subject `i` and `j`.
+
+SPEXP = SpatialExponential()
+
+"""
+function SpatialExponential()
+    CovarianceType(:SPEXP)
+end
+const SPEXP = SpatialExponential()
 #Spatial Power ?
 #=
 """
@@ -311,37 +332,39 @@ CovarianceType(cm::AbstractCovmatMethod) = CovarianceType(:FUNC, cm)
 
 #CovarianceType(cmg::AbstractCovmatMethod, cmr::AbstractCovmatMethod) = FullCovarianceType(CovarianceType(:FUNC, cmg), CovarianceType(:FUNC, cmr))
 
-function covstrparam(ct::CovarianceType, t::Int, q::Int)::Tuple{Int, Int}
+function covstrparam(ct::CovarianceType, t::Int, q::Int)
     if ct.s == :SI
-        return (1, 0)
+        return (1, 0, 0)
     elseif ct.s == :DIAG
-        return (t, 0)
-    elseif ct.s == :VC
-        return (q, 0)
+        return (t, 0, 0)
+    #elseif ct.s == :VC
+    #    return (q, 0, q)
     elseif ct.s == :AR
-        return (1, 1)
+        return (1, 1, 0)
     elseif ct.s == :ARH
-        return (t, 1)
+        return (t, 1, 0)
     elseif ct.s == :ARMA
-        return (1, 2)
+        return (1, 2, 0)
     elseif ct.s == :CS
-        return (1, 1)
+        return (1, 1, 0)
     elseif ct.s == :CSH
-        return (t, 1)
+        return (t, 1, 0)
     elseif ct.s == :TOEP
-        return (1, t - 1)
+        return (1, t - 1, 0)
     elseif ct.s == :TOEPH
-        return (t, t - 1)
+        return (t, t - 1, 0)
     elseif ct.s == :TOEPP
-        return (1, ct.p - 1)
+        return (1, ct.p - 1, 0)
     elseif ct.s == :TOEPHP
-        return (t, ct.p - 1)
+        return (t, ct.p - 1, 0)
     elseif ct.s == :UN
-        return (t, t * (t + 1) / 2 - t)
+        return (t, t * (t + 1) / 2 - t, 0)
     elseif ct.s == :ZERO
-        return (0, 0)
+        return (0, 0, 0)
     elseif ct.s == :FUNC
         return ct.p.nparamf(t, q)
+    elseif ct.s == :SPEXP
+        return (1, 0, 1)
     else
         error("Unknown covariance type!")
     end
@@ -467,7 +490,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             ztemp     = modelcols(MatrixTerm(schema[i]), data)
             q[i]      = size(ztemp, 2)
             csp       = covstrparam(random[i].covtype, q[i], random[i].p)
-            t[i]      = csp[1] + csp[2]
+            t[i]      = sum(csp)
             z         = hcat(z, ztemp)
             fillur!(zrndur, i, q)
             fillur!(tr, i, t)
@@ -488,7 +511,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         sn[end] = size(subjz[end], 2)
         q[end]      = size(rz, 2)
         csp         = covstrparam(repeated.covtype, q[end], repeated.p)
-        t[end]      = csp[1] + csp[2]
+        t[end]      = sum(csp)
         tr[end]     = UnitRange(sum(t[1:end-1]) + 1, sum(t[1:end-1]) + t[end])
         updatenametype!(ct, rcnames, csp, schema[end], repeated.covtype.s)
         #Theta length
@@ -544,7 +567,8 @@ end
 function updatenametype!(ct, rcnames, csp, schema, s)
     append!(ct, fill!(Vector{Symbol}(undef, csp[1]), :var))
     append!(ct, fill!(Vector{Symbol}(undef, csp[2]), :rho))
-    append!(rcnames, rcoefnames(schema, csp[1]+csp[2], s))
+    if length(csp) == 3 append!(ct, fill!(Vector{Symbol}(undef, csp[3]), :theta)) end
+    append!(rcnames, rcoefnames(schema, sum(csp), s))
 end
 ################################################################################
 function rcoefnames(s, t, ve)

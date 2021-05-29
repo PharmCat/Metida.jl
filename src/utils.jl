@@ -70,7 +70,7 @@ function varlinkvecapply!(v, p; varlinkf = :exp, rholinkf = :sigm)
     for i = 1:length(v)
         if p[i] == :var
             v[i] = vlink(v[i])
-        else
+        elseif p[i] == :rho
             if rholinkf == :sigm
                 v[i] = rholinksigmoid(v[i])
             elseif rholinkf == :atan
@@ -88,7 +88,7 @@ function varlinkrvecapply!(v, p; varlinkf = :exp, rholinkf = :sigm)
     for i = 1:length(v)
         if p[i] == :var
             v[i] = vlinkr(v[i])
-        else
+        elseif p[i] == :rho
             if rholinkf == :sigm
                 v[i] = rholinksigmoidr(v[i])
             elseif rholinkf == :atan
@@ -107,7 +107,7 @@ function varlinkvecapply(v, p; varlinkf = :exp, rholinkf = :sigm)
     for i = 1:length(v)
         if p[i] == :var
             s[i] = vlink(v[i])
-        else
+        elseif p[i] == :rho
             if rholinkf == :sigm
                 s[i] = rholinksigmoid(v[i])
             elseif rholinkf == :atan
@@ -117,6 +117,8 @@ function varlinkvecapply(v, p; varlinkf = :exp, rholinkf = :sigm)
             elseif rholinkf == :psigm
                 s[i] = rholinkpsigmoid(v[i])
             end
+        else
+            s[i] = v[i]
         end
     end
     s
@@ -126,7 +128,7 @@ function m2logreml(lmm)
     lmm.result.reml
 end
 function logreml(lmm)
-    -m2logreml(lmm)/2.
+    -m2logreml(lmm)/2
 end
 ################################################################################
 

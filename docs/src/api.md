@@ -76,6 +76,11 @@ Metida.HeterogeneousToeplitz
 Metida.HeterogeneousToeplitzParameterized
 ```
 
+### Metida.SpatialExponential
+```@docs
+Metida.SpatialExponential
+```
+
 ### Metida.anova
 ```@docs
 Metida.anova
