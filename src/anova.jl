@@ -7,7 +7,7 @@ struct ANOVATable
     pval::Vector
 end
 """
-    anova(lmm::LMM)
+    anova(lmm::LMM{T}; ddf::Symbol = :satter) where T
 
 !!! warning
     Experimental

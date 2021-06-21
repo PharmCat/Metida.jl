@@ -7,6 +7,7 @@ module Metida
 using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables, ForwardDiff, CategoricalArrays
 using Optim, LineSearches
 
+import MetidaBase: MetidaModel, AbstractCovarianceStructure, AbstractCovmatMethod, AbstractCovarianceType, AbstractLMMDataBlocks
 import LinearAlgebra:checksquare
 import StatsModels: @formula
 import StatsBase: fit, fit!, coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
@@ -31,7 +32,6 @@ AbstractCovarianceType, AbstractCovmatMethod, MetidaModel
 
 export coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
 
-include("abstracttype.jl")
 include("sweep.jl")
 include("varstruct.jl")
 include("gmat.jl")

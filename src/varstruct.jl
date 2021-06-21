@@ -247,7 +247,7 @@ Spatian Exponential covariance structure. Used only for repeated effect.
 R_{i,j} = \\sigma^{2} * exp(-dist(i,j)/exp(\\theta))
 ```
 
-where `dist` - Euclidean distance between row-vector of repeated effect matrix  for subject `i` and `j`.
+where `dist` - Euclidean distance between row-vectors of repeated effect matrix for subject `i` and `j`.
 
 SPEXP = SpatialExponential()
 
@@ -269,12 +269,13 @@ end
 """
     CovmatMethod(nparamf::Function, xmat!::Function)
 
-* `nparamf` - function type (t, q) -> (a, b)
+* `nparamf` - function type (t, q) -> (a, b, c)
 where:
 `t` - size(z, 2) - number of levels for effect (number of columns of individual z matriz);
 `q` - number of factors in the effect model;
 `a` - number of variance parameters;
 `b` - number of ρ parameters;
+`c` - other parameers (optional).
 
 Example: `(t, q) -> (t, 1)` for CSH structure; `(t, q) -> (1, 1)` for AR, ets.
 
@@ -334,33 +335,33 @@ CovarianceType(cm::AbstractCovmatMethod) = CovarianceType(:FUNC, cm)
 
 function covstrparam(ct::CovarianceType, t::Int, q::Int)
     if ct.s == :SI
-        return (1, 0, 0)
+        return (1, 0)
     elseif ct.s == :DIAG
-        return (t, 0, 0)
+        return (t, 0)
     #elseif ct.s == :VC
     #    return (q, 0, q)
     elseif ct.s == :AR
-        return (1, 1, 0)
+        return (1, 1)
     elseif ct.s == :ARH
-        return (t, 1, 0)
+        return (t, 1)
     elseif ct.s == :ARMA
-        return (1, 2, 0)
+        return (1, 2)
     elseif ct.s == :CS
-        return (1, 1, 0)
+        return (1, 1)
     elseif ct.s == :CSH
-        return (t, 1, 0)
+        return (t, 1)
     elseif ct.s == :TOEP
-        return (1, t - 1, 0)
+        return (1, t - 1)
     elseif ct.s == :TOEPH
-        return (t, t - 1, 0)
+        return (t, t - 1)
     elseif ct.s == :TOEPP
-        return (1, ct.p - 1, 0)
+        return (1, ct.p - 1)
     elseif ct.s == :TOEPHP
-        return (t, ct.p - 1, 0)
+        return (t, ct.p - 1)
     elseif ct.s == :UN
-        return (t, t * (t + 1) / 2 - t, 0)
+        return (t, t * (t + 1) / 2 - t)
     elseif ct.s == :ZERO
-        return (0, 0, 0)
+        return (0, 0)
     elseif ct.s == :FUNC
         return ct.p.nparamf(t, q)
     elseif ct.s == :SPEXP

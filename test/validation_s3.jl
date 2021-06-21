@@ -117,12 +117,16 @@ mm  = fit(MixedModel, fm2, dfrds, REML=true)
 
 println("")
 println("Bioequivalence Reference Datasets - REML - type B")
-pretty_table(dftable[!, [1,2,3,4]], ["RDS" "Metida" " SPSS " "DIFF" ;
-                                     " N " "REML B" "REML B" "    " ], tf = tf_ascii_rounded)
+header = ["RDS" "Metida" " SPSS " "DIFF" ;
+          " N " "REML B" "REML B" "    " ]
+header = tuple([header[i, :] for i = 1:size(header, 1)]...)
+pretty_table(dftable[!, [1,2,3,4]]; header = header, tf = tf_ascii_rounded)
 println("")
 println("Bioequivalence Reference Datasets - REML - type C")
-pretty_table(dftable[!,[1,5,6,7,8]], ["RDS" "Metida" " SPSS " "DIFF" "Comm.";
-                                      " N " "REML C" "REML C" "    " "     "], tf = tf_ascii_rounded)
+header = ["RDS" "Metida" " SPSS " "DIFF" "Comm.";
+          " N " "REML C" "REML C" "    " "     "]
+header = tuple([header[i, :] for i = 1:size(header, 1)]...)
+pretty_table(dftable[!,[1,5,6,7,8]]; header = header, tf = tf_ascii_rounded)
 println("")
 println("*  - ", c1)
 println("")
@@ -146,8 +150,10 @@ b = round.(exp.(mbucic) .* 100.0, digits = 2),
 c = round.(exp.(mclcic) .* 100.0, digits = 2),
 d = round.(exp.(mcucic) .* 100.0, digits = 2),
 e = lci, f = uci)
-pretty_table(citable, ["RDS" "Metida B" "Metida B" "Metida C" "Metida C" "REF*" "REF*";
-                       " N " "LCI"      "UCI"      "LCI"      " UCI "    "LCI" "UCI"], tf = tf_ascii_rounded)
+header = ["RDS" "Metida B" "Metida B" "Metida C" "Metida C" "REF*" "REF*";
+          " N " "LCI"      "UCI"      "LCI"      " UCI "    "LCI" "UCI"]
+header = tuple([header[i, :] for i = 1:size(header, 1)]...)
+pretty_table(citable; header = header , tf = tf_ascii_rounded)
 println("")
 println("* Reference: Schütz H, Labes D, Tomashevskiy M, la Parra MG, Shitova A,
 Fuglsang A. Reference Datasets for Studies in a Replicate Design Intended for

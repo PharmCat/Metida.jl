@@ -1,9 +1,14 @@
 # Benchmark
 
-* Data
+### System
+
+* CPU: Ryzen 5950x
+* RAM: 64Gb 3200
+
+### Data
 
 ```
-using Metida, CSV, DataFrames, MixedModels;
+using Metida, CSV, DataFrames, MixedModels, BenchmarkTools;
 
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 ```
@@ -17,15 +22,15 @@ fm = @formula(response ~ 1 + factor*time + (1 + time|subject&factor))
 
 ```
 BenchmarkTools.Trial:
-  memory estimate:  375.98 KiB
-  allocs estimate:  3544
+  memory estimate:  372.62 KiB
+  allocs estimate:  3503
   --------------
-  minimum time:     4.797 ms (0.00% GC)
-  median time:      5.232 ms (0.00% GC)
-  mean time:        5.469 ms (1.43% GC)
-  maximum time:     32.592 ms (78.90% GC)
+  minimum time:     1.507 ms (0.00% GC)
+  median time:      1.583 ms (0.00% GC)
+  mean time:        1.652 ms (1.94% GC)
+  maximum time:     12.631 ms (0.00% GC)
   --------------
-  samples:          2741
+  samples:          9053
   evals/sample:     1
 ```
 
@@ -38,51 +43,19 @@ random = VarEffect(@covstr(1 + time|subject&factor), CSH),
 @benchmark fit!($lmm, hes = false) seconds = 15
 ```
 
-* Metida v0.4.0
+* Metida v0.9.2
 
 ```
 BenchmarkTools.Trial:
-  memory estimate:  74.98 MiB
-  allocs estimate:  112761
+  memory estimate:  47.11 MiB
+  allocs estimate:  138400
   --------------
-  minimum time:     198.118 ms (0.00% GC)
-  median time:      212.742 ms (3.56% GC)
-  mean time:        212.262 ms (2.83% GC)
-  maximum time:     225.154 ms (4.37% GC)
+  minimum time:     34.806 ms (0.00% GC)
+  median time:      39.110 ms (0.00% GC)
+  mean time:        39.748 ms (6.34% GC)
+  maximum time:     80.331 ms (45.25% GC)
   --------------
-  samples:          71
-  evals/sample:     1
-```
-
-* Metida v0.5.0
-
-```
-BenchmarkTools.Trial:
-  memory estimate:  74.93 MiB
-  allocs estimate:  111421
-  --------------
-  minimum time:     196.160 ms (0.00% GC)
-  median time:      218.341 ms (0.00% GC)
-  mean time:        225.815 ms (3.55% GC)
-  maximum time:     305.821 ms (19.83% GC)
-  --------------
-  samples:          67
-  evals/sample:     1
-```
-
-* Metida v0.7.0
-
-```
-BenchmarkTools.Trial:
-  memory estimate:  46.25 MiB
-  allocs estimate:  118271
-  --------------
-  minimum time:     92.129 ms (0.00% GC)
-  median time:      99.525 ms (0.00% GC)
-  mean time:        105.830 ms (4.89% GC)
-  maximum time:     184.984 ms (0.00% GC)
-  --------------
-  samples:          142
+  samples:          378
   evals/sample:     1
 ```
 

@@ -1,6 +1,9 @@
+v0.10.0
+  * MetidaBase for abstract types
+
 v0.9.2
   * z matrix for random effect
-  * contain ddf
+  * contain ddf experimental
   * Experimental Spatial Exponential repeated structure
 
 v0.9.1

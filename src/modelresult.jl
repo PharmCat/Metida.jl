@@ -9,27 +9,7 @@ mutable struct ModelResult
     h::Union{Matrix, Nothing}
     c::Union{Matrix, Nothing}
     se::Union{Vector, Nothing}
-    #=
-    function ModelResult(
-    optim,
-    theta,
-    reml,
-    beta,
-    h,
-    c,
-    se,
-    hsvds)
-        new(true,
-        optim,
-        theta,
-        reml,
-        beta,
-        h,
-        c,
-        se,
-        hsvds)
-    end
-    =#
+
     function ModelResult()
         new(false, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
     end
