@@ -4,10 +4,11 @@
 __precompile__()
 module Metida
 
-using Distributions, LinearAlgebra, StatsBase, StatsModels, Tables, ForwardDiff, CategoricalArrays
+using Distributions, LinearAlgebra, StatsBase, ForwardDiff, CategoricalArrays
 using Optim, LineSearches
 
-import MetidaBase: MetidaModel, AbstractCovarianceStructure, AbstractCovmatMethod, AbstractCovarianceType, AbstractLMMDataBlocks
+import MetidaBase: Tables, MetidaModel, AbstractCovarianceStructure, AbstractCovmatMethod, AbstractCovarianceType, AbstractLMMDataBlocks
+using MetidaBase.StatsModels
 import LinearAlgebra:checksquare
 import StatsModels: @formula
 import StatsBase: fit, fit!, coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
