@@ -4,7 +4,7 @@
 __precompile__()
 module Metida
 
-using Distributions, LinearAlgebra, StatsBase, ForwardDiff, CategoricalArrays, LoopVectorization
+using Distributions, LinearAlgebra, StatsBase, ForwardDiff, CategoricalArrays#, LoopVectorization
 using Optim, LineSearches
 using MetidaBase
 using StatsModels

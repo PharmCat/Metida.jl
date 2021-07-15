@@ -11,11 +11,11 @@ function mulαβαtinc!(θ::AbstractMatrix{T}, A::AbstractMatrix, B::AbstractMat
     c  = Vector{T}(undef, size(B, 1))
     for i ∈ axa
         fill!(c, zero(T))
-        @turbo for n ∈ axb, m ∈ axb
+        #=@turbo=# @inbounds  for n ∈ axb, m ∈ axb
             c[n] += B[m, n] * A[i, m]
         end
         #upper triangular n = i:p
-        @turbo for n ∈ axa, m ∈ axb
+        #=@turbo=# @inbounds  for n ∈ axa, m ∈ axb
             θ[i, n] += A[n, m] * c[m]
         end
     end
@@ -35,14 +35,14 @@ function mulθ₃(y, X, β, V::AbstractArray{T}) where T
 
     if q == 1
         c = zero(T)
-        @turbo for m in 1:p
+        #=@turbo=# @inbounds  for m in 1:p
             c += X[1, m] * β[m]
         end
         return -V[1, 1] * (y[1] - c)^2
     end
 
     c = zeros(T, q)
-    @turbo for n = 1:q, m = 1:p
+    #=@turbo=# @inbounds  for n = 1:q, m = 1:p
         c[n] += X[n, m] * β[m]
     end
 
@@ -51,7 +51,7 @@ function mulθ₃(y, X, β, V::AbstractArray{T}) where T
             @inbounds θ -= V[n, m] * (y[n] - c[n]) * (y[m] - c[m]) * 2
         end
     end
-    @turbo for m = 1:q
+    #=@turbo=# @inbounds  for m = 1:q
         θ -= V[m, m] * (y[m] - c[m]) ^ 2
     end
 
@@ -66,7 +66,7 @@ function mulαtβinc!(θ::AbstractVector, A::AbstractMatrix, b::AbstractVector)
     if size(A, 1) != length(b) throw(DimensionMismatch("size(A, 1) should be equal length(b)")) end
     q = size(A, 1)
     p = size(A, 2)
-    @turbo for n in 1:p, m in 1:q
+    #=@turbo=# @inbounds  for n in 1:p, m in 1:q
         θ[n] += b[m] * A[m, n]
     end
     θ
@@ -80,7 +80,7 @@ vec = rz * θ
 =#
 @inline function tmul_unsafe(rz, θ::AbstractVector{T}) where T
     vec = zeros(T, size(rz, 1))
-    @turbo for r ∈ axes(rz, 1)
+    #=@turbo=# @inbounds  for r ∈ axes(rz, 1)
         for i ∈ axes(rz, 2)
             vec[r] += rz[r, i] * θ[i]
         end

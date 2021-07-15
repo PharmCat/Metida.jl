@@ -38,15 +38,15 @@ function rmat_base_inc!(mx, θ, covstr, block, sblock)
     mx
 end
 ################################################################################
-function rmatp_si!(mx, θ, ::AbstractMatrix, p) #@turbo checked
+function rmatp_si!(mx, θ, ::AbstractMatrix, p) ##=@turbo=# @inbounds  checked
     θsq = θ[1]*θ[1]
     @inbounds @simd for i ∈ axes(mx, 1)
             mx[i, i] += θsq
     end
     nothing
 end
-function rmatp_diag!(mx, θ, rz, p) #@turbo checked
-    @turbo for i ∈ axes(mx, 1)
+function rmatp_diag!(mx, θ, rz, p) ##=@turbo=# @inbounds  checked
+    #=@turbo=# @inbounds  for i ∈ axes(mx, 1)
         for c ∈ axes(θ, 1)
             mx[i, i] += rz[i, c] * θ[c] * θ[c]
         end
@@ -69,7 +69,6 @@ function rmatp_ar!(mx, θ, ::AbstractMatrix, p)
     nothing
 end
 function rmatp_arh!(mx, θ, rz, p)
-    #vec   = rz * (θ[1:end-1])
     vec = tmul_unsafe(rz, θ)
     rn    = size(mx, 1)
     if rn > 1
@@ -79,7 +78,7 @@ function rmatp_arh!(mx, θ, rz, p)
             end
         end
     end
-    @turbo for m ∈ axes(mx, 1)
+    #=@turbo=# @inbounds  for m ∈ axes(mx, 1)
         mx[m, m] += vec[m] * vec[m]
     end
     nothing
@@ -100,11 +99,11 @@ function rmatp_cs!(mx, θ, ::AbstractMatrix, p)
     end
     nothing
 end
-function rmatp_csh!(mx, θ, rz, p) # @turbo checked
+function rmatp_csh!(mx, θ, rz, p) # #=@turbo=# @inbounds  checked
     #vec   = rz * (θ[1:end-1])
     #=
     vec = zeros(T, size(rz, 1))
-    @turbo for r ∈ axes(rz, 1)
+    #=@turbo=# @inbounds  for r ∈ axes(rz, 1)
         for i ∈ axes(rz, 2)
             vec[r] += rz[r, i] * θ[i]
         end
@@ -119,7 +118,7 @@ function rmatp_csh!(mx, θ, rz, p) # @turbo checked
             end
         end
     end
-    @turbo for m ∈ axes(mx, 1)
+    #=@turbo=# @inbounds  for m ∈ axes(mx, 1)
         mx[m, m] += vec[m] * vec[m]
     end
     nothing
