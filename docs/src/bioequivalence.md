@@ -1,7 +1,7 @@
 ## Type B
 
 ```@example lmmexample
-using Metida, CSV, DataFrames
+using Metida, CSV, DataFrames, CategoricalArrays
 # example data
 df = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "df0.csv")) |> DataFrame;
 transform!(df, :subject => categorical, renamecols=false)
