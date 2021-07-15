@@ -4,6 +4,7 @@ authors = ["Vladimir Arnautov <mail@pharmcat.net>"]
 version = "0.10.0"
 
 [deps]
+StatsModels = "3eaba693-59b7-5ba5-a881-562e759f1c8d"
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -15,6 +16,7 @@ MetidaBase = "075456b7-4006-432f-9324-2f8453996c49"
 LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
 
 [compat]
+StatsModels = "0.6"
 CategoricalArrays = "0.8, 0.9, 0.10"
 Distributions = "0.20, 0.21, 0.22, 0.23, 0.24, 0.25"
 ForwardDiff = "0.10"
