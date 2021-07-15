@@ -23,11 +23,11 @@ time                 1.11853    0.0264038   42.3624   0.0
 factor: 1.0 &amp; time   0.404971   0.0373406   10.8453   2.09844e-27   
 
     Variance components:
-    θ vector: [1.2401, 0.101122, -0.042721, 0.985061]
-Random 1   σ² (Intercept)   var   1.53785     
-Random 1   σ² time          var   0.0102257   
-Random 1   ρ                rho   -0.042721   
-Residual   σ²               var   0.970345    
+    θ vector: [1.2401, 0.101122, -0.0427208, 0.985061]
+Random 1   σ² (Intercept)   var   1.53785      
+Random 1   σ² time          var   0.0102257    
+Random 1   ρ                rho   -0.0427208   
+Residual   σ²               var   0.970345     
 </pre><p>MixedModels result:</p><pre><code class="language-julia">fm = @formula(response ~ 1 + factor*time + (1 + time|subject&amp;factor))
 mm = fit(MixedModel, fm, rds, REML=true)</code></pre><pre class="documenter-example-output">Linear mixed model fit by REML
  response ~ 1 + factor + time + factor &amp; time + (1 + time | subject &amp; factor)
@@ -207,4 +207,4 @@ fit!(lmm)</code></pre><p>SAS code:</p><pre><code class="nohighlight">PROC MIXED 
 CLASSES subject sequence period formulation;
 MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
 RANDOM  subject/TYPE=VC G V;
-RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../bioequivalence/">Bioequivalence »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.3 on <span class="colophon-date" title="Thursday 15 July 2021 19:09">Thursday 15 July 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../bioequivalence/">Bioequivalence »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.3 on <span class="colophon-date" title="Thursday 15 July 2021 19:29">Thursday 15 July 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
