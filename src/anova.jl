@@ -57,7 +57,9 @@ end
 
 function Base.show(io::IO, at::ANOVATable)
     println(io, "  Type III Tests of Fixed Effects")
-    mx = hcat(at.name,  round.(at.f; digits = 4), round.(at.ndf; digits = 4), round.(at.df; digits = 4), round.(at.pval; digits = 4))
-    mx = vcat(["Name" "F" "ndf" "ddf" "pval"], mx)
-    printmatrix(io, mx; header = true)
+    mx = metida_table(at.name,  at.f, at.ndf, at.df, at.pval; names = (:Name, :F, :ndf, :ddf, :pval))
+    #mx = hcat(at.name,  round.(at.f; digits = 4), round.(at.ndf; digits = 4), round.(at.df; digits = 4), round.(at.pval; digits = 4))
+    #mx = vcat(["Name" "F" "ndf" "ddf" "pval"], mx)
+    #printmatrix(io, mx; header = true)
+    PrettyTables.pretty_table(io, mx; tf = PrettyTables.tf_compact)
 end

@@ -3,7 +3,7 @@ using SnoopCompile
 path    = dirname(@__FILE__)
 cd(path)
 
-inf_timing = @snoopi tmin=0.00000001 include("test.jl")
+inf_timing = @snoopi tmin=0.00001 include("test.jl")
 pc = SnoopCompile.parcel(inf_timing)
 SnoopCompile.write("precompile", pc)
 

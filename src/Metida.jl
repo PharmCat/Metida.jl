@@ -6,9 +6,10 @@ module Metida
 
 using Distributions, LinearAlgebra, StatsBase, ForwardDiff, CategoricalArrays, LoopVectorization
 using Optim, LineSearches
+using MetidaBase
 
-import MetidaBase: Tables, MetidaModel, AbstractCovarianceStructure, AbstractCovmatMethod, AbstractCovarianceType, AbstractLMMDataBlocks
-using StatsModels
+import MetidaBase: Tables, MetidaModel, AbstractCovarianceStructure, AbstractCovmatMethod, AbstractCovarianceType, AbstractLMMDataBlocks, MetidaTable, metida_table, PrettyTables
+
 import LinearAlgebra:checksquare
 import StatsModels: @formula
 import StatsBase: fit, fit!, coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
@@ -53,6 +54,7 @@ include("dof_contain.jl")
 include("fvalue.jl")
 include("anova.jl")
 
+#=
 # Use
 #    @warnpcfail precompile(args...)
 # if you want to be warned when a precompile directive fails
@@ -224,5 +226,6 @@ function _precompile_()
 end
 
 _precompile_()
+=#
 #include(".jl")
 end # module

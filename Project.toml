@@ -25,7 +25,7 @@ Optim = "1"
 StatsBase = "0.29, 0.30, 0.31, 0.32, 0.33"
 julia = "1"
 MetidaBase = "0.2"
-LoopVectorization = "0.10, 0.11, 0.12"
+LoopVectorization = "0.12"
 
 [extras]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
