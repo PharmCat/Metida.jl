@@ -4,10 +4,10 @@
 
 function nsyrk!(alpha, A, C)
     q = size(C, 1)
-    p = size(A, 2)
-    @simd for n = 1:q
-        @simd for m = n:q
-            @inbounds @simd for i = 1:p
+    #p = size(A, 2)
+    @simd for n ∈ axes(C, 1)
+        @simd for m ∈ n:q
+            @inbounds @simd for i ∈ axes(A, 2)
                 C[n, m] += A[n, i] * A[m, i] * alpha
             end
         end

@@ -32,22 +32,22 @@ end
 ################################################################################
 function rmat_base_inc!(mx, θ, covstr, block, sblock)
     zblock    = view(covstr.rz, block, :)
-    for i = 1:length(sblock[end])
-        rmat_base_inc_b!(view(mx, sblock[end][i],  sblock[end][i]), θ, view(zblock,  sblock[end][i], :), covstr)
+    @simd for i ∈ axes(sblock[end], 1)
+        @inbounds rmat_base_inc_b!(view(mx, sblock[end][i],  sblock[end][i]), θ, view(zblock,  sblock[end][i], :), covstr)
     end
     mx
 end
 ################################################################################
-function rmatp_si!(mx, θ, ::AbstractMatrix, p)
+function rmatp_si!(mx, θ, ::AbstractMatrix, p) #@turbo checked
     θsq = θ[1]*θ[1]
-    @inbounds @simd for i = 1:size(mx, 1)
+    @inbounds @simd for i ∈ axes(mx, 1)
             mx[i, i] += θsq
     end
     nothing
 end
-function rmatp_diag!(mx, θ, rz, p)
-    for i = 1:size(mx, 1)
-        @inbounds @simd for c = 1:length(θ)
+function rmatp_diag!(mx, θ, rz, p) #@turbo checked
+    @turbo for i ∈ axes(mx, 1)
+        for c ∈ axes(θ, 1)
             mx[i, i] += rz[i, c] * θ[c] * θ[c]
         end
     end
@@ -69,7 +69,8 @@ function rmatp_ar!(mx, θ, ::AbstractMatrix, p)
     nothing
 end
 function rmatp_arh!(mx, θ, rz, p)
-    vec   = rz * (θ[1:end-1])
+    #vec   = rz * (θ[1:end-1])
+    vec = tmul_unsafe(rz, θ)
     rn    = size(mx, 1)
     if rn > 1
         for m = 1:rn - 1
@@ -78,7 +79,7 @@ function rmatp_arh!(mx, θ, rz, p)
             end
         end
     end
-    @inbounds @simd for m = 1:rn
+    @turbo for m ∈ axes(mx, 1)
         mx[m, m] += vec[m] * vec[m]
     end
     nothing
@@ -99,8 +100,17 @@ function rmatp_cs!(mx, θ, ::AbstractMatrix, p)
     end
     nothing
 end
-function rmatp_csh!(mx, θ, rz, p)
-    vec   = rz * (θ[1:end-1])
+function rmatp_csh!(mx, θ, rz, p) # @turbo checked
+    #vec   = rz * (θ[1:end-1])
+    #=
+    vec = zeros(T, size(rz, 1))
+    @turbo for r ∈ axes(rz, 1)
+        for i ∈ axes(rz, 2)
+            vec[r] += rz[r, i] * θ[i]
+        end
+    end
+    =#
+    vec = tmul_unsafe(rz, θ)
     rn    = size(mx, 1)
     if rn > 1
         for m = 1:rn - 1
@@ -109,7 +119,7 @@ function rmatp_csh!(mx, θ, rz, p)
             end
         end
     end
-    @inbounds @simd for m = 1:rn
+    @turbo for m ∈ axes(mx, 1)
         mx[m, m] += vec[m] * vec[m]
     end
     nothing
