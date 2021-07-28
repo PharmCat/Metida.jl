@@ -6,7 +6,7 @@ module Metida
 
 using Distributions, LinearAlgebra, StatsBase, ForwardDiff, CategoricalArrays#, LoopVectorization
 using Optim, LineSearches, MetidaBase
-#using StatsModels
+using StatsModels
 import MetidaBase: Tables, MetidaModel, AbstractCovarianceStructure, AbstractCovmatMethod, AbstractCovarianceType, AbstractLMMDataBlocks, MetidaTable, metida_table, PrettyTables
 
 import LinearAlgebra:checksquare
