@@ -13,6 +13,7 @@ include("testdata.jl")
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.DIAG),
     )
+
     # Basic show (before fitting)
     Base.show(io, lmm)
     Metida.fit!(lmm)
@@ -33,8 +34,15 @@ include("testdata.jl")
     )
     Metida.fit!(lmm; aifirst = true)
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
+
+    anovatable = Metida.anova(lmm;  ddf = :contain) # NOT VALIDATED
+    anovatable = Metida.anova(lmm;  ddf = :residual)
     anovatable = Metida.anova(lmm)
     Base.show(io, anovatable)
+
+
+    ############################################################################
+
     ############################################################################
     # API test
     ############################################################################
@@ -46,7 +54,7 @@ include("testdata.jl")
     @test aicc(lmm)             ≈ 24.241112644506067 atol=1E-6
     @test Metida.caic(lmm)      ≈ 27.558878811225412 atol=1E-6
     @test dof_residual(lmm) == 14
-    @test Metida.dof_contain(lmm) == 6
+
     @test Metida.dof_satter(lmm, 6)   ≈ 5.81896814947982 atol=1E-2
     @test Metida.dof_satter(lmm)[end] ≈ 5.81896814947982 atol=1E-2
     @test Metida.dof_satter(lmm, [0 0 0 0 0 1]) ≈ 5.81896814947982 atol=1E-2
@@ -69,7 +77,8 @@ include("testdata.jl")
     @test length(coefnames(lmm)) == 6
     @test Metida.confint(lmm)[end][1] ≈ -0.7630380758015894 atol=1E-4
     @test Metida.confint(lmm; ddf = :residual)[end][1] ≈ -0.6740837049617738 atol=1E-4
-    Metida.confint(lmm; ddf = :contain)[end][1]
+
+    Metida.confint(lmm; ddf = :contain)[end][1] #NOT VALIDATED
     @test size(crossmodelmatrix(lmm), 1) == 6
     @test anovatable.pval[4]          ≈ 0.7852154468081014 atol=1E-6
     ############################################################################
@@ -112,6 +121,15 @@ include("testdata.jl")
     Metida.fit!(lmm; hes = false)
     @test Metida.m2logreml(lmm) ≈ 14.819463206995163 atol=1E-6
     @test Metida.dof_satter(lmm, 6)   ≈ 3.981102548214154 atol=1E-2
+
+    lmm = Metida.LMM(@formula(var~period*formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation+sequence|nosubj), Metida.SI),
+    )
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm, [0.222283, 0.444566]) ≈ Metida.m2logreml(lmm) atol=1E-6
+    # EXPERIMENTAL
+    @test Metida.dof_contain(lmm, 1) == 12
+    @test Metida.dof_contain(lmm, 5) == 8
 end
 ################################################################################
 #                                  df0

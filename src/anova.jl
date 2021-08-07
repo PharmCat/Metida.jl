@@ -39,7 +39,7 @@ function anova(lmm::LMM{T}; ddf::Symbol = :satter) where T
         if ddf == :satter
             df[i]  = dof_satter(lmm, L)
         elseif ddf == :contain
-            df[i]  = dof_contain(lmm, i)
+            df[i]  = dof_contain_f(lmm, i)
         elseif ddf == :residual
             df[i]  = dof_residual(lmm)
         end

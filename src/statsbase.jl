@@ -35,7 +35,7 @@ function StatsBase.confint(lmm::LMM{T}; level::Real=0.95, ddf::Symbol = :satter)
     if ddf == :satter
         ddfv = dof_satter(lmm)
     elseif ddf == :contain
-        ddfv = fill!(Vector{Float64}(undef, coefn(lmm)), dof_contain(lmm))
+        ddfv = dof_contain(lmm)
     elseif ddf == :residual
         ddfv = fill!(Vector{Float64}(undef, coefn(lmm)), dof_residual(lmm))
     end
@@ -78,7 +78,7 @@ end
 """
     StatsBase.dof_residual(lmm::LMM)
 
-DOF residuals.
+DOF residuals: N - rank(X).
 """
 function StatsBase.dof_residual(lmm::LMM)
     nobs(lmm) - lmm.rankx

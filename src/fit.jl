@@ -50,9 +50,8 @@ function fit!(lmm::LMM{T};
     if lmm.result.fit lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Refit model...")) end
     lmm.result.fit = false
 
-    if solver != :default
-        return fit_nlopt!(lmm; solver = solver, verbose = verbose, varlinkf = varlinkf, rholinkf = rholinkf, aifirst = aifirst, g_tol = g_tol, x_tol = x_tol, f_tol = f_tol, hes = false, init = init, io = io)
-    end
+    solver == :default || return fit_nlopt!(lmm; solver = solver, verbose = verbose, varlinkf = varlinkf, rholinkf = rholinkf, aifirst = aifirst, g_tol = g_tol, x_tol = x_tol, f_tol = f_tol, hes = false, init = init, io = io)
+
 
     if verbose == :auto
         verbose = 1

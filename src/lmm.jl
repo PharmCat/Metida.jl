@@ -26,7 +26,7 @@ struct LMM{T} <: MetidaModel
     covstr::CovStructure{T}
     data::LMMData{T}
     nfixed::Int
-    rankx::UInt32
+    rankx::Int
     result::ModelResult
     log::Vector{LMMLogMsg}
 
@@ -53,7 +53,11 @@ struct LMM{T} <: MetidaModel
         end
         lmmdata = LMMData(mm.m, response(mf))
         covstr = CovStructure(random, repeated, data)
-        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, nfixed, rank(mm.m), ModelResult(), lmmlog)
+        rankx =  rank(mm.m)
+        if rankx != size(mm.m, 2)
+            lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Fixed-effect matrix not full-rank!"))
+        end
+        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, nfixed, rankx, ModelResult(), lmmlog)
     end
 end
 """

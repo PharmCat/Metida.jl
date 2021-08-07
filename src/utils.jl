@@ -130,6 +130,9 @@ end
 function logreml(lmm)
     -m2logreml(lmm)/2
 end
+function m2logreml(lmm, theta)
+    reml_sweep_β(lmm, LMMDataViews(lmm), theta)[1]
+end
 ################################################################################
 
 function optim_callback(os)
@@ -195,3 +198,24 @@ function hessian(lmm)
     hessian(lmm, lmm.result.theta)
 end
 ################################################################################
+
+
+function get_symb(t::T; v = Vector{Symbol}(undef, 0)) where T <: Union{ConstantTerm, InterceptTerm, FunctionTerm}
+    v
+end
+function get_symb(t::T; v = Vector{Symbol}(undef, 0)) where T <: Union{Term, CategoricalTerm}
+    push!(v, t.sym)
+    v
+end
+function get_symb(t::T; v = Vector{Symbol}(undef, 0)) where T <: InteractionTerm
+    for i in t.terms
+        get_symb(i; v = v)
+    end
+    v
+end
+function get_symb(t::T; v = Vector{Symbol}(undef, 0)) where T <: Tuple{Vararg{AbstractTerm}}
+    for i in t
+        get_symb(i; v = v)
+    end
+    v
+end

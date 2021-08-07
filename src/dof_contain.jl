@@ -30,61 +30,72 @@ end
 function rankxz(lmm::LMM, i)
     rank(hcat(lmm.data.xv, zmatrix(lmm, i)))
 end
-#=
-function zmatrix(lmm, r)
-        l   = zeros(Int, lmm.covstr.sn[r])
-        si  = 1
-        rzm = Matrix{Int}(undef, 0, length(lmm.covstr.zrndur[r]) * lmm.covstr.sn[r])
-        for b = 1:length(lmm.covstr.vcovblock)
-            zblock    = view(lmm.covstr.z, lmm.covstr.vcovblock[b], lmm.covstr.zrndur[r])
-            for s = 1:length(lmm.covstr.sblock[b][r])
-                zi    = view(zblock, lmm.covstr.sblock[b][r][s], :)
-                l[si] = 1
-                rzm   = vcat(rzm, kron(l', zi))
-                l[si] = 0
-                si   +=1
+
+"""
+    dof_contain(lmm, i)
+
+!!! warning
+    Experimental!
+    Compute rank(XZi) for each random effect that syntactically contain factor assigned for β[i] element (Where Zi - Z matrix for random effect i).
+    Minimum returned. If no random effect found  N - rank(XZ) returned.
+"""
+function dof_contain(lmm, i)
+    ind  = lmm.mm.assign[i]
+    sym  = get_symb(lmm.mf.f.rhs.terms[ind])
+    rr   = Vector{Int}(undef, 0)
+    for r = 1:length(lmm.covstr.random)
+        if length(intersect(sym, get_symb(lmm.covstr.random[r].model))) > 0
+            push!(rr, rankxz(lmm, r))
+        end
+    end
+    if length(rr) > 0
+        return minimum(rr)
+    else
+        return nobs(lmm) - rankxz(lmm)
+    end
+end
+
+function dof_contain(lmm)
+    dof   = zeros(Int, length(lmm.mm.assign))
+    rrt   = zeros(Int, length(lmm.covstr.random))
+    rz   = 0
+    for i = 1:length(lmm.mm.assign)
+        ind  = lmm.mm.assign[i]
+        sym  = get_symb(lmm.mf.f.rhs.terms[ind])
+        rr   = Vector{Int}(undef, 0)
+        for r = 1:length(lmm.covstr.random)
+            if length(intersect(sym, get_symb(lmm.covstr.random[r].model))) > 0
+                if rrt[r] == 0 rrt[r] = rankxz(lmm, r) end
+                push!(rr, rrt[r])
             end
         end
-        rzm
+        if length(rr) > 0
+            dof[i] = minimum(rr)
+        else
+            if rz == 0 rz = nobs(lmm) - rankxz(lmm) end
+            dof[i] = rz
+        end
+    end
+    dof
 end
-=#
 """
-    dof_contain(lmm)
+    dof_contain_f(lmm, i)
 
 !!! warning
     Experimental
 
-Return the containment denominator degrees of freedom: rank(XZ) - rank(X)
 """
-function dof_contain(lmm)
-    rankxz(lmm) - lmm.rankx
-end
-#function dof_contain(lmm, i)
-#    rank(hcat(lmm.data.xv, fullzmatrix(lmm))) - lmm.rankx
-#end
-
-#=
-function dof_contain2(lmm)
-    tl  = length(lmm.mf.f.rhs.terms)
-    df  = Vector{Int}(undef, tl)
-    dfb = Vector{Int}(undef, coefn(lmm))
-    cnt = 1
-    for i = 1:tl
-        dfv=Vector{Int}(undef, 0)
-        for r = 1:length(lmm.covstr.random)
-            if contain(lmm.mf.f.rhs.terms[i], lmm.covstr.random[r])
-                push!(dfv, rank(hcat(lmm.data.xv, zmatrix(lmm, r))))
-            end
-        end
-        if length(dfv) > 0 df[i] = minimum(dfv) else df[i] =  nobs(lmm) - rank(hcat(lmm.data.xv, fullzmatrix(lmm))) end
-        for c = 1:termsize(lmm.mf.f.rhs.terms[i])
-            dfb[cnt] = df[i]
-            cnt += 1
+function dof_contain_f(lmm, i)
+    sym  = get_symb(lmm.mf.f.rhs.terms[i])
+    rr   = Vector{Int}(undef, 0)
+    for r = 1:length(lmm.covstr.random)
+        if length(intersect(sym, get_symb(lmm.covstr.random[r].model))) > 0
+            push!(rr, rankxz(lmm, r))
         end
     end
-    dfb
-end
-=#
-function dof_contain(lmm, i)
-
+    if length(rr) > 0
+        return minimum(rr)
+    else
+        return nobs(lmm) - rankxz(lmm)
+    end
 end
