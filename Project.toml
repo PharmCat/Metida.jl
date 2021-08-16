@@ -24,7 +24,7 @@ LineSearches = "7"
 Optim = "1"
 StatsBase = "0.29, 0.30, 0.31, 0.32, 0.33"
 julia = "1"
-MetidaBase = "0.3"
+MetidaBase = "0.3, 0.4"
 #LoopVectorization = "0.12"
 
 [extras]
