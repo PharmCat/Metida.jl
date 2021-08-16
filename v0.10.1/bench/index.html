@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Benchmark · Metida.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">Metida.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="../instanduse/">First step</a></li><li><a class="tocitem" href="../examples/">Examples</a></li><li><a class="tocitem" href="../bioequivalence/">Bioequivalence</a></li><li><a class="tocitem" href="../nlopt/">NLopt</a></li><li><a class="tocitem" href="../cuda/">CUDA</a></li><li><a class="tocitem" href="../faq/">F.A.Q.</a></li></ul></li><li><a class="tocitem" href="../details/">Details</a></li><li class="is-active"><a class="tocitem" href>Benchmark</a></li><li><a class="tocitem" href="../validation/">Validation</a></li><li><a class="tocitem" href="../api/">API</a></li><li><a class="tocitem" href="../ref/">Citation &amp; Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Benchmark</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Benchmark</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/PharmCat/Metida.jl/blob/master/docs/src/bench.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Benchmark"><a class="docs-heading-anchor" href="#Benchmark">Benchmark</a><a id="Benchmark-1"></a><a class="docs-heading-anchor-permalink" href="#Benchmark" title="Permalink"></a></h1><h3 id="System"><a class="docs-heading-anchor" href="#System">System</a><a id="System-1"></a><a class="docs-heading-anchor-permalink" href="#System" title="Permalink"></a></h3><ul><li>CPU: Ryzen 5950x</li><li>RAM: 64Gb 3200</li></ul><h3 id="Data"><a class="docs-heading-anchor" href="#Data">Data</a><a id="Data-1"></a><a class="docs-heading-anchor-permalink" href="#Data" title="Permalink"></a></h3><pre><code class="nohighlight hljs">using Metida, CSV, DataFrames, MixedModels, BenchmarkTools;
+
+rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1fptime.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame</code></pre><h3 id="MixedModels"><a class="docs-heading-anchor" href="#MixedModels">MixedModels</a><a id="MixedModels-1"></a><a class="docs-heading-anchor-permalink" href="#MixedModels" title="Permalink"></a></h3><pre><code class="nohighlight hljs">fm = @formula(response ~ 1 + factor*time + (1 + time|subject&amp;factor))
+@benchmark mm = fit($MixedModel, $fm, $rds, REML=true) seconds = 15</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial:
+  memory estimate:  372.62 KiB
+  allocs estimate:  3503
+  --------------
+  minimum time:     1.507 ms (0.00% GC)
+  median time:      1.583 ms (0.00% GC)
+  mean time:        1.652 ms (1.94% GC)
+  maximum time:     12.631 ms (0.00% GC)
+  --------------
+  samples:          9053
+  evals/sample:     1</code></pre><h3 id="Metida"><a class="docs-heading-anchor" href="#Metida">Metida</a><a id="Metida-1"></a><a class="docs-heading-anchor-permalink" href="#Metida" title="Permalink"></a></h3><pre><code class="nohighlight hljs">lmm = LMM(@formula(response ~1 + factor*time), rds;
+random = VarEffect(@covstr(1 + time|subject&amp;factor), CSH),
+)
+@benchmark fit!($lmm, hes = false) seconds = 15</code></pre><ul><li>Metida v0.9.2</li></ul><pre><code class="nohighlight hljs">BenchmarkTools.Trial:
+  memory estimate:  47.11 MiB
+  allocs estimate:  138400
+  --------------
+  minimum time:     34.806 ms (0.00% GC)
+  median time:      39.110 ms (0.00% GC)
+  mean time:        39.748 ms (6.34% GC)
+  maximum time:     80.331 ms (45.25% GC)
+  --------------
+  samples:          378
+  evals/sample:     1</code></pre><ul><li>MetidaNLopt v0.1.*</li></ul><pre><code class="nohighlight hljs">@benchmark fit!($lmm, solver = :nlopt) seconds = 15</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial:
+  memory estimate:  9.12 MiB
+  allocs estimate:  53289
+  --------------
+  minimum time:     113.572 ms (0.00% GC)
+  median time:      129.960 ms (0.00% GC)
+  mean time:        131.570 ms (1.13% GC)
+  maximum time:     167.145 ms (0.00% GC)
+  --------------
+  samples:          114
+  evals/sample:     1</code></pre><ul><li>MetidaCu v0.1.*</li></ul><pre><code class="nohighlight hljs">@benchmark fit!($lmm, solver = :cuda) seconds = 15</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial:
+  memory estimate:  26.44 MiB
+  allocs estimate:  527567
+  --------------
+  minimum time:     3.782 s (0.00% GC)
+  median time:      3.911 s (0.00% GC)
+  mean time:        3.947 s (0.32% GC)
+  maximum time:     4.183 s (1.20% GC)
+  --------------
+  samples:          4
+  evals/sample:     1</code></pre><h3 id="Cancer-data:"><a class="docs-heading-anchor" href="#Cancer-data:">Cancer data:</a><a id="Cancer-data:-1"></a><a class="docs-heading-anchor-permalink" href="#Cancer-data:" title="Permalink"></a></h3><p>File: <a href="https://stats.idre.ucla.edu/stat/data/hdp.csv">hdp.csv</a> , 8525 observations.</p><h4 id="Model-1:-maximum-377-observation-per-subject-(35-subjects)"><a class="docs-heading-anchor" href="#Model-1:-maximum-377-observation-per-subject-(35-subjects)">Model 1: maximum 377 observation-per-subject (35 subjects)</a><a id="Model-1:-maximum-377-observation-per-subject-(35-subjects)-1"></a><a class="docs-heading-anchor-permalink" href="#Model-1:-maximum-377-observation-per-subject-(35-subjects)" title="Permalink"></a></h4><pre><code class="nohighlight hljs">lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
+random = Metida.VarEffect(Metida.@covstr(1|HID), Metida.DIAG),
+)</code></pre><ul><li>MetidaNLopt v0.2.0 (Metida 0.5.1)</li></ul><pre><code class="nohighlight hljs">julia&gt; @benchmark  Metida.fit!(lmm; solver = :nlopt)
+BenchmarkTools.Trial:
+  memory estimate:  1.03 GiB
+  allocs estimate:  32925
+  --------------
+  minimum time:     7.882 s (0.75% GC)
+  median time:      7.882 s (0.75% GC)
+  mean time:        7.882 s (0.75% GC)
+  maximum time:     7.882 s (0.75% GC)
+  --------------
+  samples:          1
+  evals/sample:     1</code></pre><ul><li>MetidaCu v0.2.0 (Metida 0.5.1)</li></ul><pre><code class="nohighlight hljs">julia&gt; @benchmark  Metida.fit!(lmm; solver = :cuda)
+BenchmarkTools.Trial:
+  memory estimate:  1.02 GiB
+  allocs estimate:  541438
+  --------------
+  minimum time:     6.935 s (1.07% GC)
+  median time:      6.935 s (1.07% GC)
+  mean time:        6.935 s (1.07% GC)
+  maximum time:     6.935 s (1.07% GC)
+  --------------
+  samples:          1
+  evals/sample:     1</code></pre><h4 id="Model-2:-maximum-875-observation-per-subject-(20-subjects)"><a class="docs-heading-anchor" href="#Model-2:-maximum-875-observation-per-subject-(20-subjects)">Model 2: maximum 875 observation-per-subject (20 subjects)</a><a id="Model-2:-maximum-875-observation-per-subject-(20-subjects)-1"></a><a class="docs-heading-anchor-permalink" href="#Model-2:-maximum-875-observation-per-subject-(20-subjects)" title="Permalink"></a></h4><pre><code class="nohighlight hljs">lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
+random = Metida.VarEffect(Metida.@covstr(1|Experience), Metida.SI),
+)</code></pre><ul><li>MetidaNLopt v0.2.0 (Metida 0.5.1)</li></ul><pre><code class="nohighlight hljs">julia&gt; @benchmark  Metida.fit!(lmm; solver = :nlopt)
+BenchmarkTools.Trial:
+  memory estimate:  1.79 GiB
+  allocs estimate:  17215
+  --------------
+  minimum time:     12.168 s (2.24% GC)
+  median time:      12.168 s (2.24% GC)
+  mean time:        12.168 s (2.24% GC)
+  maximum time:     12.168 s (2.24% GC)
+  --------------
+  samples:          1
+  evals/sample:     1</code></pre><ul><li>MetidaCu v0.2.0 (Metida 0.5.1)</li></ul><pre><code class="nohighlight hljs">julia&gt; @benchmark  Metida.fit!(lmm; solver = :cuda)
+BenchmarkTools.Trial:
+  memory estimate:  1.77 GiB
+  allocs estimate:  274940
+  --------------
+  minimum time:     8.926 s (2.83% GC)
+  median time:      8.926 s (2.83% GC)
+  mean time:        8.926 s (2.83% GC)
+  maximum time:     8.926 s (2.83% GC)
+  --------------
+  samples:          1
+  evals/sample:     1</code></pre><h4 id="Model-3:-maximum-1437-observation-per-subject-(10-subjects)"><a class="docs-heading-anchor" href="#Model-3:-maximum-1437-observation-per-subject-(10-subjects)">Model 3: maximum 1437 observation-per-subject (10 subjects)</a><a id="Model-3:-maximum-1437-observation-per-subject-(10-subjects)-1"></a><a class="docs-heading-anchor-permalink" href="#Model-3:-maximum-1437-observation-per-subject-(10-subjects)" title="Permalink"></a></h4><pre><code class="nohighlight hljs">lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
+random = Metida.VarEffect(Metida.@covstr(1|ntumors), Metida.SI),
+)</code></pre><ul><li>MetidaNLopt v0.2.0 (Metida 0.5.1)</li></ul><pre><code class="nohighlight hljs">julia&gt; @benchmark  Metida.fit!(lmm; solver = :nlopt)
+BenchmarkTools.Trial:
+  memory estimate:  5.28 GiB
+  allocs estimate:  12951
+  --------------
+  minimum time:     32.109 s (2.24% GC)
+  median time:      32.109 s (2.24% GC)
+  mean time:        32.109 s (2.24% GC)
+  maximum time:     32.109 s (2.24% GC)
+  --------------
+  samples:          1
+  evals/sample:     1</code></pre><ul><li>MetidaCu v0.2.0 (Metida 0.5.1)</li></ul><pre><code class="nohighlight hljs">julia&gt; @benchmark  Metida.fit!(lmm; solver = :cuda)
+BenchmarkTools.Trial:
+  memory estimate:  4.36 GiB
+  allocs estimate:  174131
+  --------------
+  minimum time:     22.690 s (2.89% GC)
+  median time:      22.690 s (2.89% GC)
+  mean time:        22.690 s (2.89% GC)
+  maximum time:     22.690 s (2.89% GC)
+  --------------
+  samples:          1
+  evals/sample:     1</code></pre><h4 id="Model-4:-maximum-3409-observation-per-subject-(4-subjects)"><a class="docs-heading-anchor" href="#Model-4:-maximum-3409-observation-per-subject-(4-subjects)">Model 4: maximum 3409 observation-per-subject (4 subjects)</a><a id="Model-4:-maximum-3409-observation-per-subject-(4-subjects)-1"></a><a class="docs-heading-anchor-permalink" href="#Model-4:-maximum-3409-observation-per-subject-(4-subjects)" title="Permalink"></a></h4><ul><li>MetidaCu v0.2.0 (Metida 0.5.1)</li></ul><pre><code class="nohighlight hljs">lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
+random = Metida.VarEffect(Metida.@covstr(1|CancerStage), Metida.SI),
+)</code></pre><pre><code class="nohighlight hljs">julia&gt; @benchmark  Metida.fit!(lmm; solver = :cuda)
+BenchmarkTools.Trial:
+  memory estimate:  5.69 GiB
+  allocs estimate:  43924
+  --------------
+  minimum time:     28.227 s (2.73% GC)
+  median time:      28.227 s (2.73% GC)
+  mean time:        28.227 s (2.73% GC)
+  maximum time:     28.227 s (2.73% GC)
+  --------------
+  samples:          1
+  evals/sample:     1</code></pre><h3 id="Conclusion"><a class="docs-heading-anchor" href="#Conclusion">Conclusion</a><a id="Conclusion-1"></a><a class="docs-heading-anchor-permalink" href="#Conclusion" title="Permalink"></a></h3><p>MixedModels.jl faster than Metida.jl in similar cases, but Metida.jl can be used with different covariance structures for random and repeated effects. MetidaNLopt have better performance but not estimate Hessian matrix of REML. MetidaCu have advantage only for big observation-pes-subject number.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../details/">« Details</a><a class="docs-footer-nextpage" href="../validation/">Validation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Monday 16 August 2021 21:50">Monday 16 August 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
