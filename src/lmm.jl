@@ -153,10 +153,17 @@ function Base.show(io::IO, lmm::LMM)
     println(io, "    Model: $(lmm.covstr.repeated.model === nothing ? "nothing" : string(lmm.covstr.repeated.model, "|", lmm.covstr.repeated.subj))")
     println(io, "    Type: $(lmm.covstr.repeated.covtype.s) ($(lmm.covstr.t[end]))")
     println(io, "    Blocks: $(length(lmm.covstr.vcovblock)), Maximum block size: $(maximum(length.(lmm.covstr.vcovblock)))")
-    println(io, "")
+    #println(io, "")
     if lmm.result.fit
         print(io, "Status: ")
         printresult(io, lmm.result.optim)
+        if any(x-> x.type == :ERROR, lmm.log)
+            printstyled(io, "  See error(s) in log. Final results can be wrong!\n"; color = :red)
+        elseif any(x-> x.type == :WARN, lmm.log)
+            printstyled(io, " See warnings in log.\n"; color = :yellow)
+        else
+            println(io, " (No Errors)")
+        end
         #Optim.converged(lmm.result.optim) ? printstyled(io, "converged \n"; color = :green) : printstyled(io, "not converged \n"; color = :red)
         #if length(lmm.log) > 0  printstyled(io, "Warnings! See lmm.log \n"; color = :yellow) end
         ##println(io, "")
@@ -197,9 +204,9 @@ function printresult(io, res::T) where T <: Optim.MultivariateOptimizationResult
 end
 function printresult(io, res)
     if res[3] == :FTOL_REACHED || res[3] == :XTOL_REACHED || res[3] == :SUCCESS
-        printstyled(io, "converged ($(string(res[3])))\n"; color = :green)
+        printstyled(io, "converged ($(string(res[3])))"; color = :green)
     else
-        printstyled(io, "not converged ($(string(res[3])))\n"; color = :red)
+        printstyled(io, "not converged ($(string(res[3])))"; color = :red)
     end
 end
 
@@ -214,4 +221,12 @@ function Base.show(io::IO, lmmlog::LMMLogMsg)
         printstyled(io, "  ERROR : "; color = :red)
         println(io, lmmlog.msg)
     end
+end
+"""
+    getlog(lmm::LMM)
+
+Return fitting log.
+"""
+function getlog(lmm::LMM)
+    lmm.log
 end

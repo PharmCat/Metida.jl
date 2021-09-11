@@ -1,5 +1,14 @@
+v0.11.0
+  * New keywors for fit
+  * Threads
+  * sweep logdet round-off error correction (negative values)
+  * minor output changes
+  * varlink function - square and identity
+  * docs
+  * test
+
 v0.10.1
-  *MetidaBase 4.0
+  * MetidaBase 4.0
 
 v0.10.0
   * MetidaBase for abstract types

@@ -29,9 +29,15 @@ TOEPHP, HeterogeneousToeplitzParameterized,
 CovarianceType, CovmatMethod,
 fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, dof_contain, rankx, caic, lcontrast, anova,
 gmatrix, rmatrix, vmatrix!,
-AbstractCovarianceType, AbstractCovmatMethod, MetidaModel
+AbstractCovarianceType, AbstractCovmatMethod, MetidaModel,
+getlog
 
 export coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
+
+const LDCORR = sqrt(eps())
+const LOGLDCORR = log(sqrt(eps()))
+const NEWTON_OM = Optim.Newton(;alphaguess = LineSearches.InitialHagerZhang(), linesearch = LineSearches.HagerZhang())
+const LBFGS_OM  = Optim.LBFGS(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.Static())
 
 include("sweep.jl")
 include("varstruct.jl")

@@ -1,37 +1,50 @@
-using DataFrames, CSV, StatsModels, LinearAlgebra, ForwardDiff, BenchmarkTools, ForwardDiff, Optim, Distributions
+using DataFrames, CSV, StatsModels, LinearAlgebra, ForwardDiff, ForwardDiff, Optim, Distributions
 using NLopt
 using SnoopCompile
 using LineSearches
+using BenchmarkTools
 path    = dirname(@__FILE__)
 cd(path)
-df      = CSV.File(path*"/csv/df0.csv") |> DataFrame
+df0         = CSV.File(path*"/csv/df0.csv"; types = [String, String, String, String, Float64, Float64]) |> DataFrame
+df1         = CSV.File(path*"/csv/df1.csv"; types = [String, String, String, String, Float64, Float64]) |> DataFrame
+ftdf         = CSV.File(path*"/csv/1fptime.csv"; types = [String, String, Float64, Float64]) |> DataFrame
+ftdf2        = CSV.File(path*"/csv/1freparma.csv"; types = [String, String, Float64, Float64]) |> DataFrame
+ftdf3        = CSV.File(path*"/csv/2f2rand.csv"; types =
+[String,  Float64, Float64, String, String, String, String, String]) |> DataFrame
 
-θ = zeros(10, 10)
-A = rand(10, 10)
-B = rand(10, 10)
 
-@benchmark Metida.mulαβαtinc!(θ, A, B)
 
-θ2 = zeros(10)
-b = rand(10)
-@benchmark Metida.mulαtβinc!(θ2, A, b)
+lmm = Metida.LMM(@formula(response ~1 + factor*time), ftdf;
+random = Metida.VarEffect(Metida.@covstr(1 + time|subject&factor), Metida.CSH),
+)
+@benchmark fit!($lmm, hes = false) seconds = 15
 
-mx = zeros(10,10)
-θ3 = [1.2, 3.4]
-rz = rand(10, 2)
-Metida.rmatp_diag!(mx, θ3, rz, 0)
+#=
+BenchmarkTools.Trial: 527 samples with 1 evaluation.
+ Range (min … max):  14.958 ms … 177.005 ms  ┊ GC (min … max):  0.00% … 89.00%
+ Time  (median):     22.181 ms               ┊ GC (median):     0.00%
+ Time  (mean ± σ):   28.448 ms ±  25.442 ms  ┊ GC (mean ± σ):  18.12% ± 17.00%
 
-Metida.rmatp_si!(mx, θ3, rz, 0)
+  ▂▄▇█▄▁
+  ██████▇██▅▆▆▁▁▁▁▁▁▁▁▁▁▁▁▁▁▄▁▁▁▁▁▁▁▁▁▁▁▁▄▁▁▁▁▄▁▁▄█▄▁▆▅▅▁▄▄▁▁▄ ▇
+  15 ms         Histogram: log(frequency) by time       150 ms <
 
-θ4 = [1.2, 3.4, 0.2]
-Metida.rmatp_csh!(mx, θ4, rz, 0)
+ Memory estimate: 55.01 MiB, allocs estimate: 209813.
+=#
 
-function mult(rx::AbstractMatrix{T}, θ) where T
-    vec = Vector{T}(undef, size(rz, 1))
-    for r ∈ axes(rz, 1)
-        for i ∈ axes(rz, 2)
-            vec[r] += rz[r, i] * θ[i]
-        end
-    end
-    vec
-end
+
+lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
+random = Metida.VarEffect(Metida.@covstr(1|HID), Metida.DIAG),
+)
+@benchmark  Metida.fit!(lmm, hes = false)
+
+#=
+BenchmarkTools.Trial: 1 sample with 1 evaluation.
+ Single result which took 10.214 s (1.64% GC) to evaluate,
+ with a memory estimate of 3.64 GiB, over 103755 allocations.
+=#
+
+lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
+random = Metida.VarEffect(Metida.@covstr(1|HID), Metida.DIAG),
+)
+@benchmark  Metida.fit!(lmm, solver = :nlopt)

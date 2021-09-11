@@ -1,14 +1,15 @@
 #reml.jl
-function subutri!(a, b)
+ Base.@propagate_inbounds function subutri!(a, b)
     s = size(a,1)
-    if s == 1 return @inbounds a[1,1] -= b[1,1] end
+    if s == 1 return a[1,1] -= b[1,1] end
     @simd for m = 1:s
         @simd for n = m:s
-            @inbounds a[m,n] -= b[m,n]
+            a[m,n] -= b[m,n]
         end
     end
     a
 end
+#=
 function fillzeroutri!(a::AbstractArray{T}) where T
     s = size(a,1)
     if s == 1 return @inbounds a[1,1] = zero(T) end
@@ -18,6 +19,11 @@ function fillzeroutri!(a::AbstractArray{T}) where T
         end
     end
     a
+end
+=#
+function fillzeroutri!(a::AbstractArray{T})  where T
+    tr = UpperTriangular(a)
+    fill!(tr, zero(T))
 end
 function logerror!(e, lmm)
     if isa(e, DomainError)
@@ -53,11 +59,15 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
     βm            = zeros(T, lmm.rankx)
     β             = Vector{T}(undef, lmm.rankx)
     #---------------------------------------------------------------------------
-    local logdetθ₂
-    local θs₂
-    akk = Vector{T}(undef, lmm.covstr.maxn + lmm.rankx) #temp for sweep
-    try
-        @inbounds @simd for i = 1:n #@fastmath
+    logdetθ₂      = zero(T)
+    θs₂           = Symmetric(θ₂)
+    #θ₂ut          = UpperTriangular(θ₂)
+    #akk = Vector{T}(undef, lmm.covstr.maxn + lmm.rankx) #temp for sweep
+    noerror       = true
+    #try
+        l = Base.Threads.SpinLock()
+        #l = Base.Threads.ReentrantLock()
+         @inbounds Base.Threads.@threads for i = 1:n #@fastmath
             q    = length(lmm.covstr.vcovblock[i])
             qswm = q + lmm.rankx
             Vp   = Matrix{T}(undef, qswm, qswm)
@@ -69,27 +79,33 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
             fillzeroutri!(Vc)
             vmatrix!(V, θ, lmm, i)
             #-----------------------------------------------------------------------
-            swr  = sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q; logdet = true, syrkblas = syrkblas)
-            θ₁  += swr[2]
+            #swr  = sweepb!(view(akk, 1:qswm), Vp, 1:q; logdet = true, syrkblas = syrkblas)
+            swm, swr, ne  = sweepb!(Vector{T}(undef, qswm), Vp, 1:q; logdet = true, syrkblas = syrkblas)
             V⁻¹[i] = V
             #-----------------------------------------------------------------------
-            subutri!(θ₂, Vc)
-            #θ₂ -= UpperTriangular(view(Vp, q + 1:qswm, q + 1:qswm))
-            mulαtβinc!(βm, Vx, data.yv[i])
+            lock(l) do
+                if ne == false noerror = false end
+                θ₁  += swr
+                subutri!(θ₂, Vc)
+                mulαtβinc!(βm, Vx, data.yv[i])
+            end
             #-----------------------------------------------------------------------
         end
-        θs₂  = Symmetric(θ₂)
+        #θs₂  = Symmetric(θ₂)
         cθs₂ = cholesky(θs₂)
         mul!(β, inv(cθs₂), βm)
-        @inbounds @simd for i = 1:n
-            θ₃ += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹[i])
+        @inbounds Base.Threads.@threads for i = 1:n
+            θ₃t = mulθ₃(data.yv[i], data.xv[i], β, V⁻¹[i])
+            lock(l) do
+                θ₃ += θ₃t 
+            end
         end
         logdetθ₂ = logdet(cθs₂)
-    catch e
-        logerror!(e, lmm)
-        return (Inf, nothing, nothing, nothing, false)
-    end
-    return   θ₁ + logdetθ₂ + θ₃ + c, β, θs₂, θ₃, true #REML, β, iC, θ₃, errors
+    #catch e
+    #    logerror!(e, lmm)
+    #    return (Inf, nothing, nothing, nothing, false)
+    #end
+    return   θ₁ + logdetθ₂ + θ₃ + c, β, θs₂, θ₃, noerror #REML, β, iC, θ₃, errors
 end
 ################################################################################
 #                     REML with provided β
@@ -109,34 +125,44 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vect
     #---------------------------------------------------------------------------
     logdetθ₂      = zero(T)
     akk           = zeros(T, lmm.covstr.maxn + lmm.rankx) #temp for sweep
-    Vm            = Matrix{T}(undef, lmm.covstr.maxn + lmm.rankx, lmm.covstr.maxn + lmm.rankx) #!!
-    local θs₂
-    try
-        @inbounds @simd for i = 1:n
+    #Vm            = Matrix{T}(undef, lmm.covstr.maxn + lmm.rankx, lmm.covstr.maxn + lmm.rankx) #!!
+    θs₂           = Symmetric(θ₂)
+    noerror       = true
+    #try
+        l = Base.Threads.SpinLock()
+        @inbounds Base.Threads.@threads for i = 1:n
             q    = length(lmm.covstr.vcovblock[i])
             qswm = q + lmm.rankx
-            Vp   = view(Vm, 1:q + lmm.rankx, 1:q + lmm.rankx)
-            V    = view(Vm, 1:q, 1:q)
+            Vp   = Matrix{T}(undef, qswm, qswm)
+            V    = view(Vp, 1:q, 1:q)
+            Vx   = view(Vp, 1:q, q+1:qswm)
+            Vc   = view(Vp, q+1:qswm, q+1:qswm)
+            #Vp   = view(Vm, 1:q + lmm.rankx, 1:q + lmm.rankx)
+            #V    = view(Vm, 1:q, 1:q)
+            #Vx   = view(Vm, 1:q, q+1:q+lmm.rankx)
+            #Vc   = view(Vm, q + 1:qswm, q + 1:qswm)
             fillzeroutri!(V)
-            Vx   = view(Vm, 1:q, q+1:q+lmm.rankx)
             copyto!(Vx, data.xv[i])
-            Vc   = view(Vm, q + 1:qswm, q + 1:qswm)
             fillzeroutri!(Vc)
             vmatrix!(V, θ, lmm, i)
             #-----------------------------------------------------------------------
-            swr  = sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q; logdet = true)
-            θ₁  += swr[2]
+            swm, swr, ne = sweepb!(Vector{T}(undef, qswm), Vp, 1:q; logdet = true)
             #-----------------------------------------------------------------------
-            subutri!(θ₂, view(Vp, q + 1:qswm, q + 1:qswm))
-            θ₃  += mulθ₃(data.yv[i], data.xv[i], β, V)
+            θ₃t = mulθ₃(data.yv[i], data.xv[i], β, V)
+            lock(l) do
+                if ne == false noerror = false end
+                θ₁  += swr
+                subutri!(θ₂, view(Vp, q + 1:qswm, q + 1:qswm))
+                θ₃  += θ₃t
+            end
         end
-        θs₂ = Symmetric(θ₂)
+        #θs₂ = Symmetric(θ₂)
         logdetθ₂ = logdet(θs₂)
-    catch e
-        logerror!(e, lmm)
-        return (Inf, nothing, 1e100, false)
-    end
-    return   θ₁ + logdetθ₂ + θ₃ + c, θs₂, θ₃, true #REML, iC, θ₃
+    #catch e
+    #    logerror!(e, lmm)
+    #    return (Inf, nothing, 1e100, false)
+    #end
+    return   θ₁ + logdetθ₂ + θ₃ + c, θs₂, θ₃, noerror #REML, iC, θ₃
 end
 ################################################################################
 #                     REML AI-like / scoring part
@@ -144,21 +170,30 @@ end
 function sweep_ai(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector) where T <: Number
     n             = length(lmm.covstr.vcovblock)
     θ₃            = zero(T)
-    akk           = zeros(T, lmm.covstr.maxn + lmm.rankx) #temp for sweep
-    Vm            = Matrix{T}(undef, lmm.covstr.maxn + lmm.rankx, lmm.covstr.maxn + lmm.rankx) #!!
-    @inbounds @simd for i = 1:n
+    #akk           = zeros(T, lmm.covstr.maxn + lmm.rankx) #temp for sweep
+    #Vm            = Matrix{T}(undef, lmm.covstr.maxn + lmm.rankx, lmm.covstr.maxn + lmm.rankx) #!!
+    l = Base.Threads.SpinLock()
+    @inbounds Base.Threads.@threads for i = 1:n
         q    = length(lmm.covstr.vcovblock[i])
         qswm = q + lmm.rankx
-        Vp   = view(Vm, 1:q + lmm.rankx, 1:q + lmm.rankx)
-        V    = view(Vm, 1:q, 1:q)
+        Vp   = Matrix{T}(undef, qswm, qswm)
+        V    = view(Vp, 1:q, 1:q)
+        Vx   = view(Vp, 1:q, q+1:qswm)
+        Vc   = view(Vp, q+1:qswm, q+1:qswm)
+
+        #Vp   = view(Vm, 1:q + lmm.rankx, 1:q + lmm.rankx)
+        #V    = view(Vm, 1:q, 1:q)
+        #Vx   = view(Vm, 1:q, q+1:q+lmm.rankx)
+        #Vc   = view(Vm, q + 1:qswm, q + 1:qswm)
         fillzeroutri!(V)
-        Vx   = view(Vm, 1:q, q+1:q+lmm.rankx)
         copyto!(Vx, data.xv[i])
-        Vc   = view(Vm, q + 1:qswm, q + 1:qswm)
         fillzeroutri!(Vc)
         vmatrix!(V, θ, lmm, i)
-        sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q)
-        θ₃  += mulθ₃(data.yv[i], data.xv[i], β, V)
+        sweepb!(Vector{T}(undef, qswm), Vp, 1:q)
+        θ₃t = mulθ₃(data.yv[i], data.xv[i], β, V)
+        lock(l) do
+            θ₃  += θ₃t
+        end
     end
     return  θ₃
 end
@@ -167,29 +202,40 @@ function sweep_score(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector
     θ₁            = zero(T)
     θ₃            = zero(T)
     #---------------------------------------------------------------------------
-    akk           = zeros(T, lmm.covstr.maxn + lmm.rankx) #temp for sweep
-    Vm            = Matrix{T}(undef, lmm.covstr.maxn + lmm.rankx, lmm.covstr.maxn + lmm.rankx) #!!
-    try
-    @inbounds @simd for i = 1:n
+    #akk           = zeros(T, lmm.covstr.maxn + lmm.rankx) #temp for sweep
+    #Vm            = Matrix{T}(undef, lmm.covstr.maxn + lmm.rankx, lmm.covstr.maxn + lmm.rankx) #!!
+    #try
+    l = Base.Threads.SpinLock()
+    @inbounds Base.Threads.@threads for i = 1:n
         q    = length(lmm.covstr.vcovblock[i])
         qswm = q + lmm.rankx
-        Vp   = view(Vm, 1:q + lmm.rankx, 1:q + lmm.rankx)
-        V    = view(Vm, 1:q, 1:q)
+        Vp   = Matrix{T}(undef, qswm, qswm)
+        V    = view(Vp, 1:q, 1:q)
+        Vx   = view(Vp, 1:q, q+1:qswm)
+        Vc   = view(Vp, q+1:qswm, q+1:qswm)
+
+        #Vp   = view(Vm, 1:q + lmm.rankx, 1:q + lmm.rankx)
+        #V    = view(Vm, 1:q, 1:q)
+        #Vx   = view(Vm, 1:q, q+1:q+lmm.rankx)
+        #Vc   = view(Vm, q + 1:qswm, q + 1:qswm)
+
         fillzeroutri!(V)
-        Vx   = view(Vm, 1:q, q+1:q+lmm.rankx)
         copyto!(Vx, data.xv[i])
-        Vc   = view(Vm, q + 1:qswm, q + 1:qswm)
         fillzeroutri!(Vc)
         vmatrix!(V, θ, lmm, i)
         #-----------------------------------------------------------------------
-        swr  = sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q; logdet = true)
-        θ₁  += swr[2]
-        θ₃  += mulθ₃(data.yv[i], data.xv[i], β, V)
+        swr  = sweepb!(Vector{T}(undef, qswm), Vp, 1:q; logdet = true)
+
+        θ₃t  = mulθ₃(data.yv[i], data.xv[i], β, V)
+        lock(l) do
+            θ₁  += swr[2]
+            θ₃  += θ₃t
+        end
     end
-    catch
-        logerror!(e, lmm)
-        return Inf
-    end
+    #catch
+    #    logerror!(e, lmm)
+    #    return Inf
+    #end
     return   -θ₁ + θ₃
 end
 ################################################################################

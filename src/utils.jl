@@ -36,6 +36,13 @@ function vlinkr(σ::T) where T <: Real
     log(σ)
 end
 
+function vlinksq(σ::T) where T <: Real
+    σ*σ
+end
+function vlinksqr(σ::T) where T <: Real
+    sqrt(σ)
+end
+
 function rholinkpsigmoid(ρ::T) where T <: Real
     return 1.0/(1.0 + exp(-ρ * 0.5))
 end
@@ -67,9 +74,15 @@ end
 ################################################################################
 ################################################################################
 function varlinkvecapply!(v, p; varlinkf = :exp, rholinkf = :sigm)
-    for i = 1:length(v)
+    @inbounds for i = 1:length(v)
         if p[i] == :var
-            v[i] = vlink(v[i])
+            if varlinkf == :exp
+                v[i] = vlink(v[i])
+            elseif varlinkf == :sq
+                v[i] = vlinksq(v[i])
+            elseif varlinkf == :identity
+                v[i] = identity(v[i])
+            end
         elseif p[i] == :rho
             if rholinkf == :sigm
                 v[i] = rholinksigmoid(v[i])
@@ -85,9 +98,15 @@ function varlinkvecapply!(v, p; varlinkf = :exp, rholinkf = :sigm)
     v
 end
 function varlinkrvecapply!(v, p; varlinkf = :exp, rholinkf = :sigm)
-    for i = 1:length(v)
+    @inbounds for i = 1:length(v)
         if p[i] == :var
-            v[i] = vlinkr(v[i])
+            if varlinkf == :exp
+                v[i] = vlinkr(v[i])
+            elseif varlinkf == :sq
+                v[i] = vlinksqr(v[i])
+            elseif varlinkf == :identity
+                v[i] = identity(v[i])
+            end
         elseif p[i] == :rho
             if rholinkf == :sigm
                 v[i] = rholinksigmoidr(v[i])
@@ -104,9 +123,15 @@ function varlinkrvecapply!(v, p; varlinkf = :exp, rholinkf = :sigm)
 end
 function varlinkvecapply(v, p; varlinkf = :exp, rholinkf = :sigm)
     s = similar(v)
-    for i = 1:length(v)
+    @inbounds for i = 1:length(v)
         if p[i] == :var
-            s[i] = vlink(v[i])
+            if varlinkf == :exp
+                s[i] = vlink(v[i])
+            elseif varlinkf == :sq
+                s[i] = vlinksq(v[i])
+            elseif varlinkf == :identity
+                s[i] = identity(v[i])
+            end
         elseif p[i] == :rho
             if rholinkf == :sigm
                 s[i] = rholinksigmoid(v[i])
@@ -219,3 +244,23 @@ function get_symb(t::T; v = Vector{Symbol}(undef, 0)) where T <: Tuple{Vararg{Ab
     end
     v
 end
+
+
+################################################################################
+# logdet with check
+#=
+function logdet_(C::Cholesky, noerror)
+    dd = zero(real(eltype(C)))
+    @inbounds for i in 1:size(C.factors,1)
+        v = real(C.factors[i,i])
+        if v > 0
+            dd += log(v)
+        else
+            C.factors[i,i] = LOGDETCORR
+            dd += log(real(C.factors[i,i]))
+            noerror = false
+        end
+    end
+    dd + dd, noerror
+end
+=#

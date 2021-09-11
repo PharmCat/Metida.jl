@@ -43,23 +43,22 @@ random = VarEffect(@covstr(1 + time|subject&factor), CSH),
 @benchmark fit!($lmm, hes = false) seconds = 15
 ```
 
-* Metida v0.9.2
+* Metida v0.11.0
 
 ```
-BenchmarkTools.Trial:
-  memory estimate:  47.11 MiB
-  allocs estimate:  138400
-  --------------
-  minimum time:     34.806 ms (0.00% GC)
-  median time:      39.110 ms (0.00% GC)
-  mean time:        39.748 ms (6.34% GC)
-  maximum time:     80.331 ms (45.25% GC)
-  --------------
-  samples:          378
-  evals/sample:     1
+BenchmarkTools.Trial: 445 samples with 1 evaluation.
+ Range (min … max):  20.060 ms … 157.976 ms  ┊ GC (min … max):  0.00% … 79.83%
+ Time  (median):     26.957 ms               ┊ GC (median):     0.00%
+ Time  (mean ± σ):   33.721 ms ±  26.626 ms  ┊ GC (mean ± σ):  19.89% ± 19.16%
+
+  ▂▃██▄  
+  █████▆▆▁▅▄▄▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅▁▅▁▄▅▁▅█▄▁▅▁▅▁▁▄▅ ▆
+  20.1 ms       Histogram: log(frequency) by time       152 ms <
+
+ Memory estimate: 58.33 MiB, allocs estimate: 251271.
 ```
 
-* MetidaNLopt v0.1.*
+* MetidaNLopt v0.1.* (Metida 0.4)
 
 ```
 @benchmark fit!($lmm, solver = :nlopt) seconds = 15
@@ -79,7 +78,7 @@ BenchmarkTools.Trial:
   evals/sample:     1
 ```
 
-* MetidaCu v0.1.*
+* MetidaCu v0.1.* (Metida 0.4)
 
 ```
 @benchmark fit!($lmm, solver = :cuda) seconds = 15
@@ -111,21 +110,29 @@ random = Metida.VarEffect(Metida.@covstr(1|HID), Metida.DIAG),
 )
 ```
 
-* MetidaNLopt v0.2.0 (Metida 0.5.1)
+* Metida v0.10.1 Theads
+
+```
+julia> @benchmark  Metida.fit!(lmm, hes = false)
+BenchmarkTools.Trial: 1 sample with 1 evaluation.
+ Single result which took 10.214 s (1.64% GC) to evaluate,
+ with a memory estimate of 3.64 GiB, over 103755 allocations.
+```
+
+* MetidaNLopt v0.3.2 (Metida v0.10.1)
 
 ```
 julia> @benchmark  Metida.fit!(lmm; solver = :nlopt)
-BenchmarkTools.Trial:
-  memory estimate:  1.03 GiB
-  allocs estimate:  32925
-  --------------
-  minimum time:     7.882 s (0.75% GC)
-  median time:      7.882 s (0.75% GC)
-  mean time:        7.882 s (0.75% GC)
-  maximum time:     7.882 s (0.75% GC)
-  --------------
-  samples:          1
-  evals/sample:     1
+BenchmarkTools.Trial: 9 samples with 1 evaluation.
+ Range (min … max):  447.502 ms … 680.028 ms  ┊ GC (min … max):  0.00% … 9.85%
+ Time  (median):     575.979 ms               ┊ GC (median):    10.36%
+ Time  (mean ± σ):   567.062 ms ±  81.027 ms  ┊ GC (mean ± σ):   8.53% ± 6.50%
+
+  ▁          ▁    █                ▁       ▁      ▁    ▁      ▁
+  █▁▁▁▁▁▁▁▁▁▁█▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁█▁▁▁▁▁▁█▁▁▁▁█▁▁▁▁▁▁█ ▁
+  448 ms           Histogram: frequency by time          680 ms <
+
+ Memory estimate: 920.57 MiB, allocs estimate: 51647.
 ```
 
 * MetidaCu v0.2.0 (Metida 0.5.1)

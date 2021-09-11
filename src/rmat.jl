@@ -173,13 +173,15 @@ function rmatp_toephp!(mx, θ, rz, p)
     nothing
 end
 ################################################################################
-function edistance(i::AbstractVector{T1}, j::AbstractVector{T2}) where T1 where T2
+ Base.@propagate_inbounds function edistance(i::AbstractVector{T1}, j::AbstractVector{T2}) where T1 where T2
+    length(i) == length(j) || error("length i not equal j")
     sum = zero(promote_type(T1, T2))
     for c = 1:length(i)
         sum += (i[c]-j[c])^2
     end
     return sqrt(sum)
 end
+
 function edistance(mx::AbstractMatrix{T}, i::Int, j::Int) where T
     sum = zero(T)
     for c = 1:size(mx, 2)
@@ -188,16 +190,16 @@ function edistance(mx::AbstractMatrix{T}, i::Int, j::Int) where T
     return sqrt(sum)
 end
 ################################################################################
-function rmatp_spexp!(mx, θ, rz, p)
+ Base.@propagate_inbounds function rmatp_spexp!(mx, θ, rz, p)
     σ²    = θ[1]^2
     θ     = exp(θ[2])
     rn    = size(mx, 1)
-    @inbounds @simd for i = 1:size(mx, 1)
+    @simd for i = 1:size(mx, 1)
         mx[i, i] += σ²
     end
     if rn > 1
         for m = 1:rn - 1
-            @inbounds @simd for n = m + 1:rn
+            @simd for n = m + 1:rn
                 mx[m, n] += σ² * exp(-edistance(rz, m, n) / θ)
             end
         end

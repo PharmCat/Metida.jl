@@ -95,10 +95,11 @@ include("testdata.jl")
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(1 + formulation|subject), Metida.CSH; coding = Dict(:formulation => StatsModels.DummyCoding())),
     )
-    # Test rholinkf
+    # Test varlink/rholinkf
     Metida.fit!(lmm; rholinkf = :sqsigm)
     @test Metida.dof_satter(lmm, [0, 0, 0, 0, 0, 1]) ≈ 6.043195705464293 atol=1E-2
     @test Metida.m2logreml(lmm) ≈ 10.314822559210157 atol=1E-6
+    @test_nowarn Metida.fit!(lmm; varlinkf = :sq)
     # Repeated effect only
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     repeated = Metida.VarEffect(Metida.@covstr(formulation|nosubj)),
@@ -373,7 +374,7 @@ end
     random = Metida.VarEffect(Metida.@covstr(r1|subject), Metida.SI),
     repeated = Metida.VarEffect(Metida.@covstr(r1&r2|subject), Metida.TOEPHP(3)),
     )
-    Metida.fit!(lmm)
+    Metida.fit!(lmm; optmethod = Metida.LBFGS_OM)
     Base.show(io, lmm)
     @test Metida.m2logreml(lmm)  ≈ 713.5850978377632 atol=1E-8
 end
@@ -454,4 +455,6 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 1528.7150702624508 atol=1E-6
+
+    @test_nowarn Metida.fit!(lmm; varlinkf = :identity)
 end

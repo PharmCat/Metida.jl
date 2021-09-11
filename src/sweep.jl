@@ -14,8 +14,8 @@ function nsyrk!(alpha, A, C)
     end
     C
 end
-function sweep!(A::AbstractArray, k::Integer, inv::Bool = false; syrkblas::Bool = false)
-    sweepb!(Vector{eltype(A)}(undef, size(A, 2)), A, k, inv; syrkblas = syrkblas)
+function sweep!(A::AbstractArray{T}, k::Integer, inv::Bool = false; syrkblas::Bool = false) where T
+    sweepb!(Vector{T}(undef, size(A, 2)), A, k, inv; syrkblas = syrkblas)
 end
 function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, inv::Bool = false; syrkblas::Bool = false) where T <: Number
     p = checksquare(A)
@@ -27,6 +27,10 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, i
     @simd for j in (k+1):p
         @inbounds akk[j] = A[k, j]
     end
+    #syrk!(uplo, trans, alpha, A, beta, C)
+    #Rank-k update of the symmetric matrix C as alpha*A*transpose(A) + beta*C
+    #or alpha*transpose(A)*A + beta*C according to trans.
+    #Only the uplo triangle of C is used. Returns C.
     if syrkblas
         BLAS.syrk!('U', 'N', -d, akk, one(T), A)
     else
@@ -42,18 +46,28 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, i
     @inbounds A[k, k] = -d
     A
 end
-function sweep!(A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; syrkblas::Bool = false, logdet::Bool = false) where
-    {T <: Number, I <: Integer}
+function sweep!(A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; syrkblas::Bool = false, logdet::Bool = false) where {T <: Number, I <: Integer}
     akk = Vector{T}(undef, size(A,2))
     sweepb!(akk, A, ks, inv; syrkblas = syrkblas, logdet = logdet)
 end
 function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; syrkblas::Bool = false, logdet::Bool = false) where
         {T <: Number, I<:Integer}
     ld = NaN
+    noerror = true
     if logdet
         ld = 0
-        for k in ks
-            ld += log(A[k,k])
+        @inbounds for k in ks
+            Akk = A[k,k]
+            if Akk > 0
+                ld += log(Akk)
+            else
+                noerror = false
+                if Akk < 0
+                    ld += log(- Akk * LDCORR)
+                else
+                    ld += LOGLDCORR
+                end
+            end
             sweepb!(akk, A, k, inv; syrkblas = syrkblas)
         end
     else
@@ -61,5 +75,5 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, ks::AbstractV
             sweepb!(akk, A, k, inv; syrkblas = syrkblas)
         end
     end
-    A, ld
+    A, ld, noerror
 end

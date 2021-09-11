@@ -215,3 +215,8 @@ Metida.rankx
 ```@docs
 Metida.hessian
 ```
+
+### Metida.getlog
+```@docs
+Metida.getlog
+```

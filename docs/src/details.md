@@ -87,8 +87,71 @@ C = (\sum_{i=1}^{n} X_i'V_i^{-1}X_i)^{-1}
 
 Details see: https://github.com/joshday/SweepOperator.jl
 
-#### Not API functions
+#### Variance parameters link function
 
+Apply special function to some part of theta vector.
+
+##### Variance (var) part
+
+Applied only to variance part.
+
+###### Exponential function (:exp)
+
+Exponential function applied.
+
+```math
+  f(x) = exp(x)
+```
+
+```math
+  f^{-1}(x) = log(x)
+```
+
+###### Square function (:sq)
+
+```math
+  f(x) = x^2
+```
+
+```math
+  f^{-1}(x) = sqrt(x)
+```
+
+###### Identity function (:identity)
+
+```math
+  f(x) = x
+```
+
+```math
+  f^{-1}(x) = x
+```
+
+##### Covariance (rho) part
+
+Applied only to covariance part.
+
+###### Sigmoid function (:sigm)
+
+```math
+  f(x) = 1 / (1 + exp(- ρ * 0.1)) * 2 - 1
+```
+
+```math
+  f^{-1}(x) = -log(1 / (ρ + 1.0) * 2 - 1) / 0.1
+```
+
+###### Arctangent function (:atan)
+
+###### "Square" sigmoid function (:sqsigm)
+
+###### Positive sigmoid function (:psigm)
+
+##### Additional parameters (theta) part
+
+No function applied.
+
+#### Not API functions
 
 ##### Metida.mulαβαtinc!
 ```@docs
