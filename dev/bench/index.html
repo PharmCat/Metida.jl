@@ -15,17 +15,16 @@ rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot
   evals/sample:     1</code></pre><h3 id="Metida"><a class="docs-heading-anchor" href="#Metida">Metida</a><a id="Metida-1"></a><a class="docs-heading-anchor-permalink" href="#Metida" title="Permalink"></a></h3><pre><code class="nohighlight hljs">lmm = LMM(@formula(response ~1 + factor*time), rds;
 random = VarEffect(@covstr(1 + time|subject&amp;factor), CSH),
 )
-@benchmark fit!($lmm, hes = false) seconds = 15</code></pre><ul><li>Metida v0.9.2</li></ul><pre><code class="nohighlight hljs">BenchmarkTools.Trial:
-  memory estimate:  47.11 MiB
-  allocs estimate:  138400
-  --------------
-  minimum time:     34.806 ms (0.00% GC)
-  median time:      39.110 ms (0.00% GC)
-  mean time:        39.748 ms (6.34% GC)
-  maximum time:     80.331 ms (45.25% GC)
-  --------------
-  samples:          378
-  evals/sample:     1</code></pre><ul><li>MetidaNLopt v0.1.*</li></ul><pre><code class="nohighlight hljs">@benchmark fit!($lmm, solver = :nlopt) seconds = 15</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial:
+@benchmark fit!($lmm, hes = false) seconds = 15</code></pre><ul><li>Metida v0.11.0</li></ul><pre><code class="nohighlight hljs">BenchmarkTools.Trial: 445 samples with 1 evaluation.
+ Range (min … max):  20.060 ms … 157.976 ms  ┊ GC (min … max):  0.00% … 79.83%
+ Time  (median):     26.957 ms               ┊ GC (median):     0.00%
+ Time  (mean ± σ):   33.721 ms ±  26.626 ms  ┊ GC (mean ± σ):  19.89% ± 19.16%
+
+  ▂▃██▄  
+  █████▆▆▁▅▄▄▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅▁▅▁▄▅▁▅█▄▁▅▁▅▁▁▄▅ ▆
+  20.1 ms       Histogram: log(frequency) by time       152 ms &lt;
+
+ Memory estimate: 58.33 MiB, allocs estimate: 251271.</code></pre><ul><li>MetidaNLopt v0.1.* (Metida 0.4)</li></ul><pre><code class="nohighlight hljs">@benchmark fit!($lmm, solver = :nlopt) seconds = 15</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial:
   memory estimate:  9.12 MiB
   allocs estimate:  53289
   --------------
@@ -35,7 +34,7 @@ random = VarEffect(@covstr(1 + time|subject&amp;factor), CSH),
   maximum time:     167.145 ms (0.00% GC)
   --------------
   samples:          114
-  evals/sample:     1</code></pre><ul><li>MetidaCu v0.1.*</li></ul><pre><code class="nohighlight hljs">@benchmark fit!($lmm, solver = :cuda) seconds = 15</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial:
+  evals/sample:     1</code></pre><ul><li>MetidaCu v0.1.* (Metida 0.4)</li></ul><pre><code class="nohighlight hljs">@benchmark fit!($lmm, solver = :cuda) seconds = 15</code></pre><pre><code class="nohighlight hljs">BenchmarkTools.Trial:
   memory estimate:  26.44 MiB
   allocs estimate:  527567
   --------------
@@ -47,18 +46,20 @@ random = VarEffect(@covstr(1 + time|subject&amp;factor), CSH),
   samples:          4
   evals/sample:     1</code></pre><h3 id="Cancer-data:"><a class="docs-heading-anchor" href="#Cancer-data:">Cancer data:</a><a id="Cancer-data:-1"></a><a class="docs-heading-anchor-permalink" href="#Cancer-data:" title="Permalink"></a></h3><p>File: <a href="https://stats.idre.ucla.edu/stat/data/hdp.csv">hdp.csv</a> , 8525 observations.</p><h4 id="Model-1:-maximum-377-observation-per-subject-(35-subjects)"><a class="docs-heading-anchor" href="#Model-1:-maximum-377-observation-per-subject-(35-subjects)">Model 1: maximum 377 observation-per-subject (35 subjects)</a><a id="Model-1:-maximum-377-observation-per-subject-(35-subjects)-1"></a><a class="docs-heading-anchor-permalink" href="#Model-1:-maximum-377-observation-per-subject-(35-subjects)" title="Permalink"></a></h4><pre><code class="nohighlight hljs">lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
 random = Metida.VarEffect(Metida.@covstr(1|HID), Metida.DIAG),
-)</code></pre><ul><li>MetidaNLopt v0.2.0 (Metida 0.5.1)</li></ul><pre><code class="nohighlight hljs">julia&gt; @benchmark  Metida.fit!(lmm; solver = :nlopt)
-BenchmarkTools.Trial:
-  memory estimate:  1.03 GiB
-  allocs estimate:  32925
-  --------------
-  minimum time:     7.882 s (0.75% GC)
-  median time:      7.882 s (0.75% GC)
-  mean time:        7.882 s (0.75% GC)
-  maximum time:     7.882 s (0.75% GC)
-  --------------
-  samples:          1
-  evals/sample:     1</code></pre><ul><li>MetidaCu v0.2.0 (Metida 0.5.1)</li></ul><pre><code class="nohighlight hljs">julia&gt; @benchmark  Metida.fit!(lmm; solver = :cuda)
+)</code></pre><ul><li>Metida v0.10.1 Theads</li></ul><pre><code class="nohighlight hljs">julia&gt; @benchmark  Metida.fit!(lmm, hes = false)
+BenchmarkTools.Trial: 1 sample with 1 evaluation.
+ Single result which took 10.214 s (1.64% GC) to evaluate,
+ with a memory estimate of 3.64 GiB, over 103755 allocations.</code></pre><ul><li>MetidaNLopt v0.3.2 (Metida v0.10.1)</li></ul><pre><code class="nohighlight hljs">julia&gt; @benchmark  Metida.fit!(lmm; solver = :nlopt)
+BenchmarkTools.Trial: 9 samples with 1 evaluation.
+ Range (min … max):  447.502 ms … 680.028 ms  ┊ GC (min … max):  0.00% … 9.85%
+ Time  (median):     575.979 ms               ┊ GC (median):    10.36%
+ Time  (mean ± σ):   567.062 ms ±  81.027 ms  ┊ GC (mean ± σ):   8.53% ± 6.50%
+
+  ▁          ▁    █                ▁       ▁      ▁    ▁      ▁
+  █▁▁▁▁▁▁▁▁▁▁█▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁█▁▁▁▁▁▁█▁▁▁▁█▁▁▁▁▁▁█ ▁
+  448 ms           Histogram: frequency by time          680 ms &lt;
+
+ Memory estimate: 920.57 MiB, allocs estimate: 51647.</code></pre><ul><li>MetidaCu v0.2.0 (Metida 0.5.1)</li></ul><pre><code class="nohighlight hljs">julia&gt; @benchmark  Metida.fit!(lmm; solver = :cuda)
 BenchmarkTools.Trial:
   memory estimate:  1.02 GiB
   allocs estimate:  541438
@@ -130,4 +131,4 @@ BenchmarkTools.Trial:
   maximum time:     28.227 s (2.73% GC)
   --------------
   samples:          1
-  evals/sample:     1</code></pre><h3 id="Conclusion"><a class="docs-heading-anchor" href="#Conclusion">Conclusion</a><a id="Conclusion-1"></a><a class="docs-heading-anchor-permalink" href="#Conclusion" title="Permalink"></a></h3><p>MixedModels.jl faster than Metida.jl in similar cases, but Metida.jl can be used with different covariance structures for random and repeated effects. MetidaNLopt have better performance but not estimate Hessian matrix of REML. MetidaCu have advantage only for big observation-pes-subject number.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../details/">« Details</a><a class="docs-footer-nextpage" href="../validation/">Validation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Saturday 7 August 2021 16:08">Saturday 7 August 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  evals/sample:     1</code></pre><h3 id="Conclusion"><a class="docs-heading-anchor" href="#Conclusion">Conclusion</a><a id="Conclusion-1"></a><a class="docs-heading-anchor-permalink" href="#Conclusion" title="Permalink"></a></h3><p>MixedModels.jl faster than Metida.jl in similar cases, but Metida.jl can be used with different covariance structures for random and repeated effects. MetidaNLopt have better performance but not estimate Hessian matrix of REML. MetidaCu have advantage only for big observation-pes-subject number.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../details/">« Details</a><a class="docs-footer-nextpage" href="../validation/">Validation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.6 on <span class="colophon-date" title="Saturday 11 September 2021 17:00">Saturday 11 September 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
