@@ -33,9 +33,9 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     :varlinkf ∈ kwkeys ? varlinkf = kwargs[:varlinkf] : varlinkf = :exp
     :rholinkf ∈ kwkeys ? rholinkf = kwargs[:rholinkf] : rholinkf = :sigm
     :aifirst ∈ kwkeys ? aifirst = kwargs[:aifirst] : aifirst = :default
-    :g_tol ∈ kwkeys ? g_tol = kwargs[:g_tol] : g_tol = 1e-8
-    :x_tol ∈ kwkeys ? x_tol = kwargs[:x_tol] : x_tol = :1e-8
-    :f_tol ∈ kwkeys ? f_tol = kwargs[:f_tol] : f_tol = :1e-8
+    :g_tol ∈ kwkeys ? g_tol = kwargs[:g_tol] : g_tol = 1e-10
+    :x_tol ∈ kwkeys ? x_tol = kwargs[:x_tol] : x_tol = :1e-10
+    :f_tol ∈ kwkeys ? f_tol = kwargs[:f_tol] : f_tol = :1e-10
     :hes ∈ kwkeys ? hes = kwargs[:hes] : hes = true
     :init ∈ kwkeys ? init = kwargs[:init] : init = :nothing
     :io ∈ kwkeys ? io = kwargs[:io] : io = stdout

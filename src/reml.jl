@@ -94,11 +94,9 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
         #θs₂  = Symmetric(θ₂)
         cθs₂ = cholesky(θs₂)
         mul!(β, inv(cθs₂), βm)
-        @inbounds Base.Threads.@threads for i = 1:n
-            θ₃t = mulθ₃(data.yv[i], data.xv[i], β, V⁻¹[i])
-            lock(l) do
-                θ₃ += θ₃t 
-            end
+
+        @inbounds @simd for i = 1:n
+            θ₃ += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹[i])
         end
         logdetθ₂ = logdet(cθs₂)
     #catch e
@@ -180,7 +178,6 @@ function sweep_ai(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector) w
         V    = view(Vp, 1:q, 1:q)
         Vx   = view(Vp, 1:q, q+1:qswm)
         Vc   = view(Vp, q+1:qswm, q+1:qswm)
-
         #Vp   = view(Vm, 1:q + lmm.rankx, 1:q + lmm.rankx)
         #V    = view(Vm, 1:q, 1:q)
         #Vx   = view(Vm, 1:q, q+1:q+lmm.rankx)

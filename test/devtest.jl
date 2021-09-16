@@ -1,5 +1,6 @@
 using DataFrames, CSV, StatsModels, LinearAlgebra, ForwardDiff, ForwardDiff, Optim, Distributions
 using NLopt
+using Metida
 using SnoopCompile
 using LineSearches
 using BenchmarkTools
@@ -12,12 +13,14 @@ ftdf2        = CSV.File(path*"/csv/1freparma.csv"; types = [String, String, Floa
 ftdf3        = CSV.File(path*"/csv/2f2rand.csv"; types =
 [String,  Float64, Float64, String, String, String, String, String]) |> DataFrame
 
-
+################################################################################
+# Metida
+################################################################################
 
 lmm = Metida.LMM(@formula(response ~1 + factor*time), ftdf;
 random = Metida.VarEffect(Metida.@covstr(1 + time|subject&factor), Metida.CSH),
 )
-@benchmark fit!($lmm, hes = false) seconds = 15
+@benchmark Metida.fit!($lmm, hes = false) seconds = 15
 
 #=
 BenchmarkTools.Trial: 527 samples with 1 evaluation.
@@ -32,6 +35,47 @@ BenchmarkTools.Trial: 527 samples with 1 evaluation.
  Memory estimate: 55.01 MiB, allocs estimate: 209813.
 =#
 
+################################################################################
+# MetidaNLopt
+################################################################################
+
+lmm = Metida.LMM(@formula(response ~1 + factor*time), ftdf;
+random = Metida.VarEffect(Metida.@covstr(1 + time|subject&factor), Metida.CSH),
+)
+@benchmark Metida.fit!($lmm, hes = false, solver = :nlopt) seconds = 15
+
+#=
+BenchmarkTools.Trial: 333 samples with 1 evaluation.
+ Range (min … max):  19.021 ms … 198.344 ms  ┊ GC (min … max): 0.00% …  0.00%
+ Time  (median):     42.596 ms               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   45.055 ms ±  20.382 ms  ┊ GC (mean ± σ):  7.54% ± 12.83%
+
+          ▁▃▄▆█▆▂
+  ▄▄▅▄▄▄▅████████▆▄▂▂▁▁▁▃▂▁▂▁▁▁▃▂▃▂▃▃▁▂▂▁▂▁▁▁▁▂▁▁▂▁▁▁▁▁▁▁▁▁▂▂▂ ▃
+  19 ms           Histogram: frequency by time          141 ms <
+
+ Memory estimate: 17.83 MiB, allocs estimate: 125293.
+=#
+
+################################################################################
+# MetidaCu
+################################################################################
+
+lmm = Metida.LMM(@formula(response ~1 + factor*time), ftdf;
+random = Metida.VarEffect(Metida.@covstr(1 + time|subject&factor), Metida.CSH),
+)
+@benchmark Metida.fit!($lmm, hes = false, solver = :cuda) seconds = 15
+
+#=
+
+=#
+
+################################################################################
+################################################################################
+
+################################################################################
+# Metida
+################################################################################
 
 lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
 random = Metida.VarEffect(Metida.@covstr(1|HID), Metida.DIAG),
@@ -44,7 +88,46 @@ BenchmarkTools.Trial: 1 sample with 1 evaluation.
  with a memory estimate of 3.64 GiB, over 103755 allocations.
 =#
 
+################################################################################
+# MetidaNLopt
+################################################################################
+
 lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
 random = Metida.VarEffect(Metida.@covstr(1|HID), Metida.DIAG),
 )
-@benchmark  Metida.fit!(lmm, solver = :nlopt)
+@benchmark  Metida.fit!(lmm, solver = :nlopt, hes = false)
+
+#=
+BenchmarkTools.Trial: 8 samples with 1 evaluation.
+ Range (min … max):  517.141 ms … 822.903 ms  ┊ GC (min … max):  0.00% … 13.60%
+ Time  (median):     644.920 ms               ┊ GC (median):    11.81%
+ Time  (mean ± σ):   672.774 ms ± 115.055 ms  ┊ GC (mean ± σ):   8.02% ±  6.12%
+
+  ▁            █          ▁ ▁                           ▁▁    ▁
+  █▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁█▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁██▁▁▁▁█ ▁
+  517 ms           Histogram: frequency by time          823 ms <
+
+ Memory estimate: 919.67 MiB, allocs estimate: 39482.
+=#
+
+################################################################################
+# MetidaCu
+################################################################################
+
+lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
+random = Metida.VarEffect(Metida.@covstr(1|HID), Metida.DIAG),
+)
+@benchmark  Metida.fit!($lmm, solver = :cuda, hes = false)
+
+#=
+BenchmarkTools.Trial: 2 samples with 1 evaluation.
+ Range (min … max):  3.331 s …   3.453 s  ┊ GC (min … max): 1.11% … 1.22%
+ Time  (median):     3.392 s              ┊ GC (median):    1.16%
+ Time  (mean ± σ):   3.392 s ± 85.816 ms  ┊ GC (mean ± σ):  1.16% ± 0.08%
+
+  █                                                       █
+  █▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█ ▁
+  3.33 s         Histogram: frequency by time        3.45 s <
+
+ Memory estimate: 1.10 GiB, allocs estimate: 7312401
+=#

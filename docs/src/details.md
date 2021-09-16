@@ -33,7 +33,7 @@ logREML(\theta,\beta) = -\frac{N-p}{2} - \frac{1}{2}\sum_{i=1}^nlog|V_{\theta, i
 -\frac{1}{2}log|\sum_{i=1}^nX_i'V_{\theta, i}^{-1}X_i|-\frac{1}{2}\sum_{i=1}^n(y_i - X_{i}\beta)'V_{\theta, i}^{-1}(y_i - X_{i}\beta)
 ```
 
-Actually ``\mathcal{L}(\theta) = -2logREML = L_1(\theta) + L_2(\theta) + \L_3(\theta) + c`` used for optimization, where:
+Actually ``L(\theta) = -2logREML = L_1(\theta) + L_2(\theta) + \L_3(\theta) + c`` used for optimization, where:
 
 ```math
 L_1(\theta) = \frac{1}{2}\sum_{i=1}^nlog|V_{i}| \\
@@ -134,18 +134,44 @@ Applied only to covariance part.
 ###### Sigmoid function (:sigm)
 
 ```math
-  f(x) = 1 / (1 + exp(- ρ * 0.1)) * 2 - 1
+  f(x) = 1 / (1 + exp(- x * k)) * 2 - 1
 ```
 
 ```math
-  f^{-1}(x) = -log(1 / (ρ + 1.0) * 2 - 1) / 0.1
+  f^{-1}(x) = -log(1 / (x + 1) * 2 - 1) / k
 ```
+
+where ``k = 0.1``
 
 ###### Arctangent function (:atan)
 
+```math
+  f(x) = atan(x)/pi*2
+```
+
+```math
+  f^{-1}(x) = tan(x*pi/2)
+```
+
 ###### "Square" sigmoid function (:sqsigm)
 
+```math
+  f(x) = x / \sqrt{1 + (x)^2}
+```
+
+```math
+  f^{-1}(x) = sign(x) * \sqrt{x^2/(1 - x^2)}
+```
+
 ###### Positive sigmoid function (:psigm)
+
+```math
+  f(x) = 1/(1 + exp(-x / 2))
+```
+
+```math
+  f^{-1}(x) = -log(1/x - 1) * 2
+```
 
 ##### Additional parameters (theta) part
 
