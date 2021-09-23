@@ -67,37 +67,72 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
     #try
         l = Base.Threads.SpinLock()
         #l = Base.Threads.ReentrantLock()
-         @inbounds Base.Threads.@threads for i = 1:n #@fastmath
-            q    = length(lmm.covstr.vcovblock[i])
-            qswm = q + lmm.rankx
-            Vp   = Matrix{T}(undef, qswm, qswm)
-            V    = view(Vp, 1:q, 1:q)
-            Vx   = view(Vp, 1:q, q+1:qswm)
-            Vc   = view(Vp, q+1:qswm, q+1:qswm)
-            fillzeroutri!(V)
-            copyto!(Vx, data.xv[i])
-            fillzeroutri!(Vc)
-            vmatrix!(V, θ, lmm, i)
+        ncore     = min(Polyester.num_cores(), n)
+        accθ₁     = zeros(T, ncore)
+        accθ₂     = Vector{Matrix{T}}(undef, ncore)
+        accβm     = Vector{Vector{T}}(undef, ncore)
+        erroracc  = trues(ncore)
+        d, r = divrem(n, Polyester.num_cores())
+        @batch for t = 1:ncore
+        #@inbounds Base.Threads.@threads for i = 1:n #@fastmath
+        #@batch per=core for i = 1:n #@fastmath
+            # Vp - matrix for sweep operation
+            # [V  X
+            #  X' 0]
+            offset = min(t-1, r) + (t-1)*d
+            accθ₂[t] = zeros(T, lmm.rankx, lmm.rankx)
+            accβm[t] = zeros(T, lmm.rankx)
+
+            for j ∈ 1:d+(t ≤ r)
+                i =  offset + j
+
+                q    = length(lmm.covstr.vcovblock[i])
+                qswm = q + lmm.rankx
+                Vp   = Matrix{T}(undef, qswm, qswm)
+                V    = view(Vp, 1:q, 1:q)
+                Vx   = view(Vp, 1:q, q+1:qswm)
+                Vc   = view(Vp, q+1:qswm, q+1:qswm)
+                fillzeroutri!(V)
+                copyto!(Vx, data.xv[i])
+                fillzeroutri!(Vc)
+            #-------------------------------------------------------------------
+            # Make V matrix
+                vmatrix!(V, θ, lmm, i)
             #-----------------------------------------------------------------------
             #swr  = sweepb!(view(akk, 1:qswm), Vp, 1:q; logdet = true, syrkblas = syrkblas)
-            swm, swr, ne  = sweepb!(Vector{T}(undef, qswm), Vp, 1:q; logdet = true, syrkblas = syrkblas)
-            V⁻¹[i] = V
+                swm, swr, ne  = sweepb!(Vector{T}(undef, qswm), Vp, 1:q; logdet = true, syrkblas = syrkblas)
+                V⁻¹[i] = V
             #-----------------------------------------------------------------------
+                if ne == false erroracc[t] = false end
+                accθ₁[t] += swr
+                subutri!(accθ₂[t], Vc)
+                mulαtβinc!(accβm[t], Vx, data.yv[i])
+            end
+            #=
             lock(l) do
                 if ne == false noerror = false end
                 θ₁  += swr
                 subutri!(θ₂, Vc)
                 mulαtβinc!(βm, Vx, data.yv[i])
             end
+            =#
             #-----------------------------------------------------------------------
         end
-        #θs₂  = Symmetric(θ₂)
+        θ₁ = sum(accθ₁)
+        map(x->θ₂ .+= x, accθ₂)
+        map(x->βm .+= x, accβm)
+        noerror = all(erroracc)
+        #copyto!(θ₂, sum(accθ₂))
+        #copyto!(βm, sum(accβm))
+        # Cholesky decomposition for matrix inverse θs₂ - Summetric(θ₂); C = θ₂⁻¹
         cθs₂ = cholesky(θs₂)
+        # β calculation
         mul!(β, inv(cθs₂), βm)
-
+        # θ₃
         @inbounds @simd for i = 1:n
             θ₃ += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹[i])
         end
+        # final θ₂
         logdetθ₂ = logdet(cθs₂)
     #catch e
     #    logerror!(e, lmm)
@@ -154,7 +189,6 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vect
                 θ₃  += θ₃t
             end
         end
-        #θs₂ = Symmetric(θ₂)
         logdetθ₂ = logdet(θs₂)
     #catch e
     #    logerror!(e, lmm)
