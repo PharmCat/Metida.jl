@@ -28,6 +28,7 @@ struct LMM{T} <: MetidaModel
     nfixed::Int
     rankx::Int
     result::ModelResult
+    maxvcbl::Int
     log::Vector{LMMLogMsg}
 
     function LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
@@ -57,7 +58,7 @@ struct LMM{T} <: MetidaModel
         if rankx != size(mm.m, 2)
             lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Fixed-effect matrix not full-rank!"))
         end
-        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, nfixed, rankx, ModelResult(), lmmlog)
+        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, nfixed, rankx, ModelResult(), findmax(length, covstr.vcovblock)[1], lmmlog)
     end
 end
 """
@@ -152,7 +153,7 @@ function Base.show(io::IO, lmm::LMM)
     println(io, "Repeated: ")
     println(io, "    Model: $(lmm.covstr.repeated.model === nothing ? "nothing" : string(lmm.covstr.repeated.model, "|", lmm.covstr.repeated.subj))")
     println(io, "    Type: $(lmm.covstr.repeated.covtype.s) ($(lmm.covstr.t[end]))")
-    println(io, "    Blocks: $(length(lmm.covstr.vcovblock)), Maximum block size: $(maximum(length.(lmm.covstr.vcovblock)))")
+    println(io, "    Blocks: $(length(lmm.covstr.vcovblock)), Maximum block size: $(lmm.maxvcbl)")
     #println(io, "")
     if lmm.result.fit
         print(io, "Status: ")

@@ -56,6 +56,37 @@ BenchmarkTools.Trial: 333 samples with 1 evaluation.
 
  Memory estimate: 17.83 MiB, allocs estimate: 125293.
 =#
+lmm = Metida.LMM(@formula(response ~1 + factor*time), ftdf;
+random = Metida.VarEffect(Metida.@covstr(1 + time|factor), Metida.ARH),
+)
+@benchmark  Metida.fit!(lmm, solver = :nlopt, hes = false)
+#=
+#No @natch
+julia> @benchmark  Metida.fit!(lmm, solver = :nlopt, hes = false)
+BenchmarkTools.Trial: 58 samples with 1 evaluation.
+ Range (min … max):  80.086 ms … 97.076 ms  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     86.918 ms              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   87.458 ms ±  3.918 ms  ┊ GC (mean ± σ):  2.02% ± 2.75%
+
+     ▄               ▄  ▄▁▁▄██ ▁▁        ▄ ▁                ▁
+  ▆▁▆█▁▁▁▁▆▆▁▆▆▆▁▆▁▁▁█▆▁██████▆██▆▆▆▁▁▆▁▁█▁█▁▁▁▁▆▆▆▆▆▆▆▁▁▁▁▆█ ▁
+  80.1 ms         Histogram: frequency by time          95 ms <
+
+ Memory estimate: 33.28 MiB, allocs estimate: 2137.
+=#
+#=
+#@batcj
+BenchmarkTools.Trial: 101 samples with 1 evaluation.
+ Range (min … max):  43.896 ms … 66.160 ms  ┊ GC (min … max): 0.00% … 19.07%
+ Time  (median):     47.827 ms              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   49.519 ms ±  4.247 ms  ┊ GC (mean ± σ):  4.05% ±  7.55%
+
+            █
+  ▃▃▃▁▃▃▃▄████▇▆▃▃▄▁▃▃▁▃▃▁▃▁▁▁▃▁▄▁▄▃▃▄▃▃▁▁▃▁▃▁▁▁▁▁▁▁▁▃▁▁▁▁▁▁▃ ▃
+  43.9 ms         Histogram: frequency by time        64.6 ms <
+
+ Memory estimate: 33.42 MiB, allocs estimate: 4009.
+=#
 
 ################################################################################
 # MetidaCu

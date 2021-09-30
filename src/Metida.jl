@@ -58,5 +58,6 @@ include("dof_satter.jl")
 include("dof_contain.jl")
 include("fvalue.jl")
 include("anova.jl")
+include("estimate.jl")
 
 end # module

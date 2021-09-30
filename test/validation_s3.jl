@@ -89,6 +89,9 @@ for i = 1:30
         remlsc[i] = Metida.m2logreml(lmm)
         mclcic[i] =  coef(lmm)[end] - stderror(lmm)[end]*quantile(TDist(Metida.dof_satter(lmm)[end]), 1.0-0.1/2)
         mcucic[i] =  coef(lmm)[end] + stderror(lmm)[end]*quantile(TDist(Metida.dof_satter(lmm)[end]), 1.0-0.1/2)
+
+        @test mclcic[i] ≈ confint(lmm; level =0.9, ddf = :satter)[end][1]
+        @test mcucic[i] ≈ confint(lmm; level =0.9, ddf = :satter)[end][2]
     end
 end
 end

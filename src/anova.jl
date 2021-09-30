@@ -1,10 +1,10 @@
 
 struct ANOVATable
-    name::Vector
-    f::Vector
-    ndf::Vector
-    df::Vector
-    pval::Vector
+    name::Vector{String}
+    f::Vector{Float64}
+    ndf::Vector{Float64}
+    df::Vector{Float64}
+    pval::Vector{Float64}
 end
 """
     anova(lmm::LMM{T}; ddf::Symbol = :satter) where T

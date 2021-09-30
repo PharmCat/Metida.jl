@@ -223,6 +223,7 @@ end
     @test Metida.dof_satter(lmm, [0, 0, 0, 1]) ≈ 37.999999999991786 atol=1E-2
 
 end
+
 @testset "  Model: Function terms, CSH/SI                            " begin
     ftdf.expresp = exp.(ftdf.response)
     ftdf.exptime = exp.(ftdf.time)
@@ -390,6 +391,12 @@ end
     @test collect(Metida.confint(lmm)[6]) ≈  [0.05379033790060175, 0.23713821749515449] atol=1E-8
     anovatable = Metida.anova(lmm)
     @test anovatable.pval ≈ [3.087934998046721e-63, 0.9176105002577626, 0.6522549061162943, 0.002010933915677479] atol=1E-4
+
+    est = Metida.estimate(lmm, [0,0,0,0,0,1]; level = 0.9)
+    @test est.t[1] ≈ 3.12818 atol=1E-4
+    @test est.pval[1] ≈ 0.0020 atol=1E-4
+    @test est.cil[1] ≈ 0.06863 atol=1E-4
+    @test est.ciu[1] ≈ 0.2223 atol=1E-4
 
     lmm = Metida.LMM(@formula(lnpk~0+sequence+period+treatment), dfrds;
     random = Metida.VarEffect(Metida.@covstr(treatment|subject), Metida.CSH),

@@ -42,7 +42,8 @@ function StatsBase.confint(lmm::LMM{T}; level::Real=0.95, ddf::Symbol = :satter)
     cis = Vector{Tuple{T, T}}(undef, coefn(lmm))
     for i = 1:coefn(lmm)
         #ERROR: ArgumentError: TDist: the condition ν > zero(ν) is not satisfied
-        cis[i] = (lmm.result.beta[i] - lmm.result.se[i] * quantile(TDist(ddfv[i]), 1.0 - alpha / 2), lmm.result.beta[i] + lmm.result.se[i] * quantile(TDist(ddfv[i]), 1.0 - alpha / 2))
+        d = lmm.result.se[i] * quantile(TDist(ddfv[i]), 1.0 - alpha / 2)
+        cis[i] = (lmm.result.beta[i] - d, lmm.result.beta[i] + d)
     end
     cis
 end

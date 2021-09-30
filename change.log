@@ -1,6 +1,7 @@
 v0.11.0
   * New keywors for fit
-  * Threads
+  * Threads with Polyester
+  * `estimate()` function
   * sweep logdet round-off error correction (negative values)
   * minor output changes
   * varlink function - square and identity

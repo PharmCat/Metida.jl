@@ -1,5 +1,19 @@
 #linearalgebra.jl
-
+"""
+a' * B * a
+"""
+function mulαtβα(a::AbstractVector, B::AbstractMatrix)
+    if length(a) != size(B, 2)  || size(B, 2) != size(B, 1) error("Dimention error") end
+    c = 0
+    for i = 1:size(B, 1)
+        ct = 0
+        for i2 = 1:size(B, 2)
+            @inbounds  ct += B[i, i2]*a[i2]
+        end
+        @inbounds c += ct*a[i]
+    end
+    c
+end
 """
 θ + A * B * A'
 
