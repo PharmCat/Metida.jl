@@ -1,5 +1,7 @@
 name = "Metida"
 uuid = "a1dec852-9fe5-11e9-361f-8d9fde67cfa2"
+keywords = ["lenearmodel", "mixedmodel"]
+desc = "Mixed-effects models with flexible covariance structure."
 authors = ["Vladimir Arnautov <mail@pharmcat.net>"]
 version = "0.11.0"
 

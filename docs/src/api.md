@@ -131,6 +131,11 @@ Metida.dof_satter
 Metida.dof_contain
 ```
 
+### Metida.estimate
+```@docs
+Metida.estimate
+```
+
 ### Metida.caic
 ```@docs
 Metida.caic

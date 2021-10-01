@@ -27,7 +27,7 @@ TOEPP, ToeplitzParameterized,
 TOEPH, HeterogeneousToeplitz,
 TOEPHP, HeterogeneousToeplitzParameterized,
 CovarianceType, CovmatMethod,
-fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, dof_contain, rankx, caic, lcontrast, anova,
+fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, dof_contain, rankx, caic, lcontrast, anova, estimate,
 gmatrix, rmatrix, vmatrix!,
 AbstractCovarianceType, AbstractCovmatMethod, MetidaModel,
 getlog

@@ -9,7 +9,11 @@ struct EstimateTable
     cil::Vector{Float64}
     ciu::Vector{Float64}
 end
+"""
+    estimate(lmm, l::AbstractVector; level = 0.95, name = "Estimate")
 
+Estimate table for l vector. Satter DF used.
+"""
 function estimate(lmm, l::AbstractVector; level = 0.95, name = "Estimate")
     est  = coef(lmm)'*l
     se   = sqrt(mulαtβα(l, vcov(lmm)))
