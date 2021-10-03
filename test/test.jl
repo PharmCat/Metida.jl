@@ -22,7 +22,7 @@ include("testdata.jl")
     Base.show(io, lmm.result)
     Base.show(io, lmm.covstr)
     Base.show(io, lmm.covstr.repeated.covtype)
-    Base.show(io, lmm.log)
+    Base.show(io, Metida.getlog(lmm))
     #
     @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
     #Verbose
