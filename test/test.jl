@@ -28,6 +28,12 @@ include("testdata.jl")
     #Verbose
     Metida.fit!(lmm; verbose = 2, io = io)
     @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
+    #Missing
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0m;
+    random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
+    )
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
     #Basic, Subject block
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),

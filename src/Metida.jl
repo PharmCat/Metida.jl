@@ -10,7 +10,7 @@ using StatsModels
 import MetidaBase: Tables, MetidaModel, AbstractCovarianceStructure, AbstractCovmatMethod, AbstractCovarianceType, AbstractLMMDataBlocks, MetidaTable, metida_table, PrettyTables
 
 import LinearAlgebra:checksquare
-import StatsModels: @formula
+import StatsModels: @formula, termvars
 import StatsBase: fit, fit!, coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
 import Base:show
 

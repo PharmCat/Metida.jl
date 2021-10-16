@@ -37,6 +37,15 @@ struct LMM{T} <: MetidaModel
             error("No effects specified!")
         end
 
+        tv = termvars(model)
+        if !isnothing(random)
+            union!(tv, termvars(random))
+        end
+        if !isnothing(repeated)
+            union!(tv, termvars(repeated))
+        end
+        data, data_ = StatsModels.missing_omit(NamedTuple{tuple(tv...)}(Tables.columntable(data)))
+
         lmmlog = Vector{LMMLogMsg}(undef, 0)
         mf     = ModelFrame(model, data; contrasts = contrasts)
         mm     = ModelMatrix(mf)

@@ -65,7 +65,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
     #akk = Vector{T}(undef, lmm.covstr.maxn + lmm.rankx) #temp for sweep
     noerror       = true
     #try
-        l = Base.Threads.SpinLock()
+        #l = Base.Threads.SpinLock()
         #l = Base.Threads.ReentrantLock()
         ncore     = min(Polyester.num_cores(), n)
         accθ₁     = zeros(T, ncore)

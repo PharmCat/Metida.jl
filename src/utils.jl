@@ -264,3 +264,11 @@ function logdet_(C::Cholesky, noerror)
     dd + dd, noerror
 end
 =#
+
+
+function StatsModels.termvars(ve::VarEffect)
+    termvars(ve.formula)
+end
+function StatsModels.termvars(ve::Vector{VarEffect})
+    union(termvars.(ve)...)
+end

@@ -403,7 +403,7 @@ struct VarEffect
     model::Union{Tuple{Vararg{AbstractTerm}}, AbstractTerm}
     covtype::CovarianceType
     coding::Dict{Symbol, AbstractContrasts}
-    subj::AbstractTerm
+    subj::Union{Tuple{Vararg{AbstractTerm}}, AbstractTerm}
     p::Int
     function VarEffect(formula, covtype::T, coding) where T <: AbstractCovarianceType
         model, subj = modelparse(formula)
@@ -461,15 +461,16 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     #--
     function CovStructure(random, repeated, data)
         alleffl =  length(random) + 1
+        rown    =  length(Tables.rows(data))
         #
         q       = Vector{Int}(undef, alleffl)
         t       = Vector{Int}(undef, alleffl)
         tr      = Vector{UnitRange{Int}}(undef, alleffl)
         schema  = Vector{Union{AbstractTerm, Tuple}}(undef, alleffl)
-        z       = Matrix{Float64}(undef, size(data, 1), 0)
+        z       = Matrix{Float64}(undef, rown, 0)
         subjz   = Vector{BitMatrix}(undef, alleffl)
         zrndur  = Vector{UnitRange{Int}}(undef, alleffl - 1)
-        rz      = Matrix{Float64}(undef, size(data, 1), 0)
+        rz      = Matrix{Float64}(undef, rown, 0)
         rn      = length(random)
         #Theta parameter type
         ct  = Vector{Symbol}(undef, 0)
@@ -673,7 +674,7 @@ end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Union{ConstantTerm, InterceptTerm, FunctionTerm}
 end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Term
-    if typeof(data[!, t.sym]) <: CategoricalArray || !(typeof(data[!, t.sym]) <: Vector{T} where T <: Real)
+    if typeof(Tables.getcolumn(data, t.sym)) <: CategoricalArray || !(typeof(Tables.getcolumn(data, t.sym)) <: Vector{T} where T <: Real)
         d[t.sym] = StatsModels.FullDummyCoding()
     end
 end
@@ -684,7 +685,7 @@ end
 #end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: InteractionTerm
     for i in t.terms
-        if typeof(data[!, i.sym])  <: CategoricalArray || !(typeof(data[!, i.sym]) <: Vector{T} where T <: Real)
+        if typeof(Tables.getcolumn(data, i.sym))  <: CategoricalArray || !(typeof(Tables.getcolumn(data, i.sym)) <: Vector{T} where T <: Real)
             d[i.sym] = StatsModels.FullDummyCoding()
         end
     end
@@ -692,7 +693,7 @@ end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple{Vararg{AbstractTerm}}
     for i in t
         if isa(i, Term)
-            if typeof(data[!, i.sym]) <: CategoricalArray || !(typeof(data[!, i.sym]) <: Vector{T} where T <: Real)
+            if typeof(Tables.getcolumn(data, i.sym)) <: CategoricalArray || !(typeof(Tables.getcolumn(data, i.sym)) <: Vector{T} where T <: Real)
                 d[i.sym] = StatsModels.FullDummyCoding()
             end
         else
@@ -716,6 +717,14 @@ function fulldummycodingdict(t::T) where T <: Union{ConstantTerm, InterceptTerm}
     d = Dict{Symbol, AbstractContrasts}()
     d
 end
+function fulldummycodingdict(t::Tuple{Vararg{AbstractTerm}})
+    d = Dict{Symbol, AbstractContrasts}()
+    for i in t
+        merge!(d, fulldummycodingdict(i))
+    end
+    d
+end
+
 ################################################################################
 
 ################################################################################
