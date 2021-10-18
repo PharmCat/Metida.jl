@@ -75,6 +75,7 @@ end
 
 L-contrast matrix for `i` fixed effect.
 """
+#=
 function lcontrast(lmm::LMM, i::Int)
     n = nterms(lmm.mf)
     if i > n || n < 1 error("Factor number out of range 1-$(n)") end
@@ -82,6 +83,27 @@ function lcontrast(lmm::LMM, i::Int)
     mx = zeros(length(inds), size(lmm.mm.m, 2))
     for i = 1:length(inds)
         mx[i, inds[i]] = 1
+    end
+    mx
+end
+=#
+function lcontrast(lmm::LMM, i::Int)
+    n = nterms(lmm.mf)
+    if i > n || n < 1 error("Factor number out of range 1-$(n)") end
+    inds = findall(x -> x==i, lmm.mm.assign)
+    if typeof(lmm.mf.f.rhs.terms[i]) <: CategoricalTerm
+        mxc   = zeros(size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1), size(lmm.mm.m, 2))
+        mxcv  = view(mxc, :, inds)
+        mxcv .= lmm.mf.f.rhs.terms[i].contrasts.matrix
+        mx    = zeros(size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1) - 1, size(lmm.mm.m, 2))
+        for i = 2:size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1)
+            mx[i-1, :] .= mxc[i, :] - mxc[1, :]
+        end
+    else
+        mx = zeros(length(inds), size(lmm.mm.m, 2))
+        for i = 1:length(inds)
+            mx[i, inds[i]] = 1
+        end
     end
     mx
 end
