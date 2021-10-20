@@ -81,5 +81,5 @@ end
 
 function Base.show(io::IO, at::ContrastTable)
     mx = metida_table(at.name,  at.f, at.ndf, at.df, at.pval; names = (:Name, :F, :ndf, :ddf, :pval))
-    PrettyTables.pretty_table(io, mx; tf = PrettyTables.tf_compact)
+    PrettyTables.pretty_table(io, mx; tf = PrettyTables.tf_compact, header = names(mx))
 end

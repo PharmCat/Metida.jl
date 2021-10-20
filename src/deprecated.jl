@@ -4,6 +4,18 @@ function gmat_zero!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     nothing
 end
 =#
+#=
+function lcontrast(lmm::LMM, i::Int)
+    n = nterms(lmm.mf)
+    if i > n || n < 1 error("Factor number out of range 1-$(n)") end
+    inds = findall(x -> x==i, lmm.mm.assign)
+    mx = zeros(length(inds), size(lmm.mm.m, 2))
+    for i = 1:length(inds)
+        mx[i, inds[i]] = 1
+    end
+    mx
+end
+=#
 ################################################################################
 # Intersect dataframe.
 ################################################################################
