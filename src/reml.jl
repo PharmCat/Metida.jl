@@ -25,6 +25,7 @@ function fillzeroutri!(a::AbstractArray{T})  where T
     tr = UpperTriangular(a)
     fill!(tr, zero(T))
 end
+#=
 function logerror!(e, lmm)
     if isa(e, DomainError)
         lmmlog!(lmm, LMMLogMsg(:ERROR, "DomainError ($(e.val), $(e.msg)) during REML calculation."))
@@ -40,6 +41,7 @@ function logerror!(e, lmm)
         lmmlog!(lmm, LMMLogMsg(:ERROR, "Unknown error during REML calculation."))
     end
 end
+=#
 ################################################################################
 #                     REML without provided β
 ################################################################################

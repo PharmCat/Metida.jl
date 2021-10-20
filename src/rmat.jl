@@ -173,6 +173,7 @@ function rmatp_toephp!(mx, θ, rz, p)
     nothing
 end
 ################################################################################
+#=
  Base.@propagate_inbounds function edistance(i::AbstractVector{T1}, j::AbstractVector{T2}) where T1 where T2
     length(i) == length(j) || error("length i not equal j")
     sum = zero(promote_type(T1, T2))
@@ -181,8 +182,8 @@ end
     end
     return sqrt(sum)
 end
-
-function edistance(mx::AbstractMatrix{T}, i::Int, j::Int) where T
+=#
+Base.@propagate_inbounds function edistance(mx::AbstractMatrix{T}, i::Int, j::Int) where T
     sum = zero(T)
     for c = 1:size(mx, 2)
         sum += (mx[i,c] - mx[j,c])^2

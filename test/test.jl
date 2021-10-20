@@ -89,6 +89,8 @@ include("testdata.jl")
     @test t3table.pval[4]          ≈ 0.7852154468081014 atol=1E-6
     ct = Metida.contrast(lmm, [0 0 1 0 0 0; 0 0 0 1 0 0; 0 0 0 0 1 0])
     @test t3table.pval[3] ≈ ct.pval[1]
+    est = Metida.estimate(lmm, [0,0,0,0,0,1]; level = 0.9)
+    @test_nowarn Base.show(io, est)
     ############################################################################
     # AI like algo
     Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm))
