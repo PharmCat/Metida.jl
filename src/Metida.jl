@@ -27,7 +27,7 @@ TOEPP, ToeplitzParameterized,
 TOEPH, HeterogeneousToeplitz,
 TOEPHP, HeterogeneousToeplitzParameterized,
 CovarianceType, CovmatMethod,
-fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, dof_contain, rankx, caic, lcontrast, anova, estimate,
+fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, dof_contain, rankx, caic, lcontrast, typeiii, estimate, contrast,
 gmatrix, rmatrix, vmatrix!,
 AbstractCovarianceType, AbstractCovmatMethod, MetidaModel,
 getlog
@@ -57,7 +57,7 @@ include("utils.jl")
 include("dof_satter.jl")
 include("dof_contain.jl")
 include("fvalue.jl")
-include("anova.jl")
+include("typeiii.jl")
 include("estimate.jl")
 
 end # module

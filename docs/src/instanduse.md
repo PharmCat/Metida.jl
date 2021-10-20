@@ -82,7 +82,7 @@ lmm.log
     Experimental
 
 ```@example lmmexample
-anova(lmm)
+typeiii(lmm)
 ```
 
 ### Model construction

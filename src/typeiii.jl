@@ -1,5 +1,5 @@
 
-struct ANOVATable
+struct ContrastTable
     name::Vector{String}
     f::Vector{Float64}
     ndf::Vector{Float64}
@@ -7,14 +7,14 @@ struct ANOVATable
     pval::Vector{Float64}
 end
 """
-    anova(lmm::LMM{T}; ddf::Symbol = :satter) where T
+    typeiii(lmm::LMM{T}; ddf::Symbol = :satter) where T
 
 !!! warning
     Experimental
 
 Type III table.
 """
-function anova(lmm::LMM{T}; ddf::Symbol = :satter) where T
+function typeiii(lmm::LMM{T}; ddf::Symbol = :satter) where T
     if !isfitted(lmm) error("Model not fitted!") end
     c           = nterms(lmm.mf)
     d           = Vector{Int}(undef, 0)
@@ -52,11 +52,34 @@ function anova(lmm::LMM{T}; ddf::Symbol = :satter) where T
         deleteat!(df, d)
         deleteat!(pval, d)
     end
-    ANOVATable(fac, F, ndf, df, pval)
+    ContrastTable(fac, F, ndf, df, pval)
 end
 
-function Base.show(io::IO, at::ANOVATable)
-    println(io, "  Type III Tests of Fixed Effects")
+"""
+    contrast(lmm, l::AbstractMatrix; name::String = "Contrast", ddf = :satter)
+
+User contrast table.
+ddf = `:satter` or `:residual` or any number for direct ddf setting.
+"""
+function contrast(lmm, l::AbstractMatrix; name::String = "Contrast", ddf = :satter)
+    if !isfitted(lmm) error("Model not fitted!") end
+    if lmm.rankx != size(l, 2) error("size(l, 2) not equal rank X!") end
+    F    = fvalue(lmm, l)
+    ndf  = rank(l)
+    if isa(ddf, Symbol)
+        if ddf == :satter
+            df  = dof_satter(lmm, l)
+        elseif ddf == :residual
+            df  = dof_residual(lmm)
+        end
+    else
+        df = ddf
+    end
+    pval = ccdf(FDist(ndf, df), F)
+    ContrastTable([name], [F], [ndf], [df], [pval])
+end
+
+function Base.show(io::IO, at::ContrastTable)
     mx = metida_table(at.name,  at.f, at.ndf, at.df, at.pval; names = (:Name, :F, :ndf, :ddf, :pval))
     #mx = hcat(at.name,  round.(at.f; digits = 4), round.(at.ndf; digits = 4), round.(at.df; digits = 4), round.(at.pval; digits = 4))
     #mx = vcat(["Name" "F" "ndf" "ddf" "pval"], mx)

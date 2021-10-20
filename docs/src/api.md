@@ -81,9 +81,9 @@ Metida.HeterogeneousToeplitzParameterized
 Metida.SpatialExponential
 ```
 
-### Metida.anova
+### Metida.typeiii
 ```@docs
-Metida.anova
+Metida.typeiii
 ```
 
 ### Metida.isfitted

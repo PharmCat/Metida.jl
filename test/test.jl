@@ -41,10 +41,10 @@ include("testdata.jl")
     Metida.fit!(lmm; aifirst = true)
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
 
-    anovatable = Metida.anova(lmm;  ddf = :contain) # NOT VALIDATED
-    anovatable = Metida.anova(lmm;  ddf = :residual)
-    anovatable = Metida.anova(lmm)
-    Base.show(io, anovatable)
+    t3table = Metida.typeiii(lmm;  ddf = :contain) # NOT VALIDATED
+    t3table = Metida.typeiii(lmm;  ddf = :residual)
+    t3table = Metida.typeiii(lmm)
+    Base.show(io, t3table)
 
 
     ############################################################################
@@ -86,7 +86,8 @@ include("testdata.jl")
 
     Metida.confint(lmm; ddf = :contain)[end][1] #NOT VALIDATED
     @test size(crossmodelmatrix(lmm), 1) == 6
-    @test anovatable.pval[4]          ≈ 0.7852154468081014 atol=1E-6
+    @test t3table.pval[4]          ≈ 0.7852154468081014 atol=1E-6
+    contr = Metida.contrast(lmm, [0 0 1 0 0 0; 0 0 0 1 0 0 0])
     ############################################################################
     # AI like algo
     Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm))
@@ -227,7 +228,7 @@ end
     @test Metida.m2logreml(lmm) ≈ 1300.1807598168923 atol=1E-6
     @test coef(lmm) ≈ [22.13309710783416, 2.000486297455917, 1.1185284725578566, 0.4049714576872601] atol=1E-6
     @test Metida.dof_satter(lmm, [0, 0, 0, 1]) ≈ 37.999999999991786 atol=1E-2
-
+    #Metida.typeiii(lmm)
 end
 
 @testset "  Model: Function terms, CSH/SI                            " begin
@@ -395,7 +396,7 @@ end
     )
     Metida.fit!(lmm)
     @test collect(Metida.confint(lmm)[6]) ≈  [0.05379033790060175, 0.23713821749515449] atol=1E-8
-    anovatable = Metida.anova(lmm)
+    anovatable = Metida.typeiii(lmm)
     @test anovatable.pval ≈ [3.087934998046721e-63, 0.9176105002577626, 0.6522549061162943, 0.002010933915677479] atol=1E-4
 
     est = Metida.estimate(lmm, [0,0,0,0,0,1]; level = 0.9)
@@ -409,7 +410,7 @@ end
     repeated = Metida.VarEffect(Metida.@covstr(treatment|subject), Metida.DIAG),
     )
     Metida.fit!(lmm)
-    anovatable = Metida.anova(lmm)
+    anovatable = Metida.typeiii(lmm)
     @test anovatable.pval ≈ [0.9176105002855397, 0.6522549061174356, 0.0020109339157131302] atol=1E-4
 end
 ################################################################################
