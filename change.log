@@ -8,6 +8,7 @@ v0.11.0
   * varlink function - square and identity
   * fix contrast construction for model with no intercept
   * experimental contrast function
+  * C gradient in ModelResult
   * docs
   * test
   * drop missings

@@ -9,9 +9,10 @@ mutable struct ModelResult
     h::Union{Matrix, Nothing}
     c::Union{Matrix, Nothing}
     se::Union{Vector, Nothing}
+    grc::Union{Vector, Nothing}
 
     function ModelResult()
-        new(false, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
+        new(false, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
     end
 end
 

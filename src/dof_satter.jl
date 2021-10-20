@@ -2,6 +2,7 @@
 
 function gradc(lmm::LMM{T}, theta) where T
     if !lmm.result.fit error("Model not fitted!") end
+    if !isnothing(lmm.result.grc) return lmm.result.grc end
     vloptf(x) = sweep_β_cov(lmm, x, lmm.result.beta)
     chunk  = ForwardDiff.Chunk{1}()
     jcfg   = ForwardDiff.JacobianConfig(vloptf, theta, chunk)
@@ -11,10 +12,11 @@ function gradc(lmm::LMM{T}, theta) where T
         gic     = reshape(view(jic, :, i), rankx(lmm), rankx(lmm)) #<Opt
         grad[i] = - lmm.result.c * gic * lmm.result.c
     end
+    lmm.result.grc = grad
     grad
 end
 
-function getinvhes(lmm)
+function getinvhes(lmm::LMM{T}) where T
     local A
     if isnothing(lmm.result.h)
         lmm.result.h = hessian(lmm)
@@ -30,26 +32,26 @@ function getinvhes(lmm)
             if abs(qrd.R[i, i]) > 1E-8
                 vals[qrd.jpvt[i]] = true
             else
-                theta[qrd.jpvt[i]] = 0.0
-                H[:,qrd.jpvt[i]]  .= 0.0
-                H[qrd.jpvt[i],:]  .= 0.0
+                theta[qrd.jpvt[i]] = zero(T)
+                H[:,qrd.jpvt[i]]  .= zero(T)
+                H[qrd.jpvt[i],:]  .= zero(T)
             end
         elseif lmm.covstr.ct[qrd.jpvt[i]] == :rho
             if 1.0 - abs(lmm.result.theta[qrd.jpvt[i]])  > 1E-6
                 vals[qrd.jpvt[i]] = true
             else
                 if lmm.result.theta[qrd.jpvt[i]] > 0 lmm.result.theta[qrd.jpvt[i]] = 1.0 else lmm.result.theta[qrd.jpvt[i]] = -1.0 end
-                H[:,qrd.jpvt[i]] .= 0.0
-                H[qrd.jpvt[i],:] .= 0.0
+                H[:,qrd.jpvt[i]] .= zero(T)
+                H[qrd.jpvt[i],:] .= zero(T)
             end
         end
     end
     try
         vh  = view(H, vals, vals)
         vh .= inv(Matrix(vh))
-        A = 2.0 * H
+        A = H * 2
     catch
-        A = 2.0 * pinv(H)
+        A = pinv(H) * 2
     end
     A, theta
 end
@@ -66,7 +68,7 @@ df = \\frac{2(LCL')^{2}}{g'Ag}
 Where: ``A = 2H^{-1}``, ``g = \\triangledown_{\\theta}(LC^{-1}_{\\theta}L')``
 
 """
-function dof_satter(lmm::LMM{T}, l::Vector) where T
+function dof_satter(lmm::LMM{T}, l::AbstractVector) where T
     A, theta = getinvhes(lmm)
     grad  = gradc(lmm, theta)
     g  = Vector{T}(undef, length(grad))
@@ -132,7 +134,8 @@ where:
 * ``v_i = \\frac{2*Λ_{i,i}^2}{g' * A * g}``
 * ``E = \\sum_{i=1}^n {\\frac{v_i}(v_i - 2)}`` for ``v_i > 2``
 """
-function dof_satter(lmm::LMM{T}, l::Matrix) where T
+function dof_satter(lmm::LMM{T}, l::AbstractMatrix) where T
+    if lmm.rankx != size(l, 2) error("size(l, 2) not equal rank X!") end
     A, theta = getinvhes(lmm)
     grad  = gradc(lmm, theta)
     g     = Vector{T}(undef, length(grad))

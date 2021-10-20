@@ -87,7 +87,8 @@ include("testdata.jl")
     Metida.confint(lmm; ddf = :contain)[end][1] #NOT VALIDATED
     @test size(crossmodelmatrix(lmm), 1) == 6
     @test t3table.pval[4]          ≈ 0.7852154468081014 atol=1E-6
-    contr = Metida.contrast(lmm, [0 0 1 0 0 0; 0 0 0 1 0 0 0])
+    ct = Metida.contrast(lmm, [0 0 1 0 0 0; 0 0 0 1 0 0; 0 0 0 0 1 0])
+    @test t3table.pval[3] ≈ ct.pval[1]
     ############################################################################
     # AI like algo
     Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm))
