@@ -3,42 +3,42 @@
 ################################################################################
 function gmat_switch!(G, θ, covstr, r)
     if covstr.random[r].covtype.s == :SI
-        gmat_si!(G, θ[covstr.tr[r]],  covstr.random[r].covtype.p) # i > r
+        gmat_si!(G, θ[covstr.tr[r]]) # i > r
     elseif covstr.random[r].covtype.s == :DIAG
-        gmat_diag!(G, θ[covstr.tr[r]],  covstr.random[r].covtype.p)
+        gmat_diag!(G, θ[covstr.tr[r]])
     elseif covstr.random[r].covtype.s == :AR
-        gmat_ar!(G, θ[covstr.tr[r]],  covstr.random[r].covtype.p)
+        gmat_ar!(G, θ[covstr.tr[r]])
     elseif covstr.random[r].covtype.s == :ARH
-        gmat_arh!(G, θ[covstr.tr[r]],   covstr.random[r].covtype.p)
+        gmat_arh!(G, θ[covstr.tr[r]])
     elseif covstr.random[r].covtype.s == :CSH
-        gmat_csh!(G, θ[covstr.tr[r]],  covstr.random[r].covtype.p)
+        gmat_csh!(G, θ[covstr.tr[r]])
     elseif covstr.random[r].covtype.s == :CS
-        gmat_cs!(G, θ[covstr.tr[r]],   covstr.random[r].covtype.p)
+        gmat_cs!(G, θ[covstr.tr[r]])
     elseif covstr.random[r].covtype.s == :ARMA
-        gmat_arma!(G, θ[covstr.tr[r]],  covstr.random[r].covtype.p)
+        gmat_arma!(G, θ[covstr.tr[r]])
     elseif covstr.random[r].covtype.s == :TOEP
-        gmat_toep!(G, θ[covstr.tr[r]],  covstr.random[r].covtype.p)
+        gmat_toep!(G, θ[covstr.tr[r]])
     elseif covstr.random[r].covtype.s == :TOEPP
         gmat_toepp!(G, θ[covstr.tr[r]],  covstr.random[r].covtype.p)
     elseif covstr.random[r].covtype.s == :TOEPH
-        gmat_toeph!(G, θ[covstr.tr[r]],  covstr.random[r].covtype.p)
+        gmat_toeph!(G, θ[covstr.tr[r]])
     elseif covstr.random[r].covtype.s == :TOEPHP
         gmat_toephp!(G, θ[covstr.tr[r]],  covstr.random[r].covtype.p)
     elseif covstr.random[r].covtype.s == :FUNC
-         covstr.random[r].covtype.p.xmat!(G, θ[covstr.tr[r]], covstr.random[r].covtype.p)
+         covstr.random[r].covtype.f.xmat!(G, θ[covstr.tr[r]], covstr.random[r].covtype.p)
     end
     G
 end
 ################################################################################
-function zgz_base_inc!(mx::AbstractArray{T}, θ::AbstractArray{T}, covstr, block, sblock) where T
+@inline function zgz_base_inc!(mx::AbstractArray{T}, θ::AbstractArray{T}, covstr, block, sblock) where T
     if covstr.random[1].covtype.s != :ZERO
         #length of random to covstr
         for r = 1:covstr.rn
-            G = zeros(T, covstr.q[r], covstr.q[r])
-            gmat_switch!(G, θ, covstr, r)
+            G = fill!(Symmetric(Matrix{T}(undef, covstr.q[r], covstr.q[r])), zero(T))
+            gmat_switch!(G.data, θ, covstr, r)
             zblock    = view(covstr.z, block, covstr.zrndur[r])
             for i = 1:length(sblock[r])
-                mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i]), view(zblock, sblock[r][i], :), Symmetric(G))
+                @inbounds mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i]), view(zblock, sblock[r][i], :), G)
             end
         end
     end
@@ -47,14 +47,14 @@ function zgz_base_inc!(mx::AbstractArray{T}, θ::AbstractArray{T}, covstr, block
     mx
 end
 ################################################################################
-function gmat_si!(mx, θ, p)
+function gmat_si!(mx, θ)
     val = θ[1] ^ 2
     @inbounds @simd for i = 1:size(mx, 1)
         mx[i, i] = val
     end
     nothing
 end
-function gmat_diag!(mx, θ, p)
+function gmat_diag!(mx, θ)
     @inbounds @simd for i = 1:size(mx, 1)
         mx[i, i] = θ[i] ^ 2
     end
@@ -63,7 +63,7 @@ end
 #function gmat_vc!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
 #    nothing
 #end
-function gmat_ar!(mx, θ, p)
+function gmat_ar!(mx, θ)
     de  = θ[1] ^ 2
     s   = size(mx, 1)
     @inbounds @simd for i = 1:s
@@ -78,7 +78,7 @@ function gmat_ar!(mx, θ, p)
     end
     nothing
 end
-function gmat_arh!(mx, θ, p)
+function gmat_arh!(mx, θ)
     s = size(mx, 1)
     @inbounds @simd for m = 1:s
         mx[m, m] = θ[m]
@@ -95,7 +95,7 @@ function gmat_arh!(mx, θ, p)
     end
     nothing
 end
-function gmat_cs!(mx, θ, p)
+function gmat_cs!(mx, θ)
     s = size(mx, 1)
     mx .= θ[1]^2
     if s > 1
@@ -107,7 +107,7 @@ function gmat_cs!(mx, θ, p)
     end
     nothing
 end
-function gmat_csh!(mx, θ, p)
+function gmat_csh!(mx, θ)
     s = size(mx, 1)
     @inbounds @simd for m = 1:s
         mx[m, m] = θ[m]
@@ -125,7 +125,7 @@ function gmat_csh!(mx, θ, p)
     nothing
 end
 ################################################################################
-function gmat_arma!(mx, θ, p)
+function gmat_arma!(mx, θ)
     de  = θ[1] ^ 2
     s   = size(mx, 1)
     @inbounds @simd for i = 1:s
@@ -140,7 +140,7 @@ function gmat_arma!(mx, θ, p)
     end
     nothing
 end
-function gmat_toep!(mx, θ, p)
+function gmat_toep!(mx, θ)
     de  = θ[1] ^ 2    #diagonal element
     s   = size(mx, 1) #size
     @inbounds @simd for i = 1:s
@@ -155,7 +155,7 @@ function gmat_toep!(mx, θ, p)
     end
     nothing
 end
-function gmat_toepp!(mx, θ, p)
+function gmat_toepp!(mx, θ, p::Int)
     de  = θ[1] ^ 2    #diagonal element
     s   = size(mx, 1) #size
     @inbounds @simd for i = 1:s
@@ -170,7 +170,7 @@ function gmat_toepp!(mx, θ, p)
     end
     nothing
 end
-function gmat_toeph!(mx, θ, p)
+function gmat_toeph!(mx, θ)
     s = size(mx, 2)
     @inbounds @simd for m = 1:s
         mx[m, m] = θ[m]
@@ -187,7 +187,7 @@ function gmat_toeph!(mx, θ, p)
     end
     nothing
 end
-function gmat_toephp!(mx, θ, p)
+function gmat_toephp!(mx, θ, p::Int)
     s = size(mx, 2)
     @inbounds @simd for m = 1:s
         mx[m, m] = θ[m]

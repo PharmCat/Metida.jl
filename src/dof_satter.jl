@@ -73,9 +73,11 @@ function dof_satter(lmm::LMM{T}, l::AbstractVector) where T
     grad  = gradc(lmm, theta)
     g  = Vector{T}(undef, length(grad))
     for i = 1:length(grad)
-        g[i] = (l' * grad[i] * l)[1]
+        #g[i] = (l' * grad[i] * l)[1]
+        g[i] = mulαtβα(l, grad[i])
     end
-    d = g' * A * g
+    #d = g' * A * g
+    d = mulαtβα(g, A)
     df = 2*(l' * lmm.result.c * l)^2 / d
     if df < 1.0 return 1.0 elseif df > dof_residual(lmm) return dof_residual(lmm) else return df end
 end
@@ -106,9 +108,11 @@ function dof_satter(lmm::LMM{T}) where T
         l[gi] = 1
         g     = Vector{T}(undef, length(grad))
         for i = 1:length(grad)
-            g[i] = (l' * grad[i] * l)[1]
+            #g[i] = (l' * grad[i] * l)[1]
+            g[i] = mulαtβα(l, grad[i])
         end
-        d = g' * A * g
+        #d = g' * A * g
+        d = mulαtβα(g, A)
         df = 2*(l' * lmm.result.c * l)^2 / d
         if df < 1.0 dof[gi] = 1.0 elseif df > dof_residual(lmm) dof[gi] = dof_residual(lmm) else dof[gi] = df end
     end
@@ -149,9 +153,11 @@ function dof_satter(lmm::LMM{T}, l::AbstractMatrix) where T
     for i = 1:lclr
         plm = pl[i,:]
         for i2 = 1:length(grad)
-            g[i2] = (plm' * grad[i2] * plm)[1]
+            #g[i2] = (plm' * grad[i2] * plm)[1]
+            g[i2] = mulαtβα(plm, grad[i2])
         end
-        d = g' * A * g
+        #d = g' * A * g
+        d = mulαtβα(g, A)
         vm[i] = 2*lcle.values[i]^2 / d
         if vm[i] > 2.0 em += vm[i] / (vm[i] - 2.0) end
     end

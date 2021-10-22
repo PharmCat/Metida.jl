@@ -20,18 +20,103 @@ function modelparse(term::FunctionTerm{typeof(|)})
 end
 
 ################################################################################
-#                          COVARIANCE TYPE
+# COVMAT METHOD
 ################################################################################
-struct CovarianceType{T} <: AbstractCovarianceType
-    s::Symbol          #Covtype name
-    p::T
-    function CovarianceType(s, p)
-        new{typeof(p)}(s, p)
+"""
+    CovmatMethod(nparamf, xmat!)
+
+* `nparamf` - function type (t, q) -> (a, b, c)
+where:
+`t` - size(z, 2) - number of levels for effect (number of columns of individual z matriz);
+`q` - number of factors in the effect model;
+`a` - number of variance parameters;
+`b` - number of ρ parameters;
+`c` - other parameers (optional).
+
+Example: `(t, q) -> (t, 1)` for CSH structure; `(t, q) -> (1, 1)` for AR, ets.
+
+`Tuple{Int, Int}` should be returned.
+
+* `xmat!` - construction function
+
+G matrix function should update `mx`, where `mx` is zero matrix, `p` - parameter of CovarianceType structure.
+
+# Exapple
+
+```julia
+function gmat_diag!(mx, θ::Vector{T}, p) where T
+    for i = 1:size(mx, 1)
+            mx[i, i] = θ[i] ^ 2
+        end
+    nothing
+end
+```
+
+# Exapple
+
+R matrix function should add R part to `mx`, `rz` - is repeated effect matrix.
+
+# Example
+
+```julia
+function rmatp_diag!(mx, θ::Vector{T}, rz, p) where T
+    for i = 1:size(mx, 1)
+        for c = 1:length(θ)
+            mx[i, i] += rz[i, c] * θ[c] * θ[c]
+        end
     end
-    function CovarianceType(s)
-        CovarianceType(s, zero(Int))
+    nothing
+end
+```
+"""
+struct CovmatMethod{Nf, Xf} <: AbstractCovmatMethod
+    nparamf::Nf
+    xmat!::Xf
+    function CovmatMethod(nparamf, xmat!)
+        new{typeof(nparamf), typeof(xmat!)}(nparamf, xmat!)
+    end
+    function CovmatMethod()
+        CovmatMethod(nothing, nothing)
     end
 end
+################################################################################
+#                          COVARIANCE TYPE
+################################################################################
+"""
+    CovarianceType(cm::AbstractCovmatMethod)
+
+Make covariance type with CovmatMethod.
+
+# Example
+
+```julia
+customg = CovarianceType(CovmatMethod((q,p) -> (q, 1), Metida.gmat_csh!))
+```
+"""
+struct CovarianceType <: AbstractCovarianceType
+    s::Symbol          #Covtype name
+    p::Int
+    f::CovmatMethod
+    function CovarianceType(s::Symbol, p::Int, f)
+        new(s, p, f)
+    end
+    function CovarianceType(s::Symbol)
+        CovarianceType(s, 0, CovmatMethod())
+    end
+    function CovarianceType(s::Symbol, p::Int)
+        CovarianceType(s, p, CovmatMethod())
+    end
+    function CovarianceType(cm::CovmatMethod)
+        CovarianceType(:FUNC, 0, cm)
+    end
+    function CovarianceType(cm::CovmatMethod, p::Int)
+        CovarianceType(:FUNC, p, cm)
+    end
+
+end
+
+
+
 #=
 struct FullCovarianceType <: AbstractCovarianceType
     g::CovarianceType
@@ -266,70 +351,6 @@ function RZero()
     CovarianceType(:ZERO)
 end
 
-"""
-    CovmatMethod(nparamf::Function, xmat!::Function)
-
-* `nparamf` - function type (t, q) -> (a, b, c)
-where:
-`t` - size(z, 2) - number of levels for effect (number of columns of individual z matriz);
-`q` - number of factors in the effect model;
-`a` - number of variance parameters;
-`b` - number of ρ parameters;
-`c` - other parameers (optional).
-
-Example: `(t, q) -> (t, 1)` for CSH structure; `(t, q) -> (1, 1)` for AR, ets.
-
-`Tuple{Int, Int}` should be returned.
-
-* `xmat!` - construction function
-
-G matrix function should update `mx`, where `mx` is zero matrix, `p` - parameter of CovarianceType structure.
-
-# Exapple
-
-```julia
-function gmat_diag!(mx, θ::Vector{T}, p) where T
-    for i = 1:size(mx, 1)
-            mx[i, i] = θ[i] ^ 2
-        end
-    nothing
-end
-```
-
-# Exapple
-
-R matrix function should add R part to `mx`, `rz` - is repeated effect matrix.
-
-# Example
-
-```julia
-function rmatp_diag!(mx, θ::Vector{T}, rz, p) where T
-    for i = 1:size(mx, 1)
-        for c = 1:length(θ)
-            mx[i, i] += rz[i, c] * θ[c] * θ[c]
-        end
-    end
-    nothing
-end
-```
-"""
-struct CovmatMethod <: AbstractCovmatMethod
-    nparamf::Function
-    xmat!::Function
-end
-
-"""
-    CovarianceType(cm::AbstractCovmatMethod)
-
-Make custom covariance type with CovmatMethod.
-
-# Example
-
-```julia
-customg = CovarianceType(CovmatMethod((q,p) -> (q, 1), Metida.gmat_csh!))
-```
-"""
-CovarianceType(cm::AbstractCovmatMethod) = CovarianceType(:FUNC, cm)
 
 #CovarianceType(cmg::AbstractCovmatMethod, cmr::AbstractCovmatMethod) = FullCovarianceType(CovarianceType(:FUNC, cmg), CovarianceType(:FUNC, cmr))
 
@@ -363,7 +384,7 @@ function covstrparam(ct::CovarianceType, t::Int, q::Int)
     elseif ct.s == :ZERO
         return (0, 0)
     elseif ct.s == :FUNC
-        return ct.p.nparamf(t, q)
+        return ct.f.nparamf(t, q)
     elseif ct.s == :SPEXP
         return (1, 0, 1)
     else
@@ -438,7 +459,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     # Z matrix
     z::Matrix{T}
     #subjz::Vector{BitArray{2}}
-    # Blocks for each blocking subject, each effect, each effect subject
+    # Blocks for each blocking subject, each effect, each effect subject sblock[block][rand eff][subj]
     sblock::Vector{Vector{Vector{Vector{UInt32}}}}
     #unit range z column range for each random effect
     zrndur::Vector{UnitRange{Int}}

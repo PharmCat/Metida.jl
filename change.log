@@ -1,3 +1,6 @@
+v0.11.1
+  * optimizations
+
 v0.11.0
   * rename anova to typeiii
   * New keywords for fit

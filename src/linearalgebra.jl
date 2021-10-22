@@ -2,12 +2,12 @@
 """
 a' * B * a
 """
-function mulαtβα(a::AbstractVector, B::AbstractMatrix)
-    if length(a) != size(B, 2)  || size(B, 2) != size(B, 1) error("Dimention error") end
-    c = 0
-    for i = 1:size(B, 1)
-        ct = 0
-        for i2 = 1:size(B, 2)
+function mulαtβα(a::AbstractVector, B::AbstractMatrix{T}) where T
+    if length(a) != size(B, 2)::Int  || size(B, 2)::Int  != size(B, 1)::Int  error("Dimention error") end
+    c = zero(T)
+    for i ∈ axes(B, 1)::Base.OneTo{Int}
+        ct = zero(T)
+        for i2 ∈ axes(B, 2)::Base.OneTo{Int}
             @inbounds  ct += B[i, i2]*a[i2]
         end
         @inbounds c += ct*a[i]
@@ -20,16 +20,18 @@ end
 Change θ (only upper triangle).
 """
 function mulαβαtinc!(θ::AbstractMatrix{T}, A::AbstractMatrix, B::AbstractMatrix) where T
+    #1 alloc
     axb  = axes(B, 1)
     axa  = axes(A, 1)
+    sa   = size(A, 1)
     c  = Vector{T}(undef, size(B, 1))
     for i ∈ axa
         fill!(c, zero(T))
-        #=@turbo=# @inbounds  for n ∈ axb, m ∈ axb
+        @inbounds  for n ∈ axb, m ∈ axb
             c[n] += B[m, n] * A[i, m]
         end
         #upper triangular n = i:p
-        #=@turbo=# @inbounds  for n ∈ axa, m ∈ axb
+        @inbounds  for n ∈ i:sa, m ∈ axb
             θ[i, n] += A[n, m] * c[m]
         end
     end
@@ -77,8 +79,8 @@ end
 Change θ.
 """
 function mulαtβinc!(θ::AbstractVector, A::AbstractMatrix, b::AbstractVector)
-    if size(A, 1) != length(b) throw(DimensionMismatch("size(A, 1) should be equal length(b)")) end
     q = size(A, 1)
+    if q != length(b) throw(DimensionMismatch("size(A, 1) should be equal length(b)")) end
     p = size(A, 2)
     #=@turbo=# @inbounds  for n in 1:p, m in 1:q
         θ[n] += b[m] * A[m, n]

@@ -1,4 +1,67 @@
 #=
+function fillzeroutri!(a::AbstractArray{T}) where T
+    s = size(a,1)
+    if s == 1 return @inbounds a[1,1] = zero(T) end
+    @simd for m = 1:s
+        @simd for n = m:s
+            @inbounds a[m,n] = zero(T)
+        end
+    end
+    a
+end
+=#
+#=
+function logerror!(e, lmm)
+    if isa(e, DomainError)
+        lmmlog!(lmm, LMMLogMsg(:ERROR, "DomainError ($(e.val), $(e.msg)) during REML calculation."))
+    elseif isa(e, BoundsError)
+        lmmlog!(lmm, LMMLogMsg(:ERROR, "BoundsError ($(e.a), $(e.i)) during REML calculation."))
+    elseif isa(e, ArgumentError)
+        lmmlog!(lmm, LMMLogMsg(:ERROR, "ArgumentError ($(e.msg)) during REML calculation."))
+    elseif isa(e, LinearAlgebra.SingularException)
+        lmmlog!(lmm, LMMLogMsg(:ERROR, "SingularException ($(e.info)) during REML calculation."))
+    elseif isa(e, MethodError)
+        lmmlog!(lmm, LMMLogMsg(:ERROR, "MethodError ($(e.f), $(e.args), $(e.world)) during REML calculation."))
+    else
+        lmmlog!(lmm, LMMLogMsg(:ERROR, "Unknown error during REML calculation."))
+    end
+end
+=#
+
+################################################################################
+#                     β calculation
+################################################################################
+#=
+function sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T <: Number
+    n             = length(lmm.covstr.vcovblock)
+    θ₂            = zeros(T, lmm.rankx, lmm.rankx)
+    βm            = zeros(T, lmm.rankx)
+    β             = Vector{T}(undef, lmm.rankx)
+    #---------------------------------------------------------------------------
+    akk           = zeros(T, lmm.covstr.maxn + lmm.rankx) #temp for sweep
+    Vm            = Matrix{T}(undef, lmm.covstr.maxn + lmm.rankx, lmm.covstr.maxn + lmm.rankx) #!!
+    @inbounds @simd for i = 1:n
+        q    = length(lmm.covstr.vcovblock[i])
+        qswm = q + lmm.rankx
+        Vp   = view(Vm, 1:q + lmm.rankx, 1:q + lmm.rankx)
+        V    = view(Vm, 1:q, 1:q)
+        fillzeroutri!(V)
+        Vx   = view(Vm, 1:q, q+1:q+lmm.rankx)
+        copyto!(Vx, data.xv[i])
+        Vc   = view(Vm, q + 1:qswm, q + 1:qswm)
+        fillzeroutri!(Vc)
+        vmatrix!(V, θ, lmm, i)
+        #-----------------------------------------------------------------------
+        sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q)
+        subutri!(θ₂, view(Vp, q + 1:qswm, q + 1:qswm))
+        mulαtβinc!(βm, view(Vp, 1:q, q + 1:qswm), data.yv[i])
+    end
+    mul!(β, inv(Symmetric(θ₂)), βm)
+    return  β
+end
+=#
+
+#=
 function gmat_zero!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     mx .= zero(T)
     nothing

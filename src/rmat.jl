@@ -5,32 +5,32 @@
 ################################################################################
 function rmat_base_inc_b!(mx, θ, zrv, covstr)
         if covstr.repeated.covtype.s == :SI
-            rmatp_si!(mx, θ, zrv, covstr.repeated.covtype.p)
+            rmatp_si!(mx, θ, zrv)
         elseif covstr.repeated.covtype.s == :DIAG
-            rmatp_diag!(mx, θ, zrv, covstr.repeated.covtype.p)
+            rmatp_diag!(mx, θ, zrv)
         elseif covstr.repeated.covtype.s == :AR
-            rmatp_ar!(mx, θ, zrv, covstr.repeated.covtype.p)
+            rmatp_ar!(mx, θ, zrv)
         elseif covstr.repeated.covtype.s == :ARH
-            rmatp_arh!(mx, θ, zrv, covstr.repeated.covtype.p)
+            rmatp_arh!(mx, θ, zrv)
         elseif covstr.repeated.covtype.s == :CSH
-            rmatp_csh!(mx, θ, zrv, covstr.repeated.covtype.p)
+            rmatp_csh!(mx, θ, zrv)
         elseif covstr.repeated.covtype.s == :CS
-            rmatp_cs!(mx, θ, zrv, covstr.repeated.covtype.p)
+            rmatp_cs!(mx, θ, zrv)
         elseif covstr.repeated.covtype.s == :ARMA
-            rmatp_arma!(mx, θ, zrv, covstr.repeated.covtype.p)
+            rmatp_arma!(mx, θ, zrv)
         elseif covstr.repeated.covtype.s == :TOEPP
             rmatp_toepp!(mx, θ, zrv, covstr.repeated.covtype.p)
         elseif covstr.repeated.covtype.s == :TOEPHP
             rmatp_toephp!(mx, θ, zrv, covstr.repeated.covtype.p)
         elseif covstr.repeated.covtype.s == :FUNC
-            covstr.repeated.covtype.p.xmat!(mx, θ, zrv, covstr.repeated.covtype.p)
+            covstr.repeated.covtype.f.xmat!(mx, θ, zrv, covstr.repeated.covtype.p)
         elseif covstr.repeated.covtype.s == :SPEXP
-            rmatp_spexp!(mx, θ, zrv, covstr.repeated.covtype.p)
+            rmatp_spexp!(mx, θ, zrv)
         end
 end
 ################################################################################
 ################################################################################
-function rmat_base_inc!(mx, θ, covstr, block, sblock)
+@inline function rmat_base_inc!(mx, θ, covstr, block, sblock)
     zblock    = view(covstr.rz, block, :)
     @simd for i ∈ axes(sblock[end], 1)
         @inbounds rmat_base_inc_b!(view(mx, sblock[end][i],  sblock[end][i]), θ, view(zblock,  sblock[end][i], :), covstr)
@@ -38,14 +38,14 @@ function rmat_base_inc!(mx, θ, covstr, block, sblock)
     mx
 end
 ################################################################################
-function rmatp_si!(mx, θ, ::AbstractMatrix, p) ##=@turbo=# @inbounds  checked
+function rmatp_si!(mx, θ, ::AbstractMatrix)
     θsq = θ[1]*θ[1]
     @inbounds @simd for i ∈ axes(mx, 1)
             mx[i, i] += θsq
     end
     nothing
 end
-function rmatp_diag!(mx, θ, rz, p) ##=@turbo=# @inbounds  checked
+function rmatp_diag!(mx, θ, rz)
     #=@turbo=# @inbounds  for i ∈ axes(mx, 1)
         for c ∈ axes(θ, 1)
             mx[i, i] += rz[i, c] * θ[c] * θ[c]
@@ -53,7 +53,7 @@ function rmatp_diag!(mx, θ, rz, p) ##=@turbo=# @inbounds  checked
     end
     nothing
 end
-function rmatp_ar!(mx, θ, ::AbstractMatrix, p)
+function rmatp_ar!(mx, θ, ::AbstractMatrix)
     rn  = size(mx, 1)
     de  = θ[1] ^ 2
     @inbounds @simd for m = 1:rn
@@ -68,7 +68,7 @@ function rmatp_ar!(mx, θ, ::AbstractMatrix, p)
     end
     nothing
 end
-function rmatp_arh!(mx, θ, rz, p)
+function rmatp_arh!(mx, θ, rz)
     vec = tmul_unsafe(rz, θ)
     rn    = size(mx, 1)
     if rn > 1
@@ -78,12 +78,12 @@ function rmatp_arh!(mx, θ, rz, p)
             end
         end
     end
-    #=@turbo=# @inbounds  for m ∈ axes(mx, 1)
+    @inbounds  for m ∈ axes(mx, 1)
         mx[m, m] += vec[m] * vec[m]
     end
     nothing
 end
-function rmatp_cs!(mx, θ, ::AbstractMatrix, p)
+function rmatp_cs!(mx, θ, ::AbstractMatrix)
     rn    = size(mx, 1)
     θsq   =  θ[1]*θ[1]
     θsqp  =  θsq*θ[2]
@@ -99,7 +99,7 @@ function rmatp_cs!(mx, θ, ::AbstractMatrix, p)
     end
     nothing
 end
-function rmatp_csh!(mx, θ, rz, p) # #=@turbo=# @inbounds  checked
+function rmatp_csh!(mx, θ, rz)
     #vec   = rz * (θ[1:end-1])
     #=
     vec = zeros(T, size(rz, 1))
@@ -124,7 +124,7 @@ function rmatp_csh!(mx, θ, rz, p) # #=@turbo=# @inbounds  checked
     nothing
 end
 ################################################################################
-function rmatp_arma!(mx, θ, ::AbstractMatrix, p)
+function rmatp_arma!(mx, θ, ::AbstractMatrix)
     rn  = size(mx, 1)
     de  = θ[1] ^ 2
     @inbounds @simd for m = 1:rn
@@ -140,7 +140,7 @@ function rmatp_arma!(mx, θ, ::AbstractMatrix, p)
     nothing
 end
 ################################################################################
-function rmatp_toepp!(mx, θ, ::AbstractMatrix, p)
+function rmatp_toepp!(mx, θ, ::AbstractMatrix, p::Int)
     de  = θ[1] ^ 2    #diagonal element
     s   = size(mx, 1) #size
     @inbounds @simd for i = 1:s
@@ -156,7 +156,7 @@ function rmatp_toepp!(mx, θ, ::AbstractMatrix, p)
     nothing
 end
 ################################################################################
-function rmatp_toephp!(mx, θ, rz, p)
+function rmatp_toephp!(mx, θ, rz, p::Int)
     l     = size(rz, 2)
     vec   = rz * (θ[1:l])
     s   = size(mx, 1) #size
@@ -191,7 +191,7 @@ Base.@propagate_inbounds function edistance(mx::AbstractMatrix{T}, i::Int, j::In
     return sqrt(sum)
 end
 ################################################################################
- Base.@propagate_inbounds function rmatp_spexp!(mx, θ, rz, p)
+ Base.@propagate_inbounds function rmatp_spexp!(mx, θ, rz)
     σ²    = θ[1]^2
     θ     = exp(θ[2])
     rn    = size(mx, 1)

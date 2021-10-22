@@ -9,39 +9,12 @@
     end
     a
 end
-#=
-function fillzeroutri!(a::AbstractArray{T}) where T
-    s = size(a,1)
-    if s == 1 return @inbounds a[1,1] = zero(T) end
-    @simd for m = 1:s
-        @simd for n = m:s
-            @inbounds a[m,n] = zero(T)
-        end
-    end
-    a
-end
-=#
+
 function fillzeroutri!(a::AbstractArray{T})  where T
     tr = UpperTriangular(a)
     fill!(tr, zero(T))
 end
-#=
-function logerror!(e, lmm)
-    if isa(e, DomainError)
-        lmmlog!(lmm, LMMLogMsg(:ERROR, "DomainError ($(e.val), $(e.msg)) during REML calculation."))
-    elseif isa(e, BoundsError)
-        lmmlog!(lmm, LMMLogMsg(:ERROR, "BoundsError ($(e.a), $(e.i)) during REML calculation."))
-    elseif isa(e, ArgumentError)
-        lmmlog!(lmm, LMMLogMsg(:ERROR, "ArgumentError ($(e.msg)) during REML calculation."))
-    elseif isa(e, LinearAlgebra.SingularException)
-        lmmlog!(lmm, LMMLogMsg(:ERROR, "SingularException ($(e.info)) during REML calculation."))
-    elseif isa(e, MethodError)
-        lmmlog!(lmm, LMMLogMsg(:ERROR, "MethodError ($(e.f), $(e.args), $(e.world)) during REML calculation."))
-    else
-        lmmlog!(lmm, LMMLogMsg(:ERROR, "Unknown error during REML calculation."))
-    end
-end
-=#
+
 ################################################################################
 #                     REML without provided β
 ################################################################################
@@ -66,9 +39,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
     #θ₂ut          = UpperTriangular(θ₂)
     #akk = Vector{T}(undef, lmm.covstr.maxn + lmm.rankx) #temp for sweep
     noerror       = true
-    #try
-        #l = Base.Threads.SpinLock()
-        #l = Base.Threads.ReentrantLock()
+
         ncore     = min(Polyester.num_cores(), n)
         accθ₁     = zeros(T, ncore)
         accθ₂     = Vector{Matrix{T}}(undef, ncore)
@@ -76,7 +47,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
         erroracc  = trues(ncore)
         d, r = divrem(n, Polyester.num_cores())
         @batch for t = 1:ncore
-        #@inbounds Base.Threads.@threads for i = 1:n #@fastmath
+
         #@batch per=core for i = 1:n #@fastmath
             # Vp - matrix for sweep operation
             # [V  X
@@ -110,22 +81,12 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
                 subutri!(accθ₂[t], Vc)
                 mulαtβinc!(accβm[t], Vx, data.yv[i])
             end
-            #=
-            lock(l) do
-                if ne == false noerror = false end
-                θ₁  += swr
-                subutri!(θ₂, Vc)
-                mulαtβinc!(βm, Vx, data.yv[i])
-            end
-            =#
             #-----------------------------------------------------------------------
         end
         θ₁ = sum(accθ₁)
-        map(x->θ₂ .+= x, accθ₂)
+        map(x->θ₂ .+= x, accθ₂) # make upper triangular use only!
         map(x->βm .+= x, accβm)
         noerror = all(erroracc)
-        #copyto!(θ₂, sum(accθ₂))
-        #copyto!(βm, sum(accβm))
         # Cholesky decomposition for matrix inverse θs₂ - Summetric(θ₂); C = θ₂⁻¹
         cθs₂ = cholesky(θs₂)
         # β calculation
@@ -136,10 +97,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
         end
         # final θ₂
         logdetθ₂ = logdet(cθs₂)
-    #catch e
-    #    logerror!(e, lmm)
-    #    return (Inf, nothing, nothing, nothing, false)
-    #end
+
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θs₂, θ₃, noerror #REML, β, iC, θ₃, errors
 end
 ################################################################################
@@ -163,7 +121,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vect
     #Vm            = Matrix{T}(undef, lmm.covstr.maxn + lmm.rankx, lmm.covstr.maxn + lmm.rankx) #!!
     θs₂           = Symmetric(θ₂)
     noerror       = true
-    #try
+
         l = Base.Threads.SpinLock()
         @inbounds Base.Threads.@threads for i = 1:n
             q    = length(lmm.covstr.vcovblock[i])
@@ -192,10 +150,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vect
             end
         end
         logdetθ₂ = logdet(θs₂)
-    #catch e
-    #    logerror!(e, lmm)
-    #    return (Inf, nothing, 1e100, false)
-    #end
+
     return   θ₁ + logdetθ₂ + θ₃ + c, θs₂, θ₃, noerror #REML, iC, θ₃
 end
 ################################################################################
@@ -237,7 +192,6 @@ function sweep_score(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector
     #---------------------------------------------------------------------------
     #akk           = zeros(T, lmm.covstr.maxn + lmm.rankx) #temp for sweep
     #Vm            = Matrix{T}(undef, lmm.covstr.maxn + lmm.rankx, lmm.covstr.maxn + lmm.rankx) #!!
-    #try
     l = Base.Threads.SpinLock()
     @inbounds Base.Threads.@threads for i = 1:n
         q    = length(lmm.covstr.vcovblock[i])
@@ -265,44 +219,10 @@ function sweep_score(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector
             θ₃  += θ₃t
         end
     end
-    #catch
-    #    logerror!(e, lmm)
-    #    return Inf
-    #end
+
     return   -θ₁ + θ₃
 end
-################################################################################
-#                     β calculation
-################################################################################
-#=
-function sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T <: Number
-    n             = length(lmm.covstr.vcovblock)
-    θ₂            = zeros(T, lmm.rankx, lmm.rankx)
-    βm            = zeros(T, lmm.rankx)
-    β             = Vector{T}(undef, lmm.rankx)
-    #---------------------------------------------------------------------------
-    akk           = zeros(T, lmm.covstr.maxn + lmm.rankx) #temp for sweep
-    Vm            = Matrix{T}(undef, lmm.covstr.maxn + lmm.rankx, lmm.covstr.maxn + lmm.rankx) #!!
-    @inbounds @simd for i = 1:n
-        q    = length(lmm.covstr.vcovblock[i])
-        qswm = q + lmm.rankx
-        Vp   = view(Vm, 1:q + lmm.rankx, 1:q + lmm.rankx)
-        V    = view(Vm, 1:q, 1:q)
-        fillzeroutri!(V)
-        Vx   = view(Vm, 1:q, q+1:q+lmm.rankx)
-        copyto!(Vx, data.xv[i])
-        Vc   = view(Vm, q + 1:qswm, q + 1:qswm)
-        fillzeroutri!(Vc)
-        vmatrix!(V, θ, lmm, i)
-        #-----------------------------------------------------------------------
-        sweepb!(fill!(view(akk, 1:qswm), zero(T)), Vp, 1:q)
-        subutri!(θ₂, view(Vp, q + 1:qswm, q + 1:qswm))
-        mulαtβinc!(βm, view(Vp, 1:q, q + 1:qswm), data.yv[i])
-    end
-    mul!(β, inv(Symmetric(θ₂)), βm)
-    return  β
-end
-=#
+
 ################################################################################
 #                     variance-covariance matrix of β
 ################################################################################

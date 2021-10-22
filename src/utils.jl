@@ -188,7 +188,7 @@ end
 """
     vmatrix!(V, θ, lmm, i)
 
-Update variance-covariance matrix V for i bolock.
+Update variance-covariance matrix V for i bolock. Upper triangular updated.
 """
 function vmatrix!(V, θ, lmm, i)
     zgz_base_inc!(V, θ, lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])

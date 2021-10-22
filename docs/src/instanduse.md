@@ -140,8 +140,8 @@ See: [`Metida.CovarianceType`](@ref)
 ```@example lmmexample
 
 #Make methods for G and R matrix and CovarianceType struct
-CCTG = CovarianceType(CovmatMethod((q,p) -> (q, 1), Metida.gmat_csh!))
-CCTR = CovarianceType(CovmatMethod((q,p) -> (q, 0), Metida.rmatp_diag!))
+CCTG = CovarianceType(CovmatMethod((q,p) -> (q, 1), (mx, θ, p) -> Metida.gmat_csh!(mx, θ)))
+CCTR = CovarianceType(CovmatMethod((q,p) -> (q, 0), (mx, θ, zrv, p) -> Metida.rmatp_diag!(mx, θ, zrv)))
 
 #Make model
 lmm = LMM(@formula(var~sequence+period+formulation), df;
