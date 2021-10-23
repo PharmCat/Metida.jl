@@ -21,7 +21,7 @@ lmm = Metida.LMM(@formula(response ~1 + factor*time), ftdf;
 random = Metida.VarEffect(Metida.@covstr(1 + time|subject&factor), Metida.CSH),
 )
 @benchmark Metida.fit!($lmm, hes = false) seconds = 15
-
+#@time Metida.fit!(lmm, hes = false)
 #=
 BenchmarkTools.Trial: 527 samples with 1 evaluation.
  Range (min … max):  14.958 ms … 177.005 ms  ┊ GC (min … max):  0.00% … 89.00%

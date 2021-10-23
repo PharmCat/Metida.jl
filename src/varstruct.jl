@@ -80,6 +80,28 @@ struct CovmatMethod{Nf, Xf} <: AbstractCovmatMethod
     end
 end
 ################################################################################
+abstract type AbstractCType end
+struct SI_ <: AbstractCType end
+struct DIAG_ <: AbstractCType end
+struct AR_ <: AbstractCType end
+struct ARH_ <: AbstractCType end
+struct CS_ <: AbstractCType end
+struct CSH_ <: AbstractCType end
+struct ARMA_ <: AbstractCType end
+struct TOEP_ <: AbstractCType end
+struct TOEPP_ <: AbstractCType
+    p::Int
+end
+struct TOEPH_ <: AbstractCType end
+struct TOEPHP_ <: AbstractCType
+    p::Int
+end
+struct SPEXP_ <: AbstractCType end
+struct UN_ <: AbstractCType end
+struct ZERO <: AbstractCType end
+
+
+################################################################################
 #                          COVARIANCE TYPE
 ################################################################################
 """
@@ -94,25 +116,14 @@ customg = CovarianceType(CovmatMethod((q,p) -> (q, 1), Metida.gmat_csh!))
 ```
 """
 struct CovarianceType <: AbstractCovarianceType
-    s::Symbol          #Covtype name
-    p::Int
-    f::CovmatMethod
-    function CovarianceType(s::Symbol, p::Int, f)
-        new(s, p, f)
+    s::AbstractCType
+    z::Bool
+    function CovarianceType(s::AbstractCType, z::Bool)
+        new(s, z)
     end
-    function CovarianceType(s::Symbol)
-        CovarianceType(s, 0, CovmatMethod())
+    function CovarianceType(s::AbstractCType)
+        CovarianceType(s,  true)
     end
-    function CovarianceType(s::Symbol, p::Int)
-        CovarianceType(s, p, CovmatMethod())
-    end
-    function CovarianceType(cm::CovmatMethod)
-        CovarianceType(:FUNC, 0, cm)
-    end
-    function CovarianceType(cm::CovmatMethod, p::Int)
-        CovarianceType(:FUNC, p, cm)
-    end
-
 end
 
 
@@ -136,7 +147,7 @@ SI = ScaledIdentity()
 ```
 """
 function ScaledIdentity()
-    CovarianceType(:SI)
+    CovarianceType(SI_())
 end
 const SI = ScaledIdentity()
 """
@@ -151,7 +162,7 @@ DIAG = Diag()
 ```
 """
 function Diag()
-    CovarianceType(:DIAG)
+    CovarianceType(DIAG_())
 end
 const DIAG = Diag()
 """
@@ -169,7 +180,7 @@ AR = Autoregressive()
 ```
 """
 function Autoregressive()
-    CovarianceType(:AR)
+    CovarianceType(AR_())
 end
 const AR = Autoregressive()
 """
@@ -189,7 +200,7 @@ ARH = HeterogeneousAutoregressive()
 ```
 """
 function HeterogeneousAutoregressive()
-    CovarianceType(:ARH)
+    CovarianceType(ARH_())
 end
 const ARH = HeterogeneousAutoregressive()
 """
@@ -208,7 +219,7 @@ CS = CompoundSymmetry()
 ```
 """
 function CompoundSymmetry()
-    CovarianceType(:CS)
+    CovarianceType(CS_())
 end
 const CS = CompoundSymmetry()
 """
@@ -228,7 +239,7 @@ CSH = HeterogeneousCompoundSymmetry()
 ```
 """
 function HeterogeneousCompoundSymmetry()
-    CovarianceType(:CSH)
+    CovarianceType(CSH_())
 end
 const CSH = HeterogeneousCompoundSymmetry()
 """
@@ -247,7 +258,7 @@ ARMA = AutoregressiveMovingAverage()
 ```
 """
 function AutoregressiveMovingAverage()
-    CovarianceType(:ARMA)
+    CovarianceType(ARMA_())
 end
 const ARMA = AutoregressiveMovingAverage()
 
@@ -268,7 +279,7 @@ TOEP = Toeplitz()
 
 """
 function Toeplitz()
-    CovarianceType(:TOEP)
+    CovarianceType(TOEP_())
 end
 const TOEP = Toeplitz()
 
@@ -281,9 +292,9 @@ TOEPP(p) = ToeplitzParameterized(p)
 
 """
 function ToeplitzParameterized(p::Int)
-    CovarianceType(:TOEPP, p)
+    CovarianceType(TOEPP_(p))
 end
-const TOEPP(p) = ToeplitzParameterized(p)
+TOEPP(p) = ToeplitzParameterized(p)
 
 """
     HeterogeneousToeplitz()
@@ -303,7 +314,7 @@ TOEPH = HeterogeneousToeplitz()
 
 """
 function HeterogeneousToeplitz()
-    CovarianceType(:TOEPH)
+    CovarianceType(TOEPH_())
 end
 const TOEPH = HeterogeneousToeplitz()
 
@@ -316,9 +327,9 @@ TOEPHP(p) = HeterogeneousToeplitzParameterized(p)
 
 """
 function HeterogeneousToeplitzParameterized(p::Int)
-    CovarianceType(:TOEPHP, p)
+    CovarianceType(TOEPHP_(p))
 end
-const TOEPHP(p) = HeterogeneousToeplitzParameterized(p)
+TOEPHP(p) = HeterogeneousToeplitzParameterized(p)
 
 """
     SpatialExponential()
@@ -338,7 +349,7 @@ SPEXP = SpatialExponential()
 
 """
 function SpatialExponential()
-    CovarianceType(:SPEXP)
+    CovarianceType(SPEXP_())
 end
 const SPEXP = SpatialExponential()
 #Spatial Power ?
@@ -348,49 +359,88 @@ const SPEXP = SpatialExponential()
 """
 =#
 function RZero()
-    CovarianceType(:ZERO)
+    CovarianceType(ZERO(), false)
 end
 
-
 #CovarianceType(cmg::AbstractCovmatMethod, cmr::AbstractCovmatMethod) = FullCovarianceType(CovarianceType(:FUNC, cmg), CovarianceType(:FUNC, cmr))
-
+function covstrparam(ct::SI_, t::Int, q::Int)::Tuple{Int, Int}
+    return (1, 0)
+end
+function covstrparam(ct::DIAG_, t::Int, q::Int)::Tuple{Int, Int}
+    return (t, 0)
+end
+function covstrparam(ct::Union{AR_, CS_}, t::Int, q::Int)::Tuple{Int, Int}
+    return (1, 1)
+end
+function covstrparam(ct::Union{ARH_, CSH_}, t::Int, q::Int)::Tuple{Int, Int}
+    return (t, 1)
+end
+function covstrparam(ct::ARMA_, t::Int, q::Int)::Tuple{Int, Int}
+    return (1, 2)
+end
+function covstrparam(ct::TOEP_, t::Int, q::Int)::Tuple{Int, Int}
+    return (1, t - 1)
+end
+function covstrparam(ct::TOEPH_, t::Int, q::Int)::Tuple{Int, Int}
+    return (t, t - 1)
+end
+function covstrparam(ct::TOEPP_, t::Int, q::Int)::Tuple{Int, Int}
+    return (1, ct.p - 1)
+end
+function covstrparam(ct::TOEPHP_, t::Int, q::Int)::Tuple{Int, Int}
+    return (t, ct.p - 1)
+end
+function covstrparam(ct::UN_, t::Int, q::Int)::Tuple{Int, Int}
+    return (t, t * (t + 1) / 2 - t)
+end
+function covstrparam(ct::SPEXP_, t::Int, q::Int)::Tuple{Int, Int, Int}
+    return (1, 0, 1)
+end
+function covstrparam(ct::ZERO, t::Int, q::Int)::Tuple{Int, Int}
+    return (t, t * (t + 1) / 2 - t)
+end
+function covstrparam(ct, t::Int, q::Int)
+    error("Unknown covariance type!")
+end
+#=
 function covstrparam(ct::CovarianceType, t::Int, q::Int)
-    if ct.s == :SI
+    if isa(ct.s, SI_)
         return (1, 0)
-    elseif ct.s == :DIAG
+    elseif isa(ct.s, DIAG_)
         return (t, 0)
     #elseif ct.s == :VC
     #    return (q, 0, q)
-    elseif ct.s == :AR
+    elseif ct.s == AR()
         return (1, 1)
-    elseif ct.s == :ARH
+    elseif ct.s == ARH()
         return (t, 1)
-    elseif ct.s == :ARMA
+    elseif ct.s == ARMA()
         return (1, 2)
-    elseif ct.s == :CS
+    elseif ct.s == CS()
         return (1, 1)
-    elseif ct.s == :CSH
+    elseif ct.s == CSH()
         return (t, 1)
-    elseif ct.s == :TOEP
+    elseif ct.s == TOEP()
         return (1, t - 1)
-    elseif ct.s == :TOEPH
+    elseif ct.s == TOEPH()
         return (t, t - 1)
-    elseif ct.s == :TOEPP
+    elseif ct.s == TOEPP()
         return (1, ct.p - 1)
-    elseif ct.s == :TOEPHP
+    elseif ct.s == TOEPHP()
         return (t, ct.p - 1)
-    elseif ct.s == :UN
+    elseif ct.s == UN()
         return (t, t * (t + 1) / 2 - t)
-    elseif ct.s == :ZERO
+    elseif ct.s == ZERO()
         return (0, 0)
-    elseif ct.s == :FUNC
-        return ct.f.nparamf(t, q)
-    elseif ct.s == :SPEXP
+    #elseif ct.s == FUNC()
+    #    return ct.f.nparamf(t, q)
+    elseif ct.s == SPEXP()
         return (1, 0, 1)
     else
         error("Unknown covariance type!")
     end
 end
+=#
 ################################################################################
 #                  EFFECT
 ################################################################################
@@ -426,7 +476,7 @@ struct VarEffect
     coding::Dict{Symbol, AbstractContrasts}
     subj::Union{Tuple{Vararg{AbstractTerm}}, AbstractTerm}
     p::Int
-    function VarEffect(formula, covtype::T, coding) where T <: AbstractCovarianceType
+    function VarEffect(formula, covtype::AbstractCovarianceType, coding)
         model, subj = modelparse(formula)
         p = nterms(model)
         if coding === nothing
@@ -435,7 +485,7 @@ struct VarEffect
         #if !isa(subj, Union{CategoricalTerm,ConstantTerm,InteractionTerm{<:NTuple{N,CategoricalTerm} where {N}},}) error("subject (blocking) variables must be Categorical") end
         new(formula, model, covtype, coding, subj, p)
     end
-    function VarEffect(formula, covtype::T; coding = nothing) where T <: AbstractCovarianceType
+    function VarEffect(formula, covtype::AbstractCovarianceType; coding = nothing)
         VarEffect(formula, covtype, coding)
     end
     function VarEffect(formula; coding = nothing)
@@ -501,7 +551,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         sn      = zeros(Int, alleffl)
         if rn > 1
             @inbounds for i = 2:rn
-                if random[i].covtype.s == :ZERO error("One of the random effect have zero type!") end
+                if !random[i].covtype.z error("One of the random effect have zero type!") end
             end
         end
         # RANDOM EFFECTS
@@ -512,7 +562,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             schema[i] = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
             ztemp     = modelcols(MatrixTerm(schema[i]), data)
             q[i]      = size(ztemp, 2)
-            csp       = covstrparam(random[i].covtype, q[i], random[i].p)
+            csp       = covstrparam(random[i].covtype.s, q[i], random[i].p)
             t[i]      = sum(csp)
             z         = hcat(z, ztemp)
             fillur!(zrndur, i, q)
@@ -533,21 +583,21 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         subjz[end]  = convert(BitMatrix, modelcols(MatrixTerm(apply_schema(repeated.subj, StatsModels.schema(data, fulldummycodingdict(repeated.subj)))), data))
         sn[end] = size(subjz[end], 2)
         q[end]      = size(rz, 2)
-        csp         = covstrparam(repeated.covtype, q[end], repeated.p)
+        csp         = covstrparam(repeated.covtype.s, q[end], repeated.p)
         t[end]      = sum(csp)
         tr[end]     = UnitRange(sum(t[1:end-1]) + 1, sum(t[1:end-1]) + t[end])
         updatenametype!(ct, rcnames, csp, schema[end], repeated.covtype.s)
         #Theta length
         tl  = sum(t)
         ########################################################################
-        if random[1].covtype.s != :ZERO
+        if random[1].covtype.z
             subjblockmat = subjz[1]
             if length(subjz) > 2
                 for i = 2:length(subjz)-1
                     subjblockmat = noncrossmodelmatrix(subjblockmat, subjz[2])
                 end
             end
-            if !(repeated.covtype.s ∈ [:SI, :DIAG, :VC])
+            if !(isa(repeated.covtype.s, SI_) || isa(repeated.covtype.s, DIAG_))
                 subjblockmat = noncrossmodelmatrix(subjblockmat, subjz[end])
             end
         else
@@ -595,14 +645,14 @@ function updatenametype!(ct, rcnames, csp, schema, s)
 end
 ################################################################################
 function rcoefnames(s, t, ve)
-    if ve == :SI
+    if ve == SI
         return ["σ² "]
-    elseif ve == :DIAG
+    elseif ve == DIAG
         if isa(coefnames(s), AbstractArray{T,1} where T) l = length(coefnames(s)) else l = 1 end
         return fill!(Vector{String}(undef, l), "σ² ") .* string.(coefnames(s))
-    elseif ve == :CS || ve == :AR
+    elseif ve == CS || ve == AR
         return ["σ² ", "ρ "]
-    elseif ve == :CSH || ve == :ARH
+    elseif ve == CSH || ve == ARH
         cn = coefnames(s)
         if isa(cn, Vector)
             l  = length(cn)
@@ -613,9 +663,9 @@ function rcoefnames(s, t, ve)
         view(v, 1:l) .= (fill!(Vector{String}(undef, l), "σ² ") .*string.(cn))
         v[end] = "ρ "
         return v
-    elseif ve == :ARMA
+    elseif ve == ARMA
         return ["σ² ", "γ ", "ρ "]
-    elseif ve == :TOEP || ve == :TOEPP
+    elseif ve == TOEP || ve == TOEPP
         v = Vector{String}(undef, t)
         v[1] = "σ² "
         if length(v) > 1
@@ -624,7 +674,7 @@ function rcoefnames(s, t, ve)
             end
         end
         return v
-    elseif ve == :TOEPH || ve == :TOEPHP
+    elseif ve == TOEPH || ve == TOEPHP
         cn = coefnames(s)
         if isa(cn, Vector)
             l  = length(cn)

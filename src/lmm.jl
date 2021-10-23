@@ -25,6 +25,7 @@ struct LMM{T} <: MetidaModel
     mm::ModelMatrix
     covstr::CovStructure{T}
     data::LMMData{T}
+    dv::LMMDataViews{T}
     nfixed::Int
     rankx::Int
     result::ModelResult
@@ -67,7 +68,7 @@ struct LMM{T} <: MetidaModel
         if rankx != size(mm.m, 2)
             lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Fixed-effect matrix not full-rank!"))
         end
-        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, nfixed, rankx, ModelResult(), findmax(length, covstr.vcovblock)[1], lmmlog)
+        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, ModelResult(), findmax(length, covstr.vcovblock)[1], lmmlog)
     end
 end
 """
@@ -205,7 +206,7 @@ function Base.show(io::IO, lmm::LMM)
         mx = hcat(Matrix{Any}(undef, lmm.covstr.tl, 1), lmm.covstr.rcnames, lmm.covstr.ct, round.(lmm.result.theta, sigdigits = 6))
 
         for i = 1:length(lmm.covstr.random)
-            if lmm.covstr.random[i].covtype.s != :ZERO
+            if !isa(lmm.covstr.random[i].covtype.s, ZERO)
                 view(mx, lmm.covstr.tr[i], 1) .= "Random $i"
             end
         end

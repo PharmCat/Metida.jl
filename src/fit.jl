@@ -69,7 +69,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     # Optimization function
     optfunc = reml_sweep_β
     # Make data views
-    data = LMMDataViews(lmm)
+    #data = LMMDataViews(lmm)
     #Optim options
     optoptions = Optim.Options(g_tol = g_tol, x_tol = x_tol, f_abstol = f_tol,
         iterations = iterations,
@@ -108,13 +108,13 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     end
     ############################################################################
     if aifirst == :ai || aifirst == :score
-        optstep!(lmm, data, θ; method = aifirst, maxopt = 10)
+        optstep!(lmm, lmm.dv, θ; method = aifirst, maxopt = 10)
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "First step with AI-like method ($aifirst), θ: "*string(θ)))
     end
     varlinkrvecapply!(θ, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf)
 
     # Twice differentiable object
-    vloptf(x) = optfunc(lmm, data, varlinkvecapply(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf))[1]
+    vloptf(x) = optfunc(lmm, lmm.dv, varlinkvecapply(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf))[1]
     gcfg   = ForwardDiff.GradientConfig(vloptf, θ, chunk)
     hcfg   = ForwardDiff.HessianConfig(vloptf, θ, chunk)
     gfunc!(g, x) = ForwardDiff.gradient!(g, vloptf, x, gcfg, Val{false}())
@@ -135,7 +135,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Resulting θ: "*string(lmm.result.theta)*"; $(Optim.iterations(lmm.result.optim)) iterations."))
 
         # -2 LogREML, β, iC
-    lmm.result.reml, lmm.result.beta, iC, θ₃, noerrors = optfunc(lmm, data, lmm.result.theta)
+    lmm.result.reml, lmm.result.beta, iC, θ₃, noerrors = optfunc(lmm, lmm.dv, lmm.result.theta)
         # If errors in last evaluetion - log it.
     if !noerrors LMMLogMsg(:ERROR, "The last optimization step wasn't accurate. Results can be wrong!") end
         # Fit true
@@ -151,7 +151,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         end
     end
     # Check G
-    if lmm.covstr.random[1].covtype.s != :ZERO
+    if !isa(lmm.covstr.random[1].covtype.s, ZERO)
         for i = 1:length(lmm.covstr.random)
             dg = det(gmatrix(lmm, i))
             if dg < 1e-8 lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "det(G) of random effect $(i) is less 1e-08.")) end

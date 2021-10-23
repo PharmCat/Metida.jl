@@ -12,14 +12,17 @@ SnoopCompile.@snoopc "$path/precompile/metida_compiles.log" begin
     using Metida, Pkg
     include(joinpath(dirname(dirname(pathof(Metida))), "test", "test.jl"))
 end
+
 data = SnoopCompile.read("$path/precompile/metida_compiles.log")
 pc = SnoopCompile.parcel(reverse!(data[2]))
-SnoopCompile.write("$path/precompile", pc)
+SnoopCompile.write("/tmp/precompile", pc)
+
 
 
 using SnoopCompileCore
 invalidations = @snoopr begin
-    using Metida
+    using Metida, Pkg
+    Pkg.test("Metida")
 end
 using SnoopCompile
 ui = uinvalidated(invalidations)

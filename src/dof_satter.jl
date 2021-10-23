@@ -3,7 +3,7 @@
 function gradc(lmm::LMM{T}, theta) where T
     if !lmm.result.fit error("Model not fitted!") end
     if !isnothing(lmm.result.grc) return lmm.result.grc end
-    vloptf(x) = sweep_β_cov(lmm, x, lmm.result.beta)
+    vloptf(x) = sweep_β_cov(lmm, lmm.dv, x, lmm.result.beta)
     chunk  = ForwardDiff.Chunk{1}()
     jcfg   = ForwardDiff.JacobianConfig(vloptf, theta, chunk)
     jic    = ForwardDiff.jacobian(vloptf, theta, jcfg, Val{false}())
@@ -78,7 +78,7 @@ function dof_satter(lmm::LMM{T}, l::AbstractVector) where T
     end
     #d = g' * A * g
     d = mulαtβα(g, A)
-    df = 2*(l' * lmm.result.c * l)^2 / d
+    df = 2*(mulαtβα(l, lmm.result.c))^2 / d
     if df < 1.0 return 1.0 elseif df > dof_residual(lmm) return dof_residual(lmm) else return df end
 end
 """
@@ -113,7 +113,7 @@ function dof_satter(lmm::LMM{T}) where T
         end
         #d = g' * A * g
         d = mulαtβα(g, A)
-        df = 2*(l' * lmm.result.c * l)^2 / d
+        df = 2*(mulαtβα(l, lmm.result.c))^2 / d
         if df < 1.0 dof[gi] = 1.0 elseif df > dof_residual(lmm) dof[gi] = dof_residual(lmm) else dof[gi] = df end
     end
     dof
