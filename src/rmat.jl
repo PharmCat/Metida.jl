@@ -4,7 +4,7 @@
 
 ################################################################################
 function rmat_base_inc_b!(mx, θ, zrv, covstr)
-    rmatp!(mx, θ, zrv, covstr.repeated.covtype.s)
+    rmat!(mx, θ, zrv, covstr.repeated.covtype.s)
 end
 ################################################################################
 ################################################################################
@@ -17,7 +17,7 @@ function rmat_base_inc!(mx, θ, covstr, block, sblock)
 end
 ################################################################################
 #SI
-function rmatp!(mx, θ, ::AbstractMatrix, ::SI_)
+function rmat!(mx, θ, ::AbstractMatrix, ::SI_)
     θsq = θ[1]*θ[1]
     @inbounds @simd for i ∈ axes(mx, 1)
             mx[i, i] += θsq
@@ -25,7 +25,7 @@ function rmatp!(mx, θ, ::AbstractMatrix, ::SI_)
     nothing
 end
 #DIAG
-function rmatp!(mx, θ, rz, ::DIAG_)
+function rmat!(mx, θ, rz, ::DIAG_)
     #=@turbo=# @inbounds  for i ∈ axes(mx, 1)
         for c ∈ axes(θ, 1)
             mx[i, i] += rz[i, c] * θ[c] * θ[c]
@@ -34,7 +34,7 @@ function rmatp!(mx, θ, rz, ::DIAG_)
     nothing
 end
 #AR
-function rmatp!(mx, θ, ::AbstractMatrix, ::AR_)
+function rmat!(mx, θ, ::AbstractMatrix, ::AR_)
     rn  = size(mx, 1)
     de  = θ[1] ^ 2
     @inbounds @simd for m = 1:rn
@@ -50,7 +50,7 @@ function rmatp!(mx, θ, ::AbstractMatrix, ::AR_)
     nothing
 end
 #ARH
-function rmatp!(mx, θ, rz, ::ARH_)
+function rmat!(mx, θ, rz, ::ARH_)
     vec = tmul_unsafe(rz, θ)
     rn    = size(mx, 1)
     if rn > 1
@@ -66,7 +66,7 @@ function rmatp!(mx, θ, rz, ::ARH_)
     nothing
 end
 #CS
-function rmatp!(mx, θ, ::AbstractMatrix,  ::CS_)
+function rmat!(mx, θ, ::AbstractMatrix,  ::CS_)
     rn    = size(mx, 1)
     θsq   =  θ[1]*θ[1]
     θsqp  =  θsq*θ[2]
@@ -83,7 +83,7 @@ function rmatp!(mx, θ, ::AbstractMatrix,  ::CS_)
     nothing
 end
 #CSH
-function rmatp!(mx, θ, rz, ::CSH_)
+function rmat!(mx, θ, rz, ::CSH_)
     #vec   = rz * (θ[1:end-1])
     #=
     vec = zeros(T, size(rz, 1))
@@ -109,7 +109,7 @@ function rmatp!(mx, θ, rz, ::CSH_)
 end
 ################################################################################
 #ARMA
-function rmatp!(mx, θ, ::AbstractMatrix,  ::ARMA_)
+function rmat!(mx, θ, ::AbstractMatrix,  ::ARMA_)
     rn  = size(mx, 1)
     de  = θ[1] ^ 2
     @inbounds @simd for m = 1:rn
@@ -126,7 +126,7 @@ function rmatp!(mx, θ, ::AbstractMatrix,  ::ARMA_)
 end
 ################################################################################
 #TOEPP
-function rmatp!(mx, θ, ::AbstractMatrix, ct::TOEPP_)
+function rmat!(mx, θ, ::AbstractMatrix, ct::TOEPP_)
     de  = θ[1] ^ 2    #diagonal element
     s   = size(mx, 1) #size
     @inbounds @simd for i = 1:s
@@ -143,7 +143,7 @@ function rmatp!(mx, θ, ::AbstractMatrix, ct::TOEPP_)
 end
 ################################################################################
 #TOEPHP
-function rmatp!(mx, θ, rz, ct::TOEPHP_)
+function rmat!(mx, θ, rz, ct::TOEPHP_)
     l     = size(rz, 2)
     vec   = rz * (θ[1:l])
     s   = size(mx, 1) #size
@@ -179,7 +179,7 @@ function edistance(mx::AbstractMatrix{T}, i::Int, j::Int) where T
 end
 ################################################################################
 #SPEXP
-function rmatp!(mx, θ, rz,  ::SPEXP_)
+function rmat!(mx, θ, rz,  ::SPEXP_)
     σ²    = θ[1]^2
     θ     = exp(θ[2])
     rn    = size(mx, 1)

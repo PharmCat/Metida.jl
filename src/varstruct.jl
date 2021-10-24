@@ -22,6 +22,7 @@ end
 ################################################################################
 # COVMAT METHOD
 ################################################################################
+#=
 """
     CovmatMethod(nparamf, xmat!)
 
@@ -79,26 +80,27 @@ struct CovmatMethod{Nf, Xf} <: AbstractCovmatMethod
         CovmatMethod(nothing, nothing)
     end
 end
+=#
 ################################################################################
-abstract type AbstractCType end
-struct SI_ <: AbstractCType end
-struct DIAG_ <: AbstractCType end
-struct AR_ <: AbstractCType end
-struct ARH_ <: AbstractCType end
-struct CS_ <: AbstractCType end
-struct CSH_ <: AbstractCType end
-struct ARMA_ <: AbstractCType end
-struct TOEP_ <: AbstractCType end
-struct TOEPP_ <: AbstractCType
+#abstract type AbstractCType end
+struct SI_ <: AbstractCovarianceType end
+struct DIAG_ <: AbstractCovarianceType end
+struct AR_ <: AbstractCovarianceType end
+struct ARH_ <: AbstractCovarianceType end
+struct CS_ <: AbstractCovarianceType end
+struct CSH_ <: AbstractCovarianceType end
+struct ARMA_ <: AbstractCovarianceType end
+struct TOEP_ <: AbstractCovarianceType end
+struct TOEPP_ <: AbstractCovarianceType
     p::Int
 end
-struct TOEPH_ <: AbstractCType end
-struct TOEPHP_ <: AbstractCType
+struct TOEPH_ <: AbstractCovarianceType end
+struct TOEPHP_ <: AbstractCovarianceType
     p::Int
 end
-struct SPEXP_ <: AbstractCType end
-struct UN_ <: AbstractCType end
-struct ZERO <: AbstractCType end
+struct SPEXP_ <: AbstractCovarianceType end
+struct UN_ <: AbstractCovarianceType end
+struct ZERO <: AbstractCovarianceType end
 
 
 ################################################################################
@@ -115,13 +117,13 @@ Make covariance type with CovmatMethod.
 customg = CovarianceType(CovmatMethod((q,p) -> (q, 1), Metida.gmat_csh!))
 ```
 """
-struct CovarianceType <: AbstractCovarianceType
-    s::AbstractCType
+struct CovarianceType
+    s::AbstractCovarianceType
     z::Bool
-    function CovarianceType(s::AbstractCType, z::Bool)
+    function CovarianceType(s::AbstractCovarianceType, z::Bool)
         new(s, z)
     end
-    function CovarianceType(s::AbstractCType)
+    function CovarianceType(s::AbstractCovarianceType)
         CovarianceType(s,  true)
     end
 end
@@ -348,21 +350,16 @@ where `dist` - Euclidean distance between row-vectors of repeated effect matrix 
 SPEXP = SpatialExponential()
 
 """
-function SpatialExponential()
+function SpatialExponential() #Spatial Power ?
     CovarianceType(SPEXP_())
 end
 const SPEXP = SpatialExponential()
-#Spatial Power ?
-#=
-"""
-    RZero()
-"""
-=#
+
+
 function RZero()
     CovarianceType(ZERO(), false)
 end
 
-#CovarianceType(cmg::AbstractCovmatMethod, cmr::AbstractCovmatMethod) = FullCovarianceType(CovarianceType(:FUNC, cmg), CovarianceType(:FUNC, cmr))
 function covstrparam(ct::SI_, t::Int, q::Int)::Tuple{Int, Int}
     return (1, 0)
 end
@@ -399,7 +396,7 @@ end
 function covstrparam(ct::ZERO, t::Int, q::Int)::Tuple{Int, Int}
     return (t, t * (t + 1) / 2 - t)
 end
-function covstrparam(ct, t::Int, q::Int)
+function covstrparam(ct::AbstractCovarianceType, t::Int, q::Int)
     error("Unknown covariance type!")
 end
 #=
@@ -476,7 +473,7 @@ struct VarEffect
     coding::Dict{Symbol, AbstractContrasts}
     subj::Union{Tuple{Vararg{AbstractTerm}}, AbstractTerm}
     p::Int
-    function VarEffect(formula, covtype::AbstractCovarianceType, coding)
+    function VarEffect(formula, covtype::CovarianceType, coding)
         model, subj = modelparse(formula)
         p = nterms(model)
         if coding === nothing
@@ -485,7 +482,7 @@ struct VarEffect
         #if !isa(subj, Union{CategoricalTerm,ConstantTerm,InteractionTerm{<:NTuple{N,CategoricalTerm} where {N}},}) error("subject (blocking) variables must be Categorical") end
         new(formula, model, covtype, coding, subj, p)
     end
-    function VarEffect(formula, covtype::AbstractCovarianceType; coding = nothing)
+    function VarEffect(formula, covtype::CovarianceType; coding = nothing)
         VarEffect(formula, covtype, coding)
     end
     function VarEffect(formula; coding = nothing)
@@ -644,6 +641,66 @@ function updatenametype!(ct, rcnames, csp, schema, s)
     append!(rcnames, rcoefnames(schema, sum(csp), s))
 end
 ################################################################################
+function rcoefnames(s, t, ct::SI_)
+    return ["σ² "]
+end
+function rcoefnames(s, t, ct::DIAG_)
+    if isa(coefnames(s), AbstractArray{T,1} where T) l = length(coefnames(s)) else l = 1 end
+    return fill!(Vector{String}(undef, l), "σ² ") .* string.(coefnames(s))
+end
+function rcoefnames(s, t, ct::Union{CS_, AR_})
+    return ["σ² ", "ρ "]
+end
+function rcoefnames(s, t, ct::Union{CSH_, ARH_})
+    cn = coefnames(s)
+    if isa(cn, Vector)
+        l  = length(cn)
+    else
+        l  = 1
+    end
+    v  = Vector{String}(undef, t)
+    view(v, 1:l) .= (fill!(Vector{String}(undef, l), "σ² ") .*string.(cn))
+    v[end] = "ρ "
+    return v
+end
+function rcoefnames(s, t, ct::ARMA_)
+    return ["σ² ", "γ ", "ρ "]
+end
+function rcoefnames(s, t, ct::Union{TOEP_, TOEPP_})
+    v = Vector{String}(undef, t)
+    v[1] = "σ² "
+    if length(v) > 1
+        for i = 2:length(v)
+            v[i] = "ρ band $(i-1) "
+        end
+    end
+    return v
+end
+function rcoefnames(s, t, ct::Union{TOEPH_, TOEPHP_})
+    cn = coefnames(s)
+    if isa(cn, Vector)
+        l  = length(cn)
+    else
+        l  = 1
+    end
+    v  = Vector{String}(undef, t)
+    view(v, 1:l) .= (fill!(Vector{String}(undef, l), "σ² ") .*string.(cn))
+    if length(v) > l
+        for i = l+1:length(v)
+            v[i] = "ρ band $(i-l) "
+        end
+    end
+    return v
+end
+function rcoefnames(s, t, ct::SPEXP_)
+    return ["σ² ", "θ "]
+end
+function rcoefnames(s, t, ct::AbstractCovarianceType)
+    v = Vector{String}(undef, t)
+    v .= "Val"
+    return v
+end
+#=
 function rcoefnames(s, t, ve)
     if ve == SI
         return ["σ² "]
@@ -695,6 +752,7 @@ function rcoefnames(s, t, ve)
         return v
     end
 end
+=#
 ################################################################################
 function makeblocks(subjz)
     blocks = Vector{Vector{UInt32}}(undef, 0)
@@ -828,4 +886,50 @@ end
 
 function Base.show(io::IO, ct::CovarianceType)
     print(io, "Covariance Type: $(ct.s)")
+end
+
+function Base.show(io::IO, ct::AbstractCovarianceType)
+    print(io, "$(typeof(ct).name.name)")
+end
+function Base.show(io::IO, ct::SI_)
+    print(io, "SI")
+end
+function Base.show(io::IO, ct::DIAG_)
+    print(io, "DIAG")
+end
+function Base.show(io::IO, ct::AR_)
+    print(io, "AR")
+end
+function Base.show(io::IO, ct::ARH_)
+    print(io, "ARH")
+end
+function Base.show(io::IO, ct::CS_)
+    print(io, "CS")
+end
+function Base.show(io::IO, ct::CSH_)
+    print(io, "CSH")
+end
+function Base.show(io::IO, ct::ARMA_)
+    print(io, "ARMA")
+end
+function Base.show(io::IO, ct::TOEP_)
+    print(io, "TOEP")
+end
+function Base.show(io::IO, ct::TOEPP_)
+    print(io, "TOEPP($(ct.p))")
+end
+function Base.show(io::IO, ct::TOEPH_)
+    print(io, "TOEPH")
+end
+function Base.show(io::IO, ct::TOEPHP_)
+    print(io, "TOEPHP($(ct.p))")
+end
+function Base.show(io::IO, ct::SPEXP_)
+    print(io, "SPEXP")
+end
+function Base.show(io::IO, ct::UN_)
+    print(io, "UN")
+end
+function Base.show(io::IO, ct::ZERO)
+    print(io, "No effect")
 end

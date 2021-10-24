@@ -39,7 +39,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
         accβm     = Vector{Vector{T}}(undef, ncore)
         erroracc  = trues(ncore)
         d, r = divrem(n, Polyester.num_cores())
-        @batch for t = 1:ncore
+        Base.Threads.@threads  for t = 1:ncore
             # Vp - matrix for sweep operation
             # [V  X
             #  X' 0]
@@ -77,7 +77,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
         βm      = sum(accβm)
         noerror = all(erroracc)
         θs₂     = Symmetric(θ₂)
-        # Cholesky decomposition for matrix inverse θs₂ - Summetric(θ₂); C = θ₂⁻¹
+        # Cholesky decomposition for matrix inverse θs₂ - Symmetric(θ₂); C = θ₂⁻¹
         cθs₂    = cholesky(θs₂)
         # β calculation
         mul!(β, inv(cθs₂), βm)
@@ -104,7 +104,7 @@ function core_sweep_β(lmm, data, θ::Vector{T}, β, n) where T
     accθ₃     = zeros(T, ncore)
     erroracc  = trues(ncore)
     d, r = divrem(n, Polyester.num_cores())
-    @batch for t = 1:ncore
+    Base.Threads.@threads  for t = 1:ncore
         offset = min(t-1, r) + (t-1)*d
         accθ₂[t] = zeros(T, lmm.rankx, lmm.rankx)
         @inbounds for j ∈ 1:d+(t ≤ r)

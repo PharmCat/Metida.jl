@@ -121,5 +121,6 @@ function _precompile_()
 
     isdefined(Metida, Symbol("#hfunc!#52")) && Base.precompile(Tuple{getfield(Metida, Symbol("#hfunc!#52")),Matrix{Float64},Vector{Float64}})
 end
-
+    _precompile_()
+    const NOREPEAT = VarEffect(Metida.@covstr(1|1), Metida.ScaledIdentity())
 end # module

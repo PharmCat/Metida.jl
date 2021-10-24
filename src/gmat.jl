@@ -26,6 +26,10 @@ function zgz_base_inc!(mx::AbstractArray{T}, θ::AbstractArray{T}, covstr, block
 end
 ################################################################################
 #SI
+function gmat!(mx, θ, ::AbstractCovarianceType)
+    error("No gmat! method defined for thit structure!")
+end
+#SI
 function gmat!(mx, θ, ::SI_)
     val = θ[1] ^ 2
     @inbounds @simd for i = 1:size(mx, 1)

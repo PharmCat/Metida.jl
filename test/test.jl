@@ -17,12 +17,12 @@ include("testdata.jl")
     # Basic show (before fitting)
     Base.show(io, lmm)
     Metida.fit!(lmm)
-    Base.show(io, lmm)
-    Base.show(io, lmm.data)
-    Base.show(io, lmm.result)
-    Base.show(io, lmm.covstr)
-    Base.show(io, lmm.covstr.repeated.covtype)
-    Base.show(io, Metida.getlog(lmm))
+    @test_nowarn Base.show(io, lmm)
+    @test_nowarn Base.show(io, lmm.data)
+    @test_nowarn Base.show(io, lmm.result)
+    @test_nowarn Base.show(io, lmm.covstr)
+    @test_nowarn Base.show(io, lmm.covstr.repeated.covtype)
+    @test_nowarn Base.show(io, Metida.getlog(lmm))
     #
     @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
     #Verbose
