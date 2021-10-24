@@ -3,7 +3,7 @@
 function gradc(lmm::LMM{T}, theta) where T
     if !lmm.result.fit error("Model not fitted!") end
     if !isnothing(lmm.result.grc) return lmm.result.grc end
-    vloptf(x) = sweep_β_cov(lmm, x, lmm.result.beta)
+    vloptf(x) = sweep_β_cov(lmm, lmm.dv, x, lmm.result.beta)
     chunk  = ForwardDiff.Chunk{1}()
     jcfg   = ForwardDiff.JacobianConfig(vloptf, theta, chunk)
     jic    = ForwardDiff.jacobian(vloptf, theta, jcfg, Val{false}())
