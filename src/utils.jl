@@ -214,9 +214,9 @@ Calculate Hessian matrix of REML for theta.
 function hessian(lmm, theta)
     #if !lmm.result.fit error("Model not fitted!") end
     vloptf(x) = reml_sweep_β(lmm, x, lmm.result.beta)[1]
-    chunk  = ForwardDiff.Chunk{1}()
+    chunk  = ForwardDiff.Chunk{min(10, length(theta))}()
     hcfg   = ForwardDiff.HessianConfig(vloptf, theta, chunk)
-    ForwardDiff.hessian(vloptf, theta, hcfg, Val{false}())
+    ForwardDiff.hessian(vloptf, theta, hcfg)
 end
 function hessian(lmm)
     if !lmm.result.fit error("Model not fitted!") end

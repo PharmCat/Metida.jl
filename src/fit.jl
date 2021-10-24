@@ -102,7 +102,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Initial θ: "*string(θ)))
     end
     # Initial step with modified Newton method
-    chunk  = ForwardDiff.Chunk{1}()
+    chunk  = ForwardDiff.Chunk{min(10, length(θ))}()
     if isa(aifirst, Bool)
         if aifirst aifirst == :ai else aifirst == :default end
     end
@@ -117,9 +117,9 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     vloptf(x) = optfunc(lmm, lmm.dv, varlinkvecapply(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf))[1]
     gcfg   = ForwardDiff.GradientConfig(vloptf, θ, chunk)
     hcfg   = ForwardDiff.HessianConfig(vloptf, θ, chunk)
-    gfunc!(g, x) = ForwardDiff.gradient!(g, vloptf, x, gcfg, Val{false}())
+    gfunc!(g, x) = ForwardDiff.gradient!(g, vloptf, x, gcfg)
     hfunc!(h, x) = begin
-        ForwardDiff.hessian!(h, vloptf, x, hcfg, Val{false}())
+        ForwardDiff.hessian!(h, vloptf, x, hcfg)
     end
     td = TwiceDifferentiable(vloptf, gfunc!, hfunc!, θ)
     # Optimization object
