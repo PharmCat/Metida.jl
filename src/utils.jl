@@ -272,3 +272,7 @@ end
 function StatsModels.termvars(ve::Vector{VarEffect})
     union(termvars.(ve)...)
 end
+
+################################################################################
+
+num_cores() = Int(MetidaBase.num_cores())

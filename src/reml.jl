@@ -40,12 +40,12 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
     #akk = Vector{T}(undef, lmm.covstr.maxn + lmm.rankx) #temp for sweep
     noerror       = true
 
-        ncore     = min(Polyester.num_cores(), n)
+        ncore     = min(num_cores(), n)
         accθ₁     = zeros(T, ncore)
         accθ₂     = Vector{Matrix{T}}(undef, ncore)
         accβm     = Vector{Vector{T}}(undef, ncore)
         erroracc  = trues(ncore)
-        d, r = divrem(n, Polyester.num_cores())
+        d, r = divrem(n, ncore)
         Base.Threads.@threads for t = 1:ncore
 
         #@batch per=core for i = 1:n #@fastmath
