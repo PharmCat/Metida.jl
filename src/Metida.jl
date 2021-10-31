@@ -60,4 +60,5 @@ include("fvalue.jl")
 include("typeiii.jl")
 include("estimate.jl")
 
+    const NOREPEAT = VarEffect(Metida.@covstr(1|1), Metida.ScaledIdentity())
 end # module

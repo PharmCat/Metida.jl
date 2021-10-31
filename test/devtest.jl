@@ -20,19 +20,30 @@ ftdf3        = CSV.File(path*"/csv/2f2rand.csv"; types =
 lmm = Metida.LMM(@formula(response ~1 + factor*time), ftdf;
 random = Metida.VarEffect(Metida.@covstr(1 + time|subject&factor), Metida.CSH),
 )
-@benchmark Metida.fit!($lmm, hes = false) seconds = 15
-
+@benchmark Metida.fit!($lmm, hes = false; maxthreads = 16) seconds = 15
+#@time Metida.fit!(lmm, hes = false)
 #=
-BenchmarkTools.Trial: 527 samples with 1 evaluation.
- Range (min … max):  14.958 ms … 177.005 ms  ┊ GC (min … max):  0.00% … 89.00%
- Time  (median):     22.181 ms               ┊ GC (median):     0.00%
- Time  (mean ± σ):   28.448 ms ±  25.442 ms  ┊ GC (mean ± σ):  18.12% ± 17.00%
+BenchmarkTools.Trial: 893 samples with 1 evaluation.
+ Range (min … max):  14.780 ms … 31.701 ms  ┊ GC (min … max): 0.00% … 50.43%
+ Time  (median):     15.356 ms              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   16.793 ms ±  3.858 ms  ┊ GC (mean ± σ):  7.60% ± 13.35%
 
-  ▂▄▇█▄▁
-  ██████▇██▅▆▆▁▁▁▁▁▁▁▁▁▁▁▁▁▁▄▁▁▁▁▁▁▁▁▁▁▁▁▄▁▁▁▁▄▁▁▄█▄▁▆▅▅▁▄▄▁▁▄ ▇
-  15 ms         Histogram: log(frequency) by time       150 ms <
+  ▅██▅▃▄▄▁                                             ▁▂
+  ████████▇▄▇▅▄▇▇▄▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅████▇██ █
+  14.8 ms      Histogram: log(frequency) by time      28.6 ms <
 
- Memory estimate: 55.01 MiB, allocs estimate: 209813.
+ Memory estimate: 22.03 MiB, allocs estimate: 31265.
+
+BenchmarkTools.Trial: 693 samples with 1 evaluation.
+ Range (min … max):   5.497 ms … 839.792 ms  ┊ GC (min … max):  0.00% … 98.92%
+ Time  (median):      9.526 ms               ┊ GC (median):     0.00%
+ Time  (mean ± σ):   22.012 ms ±  90.417 ms  ┊ GC (mean ± σ):  56.52% ± 13.40%
+
+  █
+  █▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃▁▃▄▁▃▃ ▆
+  5.5 ms        Histogram: log(frequency) by time       652 ms <
+
+ Memory estimate: 22.63 MiB, allocs estimate: 37225.
 =#
 
 ################################################################################
@@ -111,7 +122,7 @@ random = Metida.VarEffect(Metida.@covstr(1 + time|subject&factor), Metida.CSH),
 lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
 random = Metida.VarEffect(Metida.@covstr(1|HID), Metida.DIAG),
 )
-@benchmark  Metida.fit!(lmm, hes = false)
+@benchmark  Metida.fit!(lmm, hes = false, maxthreads = 16)
 
 #=
 BenchmarkTools.Trial: 1 sample with 1 evaluation.

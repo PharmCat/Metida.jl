@@ -10,23 +10,23 @@ struct LMMData{T <: AbstractFloat}
     end
 end
 
-struct LMMDataViews{T1, T2} <: AbstractLMMDataBlocks
+struct LMMDataViews{T} <: AbstractLMMDataBlocks
     # Fixed effect matrix views
-    xv::T1
+    xv::Vector{Matrix{T}}
     # Responce vector views
-    yv::T2
-    function LMMDataViews(xv, yv, vcovblock)
-        x1 = view(xv, vcovblock[1],:)
-        y1 = view(yv, vcovblock[1])
-        x = Vector{typeof(x1)}(undef, length(vcovblock))
-        y = Vector{typeof(y1)}(undef, length(vcovblock))
-        x[1] = x1
-        y[1] = y1
-        for i = 2:length(vcovblock)
-            x[i] = view(xv, vcovblock[i],:)
-            y[i] = view(yv, vcovblock[i])
+    yv::Vector{Vector{T}}
+    function LMMDataViews(xv::Matrix{T}, yv::Vector{T}, vcovblock) where T
+        #x1 = view(xv, vcovblock[1],:)
+        #y1 = view(yv, vcovblock[1])
+        x = Vector{Matrix{T}}(undef, length(vcovblock))
+        y = Vector{Vector{T}}(undef, length(vcovblock))
+        #x[1] = x1
+        #y[1] = y1
+        for i = 1:length(vcovblock)
+            x[i] = xv[vcovblock[i],:]
+            y[i] = yv[vcovblock[i]]
         end
-        new{typeof(x), typeof(y)}(x, y)
+        new{T}(x, y)
     end
     function LMMDataViews(lmm)
         return LMMDataViews(lmm.data.xv, lmm.data.yv, lmm.covstr.vcovblock)

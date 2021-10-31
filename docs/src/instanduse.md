@@ -118,37 +118,3 @@ Metida.fit!
 * `solver` - `:default` solving with Optim.jl, for `:nlopt` and `:cuda` MetidaNLopt.jl and MetidaCu.jl should be installed.
 
 * `verbose` - 1 - only log,  2 - log and print,  3 - print only errors, other log, 0 (or any other value) - no logging.
-
-### Custom structure
-
-#### Step 1: make custom CovarianceMethod for R and G matrix
-
-```@docs
-Metida.CovmatMethod
-```
-
-#### Step 2: make custom CovarianceType
-
-```
-  CovarianceType(cm::AbstractCovmatMethod)
-```
-
-See: [`Metida.CovarianceType`](@ref)
-
-#### Step 3 Fit your model
-
-```@example lmmexample
-
-#Make methods for G and R matrix and CovarianceType struct
-CCTG = CovarianceType(CovmatMethod((q,p) -> (q, 1), (mx, θ, p) -> Metida.gmat_csh!(mx, θ)))
-CCTR = CovarianceType(CovmatMethod((q,p) -> (q, 0), (mx, θ, zrv, p) -> Metida.rmatp_diag!(mx, θ, zrv)))
-
-#Make model
-lmm = LMM(@formula(var~sequence+period+formulation), df;
-random = VarEffect(@covstr(formulation|subject), CCTG),
-repeated = VarEffect(@covstr(formulation|subject), CCTR),
-)
-
-#Fit model
-fit!(lmm)
-```

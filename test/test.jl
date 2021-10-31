@@ -17,12 +17,12 @@ include("testdata.jl")
     # Basic show (before fitting)
     Base.show(io, lmm)
     Metida.fit!(lmm)
-    Base.show(io, lmm)
-    Base.show(io, lmm.data)
-    Base.show(io, lmm.result)
-    Base.show(io, lmm.covstr)
-    Base.show(io, lmm.covstr.repeated.covtype)
-    Base.show(io, Metida.getlog(lmm))
+    @test_nowarn Base.show(io, lmm)
+    @test_nowarn Base.show(io, lmm.data)
+    @test_nowarn Base.show(io, lmm.result)
+    @test_nowarn Base.show(io, lmm.covstr)
+    @test_nowarn Base.show(io, lmm.covstr.repeated.covtype)
+    @test_nowarn Base.show(io, Metida.getlog(lmm))
     #
     @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
     #Verbose
@@ -206,17 +206,6 @@ end
     repeated = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
     )
     Metida.fit!(lmm; rholinkf = :psigm)
-    @test Metida.m2logreml(lmm) ≈ 10.065239006121315 atol=1E-6
-end
-@testset "  Model: Custom covariance type                            " begin
-    CCTG = Metida.CovarianceType(Metida.CovmatMethod((q,p) -> (q, 1), (mx, θ, p) -> Metida.gmat_csh!(mx, θ)))
-    CCTR = Metida.CovarianceType(Metida.CovmatMethod((q,p) -> (q, 0), (mx, θ, zrv, p) -> Metida.rmatp_diag!(mx, θ, zrv)))
-    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
-    random = Metida.VarEffect(Metida.@covstr(formulation|subject), CCTG),
-    repeated = Metida.VarEffect(Metida.@covstr(formulation|subject), CCTR),
-    )
-
-    Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 10.065239006121315 atol=1E-6
 end
 ################################################################################
@@ -416,6 +405,68 @@ end
     anovatable = Metida.typeiii(lmm)
     @test anovatable.pval ≈ [0.9176105002855397, 0.6522549061174356, 0.0020109339157131302] atol=1E-4
 end
+
+
+@testset "  Model: Custom covariance type                            " begin
+    struct CustomCovarianceStructure <: Metida.AbstractCovarianceType end
+    function Metida.covstrparam(ct::CustomCovarianceStructure, t::Int)::Tuple{Int, Int}
+        return (t, 1)
+    end
+    function Metida.gmat!(mx, θ, ct::CustomCovarianceStructure)
+        s = size(mx, 1)
+        @inbounds @simd for m = 1:s
+            mx[m, m] = θ[m]
+        end
+        if s > 1
+            for m = 1:s - 1
+                @inbounds @simd for n = m + 1:s
+                    mx[m, n] = mx[m, m] * mx[n, n] * θ[end]
+                end
+            end
+        end
+        @inbounds @simd for m = 1:s
+            mx[m, m] = mx[m, m] * mx[m, m]
+        end
+        nothing
+    end
+    # nowarn
+    lmm = Metida.LMM(@formula(response ~1 + factor*time), ftdf;
+    random = Metida.VarEffect(Metida.@covstr(1 + time|subject&factor), Metida.CovarianceType(CustomCovarianceStructure())),
+    )
+    Metida.fit!(lmm)
+    reml_c = Metida.m2logreml(lmm)
+
+    lmm = Metida.LMM(@formula(response ~1 + factor*time), ftdf;
+    random = Metida.VarEffect(Metida.@covstr(1 + time|subject&factor), Metida.CSH),
+    )
+    Metida.fit!(lmm)
+    reml = Metida.m2logreml(lmm)
+    @test reml_c ≈ reml
+
+    function Metida.rmat!(mx, θ, rz, ::CustomCovarianceStructure)
+        vec = Metida.tmul_unsafe(rz, θ)
+        rn    = size(mx, 1)
+        if rn > 1
+            for m = 1:rn - 1
+                @inbounds @simd for n = m + 1:rn
+                    mx[m, n] += vec[m] * vec[n] * θ[end]
+                end
+            end
+        end
+            @inbounds  for m ∈ axes(mx, 1)
+            mx[m, m] += vec[m] * vec[m]
+        end
+        nothing
+    end
+
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    repeated = Metida.VarEffect(Metida.@covstr(period|subject), CustomCovarianceStructure()),
+    )
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 8.740095378772942 atol=1E-8
+
+end
+
 ################################################################################
 #                                  Errors
 ################################################################################

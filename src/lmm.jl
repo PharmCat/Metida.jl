@@ -4,6 +4,8 @@ struct LMMLogMsg
     type::Symbol
     msg::String
 end
+
+
 """
     LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
 
@@ -25,6 +27,7 @@ struct LMM{T} <: MetidaModel
     mm::ModelMatrix
     covstr::CovStructure{T}
     data::LMMData{T}
+    dv::LMMDataViews{T}
     nfixed::Int
     rankx::Int
     result::ModelResult
@@ -51,7 +54,7 @@ struct LMM{T} <: MetidaModel
         mm     = ModelMatrix(mf)
         nfixed = nterms(mf)
         if repeated === nothing
-            repeated = VarEffect(Metida.@covstr(1|1), Metida.ScaledIdentity())
+            repeated = NOREPEAT
         end
         if random === nothing
             random = VarEffect(Metida.@covstr(0|1), Metida.RZero())
@@ -67,7 +70,7 @@ struct LMM{T} <: MetidaModel
         if rankx != size(mm.m, 2)
             lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Fixed-effect matrix not full-rank!"))
         end
-        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, nfixed, rankx, ModelResult(), findmax(length, covstr.vcovblock)[1], lmmlog)
+        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, ModelResult(), findmax(length, covstr.vcovblock)[1], lmmlog)
     end
 end
 """
@@ -161,7 +164,7 @@ function Base.show(io::IO, lmm::LMM)
     println(io, "Linear Mixed Model: ", lmm.model)
     for i = 1:length(lmm.covstr.random)
         println(io, "Random $i: ")
-        if lmm.covstr.random[i].covtype.s == :ZERO
+        if !lmm.covstr.random[i].covtype.z
             println(io, "   No")
             continue
         end
@@ -170,9 +173,13 @@ function Base.show(io::IO, lmm::LMM)
         #println(io, "   Coefnames: $(coefnames(lmm.covstr.schema[i]))")
     end
     println(io, "Repeated: ")
-    println(io, "    Model: $(lmm.covstr.repeated.model === nothing ? "nothing" : string(lmm.covstr.repeated.model, "|", lmm.covstr.repeated.subj))")
-    println(io, "    Type: $(lmm.covstr.repeated.covtype.s) ($(lmm.covstr.t[end]))")
-    println(io, "    Blocks: $(length(lmm.covstr.vcovblock)), Maximum block size: $(lmm.maxvcbl)")
+    if lmm.covstr.repeated.formula == NOREPEAT.formula
+        println(io,"    Residual only")
+    else
+        println(io, "    Model: $(lmm.covstr.repeated.model === nothing ? "nothing" : string(lmm.covstr.repeated.model, "|", lmm.covstr.repeated.subj))")
+        println(io, "    Type: $(lmm.covstr.repeated.covtype.s) ($(lmm.covstr.t[end]))")
+    end
+    println(io, "Blocks: $(length(lmm.covstr.vcovblock)), Maximum block size: $(lmm.maxvcbl)")
     #println(io, "")
     if lmm.result.fit
         print(io, "Status: ")
@@ -205,7 +212,7 @@ function Base.show(io::IO, lmm::LMM)
         mx = hcat(Matrix{Any}(undef, lmm.covstr.tl, 1), lmm.covstr.rcnames, lmm.covstr.ct, round.(lmm.result.theta, sigdigits = 6))
 
         for i = 1:length(lmm.covstr.random)
-            if lmm.covstr.random[i].covtype.s != :ZERO
+            if !isa(lmm.covstr.random[i].covtype.s, ZERO)
                 view(mx, lmm.covstr.tr[i], 1) .= "Random $i"
             end
         end

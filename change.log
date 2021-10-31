@@ -1,3 +1,7 @@
+v0.12
+  * remake custom types
+  * dispatch used
+
 v0.11.1
   * optimizations
   * fix potential bug
