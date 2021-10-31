@@ -10,6 +10,7 @@ makedocs(
         "User guide" => [
         "First step" => "instanduse.md",
         "Examples" => "examples.md",
+        "Custom structures" => "custom.md",
         "Bioequivalence" => "bioequivalence.md",
         "NLopt" => "nlopt.md",
         "CUDA" => "cuda.md",

@@ -33,7 +33,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
     #---------------------------------------------------------------------------
     #logdetθ₂      = zero(T)
     noerror       = true
-        ncore     = min(Polyester.num_cores(), n)
+        ncore     = min(num_cores(), n)
         accθ₁     = zeros(T, ncore)
         accθ₂     = Vector{Matrix{T}}(undef, ncore)
         accβm     = Vector{Vector{T}}(undef, ncore)
@@ -100,7 +100,7 @@ function reml_sweep_β(lmm, θ::Vector{T}, β::Vector) where T <: Number
 end
 
 function core_sweep_β(lmm, data, θ::Vector{T}, β, n) where T
-    ncore     = min(Polyester.num_cores(), n)
+    ncore     = min(num_cores(), n)
     accθ₁     = zeros(T, ncore)
     accθ₂     = Vector{Matrix{T}}(undef, ncore)
     accθ₃     = zeros(T, ncore)

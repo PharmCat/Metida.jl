@@ -360,84 +360,46 @@ function RZero()
     CovarianceType(ZERO(), false)
 end
 
-function covstrparam(ct::SI_, t::Int, q::Int)::Tuple{Int, Int}
+function covstrparam(ct::SI_, ::Int)::Tuple{Int, Int}
     return (1, 0)
 end
-function covstrparam(ct::DIAG_, t::Int, q::Int)::Tuple{Int, Int}
+function covstrparam(ct::DIAG_, t::Int, )::Tuple{Int, Int}
     return (t, 0)
 end
-function covstrparam(ct::Union{AR_, CS_}, t::Int, q::Int)::Tuple{Int, Int}
+function covstrparam(ct::Union{AR_, CS_}, ::Int)::Tuple{Int, Int}
     return (1, 1)
 end
-function covstrparam(ct::Union{ARH_, CSH_}, t::Int, q::Int)::Tuple{Int, Int}
+function covstrparam(ct::Union{ARH_, CSH_}, t::Int)::Tuple{Int, Int}
     return (t, 1)
 end
-function covstrparam(ct::ARMA_, t::Int, q::Int)::Tuple{Int, Int}
+function covstrparam(ct::ARMA_, ::Int)::Tuple{Int, Int}
     return (1, 2)
 end
-function covstrparam(ct::TOEP_, t::Int, q::Int)::Tuple{Int, Int}
+function covstrparam(ct::TOEP_, t::Int)::Tuple{Int, Int}
     return (1, t - 1)
 end
-function covstrparam(ct::TOEPH_, t::Int, q::Int)::Tuple{Int, Int}
+function covstrparam(ct::TOEPH_, t::Int)::Tuple{Int, Int}
     return (t, t - 1)
 end
-function covstrparam(ct::TOEPP_, t::Int, q::Int)::Tuple{Int, Int}
+function covstrparam(ct::TOEPP_, ::Int)::Tuple{Int, Int}
     return (1, ct.p - 1)
 end
-function covstrparam(ct::TOEPHP_, t::Int, q::Int)::Tuple{Int, Int}
+function covstrparam(ct::TOEPHP_, t::Int)::Tuple{Int, Int}
     return (t, ct.p - 1)
 end
-function covstrparam(ct::UN_, t::Int, q::Int)::Tuple{Int, Int}
+function covstrparam(ct::UN_, t::Int)::Tuple{Int, Int}
     return (t, t * (t + 1) / 2 - t)
 end
-function covstrparam(ct::SPEXP_, t::Int, q::Int)::Tuple{Int, Int, Int}
+function covstrparam(ct::SPEXP_, ::Int)::Tuple{Int, Int, Int}
     return (1, 0, 1)
 end
-function covstrparam(ct::ZERO, t::Int, q::Int)::Tuple{Int, Int}
+function covstrparam(ct::ZERO, t::Int)::Tuple{Int, Int}
     return (t, t * (t + 1) / 2 - t)
 end
-function covstrparam(ct::AbstractCovarianceType, t::Int, q::Int)
+function covstrparam(ct::AbstractCovarianceType, ::Int)
     error("Unknown covariance type!")
 end
-#=
-function covstrparam(ct::CovarianceType, t::Int, q::Int)
-    if isa(ct.s, SI_)
-        return (1, 0)
-    elseif isa(ct.s, DIAG_)
-        return (t, 0)
-    #elseif ct.s == :VC
-    #    return (q, 0, q)
-    elseif ct.s == AR()
-        return (1, 1)
-    elseif ct.s == ARH()
-        return (t, 1)
-    elseif ct.s == ARMA()
-        return (1, 2)
-    elseif ct.s == CS()
-        return (1, 1)
-    elseif ct.s == CSH()
-        return (t, 1)
-    elseif ct.s == TOEP()
-        return (1, t - 1)
-    elseif ct.s == TOEPH()
-        return (t, t - 1)
-    elseif ct.s == TOEPP()
-        return (1, ct.p - 1)
-    elseif ct.s == TOEPHP()
-        return (t, ct.p - 1)
-    elseif ct.s == UN()
-        return (t, t * (t + 1) / 2 - t)
-    elseif ct.s == ZERO()
-        return (0, 0)
-    #elseif ct.s == FUNC()
-    #    return ct.f.nparamf(t, q)
-    elseif ct.s == SPEXP()
-        return (1, 0, 1)
-    else
-        error("Unknown covariance type!")
-    end
-end
-=#
+
 ################################################################################
 #                  EFFECT
 ################################################################################
@@ -484,6 +446,9 @@ struct VarEffect
     end
     function VarEffect(formula, covtype::CovarianceType; coding = nothing)
         VarEffect(formula, covtype, coding)
+    end
+    function VarEffect(formula, covtype::AbstractCovarianceType; coding = nothing)
+        VarEffect(formula, CovarianceType(covtype), coding)
     end
     function VarEffect(formula; coding = nothing)
         VarEffect(formula, SI, coding)
@@ -559,7 +524,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             schema[i] = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
             ztemp     = modelcols(MatrixTerm(schema[i]), data)
             q[i]      = size(ztemp, 2)
-            csp       = covstrparam(random[i].covtype.s, q[i], random[i].p)
+            csp       = covstrparam(random[i].covtype.s, q[i])
             t[i]      = sum(csp)
             z         = hcat(z, ztemp)
             fillur!(zrndur, i, q)
@@ -580,7 +545,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         subjz[end]  = convert(BitMatrix, modelcols(MatrixTerm(apply_schema(repeated.subj, StatsModels.schema(data, fulldummycodingdict(repeated.subj)))), data))
         sn[end] = size(subjz[end], 2)
         q[end]      = size(rz, 2)
-        csp         = covstrparam(repeated.covtype.s, q[end], repeated.p)
+        csp         = covstrparam(repeated.covtype.s, q[end])
         t[end]      = sum(csp)
         tr[end]     = UnitRange(sum(t[1:end-1]) + 1, sum(t[1:end-1]) + t[end])
         updatenametype!(ct, rcnames, csp, schema[end], repeated.covtype.s)
