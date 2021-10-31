@@ -43,7 +43,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     :iterations ∈ kwkeys ? iterations = kwargs[:iterations] : iterations = 300
     :refitinit ∈ kwkeys ? refitinit = kwargs[:refitinit] : refitinit = false
     :optmethod ∈ kwkeys ? optmethod = kwargs[:optmethod] : optmethod = :default
-
+    :maxthreads ∈ kwkeys ? maxthreads = kwargs[:maxthreads] : maxthreads = num_cores()
     # If model was fitted, previous results can be used if `refitinit` == true
     # Before fitting clear log
     if lmm.result.fit
@@ -114,7 +114,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     varlinkrvecapply!(θ, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf)
 
     # Twice differentiable object
-    vloptf(x) = optfunc(lmm, lmm.dv, varlinkvecapply(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf))[1]
+    vloptf(x) = optfunc(lmm, lmm.dv, varlinkvecapply(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf); maxthreads = maxthreads)[1]
     gcfg   = ForwardDiff.GradientConfig(vloptf, θ, chunk)
     hcfg   = ForwardDiff.HessianConfig(vloptf, θ, chunk)
     gfunc!(g, x) = ForwardDiff.gradient!(g, vloptf, x, gcfg)
@@ -135,7 +135,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Resulting θ: "*string(lmm.result.theta)*"; $(Optim.iterations(lmm.result.optim)) iterations."))
 
         # -2 LogREML, β, iC
-    lmm.result.reml, lmm.result.beta, iC, θ₃, noerrors = optfunc(lmm, lmm.dv, lmm.result.theta)
+    lmm.result.reml, lmm.result.beta, iC, θ₃, noerrors = optfunc(lmm, lmm.dv, lmm.result.theta; maxthreads = maxthreads)
         # If errors in last evaluetion - log it.
     if !noerrors LMMLogMsg(:ERROR, "The last optimization step wasn't accurate. Results can be wrong!") end
         # Fit true
@@ -160,7 +160,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     # Check Hessian
     if hes && lmm.result.fit
             # Hessian
-        lmm.result.h      = hessian(lmm, lmm.result.theta)
+        lmm.result.h      = hessian(lmm, lmm.result.theta; maxthreads = maxthreads)
             # H positive definite check
         if !isposdef(Symmetric(lmm.result.h))
             lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian is not positive definite."))
@@ -184,13 +184,13 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     lmm
 end
 
-function optstep!(lmm, data, θ; method::Symbol = :ai, maxopt::Int=10)
+function optstep!(lmm, data, θ; method::Symbol = :ai, maxopt::Int=10, maxthreads = num_cores())
     if method == :ai ai_func = sweep_ai else ai_func = sweep_score end
-    reml, beta, θs₂, θ₃, rt = reml_sweep_β(lmm, data, θ)
+    reml, beta, θs₂, θ₃, rt = reml_sweep_β(lmm, data, θ; maxthreads = maxthreads)
     rt || error("Wrong initial conditions.")
-    chunk  = ForwardDiff.Chunk{1}()
-    aif(x) = ai_func(lmm, data, x, beta)
-    grf(x) = reml_sweep_β(lmm, data, x, beta)[1]
+    chunk  = ForwardDiff.Chunk{min(length(θ), 10)}()
+    aif(x) = ai_func(lmm, data, x, beta; maxthreads = maxthreads)
+    grf(x) = reml_sweep_β(lmm, data, x, beta; maxthreads = maxthreads)[1]
     aihcfg = ForwardDiff.HessianConfig(aif, θ, chunk)
     aigcfg = ForwardDiff.GradientConfig(grf, θ, chunk)
     ai = ForwardDiff.hessian(aif, θ, aihcfg, Val{false}())
@@ -212,7 +212,7 @@ function optstep!(lmm, data, θ; method::Symbol = :ai, maxopt::Int=10)
     local remlc
     while maxopti > 0
         θr = θ - θt
-        remlc, beta, θs₂, θ₃, rt = reml_sweep_β(lmm, data, θr)
+        remlc, beta, θs₂, θ₃, rt = reml_sweep_β(lmm, data, θr; maxthreads = maxthreads)
         maxopti -= 1
         if rt && remlc < reml return copyto!(θ, θr), remlc, maxopt-maxopti, true else θt ./= 2.0 end
     end

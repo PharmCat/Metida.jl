@@ -20,7 +20,7 @@ ftdf3        = CSV.File(path*"/csv/2f2rand.csv"; types =
 lmm = Metida.LMM(@formula(response ~1 + factor*time), ftdf;
 random = Metida.VarEffect(Metida.@covstr(1 + time|subject&factor), Metida.CSH),
 )
-@benchmark Metida.fit!($lmm, hes = false) seconds = 15
+@benchmark Metida.fit!($lmm, hes = false; maxthreads = 16) seconds = 15
 #@time Metida.fit!(lmm, hes = false)
 #=
 BenchmarkTools.Trial: 893 samples with 1 evaluation.
@@ -122,7 +122,7 @@ random = Metida.VarEffect(Metida.@covstr(1 + time|subject&factor), Metida.CSH),
 lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
 random = Metida.VarEffect(Metida.@covstr(1|HID), Metida.DIAG),
 )
-@benchmark  Metida.fit!(lmm, hes = false)
+@benchmark  Metida.fit!(lmm, hes = false, maxthreads = 16)
 
 #=
 BenchmarkTools.Trial: 1 sample with 1 evaluation.

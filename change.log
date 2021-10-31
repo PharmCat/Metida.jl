@@ -4,6 +4,7 @@ v0.12
 
 v0.11.1
   * optimizations
+  * fix potential bug
 
 v0.11.0
   * rename anova to typeiii

@@ -211,16 +211,16 @@ end
 
 Calculate Hessian matrix of REML for theta.
 """
-function hessian(lmm, theta)
+function hessian(lmm, theta; maxthreads = num_cores())
     #if !lmm.result.fit error("Model not fitted!") end
-    vloptf(x) = reml_sweep_β(lmm, x, lmm.result.beta)[1]
+    vloptf(x) = reml_sweep_β(lmm, x, lmm.result.beta; maxthreads = maxthreads)[1]
     chunk  = ForwardDiff.Chunk{min(10, length(theta))}()
     hcfg   = ForwardDiff.HessianConfig(vloptf, theta, chunk)
     ForwardDiff.hessian(vloptf, theta, hcfg)
 end
-function hessian(lmm)
+function hessian(lmm; maxthreads = num_cores())
     if !lmm.result.fit error("Model not fitted!") end
-    hessian(lmm, lmm.result.theta)
+    hessian(lmm, lmm.result.theta; maxthreads = maxthreads)
 end
 ################################################################################
 

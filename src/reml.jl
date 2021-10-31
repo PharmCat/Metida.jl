@@ -18,11 +18,11 @@ end
 ################################################################################
 #                     REML without provided β
 ################################################################################
-function reml_sweep_β(lmm, θ::Vector{T}; syrkblas::Bool = false) where T <: Number
+function reml_sweep_β(lmm, θ::Vector{T}; syrkblas::Bool = false, maxthreads = num_cores()) where T <: Number
     data = LMMDataViews(lmm)
-    reml_sweep_β(lmm, data, θ; syrkblas = syrkblas)
+    reml_sweep_β(lmm, data, θ; syrkblas = syrkblas, maxthreads = maxthreads)
 end
-function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas::Bool = false) where T <: Number
+function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas::Bool = false, maxthreads = num_cores()) where T <: Number
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)
@@ -33,7 +33,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
     #---------------------------------------------------------------------------
     #logdetθ₂      = zero(T)
     noerror       = true
-        ncore     = min(num_cores(), n)
+        ncore     = min(num_cores(), n, maxthreads)
         accθ₁     = zeros(T, ncore)
         accθ₂     = Vector{Matrix{T}}(undef, ncore)
         accβm     = Vector{Vector{T}}(undef, ncore)
@@ -94,13 +94,13 @@ end
 ################################################################################
 #                     REML with provided β
 ################################################################################
-function reml_sweep_β(lmm, θ::Vector{T}, β::Vector) where T <: Number
+function reml_sweep_β(lmm, θ::Vector{T}, β::Vector; maxthreads = num_cores()) where T <: Number
     data = LMMDataViews(lmm)
-    reml_sweep_β(lmm, data, θ, β)
+    reml_sweep_β(lmm, data, θ, β; maxthreads = maxthreads)
 end
 
-function core_sweep_β(lmm, data, θ::Vector{T}, β, n) where T
-    ncore     = min(num_cores(), n)
+function core_sweep_β(lmm, data, θ::Vector{T}, β, n; maxthreads = num_cores()) where T
+    ncore     = min(num_cores(), n, maxthreads)
     accθ₁     = zeros(T, ncore)
     accθ₂     = Vector{Matrix{T}}(undef, ncore)
     accθ₃     = zeros(T, ncore)
@@ -135,11 +135,11 @@ function core_sweep_β(lmm, data, θ::Vector{T}, β, n) where T
     sum(accθ₁), sum(accθ₂), sum(accθ₃), all(erroracc)
 end
 
-function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector) where T <: Number
+function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector; maxthreads = num_cores()) where T <: Number
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)
-    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, data, θ::Vector{T}, β, n)
+    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, data, θ::Vector{T}, β, n; maxthreads = maxthreads)
     θs₂      = Symmetric(θ₂)
     logdetθ₂ = logdet(θs₂)
     return   θ₁ + logdetθ₂ + θ₃ + c, θs₂, θ₃, noerror #REML, iC, θ₃
@@ -147,21 +147,21 @@ end
 ################################################################################
 #                     REML AI-like / scoring part
 ################################################################################
-function sweep_ai(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector) where T <: Number
+function sweep_ai(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector; maxthreads = num_cores()) where T <: Number
     n                   = length(lmm.covstr.vcovblock)
-    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, data, θ::Vector{T}, β, n)
+    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, data, θ::Vector{T}, β, n; maxthreads = maxthreads)
     return  θ₃
 end
-function sweep_score(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector) where T <: Number
+function sweep_score(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector; maxthreads = num_cores()) where T <: Number
     n                   = length(lmm.covstr.vcovblock)
-    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, data, θ::Vector{T}, β, n)
+    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, data, θ::Vector{T}, β, n; maxthreads = maxthreads)
     return -θ₁ + θ₃
 end
 ################################################################################
 #                     variance-covariance matrix of β
 ################################################################################
-function sweep_β_cov(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector) where T <: Number
+function sweep_β_cov(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}, β::Vector; maxthreads = num_cores()) where T <: Number
     n                   = length(lmm.covstr.vcovblock)
-    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, data, θ::Vector{T}, β, n)
+    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, data, θ::Vector{T}, β, n; maxthreads = maxthreads)
     return Symmetric(θ₂)
 end
