@@ -15,7 +15,6 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 MetidaBase = "075456b7-4006-432f-9324-2f8453996c49"
-#LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
 
 [compat]
 StatsModels = "0.6"
@@ -27,8 +26,6 @@ Optim = "1"
 StatsBase = "0.29, 0.30, 0.31, 0.32, 0.33"
 julia = "1"
 MetidaBase = "0.5"
-
-#LoopVectorization = "0.12"
 
 [extras]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
