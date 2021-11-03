@@ -15,38 +15,40 @@ Status: converged (No Errors)
     -2 logREML: 1300.18    BIC: 1324.12
 
     Fixed-effects parameters:
-Name                 Estimate   SE          z         Pr(&gt;|z|)      
-(Intercept)          22.1331    0.304339    72.7251   0.0           
-factor: 1.0          2.00049    0.430401    4.64796   3.35228e-6    
-time                 1.11853    0.0264038   42.3624   0.0           
-factor: 1.0 &amp; time   0.404971   0.0373406   10.8453   2.09844e-27   
-
+──────────────────────────────────────────────────────────
+                        Coef.  Std. Error      z  Pr(&gt;|z|)
+──────────────────────────────────────────────────────────
+(Intercept)         22.1331     0.304339   72.73    &lt;1e-99
+factor: 1.0          2.00049    0.430401    4.65    &lt;1e-05
+time                 1.11853    0.0264038  42.36    &lt;1e-99
+factor: 1.0 &amp; time   0.404971   0.0373406  10.85    &lt;1e-26
+──────────────────────────────────────────────────────────
     Variance components:
     θ vector: [1.2401, 0.101122, -0.0427208, 0.985061]
-Random 1   σ² (Intercept)   var   1.53785      
-Random 1   σ² time          var   0.0102257    
-Random 1   ρ                rho   -0.0427208   
-Residual   σ²               var   0.970345     
+  Random 1   σ² (Intercept)   var   1.53785
+  Random 1   σ² time          var   0.0102257
+  Random 1   ρ                rho   -0.0427208
+  Residual   σ²               var   0.970345
 </code></pre><p>MixedModels result:</p><pre><code class="language-julia hljs">fm = @formula(response ~ 1 + factor*time + (1 + time|subject&amp;factor))
 mm = fit(MixedModel, fm, rds, REML=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear mixed model fit by REML
  response ~ 1 + factor + time + factor &amp; time + (1 + time | subject &amp; factor)
- REML criterion at convergence: 1300.1807598192281
+ REML criterion at convergence: 1300.1807598185972
 
 Variance components:
                     Column   Variance Std.Dev.   Corr.
-subject &amp; factor (Intercept)  1.537868 1.240108
-                 time         0.010226 0.101123 -0.04
-Residual                      0.970344 0.985060
+subject &amp; factor (Intercept)  1.537863 1.240106
+                 time         0.010226 0.101122 -0.04
+Residual                      0.970345 0.985061
  Number of obs: 400; levels of grouping factors: 40
 
   Fixed-effects parameters:
 ──────────────────────────────────────────────────────────
                         Coef.  Std. Error      z  Pr(&gt;|z|)
 ──────────────────────────────────────────────────────────
-(Intercept)         22.1331     0.30434    72.72    &lt;1e-99
-factor: 1.0          2.00049    0.430402    4.65    &lt;1e-05
-time                 1.11853    0.0264038  42.36    &lt;1e-99
-factor: 1.0 &amp; time   0.404971   0.0373407  10.85    &lt;1e-26
+(Intercept)         22.1331     0.30434    72.73    &lt;1e-99
+factor: 1.0          2.00049    0.430401    4.65    &lt;1e-05
+time                 1.11853    0.0264037  42.36    &lt;1e-99
+factor: 1.0 &amp; time   0.404971   0.0373405  10.85    &lt;1e-26
 ──────────────────────────────────────────────────────────</code></pre><h3 id="Example-2-Two-random-factors-(Penicillin-data)"><a class="docs-heading-anchor" href="#Example-2-Two-random-factors-(Penicillin-data)">Example 2 - Two random factors (Penicillin data)</a><a id="Example-2-Two-random-factors-(Penicillin-data)-1"></a><a class="docs-heading-anchor-permalink" href="#Example-2-Two-random-factors-(Penicillin-data)" title="Permalink"></a></h3><p>Metida:</p><pre><code class="language-julia hljs">df          = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;Penicillin.csv&quot;); types = [String, Float64, String, String]) |&gt; DataFrame
 df.diameter = float.(df.diameter)
 
@@ -67,24 +69,26 @@ Status: converged (No Errors)
     -2 logREML: 330.861    BIC: 345.749
 
     Fixed-effects parameters:
-Name          Estimate   SE         z         Pr(&gt;|z|)                  
-(Intercept)   22.9722    0.808573   28.4108   1.4870599999999999e-177   
-
+─────────────────────────────────────────────────
+               Coef.  Std. Error      z  Pr(&gt;|z|)
+─────────────────────────────────────────────────
+(Intercept)  22.9722    0.808573  28.41    &lt;1e-99
+─────────────────────────────────────────────────
     Variance components:
     θ vector: [0.846704, 1.93156, 0.549923]
-Random 1   σ²    var   0.716908   
-Random 2   σ²    var   3.73092    
-Residual   σ²    var   0.302415   
+  Random 1   σ²    var   0.716908
+  Random 2   σ²    var   3.73092
+  Residual   σ²    var   0.302415
 </code></pre><p>MixedModels:</p><pre><code class="language-julia hljs">fm2 = @formula(diameter ~ 1 + (1|plate) + (1|sample))
 mm = fit(MixedModel, fm2, df, REML=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear mixed model fit by REML
  diameter ~ 1 + (1 | plate) + (1 | sample)
- REML criterion at convergence: 330.8605889909948
+ REML criterion at convergence: 330.86058899100425
 
 Variance components:
             Column   Variance Std.Dev.
 plate    (Intercept)  0.716908 0.846704
-sample   (Intercept)  3.730909 1.931556
-Residual              0.302415 0.549923
+sample   (Intercept)  3.730903 1.931554
+Residual              0.302416 0.549923
  Number of obs: 144; levels of grouping factors: 24, 6
 
   Fixed-effects parameters:
@@ -108,19 +112,21 @@ Status: converged  See error(s) in log. Final results can be wrong!
     -2 logREML: 709.14    BIC: 736.48
 
     Fixed-effects parameters:
-Name                 Estimate   SE          z         Pr(&gt;|z|)       
-(Intercept)          44.3896    1.35084     32.8609   7.96592e-237   
-factor: 1.0          5.40834    1.60921     3.36087   0.000776975    
-time                 0.508736   0.0481765   10.5598   4.5749e-26     
-factor: 1.0 &amp; time   0.286837   0.0681318   4.21003   2.5534e-5      
-
+──────────────────────────────────────────────────────────
+                        Coef.  Std. Error      z  Pr(&gt;|z|)
+──────────────────────────────────────────────────────────
+(Intercept)         44.3896     1.35084    32.86    &lt;1e-99
+factor: 1.0          5.40834    1.60921     3.36    0.0008
+time                 0.508736   0.0481765  10.56    &lt;1e-25
+factor: 1.0 &amp; time   0.286837   0.0681318   4.21    &lt;1e-04
+──────────────────────────────────────────────────────────
     Variance components:
     θ vector: [4.53791, 2.8059, 1.12292, 0.625323, 0.713154]
-Random 1   σ² factor: 0.0   var   20.5926    
-Random 1   σ² factor: 1.0   var   7.87307    
-Residual   σ²               var   1.26095    
-Residual   γ                rho   0.625323   
-Residual   ρ                rho   0.713154   
+  Random 1   σ² factor: 0.0   var   20.5926
+  Random 1   σ² factor: 1.0   var   7.87307
+  Residual   σ²               var   1.26095
+  Residual   γ                rho   0.625323
+  Residual   ρ                rho   0.713154
 </code></pre><p>AR:</p><pre><code class="language-julia hljs">lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
 random = VarEffect(@covstr(factor|subject&amp;factor), DIAG),
 repeated = VarEffect(@covstr(1|subject&amp;factor), AR),
@@ -137,18 +143,20 @@ Status: converged (No Errors)
     -2 logREML: 710.096    BIC: 731.968
 
     Fixed-effects parameters:
-Name                 Estimate   SE          z         Pr(&gt;|z|)                
-(Intercept)          44.3915    1.34686     32.9594   3.10194e-238            
-factor: 1.0          5.39757    1.60271     3.36778   0.000757757             
-time                 0.508075   0.0456524   11.1292   9.043279999999999e-29   
-factor: 1.0 &amp; time   0.290317   0.0645622   4.4967    6.90159e-6              
-
+──────────────────────────────────────────────────────────
+                        Coef.  Std. Error      z  Pr(&gt;|z|)
+──────────────────────────────────────────────────────────
+(Intercept)         44.3915     1.34686    32.96    &lt;1e-99
+factor: 1.0          5.39757    1.60271     3.37    0.0008
+time                 0.508075   0.0456524  11.13    &lt;1e-28
+factor: 1.0 &amp; time   0.290317   0.0645622   4.50    &lt;1e-05
+──────────────────────────────────────────────────────────
     Variance components:
     θ vector: [4.54797, 2.82342, 1.05771, 0.576979]
-Random 1   σ² factor: 0.0   var   20.684     
-Random 1   σ² factor: 1.0   var   7.9717     
-Residual   σ²               var   1.11875    
-Residual   ρ                rho   0.576979   
+  Random 1   σ² factor: 0.0   var   20.684
+  Random 1   σ² factor: 1.0   var   7.9717
+  Residual   σ²               var   1.11875
+  Residual   ρ                rho   0.576979
 </code></pre><p>ARH:</p><pre><code class="language-julia hljs">lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
 random = VarEffect(@covstr(factor|subject&amp;factor), DIAG),
 repeated = VarEffect(@covstr(1|subject&amp;factor), ARH),
@@ -165,18 +173,20 @@ Status: converged (No Errors)
     -2 logREML: 710.096    BIC: 731.968
 
     Fixed-effects parameters:
-Name                 Estimate   SE          z         Pr(&gt;|z|)                
-(Intercept)          44.3915    1.34686     32.9594   3.10194e-238            
-factor: 1.0          5.39757    1.60271     3.36778   0.000757757             
-time                 0.508075   0.0456524   11.1292   9.043279999999999e-29   
-factor: 1.0 &amp; time   0.290317   0.0645622   4.4967    6.90159e-6              
-
+──────────────────────────────────────────────────────────
+                        Coef.  Std. Error      z  Pr(&gt;|z|)
+──────────────────────────────────────────────────────────
+(Intercept)         44.3915     1.34686    32.96    &lt;1e-99
+factor: 1.0          5.39757    1.60271     3.37    0.0008
+time                 0.508075   0.0456524  11.13    &lt;1e-28
+factor: 1.0 &amp; time   0.290317   0.0645622   4.50    &lt;1e-05
+──────────────────────────────────────────────────────────
     Variance components:
     θ vector: [4.54797, 2.82342, 1.05771, 0.576979]
-Random 1   σ² factor: 0.0   var   20.684     
-Random 1   σ² factor: 1.0   var   7.9717     
-Residual   σ² (Intercept)   var   1.11875    
-Residual   ρ                rho   0.576979   
+  Random 1   σ² factor: 0.0   var   20.684
+  Random 1   σ² factor: 1.0   var   7.9717
+  Residual   σ² (Intercept)   var   1.11875
+  Residual   ρ                rho   0.576979
 </code></pre><h3 id="Example-4-SAS-relation"><a class="docs-heading-anchor" href="#Example-4-SAS-relation">Example 4 - SAS relation</a><a id="Example-4-SAS-relation-1"></a><a class="docs-heading-anchor-permalink" href="#Example-4-SAS-relation" title="Permalink"></a></h3><h4 id="Model-1"><a class="docs-heading-anchor" href="#Model-1">Model 1</a><a id="Model-1-1"></a><a class="docs-heading-anchor-permalink" href="#Model-1" title="Permalink"></a></h4><pre><code class="nohighlight hljs">df0 = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;df0.csv&quot;)) |&gt; DataFrame
 
 lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
@@ -205,4 +215,4 @@ fit!(lmm)</code></pre><p>SAS code:</p><pre><code class="nohighlight hljs">PROC M
 CLASSES subject sequence period formulation;
 MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
 RANDOM  subject/TYPE=VC G V;
-RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../custom/">Custom structures »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.10 on <span class="colophon-date" title="Sunday 31 October 2021 15:40">Sunday 31 October 2021</span>. Using Julia version 1.6.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../custom/">Custom structures »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.10 on <span class="colophon-date" title="Wednesday 3 November 2021 15:29">Wednesday 3 November 2021</span>. Using Julia version 1.6.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
