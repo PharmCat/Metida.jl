@@ -4,6 +4,7 @@
 
 * CPU: Ryzen 5950x
 * RAM: 64Gb 3200
+* GTX 1070Ti
 
 ### Data
 
@@ -21,17 +22,16 @@ fm = @formula(response ~ 1 + factor*time + (1 + time|subject&factor))
 ```
 
 ```
-BenchmarkTools.Trial:
-  memory estimate:  372.62 KiB
-  allocs estimate:  3503
-  --------------
-  minimum time:     1.507 ms (0.00% GC)
-  median time:      1.583 ms (0.00% GC)
-  mean time:        1.652 ms (1.94% GC)
-  maximum time:     12.631 ms (0.00% GC)
-  --------------
-  samples:          9053
-  evals/sample:     1
+BenchmarkTools.Trial: 10000 samples with 1 evaluation.
+ Range (min … max):  1.140 ms …  10.909 ms  ┊ GC (min … max): 0.00% … 86.12%
+ Time  (median):     1.175 ms               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   1.215 ms ± 563.839 μs  ┊ GC (mean ± σ):  2.78% ±  5.31%
+
+          ▄██▆▃▁          
+  ▁▁▁▂▂▃▅▇██████▇▅▄▃▃▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▂
+  1.14 ms         Histogram: frequency by time        1.33 ms <
+
+ Memory estimate: 409.52 KiB, allocs estimate: 6130.
 ```
 
 ### Metida
@@ -43,59 +43,57 @@ random = VarEffect(@covstr(1 + time|subject&factor), CSH),
 @benchmark fit!($lmm, hes = false) seconds = 15
 ```
 
-* Metida v0.11.0
+* Metida v0.12.0
 
 ```
-BenchmarkTools.Trial: 445 samples with 1 evaluation.
- Range (min … max):  20.060 ms … 157.976 ms  ┊ GC (min … max):  0.00% … 79.83%
- Time  (median):     26.957 ms               ┊ GC (median):     0.00%
- Time  (mean ± σ):   33.721 ms ±  26.626 ms  ┊ GC (mean ± σ):  19.89% ± 19.16%
+BenchmarkTools.Trial: 1316 samples with 1 evaluation.
+ Range (min … max):   5.394 ms … 186.301 ms  ┊ GC (min … max):  0.00% … 95.48%
+ Time  (median):      7.648 ms               ┊ GC (median):     0.00%
+ Time  (mean ± σ):   11.391 ms ±  19.135 ms  ┊ GC (mean ± σ):  32.70% ± 17.73%
 
-  ▂▃██▄  
-  █████▆▆▁▅▄▄▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅▁▅▁▄▅▁▅█▄▁▅▁▅▁▁▄▅ ▆
-  20.1 ms       Histogram: log(frequency) by time       152 ms <
+  ██▆
+  ███▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▄▁▆▅▄▄▅▄▅▄▄▆▄▆▄▄▄ █
+  5.39 ms       Histogram: log(frequency) by time       112 ms <
 
- Memory estimate: 58.33 MiB, allocs estimate: 251271.
+ Memory estimate: 22.63 MiB, allocs estimate: 37224.
 ```
 
-* MetidaNLopt v0.1.* (Metida 0.4)
+* MetidaNLopt v0.4.0 (Metida 0.12.0)
 
 ```
-@benchmark fit!($lmm, solver = :nlopt) seconds = 15
-```
-
-```
-BenchmarkTools.Trial:
-  memory estimate:  9.12 MiB
-  allocs estimate:  53289
-  --------------
-  minimum time:     113.572 ms (0.00% GC)
-  median time:      129.960 ms (0.00% GC)
-  mean time:        131.570 ms (1.13% GC)
-  maximum time:     167.145 ms (0.00% GC)
-  --------------
-  samples:          114
-  evals/sample:     1
-```
-
-* MetidaCu v0.1.* (Metida 0.4)
-
-```
-@benchmark fit!($lmm, solver = :cuda) seconds = 15
+@benchmark fit!($lmm, solver = :nlopt, hes = false, f_tol=1e-8, x_tol=1e-8) seconds = 15
 ```
 
 ```
-BenchmarkTools.Trial:
-  memory estimate:  26.44 MiB
-  allocs estimate:  527567
-  --------------
-  minimum time:     3.782 s (0.00% GC)
-  median time:      3.911 s (0.00% GC)
-  mean time:        3.947 s (0.32% GC)
-  maximum time:     4.183 s (1.20% GC)
-  --------------
-  samples:          4
-  evals/sample:     1
+BenchmarkTools.Trial: 274 samples with 1 evaluation.
+ Range (min … max):  47.312 ms … 153.284 ms  ┊ GC (min … max):  0.00% … 67.58%
+ Time  (median):     49.064 ms               ┊ GC (median):     0.00%
+ Time  (mean ± σ):   54.854 ms ±  19.559 ms  ┊ GC (mean ± σ):  10.55% ± 15.98%
+
+  ▅█    
+  ███▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▆▅▁▁▄▁▁▄▁▄▁▁▄▄▅▁▁▁▁▁▁▁▁▁▁▁▄▁▄▄▁▅▄▁▅▄▄ ▅
+  47.3 ms       Histogram: log(frequency) by time       135 ms <
+
+ Memory estimate: 35.45 MiB, allocs estimate: 301141.
+```
+
+* MetidaCu v0.4.0 (Metida 0.4)
+
+```
+@benchmark fit!($lmm, solver = :cuda, hes = false, f_tol=1e-8, x_tol=1e-8) seconds = 15
+```
+
+```
+BenchmarkTools.Trial: 42 samples with 1 evaluation.
+ Range (min … max):  347.642 ms … 461.104 ms  ┊ GC (min … max): 0.00% … 4.12%
+ Time  (median):     350.603 ms               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   358.874 ms ±  23.939 ms  ┊ GC (mean ± σ):  0.27% ± 0.98%
+
+  ▁█     
+  ███▁▃▁▁▁▁▁▁▁▁▅▄▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃▁▁▃ ▁
+  348 ms           Histogram: frequency by time          461 ms <
+
+ Memory estimate: 6.86 MiB, allocs estimate: 115020.
 ```
 
 ### Cancer data:
@@ -110,46 +108,54 @@ random = Metida.VarEffect(Metida.@covstr(1|HID), Metida.DIAG),
 )
 ```
 
-* Metida v0.10.1 Theads
+* Metida v0.12.0
 
 ```
-julia> @benchmark  Metida.fit!(lmm, hes = false)
+@benchmark  Metida.fit!(lmm, hes = false)
+```
+
+```
 BenchmarkTools.Trial: 1 sample with 1 evaluation.
- Single result which took 10.214 s (1.64% GC) to evaluate,
- with a memory estimate of 3.64 GiB, over 103755 allocations.
+ Single result which took 6.519 s (1.38% GC) to evaluate,
+ with a memory estimate of 2.33 GiB, over 41654 allocations.
 ```
 
-* MetidaNLopt v0.3.2 (Metida v0.10.1)
+* MetidaNLopt v0.4.0 (Metida v0.12.0)
 
 ```
-julia> @benchmark  Metida.fit!(lmm; solver = :nlopt)
-BenchmarkTools.Trial: 9 samples with 1 evaluation.
- Range (min … max):  447.502 ms … 680.028 ms  ┊ GC (min … max):  0.00% … 9.85%
- Time  (median):     575.979 ms               ┊ GC (median):    10.36%
- Time  (mean ± σ):   567.062 ms ±  81.027 ms  ┊ GC (mean ± σ):   8.53% ± 6.50%
-
-  ▁          ▁    █                ▁       ▁      ▁    ▁      ▁
-  █▁▁▁▁▁▁▁▁▁▁█▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁█▁▁▁▁▁▁█▁▁▁▁█▁▁▁▁▁▁█ ▁
-  448 ms           Histogram: frequency by time          680 ms <
-
- Memory estimate: 920.57 MiB, allocs estimate: 51647.
+@benchmark fit!($lmm, solver = :nlopt, hes = false, f_tol=1e-8, x_tol=1e-8) seconds = 15
 ```
 
-* MetidaCu v0.2.0 (Metida 0.5.1)
+```
+BenchmarkTools.Trial: 25 samples with 1 evaluation.
+ Range (min … max):  555.136 ms … 700.605 ms  ┊ GC (min … max): 0.00% … 16.09%
+ Time  (median):     605.713 ms               ┊ GC (median):    7.98%
+ Time  (mean ± σ):   608.768 ms ±  27.220 ms  ┊ GC (mean ± σ):  7.62% ±  3.82%
+
+                    █    ▂
+  ▅▁▁▅▁▁▁▁▁▅▁▁▁▁▁▅▁▅█▅▅▅▅█▅▁▁▅▅▁▅█▁▁▅▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅ ▁
+  555 ms           Histogram: frequency by time          701 ms <
+
+ Memory estimate: 921.54 MiB, allocs estimate: 62203.
+```
+
+* MetidaCu v0.4.0 (Metida 0.12.0)
 
 ```
-julia> @benchmark  Metida.fit!(lmm; solver = :cuda)
-BenchmarkTools.Trial:
-  memory estimate:  1.02 GiB
-  allocs estimate:  541438
-  --------------
-  minimum time:     6.935 s (1.07% GC)
-  median time:      6.935 s (1.07% GC)
-  mean time:        6.935 s (1.07% GC)
-  maximum time:     6.935 s (1.07% GC)
-  --------------
-  samples:          1
-  evals/sample:     1
+@benchmark fit!($lmm, solver = :cuda, hes = false, f_tol=1e-8, x_tol=1e-8) seconds = 15
+```
+
+```
+BenchmarkTools.Trial: 5 samples with 1 evaluation.
+ Range (min … max):  3.482 s …   3.650 s  ┊ GC (min … max): 0.00% … 2.73%
+ Time  (median):     3.496 s              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   3.547 s ± 77.924 ms  ┊ GC (mean ± σ):  1.07% ± 1.43%
+
+  ▁   █                                       ▁           ▁
+  █▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁█ ▁
+  3.48 s         Histogram: frequency by time        3.65 s <
+
+ Memory estimate: 913.96 MiB, allocs estimate: 410438.
 ```
 
 #### Model 2: maximum 875 observation-per-subject (20 subjects)
@@ -163,35 +169,39 @@ random = Metida.VarEffect(Metida.@covstr(1|Experience), Metida.SI),
 * MetidaNLopt v0.2.0 (Metida 0.5.1)
 
 ```
-julia> @benchmark  Metida.fit!(lmm; solver = :nlopt)
-BenchmarkTools.Trial:
-  memory estimate:  1.79 GiB
-  allocs estimate:  17215
-  --------------
-  minimum time:     12.168 s (2.24% GC)
-  median time:      12.168 s (2.24% GC)
-  mean time:        12.168 s (2.24% GC)
-  maximum time:     12.168 s (2.24% GC)
-  --------------
-  samples:          1
-  evals/sample:     1
+@benchmark fit!($lmm, solver = :nlopt, hes = false, f_tol=1e-8, x_tol=1e-8) seconds = 1
+```
+
+```
+BenchmarkTools.Trial: 9 samples with 1 evaluation.
+ Range (min … max):  1.651 s …    1.952 s  ┊ GC (min … max): 3.10% … 4.27%
+ Time  (median):     1.797 s               ┊ GC (median):    4.15%
+ Time  (mean ± σ):   1.815 s ± 101.277 ms  ┊ GC (mean ± σ):  3.83% ± 0.82%
+
+  ▁               ▁  ▁ ▁      ▁            ▁ ▁             █
+  █▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁█▁█▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁█▁█▁▁▁▁▁▁▁▁▁▁▁▁▁█ ▁
+  1.65 s         Histogram: frequency by time         1.95 s <
+
+ Memory estimate: 2.47 GiB, allocs estimate: 57729.
 ```
 
 * MetidaCu v0.2.0 (Metida 0.5.1)
 
 ```
-julia> @benchmark  Metida.fit!(lmm; solver = :cuda)
-BenchmarkTools.Trial:
-  memory estimate:  1.77 GiB
-  allocs estimate:  274940
-  --------------
-  minimum time:     8.926 s (2.83% GC)
-  median time:      8.926 s (2.83% GC)
-  mean time:        8.926 s (2.83% GC)
-  maximum time:     8.926 s (2.83% GC)
-  --------------
-  samples:          1
-  evals/sample:     1
+@benchmark fit!($lmm, solver = :cuda, hes = false, f_tol=1e-8, x_tol=1e-8) seconds = 15
+```
+
+```
+BenchmarkTools.Trial: 3 samples with 1 evaluation.
+ Range (min … max):  5.137 s …   5.216 s  ┊ GC (min … max): 1.03% … 2.19%
+ Time  (median):     5.166 s              ┊ GC (median):    1.43%
+ Time  (mean ± σ):   5.173 s ± 39.699 ms  ┊ GC (mean ± σ):  1.55% ± 0.59%
+
+  █                   █                                   █
+  █▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█ ▁
+  5.14 s         Histogram: frequency by time        5.22 s <
+
+ Memory estimate: 2.46 GiB, allocs estimate: 372716.
 ```
 
 #### Model 3: maximum 1437 observation-per-subject (10 subjects)
@@ -202,43 +212,47 @@ random = Metida.VarEffect(Metida.@covstr(1|ntumors), Metida.SI),
 )
 ```
 
-* MetidaNLopt v0.2.0 (Metida 0.5.1)
+* MetidaNLopt v0.4.0 (Metida 0.12.0)
 
 ```
-julia> @benchmark  Metida.fit!(lmm; solver = :nlopt)
-BenchmarkTools.Trial:
-  memory estimate:  5.28 GiB
-  allocs estimate:  12951
-  --------------
-  minimum time:     32.109 s (2.24% GC)
-  median time:      32.109 s (2.24% GC)
-  mean time:        32.109 s (2.24% GC)
-  maximum time:     32.109 s (2.24% GC)
-  --------------
-  samples:          1
-  evals/sample:     1
+@benchmark fit!($lmm, solver = :nlopt, hes = false, f_tol=1e-8, x_tol=1e-8) seconds = 15
 ```
 
-* MetidaCu v0.2.0 (Metida 0.5.1)
+```
+BenchmarkTools.Trial: 4 samples with 1 evaluation.
+ Range (min … max):  4.305 s …   4.476 s  ┊ GC (min … max): 2.49% … 3.52%
+ Time  (median):     4.372 s              ┊ GC (median):    3.23%
+ Time  (mean ± σ):   4.381 s ± 80.689 ms  ┊ GC (mean ± σ):  3.12% ± 0.47%
+
+  █     █                               █                 █
+  █▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█ ▁
+  4.3 s          Histogram: frequency by time        4.48 s <
+
+ Memory estimate: 3.83 GiB, allocs estimate: 28068.
+```
+
+* MetidaCu v0.4.0 (Metida 0.12.0)
 
 ```
-julia> @benchmark  Metida.fit!(lmm; solver = :cuda)
-BenchmarkTools.Trial:
-  memory estimate:  4.36 GiB
-  allocs estimate:  174131
-  --------------
-  minimum time:     22.690 s (2.89% GC)
-  median time:      22.690 s (2.89% GC)
-  mean time:        22.690 s (2.89% GC)
-  maximum time:     22.690 s (2.89% GC)
-  --------------
-  samples:          1
-  evals/sample:     1
+@benchmark fit!($lmm, solver = :cuda, hes = false, f_tol=1e-8, x_tol=1e-8) seconds = 15
+```
+
+```
+BenchmarkTools.Trial: 4 samples with 1 evaluation.
+ Range (min … max):  4.928 s …   4.970 s  ┊ GC (min … max): 1.83% … 1.78%
+ Time  (median):     4.957 s              ┊ GC (median):    1.85%
+ Time  (mean ± σ):   4.953 s ± 18.996 ms  ┊ GC (mean ± σ):  1.90% ± 0.15%
+
+  █                          █                       █    █
+  █▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁█ ▁
+  4.93 s         Histogram: frequency by time        4.97 s <
+
+ Memory estimate: 3.39 GiB, allocs estimate: 149182.
 ```
 
 #### Model 4: maximum 3409 observation-per-subject (4 subjects)
 
-* MetidaCu v0.2.0 (Metida 0.5.1)
+* MetidaCu v0.4.0 (Metida 0.12.0)
 
 ```
 lmm = Metida.LMM(@formula(tumorsize ~ 1 + CancerStage), hdp;
@@ -247,18 +261,21 @@ random = Metida.VarEffect(Metida.@covstr(1|CancerStage), Metida.SI),
 ```
 
 ```
-julia> @benchmark  Metida.fit!(lmm; solver = :cuda)
-BenchmarkTools.Trial:
-  memory estimate:  5.69 GiB
-  allocs estimate:  43924
-  --------------
-  minimum time:     28.227 s (2.73% GC)
-  median time:      28.227 s (2.73% GC)
-  mean time:        28.227 s (2.73% GC)
-  maximum time:     28.227 s (2.73% GC)
-  --------------
-  samples:          1
-  evals/sample:     1
+@benchmark fit!($lmm, solver = :cuda, hes = false, f_tol=1e-8, x_tol=1e-8) seconds = 15
+```
+
+```
+julia> @benchmark fit!($lmm, solver = :cuda, hes = false, f_tol=1e-8, x_tol=1e-8) seconds = 15
+BenchmarkTools.Trial: 3 samples with 1 evaluation.
+ Range (min … max):  7.343 s …   7.372 s  ┊ GC (min … max): 1.62% … 1.48%
+ Time  (median):     7.346 s              ┊ GC (median):    1.49%
+ Time  (mean ± σ):   7.354 s ± 15.657 ms  ┊ GC (mean ± σ):  1.50% ± 0.11%
+
+  █    █                                                  █
+  █▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█ ▁
+  7.34 s         Histogram: frequency by time        7.37 s <
+
+ Memory estimate: 5.04 GiB, allocs estimate: 46549.
 ```
 
 ### Conclusion
