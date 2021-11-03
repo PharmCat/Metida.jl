@@ -1,9 +1,9 @@
 #dof_satter.jl
 
-function gradc(lmm::LMM{T}, theta; maxthreads = num_cores()) where T
+function gradc(lmm::LMM{T}, theta) where T
     if !lmm.result.fit error("Model not fitted!") end
     if !isnothing(lmm.result.grc) return lmm.result.grc end
-    vloptf(x) = sweep_β_cov(lmm, lmm.dv, x, lmm.result.beta; maxthreads = maxthreads)
+    vloptf(x) = sweep_β_cov(lmm, lmm.dv, x, lmm.result.beta)
     chunk  = ForwardDiff.Chunk{min(10, length(theta))}()
     jcfg   = ForwardDiff.JacobianConfig(vloptf, theta, chunk)
     jic    = ForwardDiff.jacobian(vloptf, theta, jcfg)
@@ -16,10 +16,10 @@ function gradc(lmm::LMM{T}, theta; maxthreads = num_cores()) where T
     grad
 end
 
-function getinvhes(lmm::LMM{T}; maxthreads = num_cores()) where T
+function getinvhes(lmm::LMM{T}) where T
     local A
     if isnothing(lmm.result.h)
-        lmm.result.h = hessian(lmm; maxthreads = maxthreads)
+        lmm.result.h = hessian(lmm)
         H = copy(lmm.result.h)
     else
         H = copy(lmm.result.h)
@@ -68,9 +68,9 @@ df = \\frac{2(LCL')^{2}}{g'Ag}
 Where: ``A = 2H^{-1}``, ``g = \\triangledown_{\\theta}(LC^{-1}_{\\theta}L')``
 
 """
-function dof_satter(lmm::LMM{T}, l::AbstractVector; maxthreads = num_cores()) where T
-    A, theta = getinvhes(lmm; maxthreads = maxthreads)
-    grad  = gradc(lmm, theta; maxthreads = maxthreads)
+function dof_satter(lmm::LMM{T}, l::AbstractVector) where T
+    A, theta = getinvhes(lmm)
+    grad  = gradc(lmm, theta)
     g  = Vector{T}(undef, length(grad))
     for i = 1:length(grad)
         #g[i] = (l' * grad[i] * l)[1]
@@ -86,10 +86,10 @@ end
 
 Return Satterthwaite approximation for the denominator degrees of freedom, where `n` - coefficient number.
 """
-function dof_satter(lmm::LMM{T}, n::Int; maxthreads = num_cores()) where T
+function dof_satter(lmm::LMM{T}, n::Int) where T
     l = zeros(Int, length(lmm.result.beta))
     l[n] = 1
-    dof_satter(lmm, l; maxthreads = maxthreads)
+    dof_satter(lmm, l)
 end
 """
     dof_satter(lmm::LMM{T}) where T
@@ -97,11 +97,11 @@ end
 Return Satterthwaite approximation for the denominator degrees of freedom for all coefficients.
 
 """
-function dof_satter(lmm::LMM{T}; maxthreads = num_cores()) where T
+function dof_satter(lmm::LMM{T}) where T
     isfitted(lmm) || error("Model not fitted")
     lb       = length(lmm.result.beta)
-    A, theta = getinvhes(lmm; maxthreads = maxthreads)
-    grad     = gradc(lmm, theta; maxthreads = maxthreads)
+    A, theta = getinvhes(lmm)
+    grad     = gradc(lmm, theta)
     dof      = Vector{Float64}(undef, lb)
     for gi = 1:lb
         l     = zeros(Int, lb)
@@ -138,10 +138,10 @@ where:
 * ``v_i = \\frac{2*Λ_{i,i}^2}{g' * A * g}``
 * ``E = \\sum_{i=1}^n {\\frac{v_i}(v_i - 2)}`` for ``v_i > 2``
 """
-function dof_satter(lmm::LMM{T}, l::AbstractMatrix; maxthreads = num_cores()) where T
+function dof_satter(lmm::LMM{T}, l::AbstractMatrix) where T
     if lmm.rankx != size(l, 2) error("size(l, 2) not equal rank X!") end
-    A, theta = getinvhes(lmm; maxthreads = maxthreads)
-    grad  = gradc(lmm, theta; maxthreads = maxthreads)
+    A, theta = getinvhes(lmm)
+    grad  = gradc(lmm, theta)
     g     = Vector{T}(undef, length(grad))
     lcl   = l*lmm.result.c*l'
     lclr  = rank(lcl)

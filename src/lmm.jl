@@ -199,11 +199,15 @@ function Base.show(io::IO, lmm::LMM)
         println(io, "    Fixed-effects parameters:")
         #println(io, "")
         #chl = '─'
-        z = lmm.result.beta ./ lmm.result.se
-        mx  = hcat(coefnames(lmm.mf), round.(lmm.result.beta, sigdigits = 6), round.(lmm.result.se, sigdigits = 6), round.(z, sigdigits = 6), round.(ccdf.(Chisq(1), abs2.(z)), sigdigits = 6))
-        mx  = vcat(["Name" "Estimate" "SE" "z" "Pr(>|z|)"], mx)
-        printmatrix(io, mx)
-        println(io, "")
+        ct = coeftable(lmm)
+        println(io, ct)
+        #z = lmm.result.beta ./ lmm.result.se
+        #mx  = hcat(coefnames(lmm.mf), round.(lmm.result.beta, sigdigits = 6), round.(lmm.result.se, sigdigits = 6), round.(z, sigdigits = 6), round.(ccdf.(Chisq(1), abs2.(z)), sigdigits = 6))
+        #pretty_table(io, mx;  header = ["Name", "Estimate", "SE", "z", "Pr(>|z|)"], alignment=:l, header_alignment = :c, tf = tf_line)
+
+        #mx  = vcat(["Name" "Estimate" "SE" "z" "Pr(>|z|)"], mx)
+        #printmatrix(io, mx)
+        #println(io, "")
         println(io, "    Variance components:")
         #println(io, "")
         println(io, "    θ vector: ", round.(lmm.result.theta, sigdigits = 6))
@@ -220,7 +224,8 @@ function Base.show(io::IO, lmm::LMM)
         for i = 1:lmm.covstr.tl
             if mx[i, 3] == :var mx[i, 4] = round.(mx[i, 4]^2, sigdigits = 6) end
         end
-        printmatrix(io, mx)
+        pretty_table(io, mx;  noheader = true, alignment=:l, tf = tf_borderless)
+        #printmatrix(io, mx)
     else
         println(io, "Not fitted.")
     end

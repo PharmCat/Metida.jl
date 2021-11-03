@@ -168,6 +168,9 @@ StatsBase.vcov(lmm::LMM) = copy(lmm.result.c)
 Standard error
 """
 StatsBase.stderror(lmm::LMM) = sqrt.(diag(vcov(lmm)))
+
+stderror!(v, lmm::LMM) = copyto!(v, lmm.result.se)
+
 """
     StatsBase.modelmatrix(lmm::LMM)
 
@@ -182,6 +185,23 @@ Response vector.
 StatsBase.response(lmm::LMM) = lmm.data.yv
 
 StatsBase.crossmodelmatrix(lmm::LMM) = (x = modelmatrix(lmm); Symmetric(x' * x))
+
+
+function StatsBase.coeftable(lmm::LMM)
+    co = coef(lmm)
+    se = stderror!(similar(co), lmm)
+    z  = co ./ se
+    pvalue = ccdf.(Chisq(1), abs2.(z))
+    names = coefnames(lmm)
+    return CoefTable(
+        hcat(co, se, z, pvalue),
+        ["Coef.", "Std. Error", "z", "Pr(>|z|)"],
+        names,
+        4,
+        3,
+    )
+end
+
 
 #=
 StatsBase.mss(model::LMM) = error("mss is not defined for $(typeof(model)).")

@@ -8,10 +8,10 @@ using Distributions, LinearAlgebra, StatsBase, ForwardDiff, CategoricalArrays#, 
 using Optim, LineSearches, MetidaBase
 using StatsModels
 import MetidaBase: Tables, MetidaModel, AbstractCovarianceStructure, AbstractCovmatMethod, AbstractCovarianceType, AbstractLMMDataBlocks, MetidaTable, metida_table, PrettyTables
-
+import MetidaBase.PrettyTables: TextFormat, pretty_table, tf_borderless, ft_printf
 import LinearAlgebra:checksquare
 import StatsModels: @formula, termvars
-import StatsBase: fit, fit!, coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
+import StatsBase: fit, fit!, coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response, CoefTable, coeftable
 import Base:show
 
 export @formula, @covstr,
@@ -34,10 +34,14 @@ getlog
 
 export coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
 
+num_cores() = Int(MetidaBase.num_cores())
+
 const LDCORR = sqrt(eps())
 const LOGLDCORR = log(sqrt(eps()))
 const NEWTON_OM = Optim.Newton(;alphaguess = LineSearches.InitialHagerZhang(), linesearch = LineSearches.HagerZhang())
 const LBFGS_OM  = Optim.LBFGS(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.Static())
+
+const METIDA_SETTINGS = Dict(:MAX_THREADS => num_cores())
 
 include("sweep.jl")
 include("varstruct.jl")
