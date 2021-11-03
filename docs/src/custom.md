@@ -89,7 +89,7 @@ lmm = Metida.LMM(@formula(response ~ 1 + factor*time), ftdf2;
 Example:
 
 ```@example lmmexample
-using Metida, DataFrame, CSV
+using Metida, DataFrames, CSV
 
 ftdf = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 df0 = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "df0.csv"); types = [String, String, Float64, Float64]) |> DataFrame

@@ -12,7 +12,7 @@ Fit LMM model.
 
 * `solver` - :default / :nlopt for using with MetidaNLopt.jl/ :cuda for using with MetidaCu.jl
 * `verbose` - :auto / 1 / 2 / 3
-* `varlinkf` - :exp / :sq / :identity [ref](./details/#Variance-parameters-link-function)
+* `varlinkf` - :exp / :sq / :identity [ref](@ref varlink_header)
 * `rholinkf` - :sigm / :atan / :sqsigm / :psigm
 * `aifirst` - first iteration with AI-like method - :default / :ai / :score
 * `g_tol` - absolute tolerance in the gradient

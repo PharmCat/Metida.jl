@@ -87,7 +87,7 @@ C = (\sum_{i=1}^{n} X_i'V_i^{-1}X_i)^{-1}
 
 Details see: https://github.com/joshday/SweepOperator.jl
 
-#### Variance parameters link function
+#### [Variance parameters link function](@id varlink_header)
 
 Apply special function to some part of theta vector.
 
