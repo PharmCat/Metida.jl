@@ -211,19 +211,18 @@ end
 
 Calculate Hessian matrix of REML for theta.
 """
-function hessian(lmm, theta; maxthreads = num_cores())
+function hessian(lmm, theta)
     #if !lmm.result.fit error("Model not fitted!") end
-    vloptf(x) = reml_sweep_β(lmm, x, lmm.result.beta; maxthreads = maxthreads)[1]
+    vloptf(x) = reml_sweep_β(lmm, x, lmm.result.beta)[1]
     chunk  = ForwardDiff.Chunk{min(10, length(theta))}()
     hcfg   = ForwardDiff.HessianConfig(vloptf, theta, chunk)
     ForwardDiff.hessian(vloptf, theta, hcfg)
 end
-function hessian(lmm; maxthreads = num_cores())
+function hessian(lmm)
     if !lmm.result.fit error("Model not fitted!") end
-    hessian(lmm, lmm.result.theta; maxthreads = maxthreads)
+    hessian(lmm, lmm.result.theta)
 end
 ################################################################################
-
 
 function get_symb(t::T; v = Vector{Symbol}(undef, 0)) where T <: Union{ConstantTerm, InterceptTerm, FunctionTerm}
     v
@@ -265,7 +264,6 @@ function logdet_(C::Cholesky, noerror)
 end
 =#
 
-
 function StatsModels.termvars(ve::VarEffect)
     termvars(ve.formula)
 end
@@ -274,5 +272,3 @@ function StatsModels.termvars(ve::Vector{VarEffect})
 end
 
 ################################################################################
-
-num_cores() = Int(MetidaBase.num_cores())

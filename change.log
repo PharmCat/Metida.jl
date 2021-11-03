@@ -1,6 +1,8 @@
 v0.12
   * remake custom types
   * dispatch used
+  * changes in printing
+  * docs
 
 v0.11.1
   * optimizations

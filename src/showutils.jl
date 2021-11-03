@@ -1,5 +1,18 @@
 #showutils.jl
+tf_line = TextFormat(up_right_corner     = '⎯',
+                       up_left_corner      = '⎯',
+                       bottom_left_corner  = '⎯',
+                       bottom_right_corner = '⎯',
+                       up_intersection     = '⎯',
+                       left_intersection   = '⎯',
+                       right_intersection  = '⎯',
+                       middle_intersection = '⎯',
+                       bottom_intersection = '⎯',
+                       column              = ' ',
+                       row                 = '⎯',
+                       hlines              = [:begin, :header]);
 
+#=
 function addspace(s::String, n::Int; first = false)::String
     if n > 0
         for i = 1:n
@@ -35,3 +48,4 @@ function printmatrix(io::IO, m::Matrix; header = false)
         print(io, "\n")
     end
 end
+=#
