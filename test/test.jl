@@ -272,6 +272,9 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 710.4250214813896 atol=1E-8
+
+    #@test Metida.dof_satter(lmm)[2] ≈ 20.946001137755598 atol=1E-8
+
 end
 @testset "  Model: AR/SI                                             " begin
     # SPSS 698.879
@@ -282,6 +285,8 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 698.8792511057682 atol=1E-8
+    #SPSS 22.313
+    @test Metida.dof_satter(lmm)[2] ≈ 22.43888645153638 atol=1E-8
 end
 
 @testset "  Model: ARMA/SI                                           " begin
@@ -293,6 +298,8 @@ end
     #[1.2964e-5, 0.0299594, 0.0699728, 3.69557]
     println(io, lmm.log)
     @test Metida.m2logreml(lmm)  ≈ 913.9176298311813 atol=1E-8
+    #SPSS 166
+    @test Metida.dof_satter(lmm)[2] ≈ 165.99999999999005 atol=1E-8
 end
 
 @testset "  Model: ARH/SI (subjects with &)                          " begin
@@ -303,6 +310,7 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 707.3765873864152 atol=1E-8
+    #SPSS 23.093
     @test Metida.dof_satter(lmm, [0, 1]) ≈ 23.111983305626193 atol=1E-2
 end
 @testset "  Model: INT, *, DIAG/SI                                   " begin
@@ -522,6 +530,7 @@ end
     repeated = Metida.VarEffect(Metida.@covstr(response+time|subject), Metida.SPEXP),
     )
     Metida.fit!(lmm)
+    #SPSS 1528.715
     @test Metida.m2logreml(lmm) ≈ 1528.7150702624508 atol=1E-6
 
     @test_nowarn Metida.fit!(lmm; varlinkf = :identity)

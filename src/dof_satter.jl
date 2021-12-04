@@ -25,24 +25,24 @@ function getinvhes(lmm::LMM{T}) where T
         H = copy(lmm.result.h)
     end
     theta = copy(lmm.result.theta)
-    qrd   = qr(H, Val(true))
+    qrd   = qr(H)
     vals  = falses(thetalength(lmm))
     for i = 1:thetalength(lmm)
-        if lmm.covstr.ct[qrd.jpvt[i]] == :var
+        if lmm.covstr.ct[i] == :var
             if abs(qrd.R[i, i]) > 1E-8
-                vals[qrd.jpvt[i]] = true
+                vals[i] = true
             else
-                theta[qrd.jpvt[i]] = zero(T)
-                H[:,qrd.jpvt[i]]  .= zero(T)
-                H[qrd.jpvt[i],:]  .= zero(T)
+                theta[i] = zero(T)
+                H[:,i]  .= zero(T)
+                H[i,:]  .= zero(T)
             end
-        elseif lmm.covstr.ct[qrd.jpvt[i]] == :rho
-            if 1.0 - abs(lmm.result.theta[qrd.jpvt[i]])  > 1E-6
-                vals[qrd.jpvt[i]] = true
+        elseif lmm.covstr.ct[i] == :rho
+            if 1.0 - abs(lmm.result.theta[i])  > 1E-6
+                vals[i] = true
             else
-                if lmm.result.theta[qrd.jpvt[i]] > 0 lmm.result.theta[qrd.jpvt[i]] = 1.0 else lmm.result.theta[qrd.jpvt[i]] = -1.0 end
-                H[:,qrd.jpvt[i]] .= zero(T)
-                H[qrd.jpvt[i],:] .= zero(T)
+                if lmm.result.theta[i] > 0 lmm.result.theta[i] = 1.0 else lmm.result.theta[i] = -1.0 end
+                H[:,i] .= zero(T)
+                H[i,:] .= zero(T)
             end
         end
     end

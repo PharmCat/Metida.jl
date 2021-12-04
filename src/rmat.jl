@@ -172,8 +172,8 @@ end
 =#
 function edistance(mx::AbstractMatrix{T}, i::Int, j::Int) where T
     sum = zero(T)
-    for c = 1:size(mx, 2)
-        sum += (mx[i,c] - mx[j,c])^2
+    @inbounds for c = 1:size(mx, 2)
+        sum += (mx[i, c] - mx[j, c])^2
     end
     return sqrt(sum)
 end
@@ -181,15 +181,15 @@ end
 #SPEXP
 function rmat!(mx, θ, rz,  ::SPEXP_)
     σ²    = θ[1]^2
-    θ     = exp(θ[2])
+    θe    = exp(θ[2])
     rn    = size(mx, 1)
     @simd for i = 1:size(mx, 1)
-        mx[i, i] += σ²
+        @inbounds mx[i, i] += σ²
     end
     if rn > 1
         for m = 1:rn - 1
             @simd for n = m + 1:rn
-                mx[m, n] += σ² * exp(-edistance(rz, m, n) / θ)
+                mx[m, n] += σ² * exp(-edistance(rz, m, n) / θe)
             end
         end
     end

@@ -165,13 +165,13 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         if !isposdef(Symmetric(lmm.result.h))
             lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian is not positive definite."))
         end
-        qrd = qr(lmm.result.h, Val(true))
+        qrd = qr(lmm.result.h)
         for i = 1:length(lmm.result.theta)
             if abs(qrd.R[i,i]) < 1E-8
-                if lmm.covstr.ct[qrd.jpvt[i]] == :var
-                    lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian parameter (variation) QR.R diagonal value ($(qrd.jpvt[i])) is less than 1e-8."))
-                elseif lmm.covstr.ct[qrd.jpvt[i]] == :rho
-                    lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian parameter (rho) QR.R diagonal value ($(qrd.jpvt[i])) is less than 1e-8."))
+                if lmm.covstr.ct[i] == :var
+                    lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian parameter (variation) QR.R diagonal value ($(i)) is less than 1e-8."))
+                elseif lmm.covstr.ct[i] == :rho
+                    lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian parameter (rho) QR.R diagonal value ($(i)) is less than 1e-8."))
                 end
             end
         end

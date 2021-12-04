@@ -394,14 +394,14 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     schema::Vector{Union{Tuple, AbstractTerm}}
     rcnames::Vector{String}
     # blocks for vcov matrix / variance blocking factor (subject)
-    vcovblock::Vector{Vector{UInt32}}
+    vcovblock::Vector{Vector{Int}}
     # number of random effect
     rn::Int
     # Z matrix
     z::Matrix{T}
     #subjz::Vector{BitArray{2}}
     # Blocks for each blocking subject, each effect, each effect subject sblock[block][rand eff][subj]
-    sblock::Vector{Vector{Vector{Vector{UInt32}}}}
+    sblock::Vector{Vector{Vector{Vector{Int}}}}
     #unit range z column range for each random effect
     zrndur::Vector{UnitRange{Int}}
     # repeated effect parametrization matrix

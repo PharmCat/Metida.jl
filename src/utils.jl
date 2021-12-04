@@ -3,8 +3,10 @@
 ################################################################################
 function initvar(y::Vector, X::Matrix{T}) where T
     qrx  = qr(X)
-    β    = inv(qrx.R) * qrx.Q' * y
-    r    = y .- X * β
+    β    = (inv(qrx.R) * qrx.Q') * y
+    r    = copy(y)
+    LinearAlgebra.BLAS.gemv!('N', 1.0, X, β, -1.0, r)
+    #r    = y .- X * β
     sum(x -> x * x, r)/(length(r) - size(X, 2)), β
 end
 ################################################################################
