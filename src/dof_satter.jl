@@ -28,21 +28,21 @@ function getinvhes(lmm::LMM{T}) where T
     qrd   = qr(H)
     vals  = falses(thetalength(lmm))
     for i = 1:thetalength(lmm)
-        if lmm.covstr.ct[i] == :var
-            if abs(qrd.R[i, i]) > 1E-8
-                vals[i] = true
-            else
-                theta[i] = zero(T)
-                H[:,i]  .= zero(T)
-                H[i,:]  .= zero(T)
-            end
-        elseif lmm.covstr.ct[i] == :rho
+        if lmm.covstr.ct[i] == :rho
             if 1.0 - abs(lmm.result.theta[i])  > 1E-6
                 vals[i] = true
             else
                 if lmm.result.theta[i] > 0 lmm.result.theta[i] = 1.0 else lmm.result.theta[i] = -1.0 end
                 H[:,i] .= zero(T)
                 H[i,:] .= zero(T)
+            end
+        else
+            if abs(qrd.R[i, i]) > 1E-8
+                vals[i] = true
+            else
+                theta[i] = zero(T)
+                H[:,i]  .= zero(T)
+                H[i,:]  .= zero(T)
             end
         end
     end

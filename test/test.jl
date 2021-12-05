@@ -475,6 +475,18 @@ end
 
 end
 
+@testset "  Model: Spatial Exponential                               " begin
+    lmm = Metida.LMM(@formula(response ~ 1), ftdf;
+    repeated = Metida.VarEffect(Metida.@covstr(response+time|subject), Metida.SPEXP),
+    )
+    Metida.fit!(lmm)
+    #SPSS 1528.715
+    @test Metida.m2logreml(lmm) ≈ 1528.7150702624508 atol=1E-6
+    @test Metida.dof_satter(lmm)[1] ≈ 17.719638497284286 atol=1E-2
+    @test_nowarn Metida.fit!(lmm; varlinkf = :identity)
+end
+
+
 ################################################################################
 #                                  Errors
 ################################################################################
@@ -525,6 +537,7 @@ end
     @test iAs ≈ iAb  atol=1E-6
 end
 
+#=
 @testset "  Experimental                                             " begin
     lmm = Metida.LMM(@formula(response ~ 1), ftdf;
     repeated = Metida.VarEffect(Metida.@covstr(response+time|subject), Metida.SPEXP),
@@ -535,3 +548,4 @@ end
 
     @test_nowarn Metida.fit!(lmm; varlinkf = :identity)
 end
+=#

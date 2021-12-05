@@ -182,6 +182,8 @@ end
 function rmat!(mx, θ, rz,  ::SPEXP_)
     σ²    = θ[1]^2
     θe    = exp(θ[2])
+    #θe    = θ[2]
+    #θe    = abs(θ[2])
     rn    = size(mx, 1)
     @simd for i = 1:size(mx, 1)
         @inbounds mx[i, i] += σ²

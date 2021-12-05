@@ -97,6 +97,8 @@ function fit!(lmm::LMM{T}; kwargs...) where T
                 θ[i] = initθ
             elseif lmm.covstr.ct[i] == :rho
                 θ[i] = 1e-4
+            elseif lmm.covstr.ct[i] == :theta
+                θ[i] = 1.0
             end
         end
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Initial θ: "*string(θ)))
