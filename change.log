@@ -1,3 +1,9 @@
+v0.12.1
+  * fix SPEXP satter dof
+  * julia 1.7 support
+  * minor changes
+  * docs
+
 v0.12
   * remake custom types
   * dispatch used
