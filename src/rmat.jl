@@ -197,3 +197,22 @@ function rmat!(mx, θ, rz,  ::SPEXP_)
     end
     nothing
 end
+################################################################################
+#SPPOW
+function rmat!(mx, θ, rz,  ::SPPOW_)
+    σ²    = θ[1]^2
+    ρ     = θ[2]
+
+    rn    = size(mx, 1)
+    @simd for i = 1:size(mx, 1)
+        @inbounds mx[i, i] += σ²
+    end
+    if rn > 1
+        for m = 1:rn - 1
+            @simd for n = m + 1:rn
+                mx[m, n] += σ² * ρ^edistance(rz, m, n)
+            end
+        end
+    end
+    nothing
+end
