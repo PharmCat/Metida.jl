@@ -81,6 +81,16 @@ Metida.HeterogeneousToeplitzParameterized
 Metida.SpatialExponential
 ```
 
+### Metida.SpatialPower
+```@docs
+Metida.SpatialPower
+```
+
+### Metida.SpatialGaussian
+```@docs
+Metida.SpatialGaussian
+```
+
 ### Metida.typeiii
 ```@docs
 Metida.typeiii

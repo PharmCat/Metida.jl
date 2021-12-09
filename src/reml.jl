@@ -15,6 +15,16 @@ function fillzeroutri!(a::AbstractArray{T})  where T
     fill!(tr, zero(T))
 end
 
+function checkmatrix!(mx)
+    e = true
+    for i = 1:size(mx,1)
+        if mx[1,1] <= 0
+            mx[1,1] = eps()^2
+            e = false
+        end
+    end
+    e
+end
 ################################################################################
 #                     REML without provided β
 ################################################################################
@@ -80,15 +90,23 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
         noerror = all(erroracc)
         θs₂     = Symmetric(θ₂)
         # Cholesky decomposition for matrix inverse θs₂ - Symmetric(θ₂); C = θ₂⁻¹
-        cθs₂    = cholesky(θs₂)
+        local logdetθ₂
+        noerror = noerror * checkmatrix!(θs₂)
+        try
+            cθs₂    = cholesky(θs₂)
         # β calculation
-        mul!(β, inv(cθs₂), βm)
+            mul!(β, inv(cθs₂), βm)
+        # final θ₂
+            logdetθ₂ = logdet(cθs₂)
+        catch
+            mul!(β, inv(θs₂), βm)
+            logdetθ₂ = logdet(θs₂)
+        end
         # θ₃
         @inbounds @simd for i = 1:n
             θ₃ += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹[i])
         end
-        # final θ₂
-        logdetθ₂ = logdet(cθs₂)
+
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θs₂, θ₃, noerror #REML, β, iC, θ₃, errors
 end
 ################################################################################

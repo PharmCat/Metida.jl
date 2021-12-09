@@ -274,3 +274,17 @@ function StatsModels.termvars(ve::Vector{VarEffect})
 end
 
 ################################################################################
+#=
+import Base.rand
+function rand(lmm::Main.Metida.LMM{T}, θ, m = nothing) where T
+    n = length(lmm.covstr.vcovblock)
+    v = Vector{Float64}(undef, 0)
+    for i = 1:n
+        q    = length(lmm.covstr.vcovblock[i])
+        V    = zeros(q, q)
+        Metida.vmatrix!(V, θ, lmm, i)
+        append!(v, rand(MvNormal(Symmetric(V))))
+    end
+    v
+end
+=#

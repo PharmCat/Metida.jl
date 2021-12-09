@@ -227,7 +227,11 @@ function Base.show(io::IO, lmm::LMM)
         pretty_table(io, mx;  noheader = true, alignment=:l, tf = tf_borderless)
         #printmatrix(io, mx)
     else
-        println(io, "Not fitted.")
+        if !any(x-> x.type == :WARN, lmm.log)
+            println(io, "Not fitted.")
+        else
+            printstyled(io, "Not fitted. See error(s) in log.\n"; color = :red)
+        end
     end
 end
 

@@ -21,6 +21,10 @@ struct TOEPHP_ <: AbstractCovarianceType
 end
 struct SPEXP_ <: AbstractCovarianceType end
 struct SPPOW_ <: AbstractCovarianceType end
+struct SPGAU_ <: AbstractCovarianceType end
+struct SPEXPD_ <: AbstractCovarianceType end
+struct SPPOWD_ <: AbstractCovarianceType end
+struct SPGAUD_ <: AbstractCovarianceType end
 struct UN_ <: AbstractCovarianceType end
 struct ZERO <: AbstractCovarianceType end
 
@@ -245,19 +249,15 @@ TOEPHP(p) = HeterogeneousToeplitzParameterized(p)
 """
     SpatialExponential()
 
-!!! warning
-    Experimental
-
 Spatian Exponential covariance structure. Used only for repeated effect.
 
 ```math
-R_{i,j} = \\sigma^{2} * exp(-dist(i,j)/exp(\\theta))
+R_{i,j} = \\sigma^{2} * exp(-dist(i,j)/\\theta)
 ```
 
-where `dist` - Euclidean distance between row-vectors of repeated effect matrix for subject `i` and `j`.
+where `dist` - Euclidean distance between row-vectors of repeated effect matrix for subject `i` and `j`, θ > 0.
 
 SPEXP = SpatialExponential()
-
 """
 function SpatialExponential()
     CovarianceType(SPEXP_())
@@ -267,12 +267,58 @@ const SPEXP = SpatialExponential()
 """
     SpatialPower()
 
-SpatialPower.
+!!! warning
+    Experimental
+
+Spatian Power covariance structure. Used only for repeated effect.
+
+```math
+R_{i,j} = \\sigma^{2} * \\rho^{dist(i,j)}
+```
+
+where `dist` - Euclidean distance between row-vectors of repeated effect matrix for subject `i` and `j`, 1 > ρ > -1.
+
+SPPOW = SpatialPower()
 """
 function SpatialPower()
     CovarianceType(SPPOW_())
 end
 const SPPOW = SpatialPower()
+
+"""
+    SpatialGaussian()
+
+!!! warning
+    Experimental
+
+Spatian Gaussian covariance structure. Used only for repeated effect.
+
+```math
+R_{i,j} = \\sigma^{2} * exp(- dist(i,j)^2 / \\theta^2)
+```
+
+where `dist` - Euclidean distance between row-vectors of repeated effect matrix for subject `i` and `j`, θ ≠ 0.
+
+SPGAU = SpatialGaussian()
+"""
+function SpatialGaussian()
+    CovarianceType(SPGAU_())
+end
+const SPGAU = SpatialGaussian()
+
+
+function SpatialExponentialD()
+    CovarianceType(SPEXPD_())
+end
+const SPEXPD = SpatialExponentialD()
+function SpatialPowerD()
+    CovarianceType(SPPOWD_())
+end
+const SPPOWD = SpatialPowerD()
+function SpatialGaussianD()
+    CovarianceType(SPGAUD_())
+end
+const SPGAUD = SpatialGaussianD()
 
 
 function RZero()
@@ -285,7 +331,7 @@ end
 function covstrparam(ct::DIAG_, t::Int, )::Tuple{Int, Int}
     return (t, 0)
 end
-function covstrparam(ct::Union{AR_, CS_}, ::Int)::Tuple{Int, Int}
+function covstrparam(ct::Union{AR_, CS_, SPPOW_}, ::Int)::Tuple{Int, Int}
     return (1, 1)
 end
 function covstrparam(ct::Union{ARH_, CSH_}, t::Int)::Tuple{Int, Int}
@@ -301,22 +347,26 @@ function covstrparam(ct::TOEPH_, t::Int)::Tuple{Int, Int}
     return (t, t - 1)
 end
 function covstrparam(ct::TOEPP_, ::Int)::Tuple{Int, Int}
-    return (1, ct.p - 1)
+    return (1, Int(ct.p - 1))
 end
 function covstrparam(ct::TOEPHP_, t::Int)::Tuple{Int, Int}
-    return (t, ct.p - 1)
+    return (t, Int(ct.p - 1))
 end
 function covstrparam(ct::UN_, t::Int)::Tuple{Int, Int}
-    return (t, t * (t + 1) / 2 - t)
+    return (t, Int(t * (t + 1) / 2 - t))
 end
-function covstrparam(ct::SPEXP_, ::Int)::Tuple{Int, Int, Int}
+function covstrparam(ct::Union{SPEXP_, SPGAU_}, ::Int)::Tuple{Int, Int, Int}
     return (1, 0, 1)
 end
-function covstrparam(ct::SPPOW_, ::Int)::Tuple{Int, Int}
-    return (1, 1)
+function covstrparam(ct::Union{SPEXPD_, SPGAUD_}, ::Int)::Tuple{Int, Int, Int}
+    return (2, 0, 1)
 end
+function covstrparam(ct::SPPOWD_, ::Int)::Tuple{Int, Int}
+    return (2, 1)
+end
+
 function covstrparam(ct::ZERO, t::Int)::Tuple{Int, Int}
-    return (t, t * (t + 1) / 2 - t)
+    return (0,0)
 end
 function covstrparam(ct::AbstractCovarianceType, ::Int)
     error("Unknown covariance type!")
@@ -378,11 +428,17 @@ function rcoefnames(s, t, ct::Union{TOEPH_, TOEPHP_})
     end
     return v
 end
-function rcoefnames(s, t, ct::SPEXP_)
+function rcoefnames(s, t, ct::Union{SPEXP_, SPGAU_})
     return ["σ² ", "θ "]
 end
 function rcoefnames(s, t, ct::SPPOW_)
     return ["σ² ", "ρ "]
+end
+function rcoefnames(s, t, ct::Union{SPEXPD_, SPGAUD_})
+    return ["σ² ", "σ²s ", "θ "]
+end
+function rcoefnames(s, t, ct::SPPOWD_)
+    return ["σ² ", "σ²s ", "ρ "]
 end
 function rcoefnames(s, t, ct::AbstractCovarianceType)
     v = Vector{String}(undef, t)
@@ -438,6 +494,18 @@ function Base.show(io::IO, ct::SPEXP_)
 end
 function Base.show(io::IO, ct::SPPOW_)
     print(io, "SPPOW")
+end
+function Base.show(io::IO, ct::SPGAU_)
+    print(io, "SPGAU")
+end
+function Base.show(io::IO, ct::SPEXPD_)
+    print(io, "SPEXPD")
+end
+function Base.show(io::IO, ct::SPPOWD_)
+    print(io, "SPPOWD")
+end
+function Base.show(io::IO, ct::SPGAUD_)
+    print(io, "SPGAUD")
 end
 function Base.show(io::IO, ct::UN_)
     print(io, "UN")

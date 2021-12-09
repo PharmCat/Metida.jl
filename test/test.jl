@@ -539,12 +539,37 @@ end
 
 
 @testset "  Experimental                                             " begin
+    io = IOBuffer();
     lmm = Metida.LMM(@formula(response ~ 1), ftdf;
     repeated = Metida.VarEffect(Metida.@covstr(response+time|subject), Metida.SPPOW),
     )
     Metida.fit!(lmm)
-    
+
     @test Metida.m2logreml(lmm) ≈ 1528.7150702624508 atol=1E-6
     @test Metida.dof_satter(lmm)[1] ≈ 17.719668409114718 atol=1E-2
     #@test_nowarn Metida.fit!(lmm; varlinkf = :identity)
+
+
+    lmm = Metida.LMM(@formula(response ~ 1), ftdf;
+    repeated = Metida.VarEffect(Metida.@covstr(response+time|subject), Metida.SPGAU),
+    )
+    Metida.fit!(lmm)
+    show(io, lmm.log)
+    #@test Metida.m2logreml(lmm) ≈ 1528.7150702624508 atol=1E-6
+    #@test Metida.dof_satter(lmm)[1] ≈ 17.719668409114718 atol=1E-2
+
+    lmm = Metida.LMM(@formula(response ~ 1), ftdf;
+    repeated = Metida.VarEffect(Metida.@covstr(response+time|subject), Metida.SPEXPD),
+    )
+    Metida.fit!(lmm)
+
+    lmm = Metida.LMM(@formula(response ~ 1), ftdf;
+    repeated = Metida.VarEffect(Metida.@covstr(response+time|subject), Metida.SPPOWD),
+    )
+    Metida.fit!(lmm)
+
+    lmm = Metida.LMM(@formula(response ~ 1), ftdf;
+    repeated = Metida.VarEffect(Metida.@covstr(response+time|subject), Metida.SPGAUD),
+    )
+    Metida.fit!(lmm)
 end

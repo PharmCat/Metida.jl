@@ -1,6 +1,9 @@
 v0.12.2
   * SPPOW
-  
+  * SPGAU
+  * θ₂ check in reml
+  * better error handling
+
 v0.12.1
   * fix SPEXP satter dof
   * julia 1.7 support

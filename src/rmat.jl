@@ -16,6 +16,9 @@ function rmat_base_inc!(mx, θ, covstr, block, sblock)
     mx
 end
 ################################################################################
+function rmat!(::Any, ::Any, ::Any,  ::AbstractCovarianceType)
+    error("No rmat! method defined for thit structure!")
+end
 #SI
 function rmat!(mx, θ, ::AbstractMatrix, ::SI_)
     θsq = θ[1]*θ[1]
@@ -181,8 +184,9 @@ end
 #SPEXP
 function rmat!(mx, θ, rz,  ::SPEXP_)
     σ²    = θ[1]^2
-    θe    = exp(θ[2])
-    #θe    = θ[2]
+    #θe    = exp(θ[2])
+    θe    = θ[2]
+    θe    = iszero(θe) ? 1e-16 : abs(θe)
     #θe    = abs(θ[2])
     rn    = size(mx, 1)
     @simd for i = 1:size(mx, 1)
@@ -202,7 +206,6 @@ end
 function rmat!(mx, θ, rz,  ::SPPOW_)
     σ²    = θ[1]^2
     ρ     = θ[2]
-
     rn    = size(mx, 1)
     @simd for i = 1:size(mx, 1)
         @inbounds mx[i, i] += σ²
@@ -210,7 +213,87 @@ function rmat!(mx, θ, rz,  ::SPPOW_)
     if rn > 1
         for m = 1:rn - 1
             @simd for n = m + 1:rn
+                ed = edistance(rz, m, n)
+                mx[m, n] += ρ > 0 ? σ² * ρ^ed : σ² * ρ^ed * cos(π * ed)
+            end
+        end
+    end
+    nothing
+end
+
+#SPGAU
+function rmat!(mx, θ, rz,  ::SPGAU_)
+    σ²    = θ[1]^2
+    #θe    = exp(θ[2])
+    θe    = θ[2]
+    θe    = iszero(θe) ? 1e-16 : θe^2
+    #θe    = θ[2]
+    #θe    = abs(θ[2])
+    rn    = size(mx, 1)
+    @simd for i = 1:size(mx, 1)
+        @inbounds mx[i, i] += σ²
+    end
+    if rn > 1
+        for m = 1:rn - 1
+            @simd for n = m + 1:rn
+                mx[m, n] += σ² * exp(- (edistance(rz, m, n)^2) / θe)
+            end
+        end
+    end
+    nothing
+end
+################################################################################
+#SPEXPD cos(pidij)
+function rmat!(mx, θ, rz,  ::SPEXPD_)
+    σ²    = θ[2]^2
+    σ²d   = θ[1]^2 + σ²
+    θe    = θ[3]
+    θe    = iszero(θe) ? 1e-16 : abs(θe)
+    rn    = size(mx, 1)
+    @simd for i = 1:size(mx, 1)
+        @inbounds mx[i, i] += σ²d
+    end
+    if rn > 1
+        for m = 1:rn - 1
+            @simd for n = m + 1:rn
+                mx[m, n] += σ² * exp(-edistance(rz, m, n) / θe)
+            end
+        end
+    end
+    nothing
+end
+#SPPOWD
+function rmat!(mx, θ, rz,  ::SPPOWD_)
+    σ²    = θ[2]^2
+    σ²d   = θ[1]^2 + σ²
+    ρ     = θ[3]
+    rn    = size(mx, 1)
+    @simd for i = 1:size(mx, 1)
+        @inbounds mx[i, i] += σ²d
+    end
+    if rn > 1
+        for m = 1:rn - 1
+            @simd for n = m + 1:rn
                 mx[m, n] += σ² * ρ^edistance(rz, m, n)
+            end
+        end
+    end
+    nothing
+end
+#SPGAUD
+function rmat!(mx, θ, rz,  ::SPGAUD_)
+    σ²    = θ[2]^2
+    σ²d   = θ[1]^2 + σ²
+    θe    = θ[3]
+    θe    = iszero(θe) ? 1e-16 : θe^2
+    rn    = size(mx, 1)
+    @simd for i = 1:size(mx, 1)
+        @inbounds mx[i, i] += σ²d
+    end
+    if rn > 1
+        for m = 1:rn - 1
+            @simd for n = m + 1:rn
+                mx[m, n] += σ² * exp(- (edistance(rz, m, n)^2) / θe)
             end
         end
     end
