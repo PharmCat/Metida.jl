@@ -544,6 +544,9 @@ end
     repeated = Metida.VarEffect(Metida.@covstr(response+time|subject), Metida.SPPOW),
     )
     Metida.fit!(lmm)
+    @test_nowarn Metida.rand(lmm)
+    @test_nowarn Metida.rand(lmm, [12.6609, 0.7])
+    @test_nowarn Metida.rand(lmm, [12.6609, 0.7], [40])
 
     @test Metida.m2logreml(lmm) ≈ 1528.7150702624508 atol=1E-6
     @test Metida.dof_satter(lmm)[1] ≈ 17.719668409114718 atol=1E-2
