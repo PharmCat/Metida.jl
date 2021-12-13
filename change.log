@@ -1,9 +1,12 @@
 v0.12.2
   * SPPOW
   * SPGAU
+  * export spatials
   * θ₂ check in reml
   * better error handling
   * experimental: random data
+  * test
+  * docs
 
 v0.12.1
   * fix SPEXP satter dof

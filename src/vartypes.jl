@@ -319,7 +319,11 @@ function SpatialGaussianD()
     CovarianceType(SPGAUD_())
 end
 const SPGAUD = SpatialGaussianD()
-
+#NOT IMPLEMENTED
+function Unstructured()
+    CovarianceType(UN_())
+end
+const UN = Unstructured()
 
 function RZero()
     CovarianceType(ZERO(), false)

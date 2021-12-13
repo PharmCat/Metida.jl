@@ -275,43 +275,52 @@ end
 
 ################################################################################
 
-import Base.rand
-function rand(lmm::LMM{T}) where T
+"""
+    rand(rng::AbstractRNG, lmm::LMM{T}) where T
+
+Generate random responce vector for fitted 'lmm' model.
+"""
+function rand(rng::AbstractRNG, lmm::LMM{T}) where T
     if !lmm.result.fit error("Model not fitted!") end
-    n = length(lmm.covstr.vcovblock)
-    v = Vector{Float64}(undef, 0)
-    for i = 1:n
-        q    = length(lmm.covstr.vcovblock[i])
-        m    = lmm.dv.xv[i] * lmm.result.beta
-        V    = zeros(q, q)
-        Metida.vmatrix!(V, lmm.result.theta, lmm, i)
-        append!(v, rand(MvNormal(m, Symmetric(V))))
-    end
-    v
+    rand(rng::AbstractRNG, lmm::LMM{T}, lmm.result.theta, lmm.result.beta)
 end
 
-function rand(lmm::LMM{T}, theta) where T
+"""
+    rand(rng::AbstractRNG, lmm::LMM{T}; theta) where T
+
+!!! warning
+    Experimental
+
+Generate random responce vector 'lmm' model, theta covariance vector, and zero means.
+"""
+function rand(rng::AbstractRNG, lmm::LMM{T}, theta) where T
     n = length(lmm.covstr.vcovblock)
-    v = Vector{Float64}(undef, 0)
+    v = Vector{Float64}(undef, nobs(lmm))
     for i = 1:n
         q    = length(lmm.covstr.vcovblock[i])
         V    = zeros(q, q)
         Metida.vmatrix!(V, theta, lmm, i)
-        append!(v, rand(MvNormal(Symmetric(V))))
+        copyto!(view(v, lmm.covstr.vcovblock[i]), rand(rng, MvNormal(Symmetric(V))))
     end
     v
 end
+rand(lmm::LMM, theta) = rand(default_rng(), lmm, theta)
+"""
+    rand(rng::AbstractRNG, lmm::LMM{T}; theta, beta) where T
 
-function rand(lmm::LMM{T}, theta, beta) where T
+Generate random responce vector 'lmm' model, theta covariance vector and mean's vector.
+"""
+function rand(rng::AbstractRNG, lmm::LMM{T}, theta, beta) where T
     if length(beta) != size(lmm.data.xv, 2) error("Wrong beta length!") end
     n = length(lmm.covstr.vcovblock)
-    v = Vector{Float64}(undef, 0)
+    v = Vector{Float64}(undef, nobs(lmm))
     for i = 1:n
         q    = length(lmm.covstr.vcovblock[i])
         m    = lmm.dv.xv[i] * beta
         V    = zeros(q, q)
         Metida.vmatrix!(V, theta, lmm, i)
-        append!(v, rand(MvNormal(m, Symmetric(V))))
+        copyto!(view(v, lmm.covstr.vcovblock[i]), rand(rng, MvNormal(m, Symmetric(V))))
     end
     v
 end
+rand(lmm::LMM, theta, beta) = rand(default_rng(), lmm, theta, beta)

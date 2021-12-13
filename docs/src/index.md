@@ -24,6 +24,9 @@ Implemented covariance structures:
   * Toeplitz Parameterized (TOEPP)
   * Heterogeneous Toeplitz (TOEPH)
   * Heterogeneous Toeplitz Parameterized (TOEPHP)
+  * Spatial Exponential (SPEXP)
+  * Spatial Power (SPPOW)
+  * Spatial Gaussian (SPGAU)
   * Custom Covariance Type
 
 ## Limitations

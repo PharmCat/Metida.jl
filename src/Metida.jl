@@ -12,7 +12,8 @@ import MetidaBase.PrettyTables: TextFormat, pretty_table, tf_borderless, ft_prin
 import LinearAlgebra:checksquare
 import StatsModels: @formula, termvars
 import StatsBase: fit, fit!, coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response, CoefTable, coeftable
-import Base:show
+import Base:show, rand
+import Random: default_rng, AbstractRNG
 
 export @formula, @covstr,
 SI, ScaledIdentity,
@@ -26,11 +27,14 @@ TOEP, Toeplitz,
 TOEPP, ToeplitzParameterized,
 TOEPH, HeterogeneousToeplitz,
 TOEPHP, HeterogeneousToeplitzParameterized,
+SPEXP, SpatialExponential,
+SPPOW, SpatialPower,
+SPGAU, SpatialGaussian,
 CovarianceType, CovmatMethod,
 fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, dof_contain, rankx, caic, lcontrast, typeiii, estimate, contrast,
 gmatrix, rmatrix, vmatrix!,
 AbstractCovarianceType, AbstractCovmatMethod, MetidaModel,
-getlog
+getlog, rand
 
 export coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
 

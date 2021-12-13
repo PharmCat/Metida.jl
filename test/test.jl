@@ -6,28 +6,15 @@ path    = dirname(@__FILE__)
 include("testdata.jl")
 
 @testset "  Publick API basic tests                                  " begin
-    io = IOBuffer();
     transform!(df0, :formulation => categorical, renamecols=false)
     # Basic, no block
     df0.nosubj = ones(size(df0, 1))
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.DIAG),
     )
-
-    # Basic show (before fitting)
-    Base.show(io, lmm)
     Metida.fit!(lmm)
-    @test_nowarn Base.show(io, lmm)
-    @test_nowarn Base.show(io, lmm.data)
-    @test_nowarn Base.show(io, lmm.result)
-    @test_nowarn Base.show(io, lmm.covstr)
-    @test_nowarn Base.show(io, lmm.covstr.repeated.covtype)
-    @test_nowarn Base.show(io, Metida.getlog(lmm))
-    #
     @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
-    #Verbose
-    Metida.fit!(lmm; verbose = 2, io = io)
-    @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
+
     #Missing
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0m;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
@@ -44,8 +31,6 @@ include("testdata.jl")
     t3table = Metida.typeiii(lmm;  ddf = :contain) # NOT VALIDATED
     t3table = Metida.typeiii(lmm;  ddf = :residual)
     t3table = Metida.typeiii(lmm)
-    Base.show(io, t3table)
-
 
     ############################################################################
 
@@ -90,7 +75,7 @@ include("testdata.jl")
     ct = Metida.contrast(lmm, [0 0 1 0 0 0; 0 0 0 1 0 0; 0 0 0 0 1 0])
     @test t3table.pval[3] ≈ ct.pval[1]
     est = Metida.estimate(lmm, [0,0,0,0,0,1]; level = 0.9)
-    @test_nowarn Base.show(io, est)
+
     ############################################################################
     # AI like algo
     Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm))
@@ -486,7 +471,44 @@ end
     @test_nowarn Metida.fit!(lmm; varlinkf = :identity)
 end
 
+@testset "  Show functions                                           " begin
+    io = IOBuffer();
+    @test_nowarn show(io, Metida.ScaledIdentity())
+    @test_nowarn show(io, Metida.Diag())
+    @test_nowarn show(io, Metida.Autoregressive())
+    @test_nowarn show(io, Metida.HeterogeneousAutoregressive())
+    @test_nowarn show(io, Metida.CompoundSymmetry())
+    @test_nowarn show(io, Metida.HeterogeneousCompoundSymmetry())
+    @test_nowarn show(io, Metida.AutoregressiveMovingAverage())
+    @test_nowarn show(io, Metida.Toeplitz())
+    @test_nowarn show(io, Metida.ToeplitzParameterized(3))
+    @test_nowarn show(io, Metida.HeterogeneousToeplitz())
+    @test_nowarn show(io, Metida.HeterogeneousToeplitzParameterized(3))
+    @test_nowarn show(io, Metida.SpatialExponential())
+    @test_nowarn show(io, Metida.SpatialPower())
+    @test_nowarn show(io, Metida.SpatialGaussian())
+    @test_nowarn show(io, Metida.Unstructured())
+    @test_nowarn show(io, Metida.ZERO())
 
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.CSH),
+    repeated = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
+    )
+    Metida.fit!(lmm; rholinkf = :psigm, verbose = 2, io = io)
+
+    @test_nowarn Base.show(io, lmm)
+    @test_nowarn Base.show(io, lmm.data)
+    @test_nowarn Base.show(io, lmm.result)
+    @test_nowarn Base.show(io, lmm.covstr)
+    @test_nowarn Base.show(io, lmm.covstr.repeated.covtype)
+    @test_nowarn Base.show(io, Metida.getlog(lmm))
+
+    t3table = Metida.typeiii(lmm)
+    Base.show(io, t3table)
+
+    est = Metida.estimate(lmm, [0,0,0,0,0,1]; level = 0.9)
+    @test_nowarn Base.show(io, est)
+end
 ################################################################################
 #                                  Errors
 ################################################################################

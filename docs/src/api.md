@@ -235,3 +235,8 @@ Metida.hessian
 ```@docs
 Metida.getlog
 ```
+
+### Metida.rand
+```@docs
+Metida.rand
+```
