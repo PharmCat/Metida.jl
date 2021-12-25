@@ -15,11 +15,16 @@ function fillzeroutri!(a::AbstractArray{T})  where T
     fill!(tr, zero(T))
 end
 
-function checkmatrix!(mx)
+function checkmatrix!(mx::AbstractMatrix{T}) where T
     e = true
-    for i = 1:size(mx,1)
-        if mx[1,1] <= 0
-            mx[1,1] = eps()^2
+    dm = zero(T)
+    for  i = 1:size(mx, 1)
+        if mx[i,i] > dm dm = mx[i,i] end
+    end
+    dm *= eps()
+    for i = 1:size(mx, 1)
+        if mx[i,i] <= dm
+            mx[i,i] = dm
             e = false
         end
     end
