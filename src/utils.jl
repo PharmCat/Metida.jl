@@ -173,7 +173,7 @@ function gmatrix(lmm::LMM{T}, r::Int) where T
     if isnothing(lmm.result.theta) error("No results or model not fitted!") end
     if r > length(lmm.covstr.random) error("Invalid random effect number: $(r)!") end
     G = zeros(T, lmm.covstr.q[r], lmm.covstr.q[r])
-    gmat_switch!(G, lmm.result.theta, lmm.covstr, r)
+    gmat!(G, view(lmm.result.theta, lmm.covstr.tr[r]), lmm.covstr.random[r].covtype.s)
     Symmetric(G)
 end
 """
@@ -201,16 +201,23 @@ function vmatrix!(V, G, θ, lmm::LMM, i::Int)
     rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
 end
 function vmatrix(θ, lmm::LMM, i::Int)
-    V = zeros(length(lmm.covstr.vcovblock[i]), length(lmm.covstr.vcovblock[i]))
-    vmatrix!(V, θ, lmm, i)
+    V    = zeros(length(lmm.covstr.vcovblock[i]), length(lmm.covstr.vcovblock[i]))
+    gvec = gmatvec(θ, lmm.covstr)
+    vmatrix!(V, gvec, θ, lmm, i)
     Symmetric(V)
 end
+"""
+    vmatrix(lmm::LMM, i::Int)
+
+Return variance-covariance matrix V for i bolock.
+"""
 function vmatrix(lmm::LMM, i::Int)
     vmatrix(lmm.result.theta, lmm, i)
 end
 function vmatrix(θ::Vector, covstr::CovStructure, i::Int)
-    V = zeros(length(covstr.vcovblock[i]), length(covstr.vcovblock[i]))
-    zgz_base_inc!(V, θ, covstr, covstr.vcovblock[i], covstr.sblock[i])
+    V    = zeros(length(covstr.vcovblock[i]), length(covstr.vcovblock[i]))
+    gvec = gmatvec(θ, covstr)
+    zgz_base_inc!(V, gvec, θ, covstr, covstr.vcovblock[i], covstr.sblock[i])
     rmat_base_inc!(V, θ[covstr.tr[end]], covstr, covstr.vcovblock[i], covstr.sblock[i])
     Symmetric(V)
 end

@@ -4,16 +4,17 @@
 __precompile__()
 module Metida
 
-using Distributions, LinearAlgebra, StatsBase, ForwardDiff, CategoricalArrays#, Polyester#, LoopVectorization
+using Distributions, LinearAlgebra, StatsBase, ForwardDiff, CategoricalArrays, ProgressMeter, Random#, Polyester#, LoopVectorization
 using Optim, LineSearches, MetidaBase
 using StatsModels
 import MetidaBase: Tables, MetidaModel, AbstractCovarianceStructure, AbstractCovmatMethod, AbstractCovarianceType, AbstractLMMDataBlocks, MetidaTable, metida_table, PrettyTables
 import MetidaBase.PrettyTables: TextFormat, pretty_table, tf_borderless, ft_printf
 import LinearAlgebra:checksquare
-import StatsModels: @formula, termvars
+import StatsModels: @formula, termvars, ModelFrame
 import StatsBase: fit, fit!, coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response, CoefTable, coeftable
 import Base:show, rand
 import Random: default_rng, AbstractRNG
+import Tables: istable
 
 export @formula, @covstr,
 SI, ScaledIdentity,
@@ -68,6 +69,8 @@ include("dof_contain.jl")
 include("fvalue.jl")
 include("typeiii.jl")
 include("estimate.jl")
+include("random.jl")
+#include("miboot.jl")
 
     const NOREPEAT = VarEffect(Metida.@covstr(1|1), Metida.ScaledIdentity())
 end # module

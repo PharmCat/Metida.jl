@@ -129,6 +129,7 @@ function core_sweep_β(lmm, data, θ::Vector{T}, β, n) where T
     accθ₂     = Vector{Matrix{T}}(undef, ncore)
     accθ₃     = zeros(T, ncore)
     erroracc  = trues(ncore)
+    gvec      = gmatvec(θ, lmm.covstr)
     d, r = divrem(n, ncore)
     Base.Threads.@threads for t = 1:ncore
     #@batch for t = 1:ncore
@@ -146,7 +147,7 @@ function core_sweep_β(lmm, data, θ::Vector{T}, β, n) where T
             fillzeroutri!(V)
             copyto!(Vx, data.xv[i])
             fillzeroutri!(Vc)
-            vmatrix!(V, θ, lmm, i)
+            vmatrix!(V, gvec, θ, lmm, i)
             #-----------------------------------------------------------------------
             swm, swr, ne = sweepb!(Vector{T}(undef, qswm), Vp, 1:q; logdet = true)
             #-----------------------------------------------------------------------
