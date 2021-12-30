@@ -14,7 +14,6 @@ import StatsModels: @formula, termvars, ModelFrame
 import StatsBase: fit, fit!, coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response, CoefTable, coeftable
 import Base:show, rand
 import Random: default_rng, AbstractRNG
-import Tables: istable
 
 export @formula, @covstr,
 SI, ScaledIdentity,
