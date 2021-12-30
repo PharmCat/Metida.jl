@@ -192,20 +192,29 @@ end
 
 Update variance-covariance matrix V for i bolock. Upper triangular updated.
 """
-function vmatrix!(V, θ, lmm, i)
+function vmatrix!(V, θ, lmm::LMM, i::Int)
     zgz_base_inc!(V, θ, lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
     rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
 end
-function vmatrix(θ, lmm, i)
+function vmatrix!(V, G, θ, lmm::LMM, i::Int)
+    zgz_base_inc!(V, G, θ, lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
+    rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
+end
+function vmatrix(θ, lmm::LMM, i::Int)
     V = zeros(length(lmm.covstr.vcovblock[i]), length(lmm.covstr.vcovblock[i]))
     vmatrix!(V, θ, lmm, i)
     Symmetric(V)
 end
-function vmatrix(lmm, i)
+function vmatrix(lmm::LMM, i::Int)
     vmatrix(lmm.result.theta, lmm, i)
 end
-
-function nblocks(lmm)
+function vmatrix(θ::Vector, covstr::CovStructure, i::Int)
+    V = zeros(length(covstr.vcovblock[i]), length(covstr.vcovblock[i]))
+    zgz_base_inc!(V, θ, covstr, covstr.vcovblock[i], covstr.sblock[i])
+    rmat_base_inc!(V, θ[covstr.tr[end]], covstr, covstr.vcovblock[i], covstr.sblock[i])
+    Symmetric(V)
+end
+function nblocks(lmm::LMM)
     return length(lmm.covstr.vcovblock)
 end
 """
@@ -215,7 +224,7 @@ Calculate Hessian matrix of REML for theta.
 """
 function hessian(lmm, theta)
     #if !lmm.result.fit error("Model not fitted!") end
-    vloptf(x) = reml_sweep_β(lmm, x, lmm.result.beta)[1]
+    vloptf(x) = reml_sweep_β(lmm, lmm.dv, x, lmm.result.beta)[1]
     chunk  = ForwardDiff.Chunk{min(10, length(theta))}()
     hcfg   = ForwardDiff.HessianConfig(vloptf, theta, chunk)
     ForwardDiff.hessian(vloptf, theta, hcfg)
@@ -274,53 +283,3 @@ function StatsModels.termvars(ve::Vector{VarEffect})
 end
 
 ################################################################################
-
-"""
-    rand(rng::AbstractRNG, lmm::LMM{T}) where T
-
-Generate random responce vector for fitted 'lmm' model.
-"""
-function rand(rng::AbstractRNG, lmm::LMM{T}) where T
-    if !lmm.result.fit error("Model not fitted!") end
-    rand(rng::AbstractRNG, lmm::LMM{T}, lmm.result.theta, lmm.result.beta)
-end
-
-"""
-    rand(rng::AbstractRNG, lmm::LMM{T}; theta) where T
-
-!!! warning
-    Experimental
-
-Generate random responce vector 'lmm' model, theta covariance vector, and zero means.
-"""
-function rand(rng::AbstractRNG, lmm::LMM{T}, theta) where T
-    n = length(lmm.covstr.vcovblock)
-    v = Vector{Float64}(undef, nobs(lmm))
-    for i = 1:n
-        q    = length(lmm.covstr.vcovblock[i])
-        V    = zeros(q, q)
-        Metida.vmatrix!(V, theta, lmm, i)
-        copyto!(view(v, lmm.covstr.vcovblock[i]), rand(rng, MvNormal(Symmetric(V))))
-    end
-    v
-end
-rand(lmm::LMM, theta) = rand(default_rng(), lmm, theta)
-"""
-    rand(rng::AbstractRNG, lmm::LMM{T}; theta, beta) where T
-
-Generate random responce vector 'lmm' model, theta covariance vector and mean's vector.
-"""
-function rand(rng::AbstractRNG, lmm::LMM{T}, theta, beta) where T
-    if length(beta) != size(lmm.data.xv, 2) error("Wrong beta length!") end
-    n = length(lmm.covstr.vcovblock)
-    v = Vector{Float64}(undef, nobs(lmm))
-    for i = 1:n
-        q    = length(lmm.covstr.vcovblock[i])
-        m    = lmm.dv.xv[i] * beta
-        V    = zeros(q, q)
-        Metida.vmatrix!(V, theta, lmm, i)
-        copyto!(view(v, lmm.covstr.vcovblock[i]), rand(rng, MvNormal(m, Symmetric(V))))
-    end
-    v
-end
-rand(lmm::LMM, theta, beta) = rand(default_rng(), lmm, theta, beta)

@@ -18,11 +18,11 @@ end
 function checkmatrix!(mx::AbstractMatrix{T}) where T
     e = true
     dm = zero(T)
-    for  i = 1:size(mx, 1)
+    @inbounds for  i = 1:size(mx, 1)
         if mx[i,i] > dm dm = mx[i,i] end
     end
     dm *= eps()
-    for i = 1:size(mx, 1)
+    @inbounds for i = 1:size(mx, 1)
         if mx[i,i] <= dm
             mx[i,i] = dm
             e = false
@@ -47,6 +47,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
     β             = Vector{T}(undef, lmm.rankx)
     #---------------------------------------------------------------------------
     #logdetθ₂      = zero(T)
+    gvec          = gmatvec(θ, lmm.covstr)
     noerror       = true
         ncore     = min(num_cores(), n, METIDA_SETTINGS[:MAX_THREADS])
         accθ₁     = zeros(T, ncore)
@@ -77,7 +78,7 @@ function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas
                 fillzeroutri!(Vc)
             #-------------------------------------------------------------------
             # Make V matrix
-                vmatrix!(V, θ, lmm, i)
+                vmatrix!(V, gvec, θ, lmm, i)
             #-----------------------------------------------------------------------
                 swm, swr, ne  = sweepb!(Vector{T}(undef, qswm), Vp, 1:q; logdet = true, syrkblas = syrkblas)
                 V⁻¹[i] = V

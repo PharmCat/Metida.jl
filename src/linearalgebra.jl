@@ -20,19 +20,15 @@ end
 Change θ (only upper triangle).
 """
 function mulαβαtinc!(θ::AbstractMatrix{T}, A::AbstractMatrix, B::AbstractMatrix) where T
-    #1 alloc
     axb  = axes(B, 1)
-    axa  = axes(A, 1)
     sa   = size(A, 1)
-    c  = Vector{T}(undef, size(B, 1))
-    for i ∈ axa
-        fill!(c, zero(T))
-        @inbounds  for n ∈ axb, m ∈ axb
-            c[n] += B[m, n] * A[i, m]
-        end
-        #upper triangular n = i:p
-        @inbounds  for n ∈ i:sa, m ∈ axb
-            θ[i, n] += A[n, m] * c[m]
+    for m ∈ 1:sa
+        for n ∈ m:sa
+            for j ∈ axb
+                @inbounds for i ∈ axb
+                    θ[m, n] +=  A[m, i] * B[i, j] * A[n, j]
+                end
+            end
         end
     end
     θ

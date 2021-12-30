@@ -4,8 +4,18 @@
 
 ################################################################################
 function gmat_switch!(G, θ, covstr, r)
-    gmat!(G, θ[covstr.tr[r]], covstr.random[r].covtype.s)
+    gmat!(G, view(θ, covstr.tr[r]), covstr.random[r].covtype.s)
     G
+end
+function gmatvec(θ::Vector{T}, covstr) where T
+    gt = Tuple(Symmetric(Matrix{T}(undef, covstr.q[r], covstr.q[r])) for r in 1:covstr.rn)
+    for r = 1:covstr.rn
+        fill!(gt[r].data, zero(T))
+        if covstr.random[r].covtype.z
+            gmat!(gt[r].data, view(θ, covstr.tr[r]), covstr.random[r].covtype.s)
+        end
+    end
+    gt
 end
 ################################################################################
 function zgz_base_inc!(mx::AbstractArray{T}, θ::AbstractArray{T}, covstr, block, sblock) where T
@@ -17,6 +27,22 @@ function zgz_base_inc!(mx::AbstractArray{T}, θ::AbstractArray{T}, covstr, block
             zblock    = view(covstr.z, block, covstr.zrndur[r])
             @inbounds for i = 1:length(sblock[r])
                 mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i]), view(zblock, sblock[r][i], :), G)
+            end
+        end
+    end
+    #    fill!(mx, zero(T))
+    #end
+    mx
+end
+function zgz_base_inc!(mx::AbstractArray{T}, G, θ::AbstractArray{T}, covstr, block, sblock) where T
+    if covstr.random[1].covtype.z
+        #length of random to covstr
+        for r = 1:covstr.rn
+            #G = fill!(Symmetric(Matrix{T}(undef, covstr.q[r], covstr.q[r])), zero(T))
+            #gmat_switch!(G.data, θ, covstr, r)
+            zblock    = view(covstr.z, block, covstr.zrndur[r])
+            @inbounds for i = 1:length(sblock[r])
+                mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i]), view(zblock, sblock[r][i], :), G[r])
             end
         end
     end
