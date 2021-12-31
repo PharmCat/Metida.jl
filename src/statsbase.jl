@@ -68,11 +68,11 @@ Coefficients names.
 StatsBase.coefnames(lmm::LMM) = StatsBase.coefnames(lmm.mf)
 
 """
-    StatsBase.nobs(lmm::LMM)
+    StatsBase.nobs(lmm::MetiaModel)
 
 Number of observations.
 """
-function StatsBase.nobs(lmm::LMM)
+function StatsBase.nobs(lmm::MetidaModel)
     return length(lmm.data.yv)
 end
 

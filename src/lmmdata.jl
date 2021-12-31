@@ -1,11 +1,11 @@
 #lmmdata.jl
 
-struct LMMData{T <: AbstractFloat}
+struct LMMData{T}
     # Fixed effect matrix
     xv::Matrix{T}
     # Responce vector
     yv::Vector{T}
-    function LMMData(xa::Matrix{T}, ya::Vector{T}) where T <: AbstractFloat
+    function LMMData(xa::Matrix{T}, ya::Vector{T}) where T
         new{T}(xa, ya)
     end
 end
@@ -15,6 +15,9 @@ struct LMMDataViews{T} <: AbstractLMMDataBlocks
     xv::Vector{Matrix{T}}
     # Responce vector views
     yv::Vector{Vector{T}}
+    function LMMDataViews(xv::Vector{Matrix{T}}, yv::Vector{Vector{T}}) where T
+        new{T}(xv, yv)
+    end
     function LMMDataViews(xv::Matrix{T}, yv::Vector{T}, vcovblock) where T
         #x1 = view(xv, vcovblock[1],:)
         #y1 = view(yv, vcovblock[1])
@@ -26,9 +29,9 @@ struct LMMDataViews{T} <: AbstractLMMDataBlocks
             x[i] = xv[vcovblock[i],:]
             y[i] = yv[vcovblock[i]]
         end
-        new{T}(x, y)
+        LMMDataViews(x, y)
     end
-    function LMMDataViews(lmm)
+    function LMMDataViews(lmm::MetidaModel)
         return LMMDataViews(lmm.data.xv, lmm.data.yv, lmm.covstr.vcovblock)
     end
 end

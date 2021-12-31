@@ -34,7 +34,7 @@ CovarianceType, CovmatMethod,
 fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, dof_contain, rankx, caic, lcontrast, typeiii, estimate, contrast,
 gmatrix, rmatrix, vmatrix!,
 AbstractCovarianceType, AbstractCovmatMethod, MetidaModel,
-getlog, rand
+getlog, rand, rand!
 
 export coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
 

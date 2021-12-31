@@ -82,7 +82,7 @@ include("testdata.jl")
     ct = Metida.contrast(lmm, [0 0 1 0 0 0; 0 0 0 1 0 0; 0 0 0 0 1 0])
     @test t3table.pval[3] ≈ ct.pval[1]
     est = Metida.estimate(lmm, [0,0,0,0,0,1]; level = 0.9)
-
+    est = Metida.estimate(lmm; level = 0.9)
     ############################################################################
     # AI like algo
     Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm))
@@ -511,6 +511,9 @@ end
     @test_nowarn show(io, Metida.SpatialPower())
     @test_nowarn show(io, Metida.SpatialGaussian())
     @test_nowarn show(io, Metida.Unstructured())
+    @test_nowarn show(io, Metida.SpatialExponentialD())
+    @test_nowarn show(io, Metida.SpatialPowerD())
+    @test_nowarn show(io, Metida.SpatialGaussianD())
     @test_nowarn show(io, Metida.ZERO())
 
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;

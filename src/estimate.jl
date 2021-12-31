@@ -25,6 +25,37 @@ function estimate(lmm, l::AbstractVector; level = 0.95, name = "Estimate")
     ciu = est + d
     EstimateTable([name], [est], [se], [df], [t], [pval], [level], [cil], [ciu])
 end
+"""
+    estimate(lmm; level = 0.95)
+
+Estimates table. Satter DF used.
+"""
+function estimate(lmm; level = 0.95)
+    coe   = coef(lmm)
+    l     = zeros(length(coe))
+    vname = coefnames(lmm)
+    vest  = Vector{Float64}(undef, length(coe))
+    vse   = Vector{Float64}(undef, length(coe))
+    vdf   = Vector{Float64}(undef, length(coe))
+    vt    = Vector{Float64}(undef, length(coe))
+    vpval = Vector{Float64}(undef, length(coe))
+    vlevel= fill(level, length(coe))
+    vcil  = Vector{Float64}(undef, length(coe))
+    vciu  = Vector{Float64}(undef, length(coe))
+    for i = 1:length(coe)
+        fill!(l, 0)
+        l[i]  = 1
+        vest[i] = coe'*l
+        vse[i]  = sqrt(mulαtβα(l, vcov(lmm)))
+        vdf[i]  = dof_satter(lmm, l)
+        vt[i]   = abs(vest[i]/vse[i])
+        vpval[i]= ccdf(TDist(vdf[i]), vt[i])*2
+        d       = vse[i]*quantile(TDist(vdf[i]), 1-(1-level)/2)
+        vcil[i] = vest[i] - d
+        vciu[i] = vest[i] + d
+    end
+    EstimateTable(vname, vest, vse, vdf, vt, vpval, vlevel, vcil, vciu)
+end
 
 function Base.show(io::IO, et::EstimateTable)
     println(io, "  Estiamte")

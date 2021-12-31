@@ -240,3 +240,8 @@ Metida.getlog
 ```@docs
 Metida.rand
 ```
+
+### Metida.rand!
+```@docs
+Metida.rand
+```

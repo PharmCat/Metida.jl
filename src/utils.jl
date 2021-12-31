@@ -193,7 +193,8 @@ end
 Update variance-covariance matrix V for i bolock. Upper triangular updated.
 """
 function vmatrix!(V, θ, lmm::LMM, i::Int)
-    zgz_base_inc!(V, θ, lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
+    gvec = gmatvec(θ, lmm.covstr)
+    zgz_base_inc!(V, gvec, θ, lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
     rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
 end
 function vmatrix!(V, G, θ, lmm::LMM, i::Int)
@@ -214,6 +215,7 @@ Return variance-covariance matrix V for i bolock.
 function vmatrix(lmm::LMM, i::Int)
     vmatrix(lmm.result.theta, lmm, i)
 end
+#deprecated
 function vmatrix(θ::Vector, covstr::CovStructure, i::Int)
     V    = zeros(length(covstr.vcovblock[i]), length(covstr.vcovblock[i]))
     gvec = gmatvec(θ, covstr)

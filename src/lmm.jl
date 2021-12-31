@@ -34,8 +34,22 @@ struct LMM{T} <: MetidaModel
     maxvcbl::Int
     log::Vector{LMMLogMsg}
 
+    function LMM(model::FormulaTerm,
+        mf::ModelFrame,
+        mm::ModelMatrix,
+        covstr::CovStructure{T},
+        data::LMMData{T},
+        dv::LMMDataViews{T},
+        nfixed::Int,
+        rankx::Int,
+        result::ModelResult,
+        maxvcbl::Int,
+        log::Vector{LMMLogMsg}) where T
+        new{eltype(mm.m)}(model, mf, mm, covstr, data, dv, nfixed, rankx, result, maxvcbl, log)
+    end
     function LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
         #need check responce - Float
+        if !Tables.istable(data) error("Data not a table!") end
         if repeated === nothing && random === nothing
             error("No effects specified!")
         end
@@ -47,10 +61,14 @@ struct LMM{T} <: MetidaModel
         if !isnothing(repeated)
             union!(tv, termvars(repeated))
         end
-        data, data_ = StatsModels.missing_omit(NamedTuple{tuple(tv...)}(Tables.columntable(data)))
-
+        ct = Tables.columntable(data)
+        if !(tv ⊆ keys(ct)) error("Some column(s) not found!") end
+        data, data_ = StatsModels.missing_omit(NamedTuple{tuple(tv...)}(ct))
         lmmlog = Vector{LMMLogMsg}(undef, 0)
-        mf     = ModelFrame(model, data; contrasts = contrasts)
+        sch    = schema(model, data, contrasts)
+        f      = apply_schema(model, sch, MetidaModel)
+        mf     = ModelFrame(f, sch, data, MetidaModel)
+        #mf     = ModelFrame(model, data; contrasts = contrasts)
         mm     = ModelMatrix(mf)
         nfixed = nterms(mf)
         if repeated === nothing
@@ -133,6 +151,13 @@ Return rank of `X` matrix.
 function rankx(lmm::LMM)
     Int(lmm.rankx)
 end
+
+function nblocks(mm::MetidaModel)
+    return length(mm.covstr.vcovblock)
+end
+function maxblocksize(mm::MetidaModel)
+    mm.maxvcbl
+end
 ################################################################################
 function lmmlog!(io, lmmlog::Vector{LMMLogMsg}, verbose, vmsg)
     if verbose == 1
@@ -179,7 +204,7 @@ function Base.show(io::IO, lmm::LMM)
         println(io, "    Model: $(lmm.covstr.repeated.model === nothing ? "nothing" : string(lmm.covstr.repeated.model, "|", lmm.covstr.repeated.subj))")
         println(io, "    Type: $(lmm.covstr.repeated.covtype.s) ($(lmm.covstr.t[end]))")
     end
-    println(io, "Blocks: $(length(lmm.covstr.vcovblock)), Maximum block size: $(lmm.maxvcbl)")
+    println(io, "Blocks: $(nblocks(lmm)), Maximum block size: $(maxblocksize(lmm))")
     #println(io, "")
     if lmm.result.fit
         print(io, "Status: ")
