@@ -15,18 +15,25 @@ include("testdata.jl")
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
 
+
+
     #Missing
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0m;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
     )
     Metida.fit!(lmm)
-    @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
+    @test Metida.m2logreml(lmm) ≈ 16.636012616466203 atol=1E-6
+
+    #milmm = Metida.MILMM(lmm, df0m)
+
     #Basic, Subject block
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
     )
     Metida.fit!(lmm; aifirst = true)
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
+
+
 
     t3table = Metida.typeiii(lmm;  ddf = :contain) # NOT VALIDATED
     t3table = Metida.typeiii(lmm;  ddf = :residual)
@@ -259,7 +266,6 @@ end
     @test Metida.m2logreml(lmm)  ≈ 710.4250214813896 atol=1E-8
 
     #@test Metida.dof_satter(lmm)[2] ≈ 20.946001137755598 atol=1E-8
-
 end
 @testset "  Model: AR/SI                                             " begin
     # SPSS 698.879
@@ -471,6 +477,23 @@ end
     @test_nowarn Metida.fit!(lmm; varlinkf = :identity)
 end
 
+@testset "  Random                                                   " begin
+    lmm = Metida.LMM(@formula(response ~ 1 + factor*time), ftdf2;
+    random = Metida.VarEffect(Metida.@covstr(factor|subject&factor), Metida.DIAG),
+    repeated = Metida.VarEffect(Metida.@covstr(1|subject&factor), Metida.AR),
+    )
+    Metida.fit!(lmm)
+    #@test Metida.m2logreml(lmm) ≈ 710.0962305879676 atol=1E-6
+    @test_nowarn Metida.rand(lmm)
+    @test_nowarn Metida.rand(lmm, [4.54797, 2.82342, 1.05771, 0.576979])
+    @test_nowarn Metida.rand(lmm, [4.54797, 2.82342, 1.05771, 0.576979], [44.3, 5.3, 0.5, 0.29])
+    v = zeros(nobs(lmm))
+    @test_nowarn Metida.rand!(v, lmm)
+    @test_nowarn Metida.rand!(v, lmm, [4.54797, 2.82342, 1.05771, 0.576979])
+    @test_nowarn Metida.rand!(v, lmm, [4.54797, 2.82342, 1.05771, 0.576979], [44.3, 5.3, 0.5, 0.29])
+
+end
+
 @testset "  Show functions                                           " begin
     io = IOBuffer();
     @test_nowarn show(io, Metida.ScaledIdentity())
@@ -566,10 +589,6 @@ end
     repeated = Metida.VarEffect(Metida.@covstr(response+time|subject), Metida.SPPOW),
     )
     Metida.fit!(lmm)
-    @test_nowarn Metida.rand(lmm)
-    @test_nowarn Metida.rand(lmm, [12.6609, 0.7])
-    @test_nowarn Metida.rand(lmm, [12.6609, 0.7], [40])
-
     @test Metida.m2logreml(lmm) ≈ 1528.7150702624508 atol=1E-6
     @test Metida.dof_satter(lmm)[1] ≈ 17.719668409114718 atol=1E-2
     #@test_nowarn Metida.fit!(lmm; varlinkf = :identity)

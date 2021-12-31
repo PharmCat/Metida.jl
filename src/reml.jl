@@ -33,10 +33,12 @@ end
 ################################################################################
 #                     REML without provided β
 ################################################################################
+#=
 function reml_sweep_β(lmm, θ::Vector{T}; syrkblas::Bool = false) where T <: Number
     data = LMMDataViews(lmm)
     reml_sweep_β(lmm, data, θ; syrkblas = syrkblas)
 end
+=#
 function reml_sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}; syrkblas::Bool = false) where T <: Number
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
@@ -118,11 +120,12 @@ end
 ################################################################################
 #                     REML with provided β
 ################################################################################
+#=
 function reml_sweep_β(lmm, θ::Vector{T}, β::Vector) where T <: Number
     data = LMMDataViews(lmm)
     reml_sweep_β(lmm, data, θ, β)
 end
-
+=#
 function core_sweep_β(lmm, data, θ::Vector{T}, β, n) where T
     ncore     = min(num_cores(), n, METIDA_SETTINGS[:MAX_THREADS])
     accθ₁     = zeros(T, ncore)
