@@ -31,9 +31,11 @@ Implemented covariance structures:
 
 ## Limitations
 
-  * Maximum length of block more than ~400 (observation-per-subject)
-  * Observation number more than 160 000
-  * For MetidaCu number of blocks more than 40  (maximum length of block more than 4000)
+  * Maximum length of block more than ~400 (observation-per-subject).
+  * Observation number more than 160 000.
+  * For MetidaCu number of blocks more than 40  (maximum length of block more than 4000).
+
+Actually Metida can fit datasets with wore than  160k observation and 40k subjects levels on PC with 64 GB RAM. This is not "hard-coded" limitation, but depends on your model and data structure. Fitting of big datasets can take a lot of time. Optimal dataset size is less than 100k observations with maximum length of block less than 400.
 
 ## Contents
 

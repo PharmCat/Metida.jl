@@ -244,20 +244,20 @@ function hessian(lmm)
 end
 ################################################################################
 
-function get_symb(t::T; v = Vector{Symbol}(undef, 0)) where T <: Union{ConstantTerm, InterceptTerm, FunctionTerm}
+function get_symb(t::Union{ConstantTerm, InterceptTerm, FunctionTerm}; v = Vector{Symbol}(undef, 0))
     v
 end
-function get_symb(t::T; v = Vector{Symbol}(undef, 0)) where T <: Union{Term, CategoricalTerm}
+function get_symb(t::Union{Term, CategoricalTerm}; v = Vector{Symbol}(undef, 0))
     push!(v, t.sym)
     v
 end
-function get_symb(t::T; v = Vector{Symbol}(undef, 0)) where T <: InteractionTerm
+function get_symb(t::InteractionTerm; v = Vector{Symbol}(undef, 0))
     for i in t.terms
         get_symb(i; v = v)
     end
     v
 end
-function get_symb(t::T; v = Vector{Symbol}(undef, 0)) where T <: Tuple{Vararg{AbstractTerm}}
+function get_symb(t::Tuple{Vararg{AbstractTerm}}; v = Vector{Symbol}(undef, 0))
     for i in t
         get_symb(i; v = v)
     end

@@ -369,7 +369,7 @@ function covstrparam(ct::SPPOWD_, ::Int)::Tuple{Int, Int}
     return (2, 1)
 end
 
-function covstrparam(ct::ZERO, t::Int)::Tuple{Int, Int}
+function covstrparam(ct::ZERO, ::Int)::Tuple{Int, Int}
     return (0,0)
 end
 function covstrparam(ct::AbstractCovarianceType, ::Int)

@@ -73,6 +73,10 @@ df        = CSV.File(path*"/csv/Pastes.csv"; types = [String, Float64, String, S
     )
     Metida.fit!(lmm)
     @test lmm.result.reml ≈ 246.99074585348623 atol=1E-6
+    @test coef(lmm)[1] ≈ 60.053333333333335 atol=1E-6
+    @test Metida.theta(lmm)[1] ≈ 1.2873649995145917 atol=1E-6
+    @test Metida.theta(lmm)[2] ≈ 2.9040775930864386 atol=1E-6
+    @test Metida.theta(lmm)[3] ≈ 0.8234075540095553 atol=1E-6
 end
 
 @testset "  Model 6: Pastes.csv ARMA/SI                              " begin
