@@ -613,10 +613,12 @@ end
     lmm = Metida.LMM(@formula(response ~ 1), ftdf;
     repeated = Metida.VarEffect(Metida.@covstr(response+time|subject), Metida.SPPOWD),
     )
-    Metida.fit!(lmm)
+    Metida.fit!(lmm, init = [0.01, 4.0, 0.9])
 
     lmm = Metida.LMM(@formula(response ~ 1), ftdf;
     repeated = Metida.VarEffect(Metida.@covstr(response+time|subject), Metida.SPGAUD),
     )
-    Metida.fit!(lmm)
+    Metida.fit!(lmm, init = [.1, 12.0, 1])
+    println(io, lmm)
+    println(io, lmm.log)
 end

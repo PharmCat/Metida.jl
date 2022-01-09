@@ -9,7 +9,7 @@ using ProgressMeter
 using StatsModels
 import MetidaBase: Tables, MetidaModel, AbstractCovarianceStructure, AbstractCovmatMethod, AbstractCovarianceType, AbstractLMMDataBlocks, MetidaTable, metida_table, PrettyTables#, indsdict!
 import MetidaBase.PrettyTables: TextFormat, pretty_table, tf_borderless, ft_printf
-import LinearAlgebra:checksquare
+import LinearAlgebra:checksquare, BlasFloat
 import StatsModels: @formula, termvars, ModelFrame
 import StatsBase: fit, fit!, coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response, CoefTable, coeftable
 import Base:show, rand, ht_keyindex

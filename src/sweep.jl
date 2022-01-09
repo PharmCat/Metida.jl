@@ -2,18 +2,21 @@
 #Based on https://github.com/joshday/SweepOperator.jl
 #Thanks to @joshday and @Hua-Zhou
 
-function nsyrk!(alpha, A, C)
-    q = size(C, 1)
-    #p = size(A, 2)
-    @simd for n ∈ axes(C, 1)
-        @simd for m ∈ n:q
-            @inbounds @simd for i ∈ axes(A, 2)
-                C[n, m] += A[n, i] * A[m, i] * alpha
-            end
-        end
+function nsyrk!(α, x, A)
+    p = checksquare(A)
+    for i in 1:p, j in i:p
+        @inbounds A[i,j] += α * x[i] * x[j]
     end
-    C
+    A
 end
+#=
+function nsyrk!(α::T, x::AbstractArray{<:T}, A::StridedMatrix{T}) where {T<:Union{LinearAlgebra.BlasFloat, LinearAlgebra.BlasComplex}}
+    nt = LinearAlgebra.BLAS.get_num_threads()
+    LinearAlgebra.BLAS.set_num_threads(1)
+    BLAS.syrk!('U', 'N', α, x, one(T), A)
+    LinearAlgebra.BLAS.set_num_threads(nt)
+end
+=#
 function sweep!(A::AbstractArray{T}, k::Integer, inv::Bool = false; syrkblas::Bool = false) where T
     sweepb!(Vector{T}(undef, size(A, 2)), A, k, inv; syrkblas = syrkblas)
 end
@@ -36,6 +39,7 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, i
     else
         nsyrk!(-d, akk, A)
     end
+
     rmul!(akk, d * (-one(T)) ^ inv)
     @simd for i in 1:(k-1)
         @inbounds A[i, k] = akk[i]
