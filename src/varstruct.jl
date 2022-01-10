@@ -17,6 +17,11 @@ macro covstr(ex)
 end
 function modelparse(term::FunctionTerm{typeof(|)})
     eff, subj = term.args_parsed
+    if !isa(subj, AbstractTerm) throw(FormulaException("Subject term type not <: AbstractTerm. Use `term` or `interaction term` only. Maybe you are using something like this: `@covstr(factor|term1*term2)` or `@covstr(factor|(term1+term2))`. Use only `@covstr(factor|term)` or `@covstr(factor|term1&term2)`.")) end
+    eff, subj
+end
+function modelparse(term)
+    throw(FormulaException("Model term type not <: FunctionTerm{typeof(|)}. Use model like this: `@covstr(factor|subject)`. Maybe you are using something like this: `@covstr(factor|term1+term2)`. Use only `@covstr(factor|term)` or `@covstr(factor|term1&term2)`."))
 end
 
 ################################################################################
@@ -219,7 +224,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                     #subjz[i]  = convert(BitMatrix, modelcols(MatrixTerm(apply_schema(random[i].subj, StatsModels.schema(data, fulldummycodingdict(random[i].subj)))), data))
                 #subjz[i]  = convert(BitMatrix, modelmatrix(random[i].subj, data; hints=fulldummycodingdict(random[i].subj), mod=MetidaModel))
                     #sn[i]     = size(subjz[i], 2)
-                    sn[i]     = length(dicts[i])
+                sn[i]     = length(dicts[i])
                 updatenametype!(ct, rcnames, csp, schema[i], random[i].covtype.s)
             end
         #=
@@ -333,6 +338,7 @@ function updatenametype!(ct, rcnames, csp, schema, s)
 end
 
 ################################################################################
+#=
 function makeblocks(subjz)
     blocks = Vector{Vector{UInt32}}(undef, 0)
     for i = 1:size(subjz, 2)
@@ -341,7 +347,9 @@ function makeblocks(subjz)
     end
     blocks
 end
+=#
 ################################################################################
+#=
 function noncrossmodelmatrix(mx::AbstractArray, my::AbstractArray)
     size(mx, 2) > size(my, 2) ?  (mat = mx' * my; a = mx) : (mat = my' * mx; a = my)
     #mat = mat * mat'
@@ -375,16 +383,19 @@ function noncrossmodelmatrix(mx::AbstractArray, my::AbstractArray)
     res = replace(x -> iszero(x) ?  0 : 1, view(mat, :, cols))
     a * res
 end
+=#
 ################################################################################
 #                            CONTRAST CODING
 ################################################################################
 
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Union{ConstantTerm, InterceptTerm, FunctionTerm}
+    d
 end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Term
     if typeof(Tables.getcolumn(data, t.sym)) <: CategoricalArray || !(typeof(Tables.getcolumn(data, t.sym)) <: Vector{T} where T <: Real)
         d[t.sym] = StatsModels.FullDummyCoding()
     end
+    d
 end
 #function fill_coding_dict!(t::T, d::Dict, data) where T <: CategoricalTerm
 #    if typeof(data[!, t.sym])  <: CategoricalArray
@@ -397,6 +408,7 @@ function fill_coding_dict!(t::T, d::Dict, data) where T <: InteractionTerm
             d[i.sym] = StatsModels.FullDummyCoding()
         end
     end
+    d
 end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple{Vararg{AbstractTerm}}
     for i in t
@@ -408,7 +420,9 @@ function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple{Vararg{Abstract
             fill_coding_dict!(i, d, data)
         end
     end
+    d
 end
+#=
 function fulldummycodingdict(t::InteractionTerm)
     d = Dict{Symbol, AbstractContrasts}()
     for i in t.terms
@@ -432,7 +446,7 @@ function fulldummycodingdict(t::Tuple{Vararg{AbstractTerm}})
     end
     d
 end
-
+=#
 ################################################################################
 # SHOW
 ################################################################################

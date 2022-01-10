@@ -47,6 +47,7 @@ const LBFGS_OM  = Optim.LBFGS(;alphaguess = LineSearches.InitialStatic(), linese
 
 const METIDA_SETTINGS = Dict(:MAX_THREADS => num_cores())
 
+include("exceptions.jl")
 include("sweep.jl")
 include("vartypes.jl")
 include("varstruct.jl")

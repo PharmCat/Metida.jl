@@ -264,8 +264,19 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 710.4250214813896 atol=1E-8
-
     #@test Metida.dof_satter(lmm)[2] ≈ 20.946001137755598 atol=1E-8
+end
+@testset "  Model: SI, SI/CSH                                        " begin
+    # no errors
+    # not validated
+    lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3; contrasts=Dict(:factor => DummyCoding(; base=1.0)),
+    random = [Metida.VarEffect(Metida.@covstr(1|subject), Metida.SI),
+    Metida.VarEffect(Metida.@covstr(1|r1&subject), Metida.SI)],
+    repeated = Metida.VarEffect(Metida.@covstr(p|subject), Metida.CSH)
+    )
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm)  ≈ 697.2241355154041 atol=1E-8
+    #@test Metida.dof_satter(lmm)[2] ≈ 21.944891442712407 atol=1E-8
 end
 @testset "  Model: AR/SI                                             " begin
     # SPSS 698.879
@@ -534,6 +545,13 @@ end
 
     est = Metida.estimate(lmm, [0,0,0,0,0,1]; level = 0.9)
     @test_nowarn Base.show(io, est)
+
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    repeated = Metida.VarEffect(Metida.@covstr(1|subject), Metida.CSH),
+    )
+    Metida.fit!(lmm; rholinkf = :atan)
+    @test Metida.m2logreml(lmm) ≈ 10.862124583312667 atol=1E-8
+    @test_nowarn Base.show(io, lmm)
 end
 ################################################################################
 #                                  Errors
@@ -551,6 +569,15 @@ end
 
     @test_throws ErrorException  Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = [Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.DIAG), Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.RZero())]
+    )
+
+    @test_throws Metida.FormulaException lmm = Metida.LMM(@formula(response ~ 1 + factor*time), ftdf2;
+    random = Metida.VarEffect(Metida.@covstr(factor|subject*factor), Metida.DIAG),
+    repeated = Metida.VarEffect(Metida.@covstr(1|subject), Metida.ARMA),
+    )
+    @test_throws Metida.FormulaException lmm = Metida.LMM(@formula(response ~ 1 + factor*time), ftdf2;
+    random = Metida.VarEffect(Metida.@covstr(factor|subject), Metida.DIAG),
+    repeated = Metida.VarEffect(Metida.@covstr(1|subject+factor), Metida.ARMA),
     )
     # Error messages
     io = IOBuffer();
