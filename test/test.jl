@@ -1,6 +1,6 @@
 # Metida
 
-using  Test, CSV, DataFrames, StatsModels, StatsBase, LinearAlgebra, CategoricalArrays
+using  Test, CSV, DataFrames, StatsModels, StatsBase, LinearAlgebra, CategoricalArrays, Random
 
 path    = dirname(@__FILE__)
 include("testdata.jl")
