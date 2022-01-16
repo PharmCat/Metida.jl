@@ -46,6 +46,7 @@ struct LMM{T} <: MetidaModel
         maxvcbl::Int,
         log::Vector{LMMLogMsg}) where T
         new{eltype(mm.m)}(model, mf, mm, covstr, data, dv, nfixed, rankx, result, maxvcbl, log)
+        #new{eltype(mm.m)}(model, mf, mm, covstr, dv, nfixed, rankx, result, maxvcbl, log)
     end
     function LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
         #need check responce - Float
@@ -88,7 +89,8 @@ struct LMM{T} <: MetidaModel
         if rankx != size(mm.m, 2)
             lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Fixed-effect matrix not full-rank!"))
         end
-        new{eltype(mm.m)}(model, mf, mm, covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, ModelResult(), findmax(length, covstr.vcovblock)[1], lmmlog)
+        LMM(model, mf, mm, covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, ModelResult(), findmax(length, covstr.vcovblock)[1], lmmlog)
+        #LMM(model, mf, mm, covstr, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, ModelResult(), findmax(length, covstr.vcovblock)[1], lmmlog)
     end
 end
 """
@@ -182,6 +184,19 @@ function lmmlog!(lmm::LMM, verbose, vmsg)
 end
 function lmmlog!(lmm::LMM, vmsg)
     lmmlog!(stdout, lmm, 1, vmsg)
+end
+
+function msgnum(log::Vector{LMMLogMsg}, type::Symbol)
+    n = 0
+    for i in log
+        if i.type == type
+            n += 1
+        end
+    end
+    n
+end
+function msgnum(log::Vector{LMMLogMsg})
+    length(log)
 end
 ################################################################################
 

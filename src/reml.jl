@@ -56,6 +56,7 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
         accθ₁     = zeros(T, ncore)
         accθ₂     = Vector{Matrix{T}}(undef, ncore)
         accβm     = Vector{Vector{T}}(undef, ncore)
+        swtw      = Vector{Vector{T}}(undef, ncore)
         erroracc  = trues(ncore)
         d, r = divrem(n, ncore)
         Base.Threads.@threads for t = 1:ncore
@@ -67,6 +68,7 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
             offset   = min(t-1, r) + (t-1)*d
             accθ₂[t] = zeros(T, lmm.rankx, lmm.rankx)
             accβm[t] = zeros(T, lmm.rankx)
+            swtw[t]  = zeros(T, lmm.maxvcbl)
             #Vp       = Matrix{T}(undef, lmm.maxvcbl, lmm.maxvcbl)
             @inbounds for j ∈ 1:d+(t ≤ r)
                 i =  offset + j
@@ -83,7 +85,8 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
             # Make V matrix
                 vmatrix!(V, gvec, θ, lmm, i)
             #-----------------------------------------------------------------------
-                swm, swr, ne  = sweepb!(Vector{T}(undef, qswm), Vp, 1:q; logdet = true, syrkblas = syrkblas)
+                if length(swtw[t]) != qswm resize!(swtw[t], qswm) end
+                swm, swr, ne  = sweepb!(swtw[t], Vp, 1:q; logdet = true, syrkblas = syrkblas)
                 V⁻¹[i] = V
 
             #-----------------------------------------------------------------------

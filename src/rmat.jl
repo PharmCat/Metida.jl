@@ -215,6 +215,7 @@ function rmat!(mx, θ, rz,  ::SPPOW_)
             @simd for n = m + 1:rn
                 ed = edistance(rz, m, n)
                 mx[m, n] += ρ > 0 ? σ² * ρ^ed : σ² * ρ^ed * cos(π * ed)
+                #mx[m, n] += ρ > 0 ? σ² * ρ^ed : σ² * abs(ρ)^ed * sign(ρ)
             end
         end
     end

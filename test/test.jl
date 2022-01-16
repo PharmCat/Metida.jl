@@ -314,6 +314,17 @@ end
     @test Metida.m2logreml(lmm)  ≈ 707.3765873864152 atol=1E-8
     #SPSS 23.093
     @test Metida.dof_satter(lmm, [0, 1]) ≈ 23.111983305626193 atol=1E-2
+
+    #SPSS 691.360073
+    lmm = Metida.LMM(@formula(nrhoresp ~ 1 + factor), ftdf3; contrasts=Dict(:factor => DummyCoding(; base=1.0)),
+    random = Metida.VarEffect(Metida.@covstr(r1|s2&factor), Metida.ARH),
+    )
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm)  ≈ 691.3600726310308 atol=1E-8
+    mtt = Metida.typeiii(lmm)
+    #SPSS 48.550474
+    @test mtt.df[2] ≈ 48.55470874755898 atol=1E-8
+
 end
 @testset "  Model: INT, *, DIAG/SI                                   " begin
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
@@ -648,4 +659,18 @@ end
     Metida.fit!(lmm, init = [.1, 12.0, 1])
     println(io, lmm)
     println(io, lmm.log)
+
+
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0m;
+    random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
+    )
+    Metida.fit!(lmm)
+
+    @test_nowarn Base.show(io, Metida.bootstrap(lmm; n = 10, double = false, verbose = false, rng = MersenneTwister(1263)))
+    @test_nowarn Base.show(io, Metida.bootstrap(lmm; n = 10, double = true, verbose = false, rng = MersenneTwister(1263)))
+
+    mi = Metida.MILMM(lmm, df0m)
+    @test_nowarn Base.show(io, mi)
+    @test_nowarn Base.show(io, Metida.milmm(mi; n = 10, verbose = false, rng = MersenneTwister(1234)))
+    @test_nowarn Base.show(io, Metida.miboot(mi; n = 10, verbose = false, rng = MersenneTwister(1234)))
 end

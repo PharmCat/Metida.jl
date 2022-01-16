@@ -3,6 +3,7 @@ test/precompile/
 test/devtest.jl
 test/dstest.jl
 test/snoopy.jl
+test/profile.jl
 test/hdp.csv
 examples/
 docs/build/

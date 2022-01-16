@@ -60,7 +60,7 @@ struct BootstrapResult{T}
     bv::Vector{Vector{T}}
     tv::Vector{Vector{T}}
     rml::Vector{Int}
-    log::Vector{String}
+    log::Vector{LMMLogMsg}
 end
 """
     bootstrap(lmm::LMM{T}; double = false, n = 100, varn = n, verbose = true, rng = default_rng()) where T
@@ -68,6 +68,7 @@ end
 Parametric bootstrap.
 """
 function bootstrap(lmm::LMM{T}; double = false, n = 100, varn = n, verbose = true, rng = default_rng()) where T
+    isfitted(lmm) || throw(ArgumentError("lmm not fitted!"))
     if double
         return dbootstrap_(lmm; n = n, varn = varn, verbose = verbose, rng = rng)
     else
@@ -75,13 +76,13 @@ function bootstrap(lmm::LMM{T}; double = false, n = 100, varn = n, verbose = tru
     end
 end
 
-function bootstrap_(lmm::LMM{T}; n = 100, verbose = true, rng = default_rng()) where T
+function bootstrap_(lmm::LMM{T}; n = 100, verbose = true, maxiter = 5, rng = default_rng()) where T
     nb   = nblocks(lmm)
     bv   = Vector{Vector{T}}(undef, n)
     tv   = Vector{Vector{T}}(undef, n)
     dist = Vector{FullNormal}(undef, nb)
     local rml  = Vector{Int}(undef, 0)
-    local log  = Vector{String}(undef, 0)
+    local log  = Vector{LMMLogMsg}(undef, 0)
     Base.Threads.@threads for i = 1:nb
         q    = length(lmm.covstr.vcovblock[i])
         m    = Vector{T}(undef, q)
@@ -97,7 +98,7 @@ function bootstrap_(lmm::LMM{T}; n = 100, verbose = true, rng = default_rng()) w
             barlen=20)
     for i = 1:n
         local success = false
-        local iter    = 5
+        local iter    = maxiter
         while !success && iter > 0
             Base.Threads.@threads  for j = 1:nb
                 rand!(rng, dist[j], lmmb.dv.yv[j])
@@ -106,13 +107,13 @@ function bootstrap_(lmm::LMM{T}; n = 100, verbose = true, rng = default_rng()) w
                 fit!(lmmb; refitinit = true, hes = false)
                 success = isfitted(lmmb)
             catch
-                push!(log, "Error in iteration $i...")
+                lmmlog!(log, 1, LMMLogMsg(:WARN, "Error in iteration $i."))
             end
             iter -=1
         end
         if !isfitted(lmmb)
             push!(rml, i)
-            push!(log, "Itaration $i was not successful...")
+            lmmlog!(log, 1, LMMLogMsg(:ERROR, "Itaration $i was not successful..."))
         end
         bv[i] = coef(lmmb)
         tv[i] = theta(lmmb)
@@ -121,13 +122,13 @@ function bootstrap_(lmm::LMM{T}; n = 100, verbose = true, rng = default_rng()) w
     BootstrapResult(coef(lmm), theta(lmm), bv, tv, rml, log)
 end
 
-function dbootstrap_(lmm::LMM{T}; n = 100, varn = 100, verbose = true, rng = default_rng()) where T
+function dbootstrap_(lmm::LMM{T}; n = 100, varn = 100, verbose = true, maxiter = 5, rng = default_rng()) where T
     nb   = nblocks(lmm)
     bv   = Vector{Vector{T}}(undef, n)
     tv   = Vector{Vector{T}}(undef, n)
     dist = Vector{MvNormal}(undef, nb)
     local rml  = Vector{Int}(undef, 0)
-    local log  = Vector{String}(undef, 0)
+    local log  = Vector{LMMLogMsg}(undef, 0)
 
     for i = 1:nb
         q    = length(lmm.covstr.vcovblock[i])
@@ -144,7 +145,7 @@ function dbootstrap_(lmm::LMM{T}; n = 100, varn = 100, verbose = true, rng = def
     # STEP 1
     for i = 1:n
         local success = false
-        local iter    = 5
+        local iter    = maxiter
         while !success && iter > 0
             Base.Threads.@threads for j = 1:nb
                 rand!(rng, dist[j], lmmb.dv.yv[j])
@@ -153,20 +154,20 @@ function dbootstrap_(lmm::LMM{T}; n = 100, varn = 100, verbose = true, rng = def
                 fit!(lmmb; refitinit = true, hes = false)
                 success = isfitted(lmmb)
             catch
-                push!(log, "Step I: Error in iteration $i...")
+                lmmlog!(log, 1, LMMLogMsg(:WARN, "Error in iteration $i."))
             end
             iter -=1
         end
         if !isfitted(lmmb)
             push!(rml, i)
-            push!(log, "Step I: Itaration $i was not successful...")
+            lmmlog!(log, 1, LMMLogMsg(:ERROR, "Itaration $i was not successful."))
         end
         tv[i] = theta(lmmb)
         if verbose next!(p) end
     end
     if length(rml) > 0
         deleteat!(tv, rml)
-        push!(log, "Step I: Some variance results was deleted...")
+        lmmlog!(log, 1, LMMLogMsg(:WARN, "Step I: Some variance results ($(length(rml))) was deleted."))
     end
     # STEP 2
     p = Progress(n, dt=0.5,
@@ -177,7 +178,7 @@ function dbootstrap_(lmm::LMM{T}; n = 100, varn = 100, verbose = true, rng = def
     Vt  = Matrix{T}(undef, lmm.maxvcbl, lmm.maxvcbl)
     for i = 1:n
         local success = false
-        local iter    = 5
+        local iter    = maxiter
         while !success && iter > 0
             theta = tv[rand(rng, 1:length(tv))]
             for j = 1:nb
@@ -193,13 +194,13 @@ function dbootstrap_(lmm::LMM{T}; n = 100, varn = 100, verbose = true, rng = def
                 fit!(lmmb; refitinit = true, hes = false)
                 success = isfitted(lmmb)
             catch
-                push!(log, "Error in iteration $i...")
+                lmmlog!(log, 1, LMMLogMsg(:WARN, "Step II: Error in iteration $i."))
             end
             iter -=1
         end
         if !isfitted(lmmb)
             push!(rml, i)
-            push!(log, "Itaration $i was not successful...")
+            lmmlog!(log, 1, LMMLogMsg(:ERROR, "Step II: Itaration $i was not successful."))
         end
         bv[i] = coef(lmmb)
         if verbose next!(p) end
@@ -217,8 +218,8 @@ function milmm(mi::MILMM; n = 100, verbose = true, rng = default_rng())
     max = maximum(x->length(getindex(x, 2)), mi.mrs.block)
     ty  = Vector{Float64}(undef, max)
     for i = 1:n
-        dv = generatedv(rng, mi.dv, mi.covstr.vcovblock, mi.mrs, rb, ty)
-        lmmi = LMM(mi.lmm.model, mi.mf, mi.mm, mi.covstr, mi.data, dv, mi.lmm.nfixed, mi.lmm.rankx, deepcopy(mi.lmm.result), mi.maxvcbl, mi.log)
+        data, dv = generate_mi(rng, mi.data, mi.dv, mi.covstr.vcovblock, mi.mrs, rb, ty)
+        lmmi = LMM(mi.lmm.model, mi.mf, mi.mm, mi.covstr, data, dv, mi.lmm.nfixed, mi.lmm.rankx, deepcopy(mi.lmm.result), mi.maxvcbl, mi.log)
         lmm[i] = lmmi
     end
     p = Progress(n, dt = 0.5,
@@ -236,14 +237,14 @@ end
 
 Multiple imputation with parametric bootstrap step.
 """
-function miboot(mi::MILMM; n = 100, varn = n, double = true, verbose = true, rng = default_rng())
+function miboot(mi::MILMM{T}; n = 100, varn = n, double = true, verbose = true, rng = default_rng()) where T
     mres = milmm(mi; n = n)
     nb   = nblocks(mres.lmm[1])
     dist = Vector{MvNormal}(undef, nb)
-    bv   = Vector{Vector}(undef, n)
-    tv   = Vector{Vector}(undef, n)
+    bv   = Vector{Vector{T}}(undef, n)
+    tv   = Vector{Vector{T}}(undef, n)
     local rml  = Vector{Int}(undef, 0)
-    local log  = Vector{String}(undef, 0)
+    local log  = Vector{LMMLogMsg}(undef, 0)
     #V    = zeros(lmm[1].maxvcbl, lmm[1].maxvcbl)
     p = Progress(n, dt=0.5,
             desc="Bootstrap MI LMMs...",
@@ -268,11 +269,11 @@ function miboot(mi::MILMM; n = 100, varn = n, double = true, verbose = true, rng
                 fit!(mres.lmm[j]; refitinit = true, hes = false)
                 success = isfitted(mres.lmm[j])
             catch
-                push!(log, "Error in iteration $j...")
+                lmmlog!(log, 1, LMMLogMsg(:WARN, "Error in iteration $i."))
             end
             if !isfitted(mres.lmm[j])
                 if !(j in rml) push!(rml, j) end
-                push!(log, "Itaration $j (try $(iter)) was not successful...")
+                lmmlog!(log, 1, LMMLogMsg(:ERROR, "Itaration $j (try $(iter)) was not successful."))
             end
             iter +=1
         end
@@ -298,7 +299,8 @@ end
 # return distribution vector for
 function mrsdist(lmm, mb, covstr, xv, yv)
     dist = Vector{MvNormal}(undef, length(mb))
-    Base.Threads.@threads for i in 1:length(mb)
+    #Base.Threads.@threads
+    for i in 1:length(mb)
         v       = vmatrix(lmm.result.theta, covstr, mb[i][1])
         rv      = covmatreorder(v, mb[i][2])
         dist[i] = mvconddist(rv[1], rv[2], mb[i][2], lmm.result.beta, xv[mb[i][1]], yv[mb[i][1]])
@@ -334,15 +336,17 @@ function mvconddist(mx, nm, vec, beta, xv::AbstractMatrix{T}, yv) where T #₁�
         μ  = m[nm]
         y  = yv[nm]
         p  = q + 1
-        Σ₁ = view(mx, 1:q, 1:q)
+        Σ₁ = mx[1:q, 1:q]
         Σ₁₂= view(mx, 1:q, p:N)
-        Σ₂₂= view(mx, p:N, p:N)
-        Σ⁻¹= inv(Matrix(Σ₂₂))
-        Σ  = Σ₁ - Σ₁₂ * Σ⁻¹ * Σ₁₂'
-        μ₁ = view(μ, 1:q)
+        Σ₂₂= mx[p:N, p:N]
+        Σ⁻¹= inv(Σ₂₂)
+        #Σ  = Symmetric(Σ₁ - Σ₁₂ * Σ⁻¹ * Σ₁₂')
+        Σ  = Symmetric(mulαβαtinc!(Σ₁, Σ₁₂, Σ⁻¹, -1))
+        μ₁ = μ[1:q]
         μ₂ = view(μ, p:N)
         a  = view(y, p:N)
-        M  = μ₁ - Σ₁₂ * Σ⁻¹ * (a - μ₂)
+        #M  = μ₁ - Σ₁₂ * Σ⁻¹ * (a - μ₂)
+        M  = mulαβαtinc!(μ₁, Σ₁₂, Σ⁻¹, a, μ₂, -1)
     #p,N
         return MvNormal(M, Σ)
     else
@@ -350,27 +354,22 @@ function mvconddist(mx, nm, vec, beta, xv::AbstractMatrix{T}, yv) where T #₁�
     end
 end
 # generate data views MI; X without changes
-function generatedv(rng, dv::LMMDataViews{T}, vcovblock, mrs, rb, ty)  where T
-    y = Vector{Vector{T}}(undef, length(vcovblock))
-    #x = Vector{Matrix{nonmissingtype(M)}}(undef, length(vcovblock))
+function generate_mi(rng, data, dv::LMMDataViews{T}, vcovblock, mrs, rb, ty)  where T
+    y  = Vector{Vector{T}}(undef, length(vcovblock))
+    yv = copy(data.yv)
     for i = 1:length(vcovblock)
         if !(i in rb)
-            #y[i] = convert(Vector{NMT}, dv.yv[i])
             y[i] = dv.yv[i]
-            #x[i] = float.(dv.xv[i])
         end
     end
     @inbounds for i = 1:length(mrs.block)
-        #yt = copy(dv.yv[mrs.block[i][1]])
-        #yt = convert(Vector{NMT}, dv.yv[mrs.block[i][1]])
         yt = copy(dv.yv[mrs.block[i][1]])
         if length(ty) != length(mrs.block[i][2]) resize!(ty, length(mrs.block[i][2])) end
         yt[mrs.block[i][2]] .= rand!(rng, mrs.dist[i], ty)
-        #rand!(mrs.dist[i], view(yt, mrs.block[i][2]))
-        y[mrs.block[i][1]] = yt
-        #x[mrs.block[i][1]] = float.(dv.xv[mrs.block[i][1]])
+        y[mrs.block[i][1]]   = yt
+        yv[vcovblock[mrs.block[i][1]]]    .= yt
     end
-    LMMDataViews(dv.xv, y)
+    LMMData(data.xv, yv), LMMDataViews(dv.xv, y)
 end
 ################################################################################
 """
@@ -459,6 +458,7 @@ function Base.show(io::IO, br::BootstrapResult)
     println(io, "    Bootstrap results:                          ")
     println(io, "------------------------------------------------")
     println(io, "    Number of replications: $(length(br.bv))    ")
-    println(io, "    Errors: $(length(br.log))                   ")
+    println(io, "    Errors: $(msgnum(br.log, :ERROR))           ")
+    println(io, "    Warnings: $(msgnum(br.log, :WARN))          ")
     println(io, "    Excluded/suspicious: $(length(br.rml))      ")
 end
