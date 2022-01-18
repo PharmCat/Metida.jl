@@ -63,20 +63,31 @@ struct BootstrapResult{T}
     log::Vector{LMMLogMsg}
 end
 """
-    bootstrap(lmm::LMM{T}; double = false, n = 100, varn = n, verbose = true, rng = default_rng()) where T
+    bootstrap(lmm::LMM; double = true, n = 100, varn = n, verbose = true, init = lmm.result.theta, rng = default_rng())
 
 Parametric bootstrap.
+
+- double - use double approach (defaultr - true);
+- n - number of bootstrap samples for coefficient estimtion;
+- varn - number of bottstrap samples for varianvce estimation;
+- verbose - show progress bar;
+- init - initial values for lmm;
+- rng - random number generator.
+
+Parametric bootstrap based on generating random responce vector from known distribution, that given from fitted LMM model.
+For one-stage bootstrap variance parameters and coefficients simulated in one step. For double bootstrap (two-tage) variance parameters simulated first,
+than used for simulating coefficients on stage two.
 """
-function bootstrap(lmm::LMM{T}; double = false, n = 100, varn = n, verbose = true, rng = default_rng()) where T
+function bootstrap(lmm::LMM; double = true, n = 100, varn = n, verbose = true, init = lmm.result.theta, rng = default_rng())
     isfitted(lmm) || throw(ArgumentError("lmm not fitted!"))
     if double
-        return dbootstrap_(lmm; n = n, varn = varn, verbose = verbose, rng = rng)
+        return dbootstrap_(lmm; n = n, varn = varn, verbose = verbose, maxiter = 5, init = init, rng = rng)
     else
-        return bootstrap_(lmm; n = n, verbose = verbose, rng = rng)
+        return bootstrap_(lmm; n = n, verbose = verbose, maxiter = 5, init = init, rng = rng)
     end
 end
 
-function bootstrap_(lmm::LMM{T}; n = 100, verbose = true, maxiter = 5, rng = default_rng()) where T
+function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng) where T
     nb   = nblocks(lmm)
     bv   = Vector{Vector{T}}(undef, n)
     tv   = Vector{Vector{T}}(undef, n)
@@ -104,7 +115,7 @@ function bootstrap_(lmm::LMM{T}; n = 100, verbose = true, maxiter = 5, rng = def
                 rand!(rng, dist[j], lmmb.dv.yv[j])
             end
             try
-                fit!(lmmb; refitinit = true, hes = false)
+                fit!(lmmb; init = init, hes = false)
                 success = isfitted(lmmb)
             catch
                 lmmlog!(log, 1, LMMLogMsg(:WARN, "Error in iteration $i."))
@@ -122,10 +133,10 @@ function bootstrap_(lmm::LMM{T}; n = 100, verbose = true, maxiter = 5, rng = def
     BootstrapResult(coef(lmm), theta(lmm), bv, tv, rml, log)
 end
 
-function dbootstrap_(lmm::LMM{T}; n = 100, varn = 100, verbose = true, maxiter = 5, rng = default_rng()) where T
+function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng) where T
     nb   = nblocks(lmm)
     bv   = Vector{Vector{T}}(undef, n)
-    tv   = Vector{Vector{T}}(undef, n)
+    tv   = Vector{Vector{T}}(undef, varn)
     dist = Vector{MvNormal}(undef, nb)
     local rml  = Vector{Int}(undef, 0)
     local log  = Vector{LMMLogMsg}(undef, 0)
@@ -138,12 +149,12 @@ function dbootstrap_(lmm::LMM{T}; n = 100, varn = 100, verbose = true, maxiter =
         dist[i] = MvNormal(m, Symmetric(V))
     end
     lmmb = deepcopy(lmm)
-    p = Progress(n, dt=0.5,
+    p = Progress(varn, dt=0.5,
             desc="Bootstrapping I  LMMs...",
             barglyphs=BarGlyphs('|','█', ['▁' ,'▂' ,'▃' ,'▄' ,'▅' ,'▆', '▇'],' ','|',),
             barlen=20)
     # STEP 1
-    for i = 1:n
+    for i = 1:varn
         local success = false
         local iter    = maxiter
         while !success && iter > 0
@@ -151,22 +162,23 @@ function dbootstrap_(lmm::LMM{T}; n = 100, varn = 100, verbose = true, maxiter =
                 rand!(rng, dist[j], lmmb.dv.yv[j])
             end
             try
-                fit!(lmmb; refitinit = true, hes = false)
+                fit!(lmmb; init = init, hes = false)
                 success = isfitted(lmmb)
             catch
-                lmmlog!(log, 1, LMMLogMsg(:WARN, "Error in iteration $i."))
+                lmmlog!(log, 1, LMMLogMsg(:WARN, "Step I: Error in iteration $i. Try $(maxiter - iter + 1).$(iter == 1 ? " This was last try." : "")"))
             end
             iter -=1
         end
         if !isfitted(lmmb)
             push!(rml, i)
-            lmmlog!(log, 1, LMMLogMsg(:ERROR, "Itaration $i was not successful."))
+            lmmlog!(log, 1, LMMLogMsg(:ERROR, "Step I: Itaration $i was not successful."))
         end
         tv[i] = theta(lmmb)
         if verbose next!(p) end
     end
     if length(rml) > 0
         deleteat!(tv, rml)
+        resize!(rml, 0)
         lmmlog!(log, 1, LMMLogMsg(:WARN, "Step I: Some variance results ($(length(rml))) was deleted."))
     end
     # STEP 2
@@ -176,25 +188,30 @@ function dbootstrap_(lmm::LMM{T}; n = 100, varn = 100, verbose = true, maxiter =
             barlen=20)
     m   = Vector{T}(undef, lmm.maxvcbl)
     Vt  = Matrix{T}(undef, lmm.maxvcbl, lmm.maxvcbl)
+    V   = view(Vt, 1:length(m), 1:length(m))
+    tvl = length(tv)
     for i = 1:n
         local success = false
         local iter    = maxiter
         while !success && iter > 0
-            theta = tv[rand(rng, 1:length(tv))]
+            r = rem(i, tvl)
+            theta = tv[r == 0 ? tvl : r]
             for j = 1:nb
                 q    = length(lmm.covstr.vcovblock[j])
                 if length(m) != q resize!(m, q) end
                 mul!(m, lmm.dv.xv[j], lmm.result.beta)
-                V    = view(Vt, 1:q, 1:q)
+                if size(V, 1) != q
+                    V    = view(Vt, 1:q, 1:q)
+                end
                 fill!(V, zero(T))
                 vmatrix!(V, theta, lmm, j)
                 rand!(rng, MvNormal(m, Symmetric(V)), lmmb.dv.yv[j])
             end
             try
-                fit!(lmmb; refitinit = true, hes = false)
+                fit!(lmmb; init = init, hes = false)
                 success = isfitted(lmmb)
             catch
-                lmmlog!(log, 1, LMMLogMsg(:WARN, "Step II: Error in iteration $i."))
+                lmmlog!(log, 1, LMMLogMsg(:WARN, "Step II: Error in iteration $i. Try $(maxiter - iter + 1).$(iter == 1 ? " This was last try." : "")"))
             end
             iter -=1
         end
@@ -211,6 +228,37 @@ end
     milmm(mi::MILMM; n = 100, verbose = true, rng = default_rng())
 
 Multiple imputation.
+
+For each subject raandom vector of missing values generated from distribution:
+
+```math
+X_{imp} \\sim N(\\mu_{miss \\mid obs}, \\Sigma_{miss \\mid obs})
+```
+
+```math
+\\mu_{miss \\mid obs} = \\mu_1+ \\Sigma_{12} \\Sigma_{22}^{-1} (x_{obs}- \\mu_2)
+```
+
+```math
+\\Sigma_{miss \\mid obs} = \\Sigma_{11}- \\Sigma_{12} \\Sigma_{22}^{-1} \\Sigma_{21}
+```
+
+```math
+x = \\begin{bmatrix}x_{miss}  \\\\ x_{obs}  \\end{bmatrix};
+\\mu = \\begin{bmatrix}\\mu_1  \\\\ \\mu_2  \\end{bmatrix};
+\\Sigma = \\begin{bmatrix} \\Sigma_{11} & \\Sigma_{12} \\\\ \\Sigma_{21} & \\Sigma_{22} \\end{bmatrix}
+```
+
+Example:
+
+```julia
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0m;
+random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.CSH),
+)
+Metida.fit!(lmm)
+mi = Metida.MILMM(lmm, df0m)
+bm = Metida.milmm(mi; n = 100, rng = MersenneTwister(1234))
+```
 """
 function milmm(mi::MILMM; n = 100, verbose = true, rng = default_rng())
     lmm = Vector{LMM}(undef, n)
@@ -236,6 +284,17 @@ end
     miboot(mi::MILMM; n = 100, verbose = true, rng = default_rng())
 
 Multiple imputation with parametric bootstrap step.
+
+Example:
+
+```julia
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0m;
+random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.CSH),
+)
+Metida.fit!(lmm)
+mi = Metida.MILMM(lmm, df0m)
+bm = Metida.miboot(mi; n = 100, rng = MersenneTwister(1234))
+```
 """
 function miboot(mi::MILMM{T}; n = 100, varn = n, double = true, verbose = true, rng = default_rng()) where T
     mres = milmm(mi; n = n)
@@ -376,8 +435,14 @@ end
     StatsBase.confint(br::BootstrapResult, n::Int; level::Float64=0.95, method=:jn)
 
 Confidence interval for bootstrap result.
+
+*method:
+- :bp - bootstrap percentile;
+- :rbp - reverse bootstrap percentile;
+- :norm - Normal distribution;
+- :jn - bias corrected (jackknife resampling).
 """
-function StatsBase.confint(br::BootstrapResult, n::Int; level::Float64=0.95, method=:jn)
+function StatsBase.confint(br::BootstrapResult, n::Int; level::Float64=0.95, method=:bp)
     if method == :bp
         confint_q(br, n, 1-level)
     elseif method == :rbp
@@ -389,6 +454,14 @@ function StatsBase.confint(br::BootstrapResult, n::Int; level::Float64=0.95, met
     else
         error("Method unknown!")
     end
+end
+function StatsBase.confint(br::BootstrapResult; level::Float64=0.95, method=:jn)
+    l = length(first(br.bv))
+    v = Vector{Tuple}(undef, l)
+    for i = 1:l
+        v[i] = confint(br, i; level = level, method = method)
+    end
+    v
 end
 ####
 function confint_q(bt::BootstrapResult, i::Int, alpha)
@@ -457,7 +530,7 @@ end
 function Base.show(io::IO, br::BootstrapResult)
     println(io, "    Bootstrap results:                          ")
     println(io, "------------------------------------------------")
-    println(io, "    Number of replications: $(length(br.bv))    ")
+    println(io, "    Number of replications: $(length(br.tv))/$(length(br.bv))")
     println(io, "    Errors: $(msgnum(br.log, :ERROR))           ")
     println(io, "    Warnings: $(msgnum(br.log, :WARN))          ")
     println(io, "    Excluded/suspicious: $(length(br.rml))      ")

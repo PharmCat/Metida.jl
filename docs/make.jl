@@ -17,6 +17,8 @@ makedocs(
         "F.A.Q." => "faq.md",
         ],
         "Details" => "details.md",
+        "Bootstrap" => "boot.md",
+        "Multiple imputation" => "mi.md",
         "Benchmark" => "bench.md",
         "Validation" => "validation.md",
         "API" => "api.md",
