@@ -62,6 +62,13 @@ struct BootstrapResult{T}
     rml::Vector{Int}
     log::Vector{LMMLogMsg}
 end
+struct MIBootResult{T1, T2}
+    mir::MILMMResult{T1}
+    br::Vector{BootstrapResult{T2}}
+    function MIBootResult(mir::MILMMResult{T1}, br::Vector{BootstrapResult{T2}}) where T1 where T2
+        new{T1, T2}(mir, br)
+    end
+end
 """
     bootstrap(lmm::LMM; double = true, n = 100, varn = n, verbose = true, init = lmm.result.theta, rng = default_rng())
 
@@ -77,6 +84,8 @@ Parametric bootstrap.
 Parametric bootstrap based on generating random responce vector from known distribution, that given from fitted LMM model.
 For one-stage bootstrap variance parameters and coefficients simulated in one step. For double bootstrap (two-tage) variance parameters simulated first,
 than used for simulating coefficients on stage two.
+
+See also: [`confint`](@ref), [`Metida.miboot`](@ref)
 """
 function bootstrap(lmm::LMM; double = true, n = 100, varn = n, verbose = true, init = lmm.result.theta, rng = default_rng())
     isfitted(lmm) || throw(ArgumentError("lmm not fitted!"))
@@ -87,13 +96,9 @@ function bootstrap(lmm::LMM; double = true, n = 100, varn = n, verbose = true, i
     end
 end
 
-function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng) where T
+function make_dist_vec(lmm::LMM{T}) where T
     nb   = nblocks(lmm)
-    bv   = Vector{Vector{T}}(undef, n)
-    tv   = Vector{Vector{T}}(undef, n)
     dist = Vector{FullNormal}(undef, nb)
-    local rml  = Vector{Int}(undef, 0)
-    local log  = Vector{LMMLogMsg}(undef, 0)
     Base.Threads.@threads for i = 1:nb
         q    = length(lmm.covstr.vcovblock[i])
         m    = Vector{T}(undef, q)
@@ -102,30 +107,43 @@ function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng) where T
         vmatrix!(V, lmm.result.theta, lmm, i)
         dist[i] = MvNormal(m, Symmetric(V))
     end
+    dist
+end
+function fit_lmm!(lmmb, init, dist, i, nb, maxiter, rml, log, rng)
+    local success = false
+    local iter    = maxiter
+    while !success && iter > 0
+        for j = 1:nb
+            rand!(rng, dist[j], lmmb.dv.yv[j])
+        end
+        try
+            fit!(lmmb; init = init, hes = false)
+            success = isfitted(lmmb)
+        catch
+            lmmlog!(log, 1, LMMLogMsg(:WARN, "Step I: Error in iteration $i. Try $(maxiter - iter + 1).$(iter == 1 ? " This was last try." : "")"))
+        end
+        iter -=1
+    end
+    if !isfitted(lmmb)
+        push!(rml, i)
+        lmmlog!(log, 1, LMMLogMsg(:ERROR, "Step I: Itaration $i was not successful."))
+    end
+    lmmb
+end
+function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng) where T
+    nb   = nblocks(lmm)
+    bv   = Vector{Vector{T}}(undef, n)
+    tv   = Vector{Vector{T}}(undef, n)
+    local rml  = Vector{Int}(undef, 0)
+    local log  = Vector{LMMLogMsg}(undef, 0)
+    dist = make_dist_vec(lmm)
     lmmb = deepcopy(lmm)
     p = Progress(n, dt=0.5,
             desc="Bootstrapping LMMs...",
             barglyphs=BarGlyphs('|','█', ['▁' ,'▂' ,'▃' ,'▄' ,'▅' ,'▆', '▇'],' ','|',),
             barlen=20)
     for i = 1:n
-        local success = false
-        local iter    = maxiter
-        while !success && iter > 0
-            Base.Threads.@threads  for j = 1:nb
-                rand!(rng, dist[j], lmmb.dv.yv[j])
-            end
-            try
-                fit!(lmmb; init = init, hes = false)
-                success = isfitted(lmmb)
-            catch
-                lmmlog!(log, 1, LMMLogMsg(:WARN, "Error in iteration $i."))
-            end
-            iter -=1
-        end
-        if !isfitted(lmmb)
-            push!(rml, i)
-            lmmlog!(log, 1, LMMLogMsg(:ERROR, "Itaration $i was not successful..."))
-        end
+        fit_lmm!(lmmb, init, dist, i, nb, maxiter, rml, log, rng)
         bv[i] = coef(lmmb)
         tv[i] = theta(lmmb)
         if verbose next!(p) end
@@ -137,17 +155,9 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng) where T
     nb   = nblocks(lmm)
     bv   = Vector{Vector{T}}(undef, n)
     tv   = Vector{Vector{T}}(undef, varn)
-    dist = Vector{MvNormal}(undef, nb)
     local rml  = Vector{Int}(undef, 0)
     local log  = Vector{LMMLogMsg}(undef, 0)
-
-    for i = 1:nb
-        q    = length(lmm.covstr.vcovblock[i])
-        m    = lmm.dv.xv[i] * lmm.result.beta
-        V    = zeros(q, q)
-        vmatrix!(V, lmm.result.theta, lmm, i)
-        dist[i] = MvNormal(m, Symmetric(V))
-    end
+    dist = make_dist_vec(lmm)
     lmmb = deepcopy(lmm)
     p = Progress(varn, dt=0.5,
             desc="Bootstrapping I  LMMs...",
@@ -155,24 +165,7 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng) where T
             barlen=20)
     # STEP 1
     for i = 1:varn
-        local success = false
-        local iter    = maxiter
-        while !success && iter > 0
-            Base.Threads.@threads for j = 1:nb
-                rand!(rng, dist[j], lmmb.dv.yv[j])
-            end
-            try
-                fit!(lmmb; init = init, hes = false)
-                success = isfitted(lmmb)
-            catch
-                lmmlog!(log, 1, LMMLogMsg(:WARN, "Step I: Error in iteration $i. Try $(maxiter - iter + 1).$(iter == 1 ? " This was last try." : "")"))
-            end
-            iter -=1
-        end
-        if !isfitted(lmmb)
-            push!(rml, i)
-            lmmlog!(log, 1, LMMLogMsg(:ERROR, "Step I: Itaration $i was not successful."))
-        end
+        fit_lmm!(lmmb, init, dist, i, nb, maxiter, rml, log, rng)
         tv[i] = theta(lmmb)
         if verbose next!(p) end
     end
@@ -296,15 +289,26 @@ mi = Metida.MILMM(lmm, df0m)
 bm = Metida.miboot(mi; n = 100, rng = MersenneTwister(1234))
 ```
 """
-function miboot(mi::MILMM{T}; n = 100, varn = n, double = true, verbose = true, rng = default_rng()) where T
-    mres = milmm(mi; n = n)
-    nb   = nblocks(mres.lmm[1])
-    dist = Vector{MvNormal}(undef, nb)
-    bv   = Vector{Vector{T}}(undef, n)
-    tv   = Vector{Vector{T}}(undef, n)
-    local rml  = Vector{Int}(undef, 0)
-    local log  = Vector{LMMLogMsg}(undef, 0)
+function miboot(mi::MILMM{T}; n = 100, double = true, bootn = 100, varn = bootn, verbose = true, rng = default_rng()) where T
+    mres = milmm(mi; n = n, verbose = verbose, rng = rng)
+    br = Vector{BootstrapResult{T}}(undef, n)
+    #nb   = nblocks(mres.lmm[1])
+    #dist = Vector{MvNormal}(undef, nb)
+    #bv   = Vector{Vector{T}}(undef, n)
+    #tv   = Vector{Vector{T}}(undef, n)
+    #local rml  = Vector{Int}(undef, 0)
+    #local log  = Vector{LMMLogMsg}(undef, 0)
     #V    = zeros(lmm[1].maxvcbl, lmm[1].maxvcbl)
+    p = Progress(n, dt=0.5,
+            desc="Bootstrap MI LMMs...",
+            barglyphs=BarGlyphs('|','█', ['▁' ,'▂' ,'▃' ,'▄' ,'▅' ,'▆', '▇'],' ','|',),
+            barlen=20)
+    for i = 1:n
+        br[i] = bootstrap(mres.lmm[i]; double = double, n = bootn, varn = varn, verbose = false, init = mres.lmm[i].result.theta, rng = rng)
+        if verbose next!(p) end
+    end
+    MIBootResult(mres, br)
+    #=
     p = Progress(n, dt=0.5,
             desc="Bootstrap MI LMMs...",
             barglyphs=BarGlyphs('|','█', ['▁' ,'▂' ,'▃' ,'▄' ,'▅' ,'▆', '▇'],' ','|',),
@@ -321,7 +325,7 @@ function miboot(mi::MILMM{T}; n = 100, varn = n, double = true, verbose = true, 
         local success = false
         local iter    = 1
         while !success && iter < 10
-            Base.Threads.@threads for i = 1:nb
+            for i = 1:nb
                 mres.lmm[j].dv.yv[i] = rand(rng, dist[i])
             end
             try
@@ -341,6 +345,7 @@ function miboot(mi::MILMM{T}; n = 100, varn = n, double = true, verbose = true, 
         if verbose next!(p) end
     end
     BootstrapResult(coef(mi.lmm), theta(mi.lmm), bv, tv, rml, log)
+    =#
 end
 # Finf all block with missing values
 # NaN used for mising data
@@ -524,14 +529,32 @@ function Base.show(io::IO, mr::MILMMResult)
     println(io, mr.milmm)
     println(io, "------------------------------------------------")
     println(io, "    Generated datasets:                         ")
-    println(io, "    Number of sets: $(length(mr.lmm))           ")
+    print(io, "    Number of sets: $(length(mr.lmm))           ")
 end
 
+function tvlength(br::BootstrapResult)
+    length(br.tv)
+end
+function bvlength(br::BootstrapResult)
+    length(br.bv)
+end
+function msgnum(br::BootstrapResult, type)
+    msgnum(br.log, type)
+end
 function Base.show(io::IO, br::BootstrapResult)
     println(io, "    Bootstrap results:                          ")
     println(io, "------------------------------------------------")
-    println(io, "    Number of replications: $(length(br.tv))/$(length(br.bv))")
-    println(io, "    Errors: $(msgnum(br.log, :ERROR))           ")
-    println(io, "    Warnings: $(msgnum(br.log, :WARN))          ")
-    println(io, "    Excluded/suspicious: $(length(br.rml))      ")
+    println(io, "    Number of replications: $(tvlength(br))/$(bvlength(br))")
+    println(io, "    Errors: $(msgnum(br, :ERROR))               ")
+    println(io, "    Warnings: $(msgnum(br, :WARN))              ")
+    print(io, "    Excluded/suspicious: $(length(br.rml))      ")
+end
+
+function Base.show(io::IO, mb::MIBootResult)
+    println(io, "    Multiple Imputation & Bootstrap             ")
+    println(io, "------------------------------------------------")
+    println(io, mb.mir)
+    println(io, "    Total number of replications: $(sum(tvlength.(mb.br)))/$(sum(bvlength.(mb.br)))")
+    println(io, "    Total Errors: $(sum(msgnum.(mb.br, :ERROR)))   ")
+    print(io,   "    Total Warnings: $(sum(msgnum.(mb.br, :WARN)))")
 end

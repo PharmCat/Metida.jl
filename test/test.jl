@@ -666,9 +666,9 @@ end
     )
     Metida.fit!(lmm)
 
-    @test_nowarn Base.show(io, Metida.bootstrap(lmm; n = 10, double = false, verbose = false, rng = MersenneTwister(1263)))
+    #@test_nowarn Base.show(io, Metida.bootstrap(lmm; n = 10, double = false, verbose = false, rng = MersenneTwister(1263)))
     @test_nowarn begin
-        br = Metida.bootstrap(lmm; n = 10, double = true, verbose = false, rng = MersenneTwister(1263))
+        br = Metida.bootstrap(lmm; n = 10, double = false, verbose = false, rng = MersenneTwister(1263))
         Base.show(io, br)
         confint(br)
         confint(br, 1; method = :bp)
@@ -680,5 +680,8 @@ end
     mi = Metida.MILMM(lmm, df0m)
     @test_nowarn Base.show(io, mi)
     @test_nowarn Base.show(io, Metida.milmm(mi; n = 10, verbose = false, rng = MersenneTwister(1234)))
-    @test_nowarn Base.show(io, Metida.miboot(mi; n = 10, verbose = false, rng = MersenneTwister(1234)))
+    @test_nowarn begin
+        mb =  Metida.miboot(mi; n = 10, bootn = 10, varn = 10, double = true, verbose = false, rng = MersenneTwister(1234))
+        Base.show(io, mb)
+    end
 end
