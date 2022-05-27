@@ -84,11 +84,11 @@ function mulθ₃(y, X, β, V::AbstractArray{T}) where T
     θ = zero(T)
 
     if q == 1
-        c = zero(T)
+        cs = zero(T)
         #=@turbo=# @inbounds  for m in 1:p
-            c += X[1, m] * β[m]
+            cs += X[1, m] * β[m]
         end
-        return -V[1, 1] * (y[1] - c)^2
+        return -V[1, 1] * (y[1] - cs)^2
     end
 
     c = zeros(T, q)
@@ -130,9 +130,9 @@ vec = rz * θ
 =#
 @inline function tmul_unsafe(rz, θ::AbstractVector{T}) where T
     vec = zeros(T, size(rz, 1))
-    #=@turbo=# @inbounds  for r ∈ axes(rz, 1)
+    #=@turbo=# for r ∈ axes(rz, 1)
         for i ∈ axes(rz, 2)
-            vec[r] += rz[r, i] * θ[i]
+            @inbounds vec[r] += rz[r, i] * θ[i]
         end
     end
     vec

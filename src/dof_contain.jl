@@ -41,10 +41,10 @@ end
 """
 function dof_contain(lmm, i)
     ind  = lmm.mm.assign[i]
-    sym  = get_symb(lmm.mf.f.rhs.terms[ind])
+    sym  = StatsModels.termvars(lmm.mf.f.rhs.terms[ind])
     rr   = Vector{Int}(undef, 0)
     for r = 1:length(lmm.covstr.random)
-        if length(intersect(sym, get_symb(lmm.covstr.random[r].model))) > 0
+        if length(intersect(sym, StatsModels.termvars(lmm.covstr.random[r].model))) > 0
             push!(rr, rankxz(lmm, r))
         end
     end
@@ -61,10 +61,10 @@ function dof_contain(lmm)
     rz   = 0
     for i = 1:length(lmm.mm.assign)
         ind  = lmm.mm.assign[i]
-        sym  = get_symb(lmm.mf.f.rhs.terms[ind])
+        sym  = StatsModels.termvars(lmm.mf.f.rhs.terms[ind])
         rr   = Vector{Int}(undef, 0)
         for r = 1:length(lmm.covstr.random)
-            if length(intersect(sym, get_symb(lmm.covstr.random[r].model))) > 0
+            if length(intersect(sym, StatsModels.termvars(lmm.covstr.random[r].model))) > 0
                 if rrt[r] == 0 rrt[r] = rankxz(lmm, r) end
                 push!(rr, rrt[r])
             end
@@ -86,10 +86,10 @@ end
 
 """
 function dof_contain_f(lmm, i)
-    sym  = get_symb(lmm.mf.f.rhs.terms[i])
+    sym  = StatsModels.termvars(lmm.mf.f.rhs.terms[i])
     rr   = Vector{Int}(undef, 0)
     for r = 1:length(lmm.covstr.random)
-        if length(intersect(sym, get_symb(lmm.covstr.random[r].model))) > 0
+        if length(intersect(sym, StatsModels.termvars(lmm.covstr.random[r].model))) > 0
             push!(rr, rankxz(lmm, r))
         end
     end

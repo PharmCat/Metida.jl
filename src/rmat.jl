@@ -20,7 +20,7 @@ function rmat!(::Any, ::Any, ::Any,  ::AbstractCovarianceType)
     error("No rmat! method defined for thit structure!")
 end
 #SI
-function rmat!(mx, θ, ::AbstractMatrix, ::SI_)
+Base.@propagate_inbounds function rmat!(mx, θ, ::AbstractMatrix, ::SI_)
     θsq = θ[1]*θ[1]
     @inbounds @simd for i ∈ axes(mx, 1)
             mx[i, i] += θsq
@@ -29,8 +29,8 @@ function rmat!(mx, θ, ::AbstractMatrix, ::SI_)
 end
 #DIAG
 function rmat!(mx, θ, rz, ::DIAG_)
-    #=@turbo=# @inbounds  for i ∈ axes(mx, 1)
-        for c ∈ axes(θ, 1)
+    #=@turbo=#  for i ∈ axes(mx, 1)
+        @inbounds @simd for c ∈ axes(θ, 1)
             mx[i, i] += rz[i, c] * θ[c] * θ[c]
         end
     end

@@ -30,7 +30,9 @@ struct MILMM{T} <: MetidaModel
         datam, data_ = StatsModels.missing_omit(NamedTuple{tuple(tv...)}(Tables.columntable(data)))
         rv           = termvars(lmm.model.lhs)[1]
         rcol         = Tables.getcolumn(data, rv)[data_]
+        # check NaN values
         if any(x-> isnanm(x), rcol) error("Some values is NaN!") end
+        # replace missing to NaN
         replace!(rcol, missing => NaN)
         data         = merge(NamedTuple{(rv,)}((convert(Vector{Float64}, rcol),)), datam)
         lmmlog       = Vector{LMMLogMsg}(undef, 0)
@@ -58,6 +60,7 @@ struct BootstrapResult{T}
     beta::Vector{T}
     theta::Vector{T}
     bv::Vector{Vector{T}}
+    #SE vector?
     tv::Vector{Vector{T}}
     rml::Vector{Int}
     log::Vector{LMMLogMsg}
@@ -74,7 +77,7 @@ end
 
 Parametric bootstrap.
 
-- double - use double approach (defaultr - true);
+- double - use double approach (default - true);
 - n - number of bootstrap samples for coefficient estimtion;
 - varn - number of bottstrap samples for varianvce estimation;
 - verbose - show progress bar;
@@ -84,6 +87,15 @@ Parametric bootstrap.
 Parametric bootstrap based on generating random responce vector from known distribution, that given from fitted LMM model.
 For one-stage bootstrap variance parameters and coefficients simulated in one step. For double bootstrap (two-tage) variance parameters simulated first,
 than used for simulating coefficients on stage two.
+
+```julia
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0m;
+random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.CSH),
+)
+Metida.fit!(lmm)
+bt = Metida.bootstrap(lmm; n = 1000, varn = 1000, double = true, rng = MersenneTwister(1234))
+confint(bt)
+```
 
 See also: [`confint`](@ref), [`Metida.miboot`](@ref)
 """
@@ -95,7 +107,9 @@ function bootstrap(lmm::LMM; double = true, n = 100, varn = n, verbose = true, i
         return bootstrap_(lmm; n = n, verbose = verbose, maxiter = 5, init = init, rng = rng)
     end
 end
-
+"""
+    Make distribution vector for each lmm block
+"""
 function make_dist_vec(lmm::LMM{T}) where T
     nb   = nblocks(lmm)
     dist = Vector{FullNormal}(undef, nb)
@@ -109,14 +123,19 @@ function make_dist_vec(lmm::LMM{T}) where T
     end
     dist
 end
+"""
+    Try to fit temprorary made lmm object
+"""
 function fit_lmm!(lmmb, init, dist, i, nb, maxiter, rml, log, rng)
     local success = false
     local iter    = maxiter
     while !success && iter > 0
         for j = 1:nb
+            # Generate data from 'dist' distribution vector
             rand!(rng, dist[j], lmmb.dv.yv[j])
         end
         try
+            # try to fit; using different first step?
             fit!(lmmb; init = init, hes = false)
             success = isfitted(lmmb)
         catch
@@ -130,6 +149,9 @@ function fit_lmm!(lmmb, init, dist, i, nb, maxiter, rml, log, rng)
     end
     lmmb
 end
+"""
+    Simple bootstrap.
+"""
 function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng) where T
     nb   = nblocks(lmm)
     bv   = Vector{Vector{T}}(undef, n)
@@ -150,7 +172,9 @@ function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng) where T
     end
     BootstrapResult(coef(lmm), theta(lmm), bv, tv, rml, log)
 end
-
+"""
+    Double bootstrap.
+"""
 function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng) where T
     nb   = nblocks(lmm)
     bv   = Vector{Vector{T}}(undef, n)
@@ -179,7 +203,7 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng) where T
             desc="Bootstrapping II LMMs...",
             barglyphs=BarGlyphs('|','█', ['▁' ,'▂' ,'▃' ,'▄' ,'▅' ,'▆', '▇'],' ','|',),
             barlen=20)
-    m   = Vector{T}(undef, lmm.maxvcbl)
+    m   = Vector{T}(undef, lmm.maxvcbl)                 # means vector
     Vt  = Matrix{T}(undef, lmm.maxvcbl, lmm.maxvcbl)
     V   = view(Vt, 1:length(m), 1:length(m))
     tvl = length(tv)
@@ -187,8 +211,10 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng) where T
         local success = false
         local iter    = maxiter
         while !success && iter > 0
+            # Iteration if number of bootstram more than on step I
             r = rem(i, tvl)
             theta = tv[r == 0 ? tvl : r]
+            # make distributions and generate responce
             for j = 1:nb
                 q    = length(lmm.covstr.vcovblock[j])
                 if length(m) != q resize!(m, q) end
@@ -200,6 +226,7 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng) where T
                 vmatrix!(V, theta, lmm, j)
                 rand!(rng, MvNormal(m, Symmetric(V)), lmmb.dv.yv[j])
             end
+            #try to fit
             try
                 fit!(lmmb; init = init, hes = false)
                 success = isfitted(lmmb)
@@ -222,7 +249,7 @@ end
 
 Multiple imputation.
 
-For each subject raandom vector of missing values generated from distribution:
+For each subject random vector of missing values generated from distribution:
 
 ```math
 X_{imp} \\sim N(\\mu_{miss \\mid obs}, \\Sigma_{miss \\mid obs})
@@ -292,13 +319,7 @@ bm = Metida.miboot(mi; n = 100, rng = MersenneTwister(1234))
 function miboot(mi::MILMM{T}; n = 100, double = true, bootn = 100, varn = bootn, verbose = true, rng = default_rng()) where T
     mres = milmm(mi; n = n, verbose = verbose, rng = rng)
     br = Vector{BootstrapResult{T}}(undef, n)
-    #nb   = nblocks(mres.lmm[1])
-    #dist = Vector{MvNormal}(undef, nb)
-    #bv   = Vector{Vector{T}}(undef, n)
-    #tv   = Vector{Vector{T}}(undef, n)
-    #local rml  = Vector{Int}(undef, 0)
-    #local log  = Vector{LMMLogMsg}(undef, 0)
-    #V    = zeros(lmm[1].maxvcbl, lmm[1].maxvcbl)
+
     p = Progress(n, dt=0.5,
             desc="Bootstrap MI LMMs...",
             barglyphs=BarGlyphs('|','█', ['▁' ,'▂' ,'▃' ,'▄' ,'▅' ,'▆', '▇'],' ','|',),
@@ -308,44 +329,6 @@ function miboot(mi::MILMM{T}; n = 100, double = true, bootn = 100, varn = bootn,
         if verbose next!(p) end
     end
     MIBootResult(mres, br)
-    #=
-    p = Progress(n, dt=0.5,
-            desc="Bootstrap MI LMMs...",
-            barglyphs=BarGlyphs('|','█', ['▁' ,'▂' ,'▃' ,'▄' ,'▅' ,'▆', '▇'],' ','|',),
-            barlen=20)
-    for j = 1:n
-        Base.Threads.@threads for i = 1:nb
-            q    = length(mres.lmm[j].covstr.vcovblock[i])
-            m    = mres.lmm[j].dv.xv[i] * mres.lmm[j].result.beta
-            V    = zeros(q, q)
-            vmatrix!(V, mres.lmm[j].result.theta, mres.lmm[j], i)
-            dist[i] = MvNormal(m, Symmetric(V))
-        end
-
-        local success = false
-        local iter    = 1
-        while !success && iter < 10
-            for i = 1:nb
-                mres.lmm[j].dv.yv[i] = rand(rng, dist[i])
-            end
-            try
-                fit!(mres.lmm[j]; refitinit = true, hes = false)
-                success = isfitted(mres.lmm[j])
-            catch
-                lmmlog!(log, 1, LMMLogMsg(:WARN, "Error in iteration $i."))
-            end
-            if !isfitted(mres.lmm[j])
-                if !(j in rml) push!(rml, j) end
-                lmmlog!(log, 1, LMMLogMsg(:ERROR, "Itaration $j (try $(iter)) was not successful."))
-            end
-            iter +=1
-        end
-        bv[j] = coef(mres.lmm[j])
-        tv[j] = theta(mres.lmm[j])
-        if verbose next!(p) end
-    end
-    BootstrapResult(coef(mi.lmm), theta(mi.lmm), bv, tv, rml, log)
-    =#
 end
 # Finf all block with missing values
 # NaN used for mising data
@@ -530,6 +513,38 @@ function Base.show(io::IO, mr::MILMMResult)
     println(io, "------------------------------------------------")
     println(io, "    Generated datasets:                         ")
     print(io, "    Number of sets: $(length(mr.lmm))           ")
+    lmmn = length(mr.lmm)
+    if lmmn > 1
+        println(io, "")
+        cl   = coefn(mr.milmm.lmm)
+        β    = zeros(cl)
+        σ²   = zeros(cl)
+        βii  = zeros(cl)
+        βtv  = zeros(cl)
+    #stderror_(lmm::LMM)
+    #coef_(lmm::LMM)
+        for i = 1:lmmn
+            for c = 1:cl
+                β[c]  += coef_(mr.lmm[i])[c]
+                σ²[c] += stderror_(mr.lmm[i])[c]^2
+            end
+        end
+        for c = 1:cl
+            β[c]  = β[c]/lmmn
+            σ²[c] = σ²[c]/lmmn
+        end
+        for i = 1:lmmn
+            for c = 1:cl
+                βii[c] += (coef_(mr.lmm[i])[c] - β[c])^2
+            end
+        end
+        for c = 1:cl
+            βii[c] = βii[c]/(lmmn-1)
+            βtv[c] = σ²[c] + (1 + 1/lmmn)*βii[c]
+        end
+        mt = metida_table(coefnames(mr.milmm.lmm),  β, σ², βii, βtv, sqrt.(βtv); names = (Symbol("Coef. name"), Symbol("β"), Symbol("σ²"), Symbol("Inter-σ²"), Symbol("Total σ²"), Symbol("Total Std. Error")))
+        show(io, mt)
+    end
 end
 
 function tvlength(br::BootstrapResult)

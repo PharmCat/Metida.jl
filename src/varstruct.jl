@@ -213,9 +213,9 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                 z         = hcat(z, ztemp)
                 fillur!(zrndur, i, q)
                 fillur!(tr, i, t)
-                symbs       = get_symb(random[i].subj)
+                symbs       = StatsModels.termvars(random[i].subj)
                 if length(symbs) > 0
-                    cdata     = Tuple(Tables.getcolumn(Tables.columns(data), x) for x in get_symb(random[i].subj))
+                    cdata     = Tuple(Tables.getcolumn(Tables.columns(data), x) for x in StatsModels.termvars(random[i].subj))
                     dicts[i]  = Dict{Tuple{eltype.(cdata)...}, Vector{Int}}()
                     indsdict!(dicts[i], cdata)
                 else
@@ -249,9 +249,9 @@ struct CovStructure{T} <: AbstractCovarianceStructure
 
         schema[end] = apply_schema(repeated.model, StatsModels.schema(data, repeated.coding))
         rz          = modelcols(MatrixTerm(schema[end]), data)
-        symbs       = get_symb(repeated.subj)
+        symbs       = StatsModels.termvars(repeated.subj)
         if length(symbs) > 0
-            cdata       = Tuple(Tables.getcolumn(Tables.columns(data), x) for x in get_symb(repeated.subj))
+            cdata       = Tuple(Tables.getcolumn(Tables.columns(data), x) for x in StatsModels.termvars(repeated.subj))
             dicts[end]  = Dict{Tuple{eltype.(cdata)...}, Vector{Int}}()
             indsdict!(dicts[end], cdata)
         else
@@ -290,12 +290,12 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         end
         #blocks = makeblocks(subjblockmat) #vcovblock
         blocks  = collect(values(subjblockdict))
-        sblock = Vector{Vector{Vector{Vector{UInt32}}}}(undef, length(blocks))
+        sblock = Vector{Vector{Vector{Vector{Int}}}}(undef, length(blocks))
         ########################################################################
         @inbounds for i = 1:length(blocks)
-            sblock[i] = Vector{Vector{Vector{UInt32}}}(undef, alleffl)
+            sblock[i] = Vector{Vector{Vector{Int}}}(undef, alleffl)
             @inbounds for s = 1:alleffl
-                sblock[i][s] = Vector{Vector{UInt32}}(undef, 0)
+                sblock[i][s] = Vector{Vector{Int}}(undef, 0)
                 #=
                 @inbounds for col in eachcol(view(subjz[s], blocks[i], :))
                     if any(col) push!(sblock[i][s], findall(col)) end

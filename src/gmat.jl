@@ -59,7 +59,7 @@ function gmat!(::Any, ::Any, ::ZERO)
     nothing
 end
 #SI
-function gmat!(mx, θ, ::SI_)
+Base.@propagate_inbounds function gmat!(mx, θ, ::SI_)
     val = θ[1] ^ 2
     @inbounds @simd for i = 1:size(mx, 1)
         mx[i, i] = val

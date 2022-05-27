@@ -33,9 +33,10 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     :varlinkf ∈ kwkeys ? varlinkf = kwargs[:varlinkf] : varlinkf = :exp
     :rholinkf ∈ kwkeys ? rholinkf = kwargs[:rholinkf] : rholinkf = :sigm
     :aifirst ∈ kwkeys ? aifirst = kwargs[:aifirst] : aifirst = :default
+    :aifmax ∈ kwkeys ? aifmax = kwargs[:aifmax] : aifmax = 10
     :g_tol ∈ kwkeys ? g_tol = kwargs[:g_tol] : g_tol = 1e-10
-    :x_tol ∈ kwkeys ? x_tol = kwargs[:x_tol] : x_tol = :1e-10
-    :f_tol ∈ kwkeys ? f_tol = kwargs[:f_tol] : f_tol = :1e-10
+    :x_tol ∈ kwkeys ? x_tol = kwargs[:x_tol] : x_tol = 1e-10
+    :f_tol ∈ kwkeys ? f_tol = kwargs[:f_tol] : f_tol = 1e-10
     :hes ∈ kwkeys ? hes = kwargs[:hes] : hes = true
     :init ∈ kwkeys ? init = kwargs[:init] : init = :nothing
     :io ∈ kwkeys ? io = kwargs[:io] : io = stdout
@@ -43,6 +44,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     :iterations ∈ kwkeys ? iterations = kwargs[:iterations] : iterations = 300
     :refitinit ∈ kwkeys ? refitinit = kwargs[:refitinit] : refitinit = false
     :optmethod ∈ kwkeys ? optmethod = kwargs[:optmethod] : optmethod = :default
+    :singtol ∈ kwkeys ? singtol = kwargs[:singtol] : singtol = 1e-8
 
     # If model was fitted, previous results can be used if `refitinit` == true
     # Before fitting clear log
@@ -110,7 +112,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     end
     ############################################################################
     if aifirst == :ai || aifirst == :score
-        optstep!(lmm, lmm.dv, θ; method = aifirst, maxopt = 10)
+        optstep!(lmm, lmm.dv, θ; method = aifirst, maxopt = aifmax)
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "First step with AI-like method ($aifirst), θ: "*string(θ)))
     end
     varlinkrvecapply!(θ, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf)
@@ -147,7 +149,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         # SE
         if  !any(x -> x < 0.0, diag(lmm.result.c))
             lmm.result.se           = sqrt.(diag(lmm.result.c))
-            if any(x-> x < 1e-8, lmm.result.se) && minimum(lmm.result.se)/maximum(lmm.result.se) < 1e-8 lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Some of the SE parameters is suspicious.")) end
+            if any(x-> x < singtol, lmm.result.se) && minimum(lmm.result.se)/maximum(lmm.result.se) < singtol lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Some of the SE parameters is suspicious.")) end
             lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model fitted."))
             lmm.result.fit      = true
         else
@@ -160,7 +162,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     if !isa(lmm.covstr.random[1].covtype.s, ZERO)
         for i = 1:length(lmm.covstr.random)
             dg = det(gmatrix(lmm, i))
-            if dg < 1e-8 lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "det(G) of random effect $(i) is less 1e-08.")) end
+            if dg < singtol lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "det(G) of random effect $(i) is less $(singtol).")) end
         end
     end
     # Check Hessian
@@ -173,8 +175,8 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         end
         qrd = qr(lmm.result.h)
         for i = 1:length(lmm.result.theta)
-            if abs(qrd.R[i,i]) < 1E-8
-                lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian parameter ($(lmm.covstr.ct[i])) QR.R diagonal value ($(i)) is less than 1e-8."))
+            if abs(qrd.R[i,i]) < singtol
+                lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian parameter ($(lmm.covstr.ct[i])) QR.R diagonal value ($(i)) is less than $(singtol)."))
             end
         end
     end

@@ -83,41 +83,18 @@ struct LMM{T} <: MetidaModel
         if repeated.covtype.s == :SI && !isa(repeated.model, ConstantTerm)
             lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Repeated effect not a constant, but covariance type is SI. "))
         end
-        lmmdata = LMMData(mm.m, response(mf))
+        #lmmdata = LMMData(mm.m, response(mf))
+        lmmdata = LMMData(modelmatrix(mf), response(mf))
         covstr = CovStructure(random, repeated, data)
-        rankx =  rank(mm.m)
-        if rankx != size(mm.m, 2)
+        rankx =  rank(lmmdata.xv)
+        if rankx != size(lmmdata.xv, 2)
             lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Fixed-effect matrix not full-rank!"))
         end
         LMM(model, mf, mm, covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, ModelResult(), findmax(length, covstr.vcovblock)[1], lmmlog)
         #LMM(model, mf, mm, covstr, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, ModelResult(), findmax(length, covstr.vcovblock)[1], lmmlog)
     end
 end
-"""
-    lcontrast(lmm::LMM, i::Int)
 
-L-contrast matrix for `i` fixed effect.
-"""
-function lcontrast(lmm::LMM, i::Int)
-    n = nterms(lmm.mf)
-    if i > n || n < 1 error("Factor number out of range 1-$(n)") end
-    inds = findall(x -> x==i, lmm.mm.assign)
-    if typeof(lmm.mf.f.rhs.terms[i]) <: CategoricalTerm
-        mxc   = zeros(size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1), size(lmm.mm.m, 2))
-        mxcv  = view(mxc, :, inds)
-        mxcv .= lmm.mf.f.rhs.terms[i].contrasts.matrix
-        mx    = zeros(size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1) - 1, size(lmm.mm.m, 2))
-        for i = 2:size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1)
-            mx[i-1, :] .= mxc[i, :] - mxc[1, :]
-        end
-    else
-        mx = zeros(length(inds), size(lmm.mm.m, 2))
-        for i = 1:length(inds)
-            mx[i, inds[i]] = 1
-        end
-    end
-    mx
-end
 ################################################################################
 """
     thetalength(lmm::LMM)
@@ -143,7 +120,10 @@ end
 Return theta vector.
 """
 function theta(lmm::LMM)
-    copy(lmm.result.theta)
+    copy(theta_(lmm))
+end
+function theta_(lmm::LMM)
+    lmm.result.theta
 end
 """
     rankx(lmm::LMM)

@@ -58,8 +58,11 @@ ML:, n = total number of observation; d = number of fixed effect parameters + nu
 
 Model coefficients (β).
 """
-StatsBase.coef(lmm::LMM) = copy(lmm.result.beta)
+StatsBase.coef(lmm::LMM) = copy(coef_(lmm))
 
+function coef_(lmm::LMM)
+    lmm.result.beta
+end
 """
     StatsBase.coefnames(lmm::LMM) = StatsBase.coefnames(lmm.mf)
 
@@ -168,6 +171,10 @@ StatsBase.vcov(lmm::LMM) = copy(lmm.result.c)
 Standard error
 """
 StatsBase.stderror(lmm::LMM) = sqrt.(diag(vcov(lmm)))
+
+function stderror_(lmm::LMM)
+    lmm.result.se
+end
 
 stderror!(v, lmm::LMM) = copyto!(v, lmm.result.se)
 
