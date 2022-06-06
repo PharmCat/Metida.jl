@@ -4,16 +4,19 @@ mutable struct ModelResult
     fit::Bool
     optim
     theta::Union{Vector, Nothing}
-    reml::Union{Float64, Nothing}
+    reml::Float64
     beta::Union{Vector, Nothing}
     h::Union{Matrix, Nothing}
     c::Union{Matrix, Nothing}
     se::Union{Vector, Nothing}
     grc::Union{Vector, Nothing}
-
+    ipd::Bool
     function ModelResult()
-        new(false, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
+        new(false, nothing, nothing, NaN, nothing, nothing, nothing, nothing, nothing, false)
     end
+    #function ModelResult(tn::Int, bn::Int)
+    #    new(false, nothing, Vector{Float64}(undef, tn), NaN, Vector{Float64}(undef, bn), Matrix{Float64}(undef, tn, tn),  Matrix{Float64}(undef, bn, bn), Vector{Float64}(undef, bn), nothing, false)
+    #end
 end
 
 

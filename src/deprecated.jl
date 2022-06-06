@@ -771,3 +771,28 @@ function mulr(y::AbstractVector, X::AbstractMatrix, β::AbstractVector)
     return v
 end
 =#
+
+
+
+#=
+
+function get_symb(t::Union{ConstantTerm, InterceptTerm, FunctionTerm}; v = Vector{Symbol}(undef, 0))
+    v
+end
+function get_symb(t::Union{Term, CategoricalTerm}; v = Vector{Symbol}(undef, 0))
+    push!(v, t.sym)
+    v
+end
+function get_symb(t::InteractionTerm; v = Vector{Symbol}(undef, 0))
+    for i in t.terms
+        get_symb(i; v = v)
+    end
+    v
+end
+function get_symb(t::Tuple{Vararg{AbstractTerm}}; v = Vector{Symbol}(undef, 0))
+    for i in t
+        get_symb(i; v = v)
+    end
+    v
+end
+=#

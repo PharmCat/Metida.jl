@@ -49,7 +49,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     # If model was fitted, previous results can be used if `refitinit` == true
     # Before fitting clear log
     if lmm.result.fit
-        if length(lmm.log) > 0 deleteat!(lmm.log, 1:length(lmm.log)) end
+        if length(lmm.log) > 0 deleteat!(lmm.log, 1:length(lmm.log)) end #resize?
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Refit model..."))
         if refitinit
             lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Using previous initial parameters."))
@@ -143,8 +143,8 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         # If errors in last evaluetion - log it.
     if !noerrors LMMLogMsg(:ERROR, "The last optimization step wasn't accurate. Results can be wrong!") end
         # Fit true
-    if !isnan(lmm.result.reml) && !isinf(lmm.result.reml)
-        # Variance-vovariance matrix of β
+    if !isnan(lmm.result.reml) && !isinf(lmm.result.reml) && rank(iC) == size(iC, 1)
+        # Variance-covariance matrix of β
         lmm.result.c            = inv(Matrix(iC))
         # SE
         if  !any(x -> x < 0.0, diag(lmm.result.c))
@@ -159,10 +159,15 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         lmmlog!(io, lmm, verbose, LMMLogMsg(:ERROR, "REML not estimated or final iteration completed with errors."))
     end
     # Check G
+    lmm.result.ipd = true
     if !isa(lmm.covstr.random[1].covtype.s, ZERO)
         for i = 1:length(lmm.covstr.random)
-            dg = det(gmatrix(lmm, i))
-            if dg < singtol lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "det(G) of random effect $(i) is less $(singtol).")) end
+            if isposdef(gmatrix(lmm, i)) == false
+                lmm.result.ipd =  false
+                lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Variance-covariance matrix (G) of random effect $(i) is not positive definite."))
+            end
+            #dg = det(gmatrix(lmm, i))
+            #if dg < singtol lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "det(G) of random effect $(i) is less $(singtol).")) end
         end
     end
     # Check Hessian

@@ -201,6 +201,17 @@ function gmatrix(lmm::LMM{T}, r::Int) where T
     gmat!(G, view(lmm.result.theta, lmm.covstr.tr[r]), lmm.covstr.random[r].covtype.s)
     Symmetric(G)
 end
+
+
+"""
+    gmatrixipd(lmm::LMM)
+
+Return true if all variance-covariance matrix (G) of random effect is positive definite.
+"""
+function gmatrixipd(lmm::LMM)
+    lmm.result.ipd
+end
+
 """
     rmatrix(lmm::LMM{T}, i::Int) where T
 """
@@ -268,30 +279,6 @@ function hessian(lmm)
     hessian(lmm, lmm.result.theta)
 end
 ################################################################################
-
-#=
-
-function get_symb(t::Union{ConstantTerm, InterceptTerm, FunctionTerm}; v = Vector{Symbol}(undef, 0))
-    v
-end
-function get_symb(t::Union{Term, CategoricalTerm}; v = Vector{Symbol}(undef, 0))
-    push!(v, t.sym)
-    v
-end
-function get_symb(t::InteractionTerm; v = Vector{Symbol}(undef, 0))
-    for i in t.terms
-        get_symb(i; v = v)
-    end
-    v
-end
-function get_symb(t::Tuple{Vararg{AbstractTerm}}; v = Vector{Symbol}(undef, 0))
-    for i in t
-        get_symb(i; v = v)
-    end
-    v
-end
-=#
-
 ################################################################################
 # logdet with check
 #=

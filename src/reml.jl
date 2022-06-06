@@ -21,7 +21,7 @@ function checkmatrix!(mx::AbstractMatrix{T}) where T
     @inbounds for  i = 1:size(mx, 1)
         if mx[i,i] > dm dm = mx[i,i] end
     end
-    dm *= eps()
+    dm *= sqrt(eps())
     @inbounds for i = 1:size(mx, 1)
         if mx[i,i] <= dm
             mx[i,i] = dm
@@ -101,19 +101,30 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
         θ₂      = sum(accθ₂)
         βm      = sum(accβm)
         noerror = all(erroracc)
+        noerror = noerror * checkmatrix!(θ₂)
         θs₂     = Symmetric(θ₂)
         # Cholesky decomposition for matrix inverse θs₂ - Symmetric(θ₂); C = θ₂⁻¹
         local logdetθ₂
-        noerror = noerror * checkmatrix!(θs₂)
+        #local cθs₂
         try
             cθs₂    = cholesky(θs₂)
         # β calculation
             mul!(β, inv(cθs₂), βm)
         # final θ₂
             logdetθ₂ = logdet(cθs₂)
+            #detθ₂ = det(cθs₂)
+            #if detθ₂ > 0
+            #    logdetθ₂ = log(detθ₂)
+            #else
+            #    noerror  = false
+            #    logdetθ₂ = -Inf
+            #    β .= NaN
+            #end
         catch
-            mul!(β, inv(θs₂), βm)
-            logdetθ₂ = logdet(θs₂)
+            #mul!(β, inv(θs₂), βm)
+            #logdetθ₂ = logdet(θs₂)
+            logdetθ₂ = Inf
+            β .= NaN
         end
         # θ₃
         @inbounds @simd for i = 1:n
