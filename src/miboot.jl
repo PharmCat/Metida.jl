@@ -4,6 +4,8 @@ struct MRS{D}
     block::Vector{Tuple{Int, Vector{Int}}}
     dist::Vector{D}
 end
+
+# unify with MetidaBase
 isnanm(x) = isnan(x)
 isnanm(x::Missing) = false
 """
@@ -60,7 +62,7 @@ struct BootstrapResult{T}
     beta::Vector{T}
     theta::Vector{T}
     bv::Vector{Vector{T}}
-    #SE vector?
+    vv::Vector{Vector{T}} #SE vector?
     tv::Vector{Vector{T}}
     rml::Vector{Int}
     log::Vector{LMMLogMsg}
@@ -110,14 +112,15 @@ end
 """
     Make distribution vector for each lmm block
 """
-function make_dist_vec(lmm::LMM{T}) where T
+function make_dist_vec!(dist, lmm::LMM)
     nb   = nblocks(lmm)
-    dist = Vector{FullNormal}(undef, nb)
-    Base.Threads.@threads for i = 1:nb
+    #dist = Vector{FullNormal}(undef, nb)
+    #Base.Threads.@threads
+    for i = 1:nb
         q    = length(lmm.covstr.vcovblock[i])
-        m    = Vector{T}(undef, q)
+        m    = Vector{Float64}(undef, q)
         mul!(m, lmm.dv.xv[i], lmm.result.beta)
-        V    = zeros(T, q, q)
+        V    = zeros(Float64, q, q)
         vmatrix!(V, lmm.result.theta, lmm, i)
         dist[i] = MvNormal(m, Symmetric(V))
     end
@@ -126,51 +129,74 @@ end
 """
     Try to fit temprorary made lmm object
 """
-function fit_lmm!(lmmb, init, dist, i, nb, maxiter, rml, log, rng)
-    local success = false
-    local iter    = maxiter
-    while !success && iter > 0
-        for j = 1:nb
+function fit_lmm!(lmmb, init, dist, rng)
+    #local success = false
+    nb = nblocks(lmmb)
+
+    for j = 1:nb
             # Generate data from 'dist' distribution vector
-            rand!(rng, dist[j], lmmb.dv.yv[j])
-        end
-        try
+        rand!(rng, dist[j], lmmb.dv.yv[j])
+    end
+        #try
             # try to fit; using different first step?
-            fit!(lmmb; init = init, hes = false)
-            success = isfitted(lmmb)
-        catch
-            lmmlog!(log, 1, LMMLogMsg(:WARN, "Step I: Error in iteration $i. Try $(maxiter - iter + 1).$(iter == 1 ? " This was last try." : "")"))
-        end
-        iter -=1
-    end
-    if !isfitted(lmmb)
-        push!(rml, i)
-        lmmlog!(log, 1, LMMLogMsg(:ERROR, "Step I: Itaration $i was not successful."))
-    end
+    fit!(lmmb; init = init, hes = false)
+        #    success = isfitted(lmmb)
+        #catch
+        #    lmmlog!(log, 1, LMMLogMsg(:WARN, "Step I: Error in iteration $i. Try $(maxiter - iter + 1).$(iter == 1 ? " This was last try." : "")"))
+        #end
     lmmb
+end
+
+function check_lmm!(rml, log, lmmb, tlmm, tv, vi, i, ll, ul)
+    if isfitted(lmmb)
+        for v in vi
+            vvar =  tv[v]^2 / tlmm[v]
+            if !(ll < vvar < ul)
+                push!(rml, i)
+                lmmlog!(log, 1, LMMLogMsg(:WARN, "Itaration $i is suspisious: variance ratio = $vvar ."))
+                break
+            end
+        end
+    else
+        push!(rml, i)
+        lmmlog!(log, 1, LMMLogMsg(:ERROR, "Itaration $i was not successful."))
+    end
 end
 """
     Simple bootstrap.
 """
 function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng) where T
-    nb   = nblocks(lmm)
+    #nb   = nblocks(lmm)
     bv   = Vector{Vector{T}}(undef, n)
+    vv   = Vector{Vector{T}}(undef, n)
     tv   = Vector{Vector{T}}(undef, n)
-    local rml  = Vector{Int}(undef, 0)
-    local log  = Vector{LMMLogMsg}(undef, 0)
-    dist = make_dist_vec(lmm)
+    rml  = Vector{Int}(undef, 0)
+    log  = Vector{LMMLogMsg}(undef, 0)
+
     lmmb = deepcopy(lmm)
-    p = Progress(n, dt=0.5,
+    vi   = findall(x-> x == :var, lmm.covstr.ct)
+    tlmm = theta_(lmm) .^ 2
+    ll   = quantile(FDist(1, 1), 1/n)
+    ul   = quantile(FDist(1, 1), 1 - 1/n)
+    dist = Vector{FullNormal}(undef, nblocks(lmm))
+    make_dist_vec!(dist, lmm)
+
+    lmmlog!(log, 1, LMMLogMsg(:INFO, "Start bootstrap..."))
+
+    p = Progress(n, dt = 0.5,
             desc="Bootstrapping LMMs...",
             barglyphs=BarGlyphs('|','█', ['▁' ,'▂' ,'▃' ,'▄' ,'▅' ,'▆', '▇'],' ','|',),
             barlen=20)
     for i = 1:n
-        fit_lmm!(lmmb, init, dist, i, nb, maxiter, rml, log, rng)
+        fit_lmm!(lmmb, init, dist, rng)
         bv[i] = coef(lmmb)
+        vv[i] = stderror(lmmb)
         tv[i] = theta(lmmb)
         if verbose next!(p) end
+        check_lmm!(rml, log, lmmb, tlmm, tv[i], vi, i, ll, ul)
     end
-    BootstrapResult(coef(lmm), theta(lmm), bv, tv, rml, log)
+    lmmlog!(log, 1, LMMLogMsg(:INFO, "End bootstrap..."))
+    BootstrapResult(coef(lmm), theta(lmm), bv, vv, tv, rml, log)
 end
 """
     Double bootstrap.
@@ -178,26 +204,35 @@ end
 function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng) where T
     nb   = nblocks(lmm)
     bv   = Vector{Vector{T}}(undef, n)
+    vv   = Vector{Vector{T}}(undef, n)
     tv   = Vector{Vector{T}}(undef, varn)
-    local rml  = Vector{Int}(undef, 0)
-    local log  = Vector{LMMLogMsg}(undef, 0)
-    dist = make_dist_vec(lmm)
+    rml  = Vector{Int}(undef, 0)
+    log  = Vector{LMMLogMsg}(undef, 0)
     lmmb = deepcopy(lmm)
-    p = Progress(varn, dt=0.5,
+    vi   = findall(x-> x == :var, lmm.covstr.ct)
+    tlmm = theta_(lmm) .^ 2
+    ll   = quantile(FDist(1, 1), 1/varn)
+    ul   = quantile(FDist(1, 1), 1 - 1/varn)
+    dist = Vector{FullNormal}(undef, nblocks(lmm))
+    make_dist_vec!(dist, lmm)
+    lmmlog!(log, 1, LMMLogMsg(:INFO, "Start bootstrap, step I..."))
+    p = Progress(varn, dt = 0.5,
             desc="Bootstrapping I  LMMs...",
             barglyphs=BarGlyphs('|','█', ['▁' ,'▂' ,'▃' ,'▄' ,'▅' ,'▆', '▇'],' ','|',),
             barlen=20)
     # STEP 1
     for i = 1:varn
-        fit_lmm!(lmmb, init, dist, i, nb, maxiter, rml, log, rng)
+        fit_lmm!(lmmb, init, dist, rng)
         tv[i] = theta(lmmb)
+        check_lmm!(rml, log, lmmb, tlmm, tv[i], vi, i, ll, ul)
         if verbose next!(p) end
     end
     if length(rml) > 0
         deleteat!(tv, rml)
-        resize!(rml, 0)
         lmmlog!(log, 1, LMMLogMsg(:WARN, "Step I: Some variance results ($(length(rml))) was deleted."))
+        resize!(rml, 0)
     end
+    lmmlog!(log, 1, LMMLogMsg(:INFO, "Start step II..."))
     # STEP 2
     p = Progress(n, dt=0.5,
             desc="Bootstrapping II LMMs...",
@@ -207,42 +242,49 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng) where T
     Vt  = Matrix{T}(undef, lmm.maxvcbl, lmm.maxvcbl)
     V   = view(Vt, 1:length(m), 1:length(m))
     tvl = length(tv)
+    ll   = quantile(FDist(1, 1), 1/n)
+    ul   = quantile(FDist(1, 1), 1 - 1/n)
+
     for i = 1:n
-        local success = false
-        local iter    = maxiter
-        while !success && iter > 0
-            # Iteration if number of bootstram more than on step I
-            r = rem(i, tvl)
-            theta = tv[r == 0 ? tvl : r]
+        #success = false
+
+        # Iteration if number of bootstram more than on step I
+        r = rem(i, tvl)
+        theta = tv[r == 0 ? tvl : r]
             # make distributions and generate responce
-            for j = 1:nb
-                q    = length(lmm.covstr.vcovblock[j])
-                if length(m) != q resize!(m, q) end
-                mul!(m, lmm.dv.xv[j], lmm.result.beta)
-                if size(V, 1) != q
-                    V    = view(Vt, 1:q, 1:q)
-                end
-                fill!(V, zero(T))
-                vmatrix!(V, theta, lmm, j)
-                rand!(rng, MvNormal(m, Symmetric(V)), lmmb.dv.yv[j])
+        for j = 1:nb
+            q    = length(lmm.covstr.vcovblock[j])
+            if length(m) != q resize!(m, q) end
+            mul!(m, lmm.dv.xv[j], lmm.result.beta)
+            if size(V, 1) != q
+                V    = view(Vt, 1:q, 1:q)
             end
-            #try to fit
-            try
-                fit!(lmmb; init = init, hes = false)
-                success = isfitted(lmmb)
-            catch
-                lmmlog!(log, 1, LMMLogMsg(:WARN, "Step II: Error in iteration $i. Try $(maxiter - iter + 1).$(iter == 1 ? " This was last try." : "")"))
-            end
-            iter -=1
+            fill!(V, zero(T))
+            vmatrix!(V, theta, lmm, j)
+            rand!(rng, MvNormal(m, Symmetric(V)), lmmb.dv.yv[j])
         end
-        if !isfitted(lmmb)
-            push!(rml, i)
-            lmmlog!(log, 1, LMMLogMsg(:ERROR, "Step II: Itaration $i was not successful."))
-        end
+        # fit
+
+        fit!(lmmb; init = init, hes = false)
         bv[i] = coef(lmmb)
+        vv[i] = stderror(lmmb)
         if verbose next!(p) end
+        check_lmm!(rml, log, lmmb, tlmm, theta_(lmmb), vi, i, ll, ul)
+        #    success = isfitted(lmmb)
+        #catch
+        #    lmmlog!(log, 1, LMMLogMsg(:WARN, "Step II: Error in iteration $i. Try $(maxiter - iter + 1).$(iter == 1 ? " This was last try." : "")"))
+        #end
+        #iter -=1
+        #end
+        #if !isfitted(lmmb)
+        #    push!(rml, i)
+        #    lmmlog!(log, 1, LMMLogMsg(:ERROR, "Step II: Itaration $i was not successful."))
+        #end
+        #bv[i] = coef(lmmb)
+        #if verbose next!(p) end
     end
-    BootstrapResult(coef(lmm), theta(lmm), bv, tv, rml, log)
+    lmmlog!(log, 1, LMMLogMsg(:INFO, "End bootstrap..."))
+    BootstrapResult(coef(lmm), theta(lmm), bv, vv, tv, rml, log)
 end
 """
     milmm(mi::MILMM; n = 100, verbose = true, rng = default_rng())
