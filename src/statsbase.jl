@@ -170,7 +170,8 @@ StatsBase.vcov(lmm::LMM) = copy(lmm.result.c)
 
 Standard error
 """
-StatsBase.stderror(lmm::LMM) = sqrt.(diag(vcov(lmm)))
+StatsBase.stderror(lmm::LMM) = copy(stderror_(lmm))
+#StatsBase.stderror(lmm::LMM) = sqrt.(diag(vcov(lmm)))
 
 function stderror_(lmm::LMM)
     lmm.result.se
