@@ -81,7 +81,7 @@ end
 ################################################################################
 #                            COVARIANCE STRUCTURE
 ################################################################################
-function indsdict!(d::Dict{T}, cdata::Union{Tuple, NamedTuple}) where T
+function indsdict!(d::Dict, cdata::Union{Tuple, NamedTuple})
     @inbounds for (i, element) in enumerate(zip(cdata...))
         ind = ht_keyindex(d, element)
         if ind > 0
@@ -94,7 +94,7 @@ function indsdict!(d::Dict{T}, cdata::Union{Tuple, NamedTuple}) where T
     end
     d
 end
-function indsdict!(d::Dict{T}, cdata::AbstractVector) where T
+function indsdict!(d::Dict, cdata::AbstractVector)
     for i = 1:length(cdata)
         ind = ht_keyindex(d, cdata[i])
         if ind > 0
