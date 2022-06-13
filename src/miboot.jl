@@ -1,5 +1,9 @@
 ################################################################################
 # Multiple imputation blocks and distributions
+
+#using Bootstrap
+#import Bootstrap: BootstrapSample, original, straps
+
 struct MRS{D}
     block::Vector{Tuple{Int, Vector{Int}}}
     dist::Vector{D}
@@ -58,13 +62,13 @@ struct MILMMResult{T}
         new{T}(milmm, lmm)
     end
 end
-struct BootstrapResult{T}
+struct BootstrapResult{T} #<: BootstrapSample
     beta::Vector{T}
     theta::Vector{T}
-    bv::Vector{Vector{T}}
-    vv::Vector{Vector{T}} #SE vector?
-    tv::Vector{Vector{T}}
-    rml::Vector{Int}
+    bv::Vector{Vector{T}}  # Coef vector
+    vv::Vector{Vector{T}}  # SE vector
+    tv::Vector{Vector{T}}  # theta (var-cov) vecor
+    rml::Vector{Int}       # iterations with warn and errors
     log::Vector{LMMLogMsg}
 end
 struct MIBootResult{T1, T2}
@@ -74,6 +78,19 @@ struct MIBootResult{T1, T2}
         new{T1, T2}(mir, br)
     end
 end
+
+#=
+Bootstrap.original(br::BootstrapResult) = br.beta
+
+Bootstrap.original(br::BootstrapResult, idx::Int) = original(br)[idx]
+
+#Bootstrap.straps(br::BootstrapResult) = bs.t1
+
+Bootstrap.straps(br::BootstrapResult, idx::Int) = getindex.(br.bv, idx)
+
+Bootstrap.nvar(br::BootstrapResult) = length(br.beta)
+=#
+
 """
     bootstrap(lmm::LMM; double = true, n = 100, varn = n, verbose = true, init = lmm.result.theta, rng = default_rng())
 
@@ -146,7 +163,10 @@ function fit_lmm!(lmmb, init, dist, rng)
         #end
     lmmb
 end
+"""
 
+Check bootstrap results
+"""
 function check_lmm!(rml, log, lmmb, tlmm, tv, vi, i, ll, ul)
     if isfitted(lmmb)
         for v in vi
@@ -215,6 +235,7 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng) where T
     ul   = quantile(FDist(1, 1), 1 - 1/varn)
     dist = Vector{FullNormal}(undef, nblocks(lmm))
     make_dist_vec!(dist, lmm)
+
     lmmlog!(log, 1, LMMLogMsg(:INFO, "Start bootstrap, step I..."))
     p = Progress(varn, dt = 0.5,
             desc="Bootstrapping I  LMMs...",
@@ -366,10 +387,12 @@ function miboot(mi::MILMM{T}; n = 100, double = true, bootn = 100, varn = bootn,
             desc="Bootstrap MI LMMs...",
             barglyphs=BarGlyphs('|','█', ['▁' ,'▂' ,'▃' ,'▄' ,'▅' ,'▆', '▇'],' ','|',),
             barlen=20)
+
     for i = 1:n
         br[i] = bootstrap(mres.lmm[i]; double = double, n = bootn, varn = varn, verbose = false, init = mres.lmm[i].result.theta, rng = rng)
         if verbose next!(p) end
     end
+
     MIBootResult(mres, br)
 end
 # Finf all block with missing values
@@ -402,16 +425,16 @@ function covmatreorder(v::AbstractMatrix{T}, vec) where T
     mx = zeros(T, l, l)
     nm = append!(deepcopy(vec), setdiff(collect(1:l), vec))
     if l > 1
-        @inbounds for m = 1:length(nm) - 1
-            @inbounds for n = m + 1:l
+        for m = 1:length(nm) - 1
+            for n = m + 1:l
                 mx[m,n] = v[nm[m], nm[n]]
             end
         end
-        @inbounds for m = 1:length(nm)
+        for m = 1:length(nm)
             mx[m,m] = v[nm[m], nm[m]]
         end
     else
-        @inbounds mx[1,1] = v[vec[1], vec[1]]
+        mx[1,1] = v[vec[1], vec[1]]
     end
     Symmetric(mx), nm
 end
@@ -445,14 +468,14 @@ end
 # generate data views MI; X without changes
 function generate_mi(rng, data, dv::LMMDataViews{T}, vcovblock, mrs, rb, ty)  where T
     y  = Vector{Vector{T}}(undef, length(vcovblock))
-    yv = copy(data.yv)
+    yv = deepcopy(data.yv)
     for i = 1:length(vcovblock)
         if !(i in rb)
             y[i] = dv.yv[i]
         end
     end
-    @inbounds for i = 1:length(mrs.block)
-        yt = copy(dv.yv[mrs.block[i][1]])
+    for i = 1:length(mrs.block)
+        yt = deepcopy(dv.yv[mrs.block[i][1]])
         if length(ty) != length(mrs.block[i][2]) resize!(ty, length(mrs.block[i][2])) end
         yt[mrs.block[i][2]] .= rand!(rng, mrs.dist[i], ty)
         y[mrs.block[i][1]]   = yt
@@ -470,66 +493,62 @@ Confidence interval for bootstrap result.
 - :bp - bootstrap percentile;
 - :rbp - reverse bootstrap percentile;
 - :norm - Normal distribution;
+- :bcnorm - Bias corrected Normal distribution;
 - :jn - bias corrected (jackknife resampling).
 """
-function StatsBase.confint(br::BootstrapResult, n::Int; level::Float64=0.95, method=:bp)
+function StatsBase.confint(br::BootstrapResult, n::Int; level::Float64=0.95, method=:bp, delrml = false)
+    v = getindex.(br.bv, n)
+    if length(br.rml) > 0 && delrml
+         deleteat!(v, br.rml)
+    end
     if method == :bp
-        confint_q(br, n, 1-level)
+        confint_q(br, v, n, 1-level)
     elseif method == :rbp
-        confint_rq(br, n, 1-level)
+        confint_rq(br, v, n, 1-level)
     elseif method == :norm
-        confint_n(br, n, 1-level)
+        confint_n(br, v, n, 1-level)
+    elseif method == :bcnorm
+        confint_bcn(br, v, n, 1-level)
     elseif method == :jn
-        confint_jn(br, n, 1-level)
+        confint_jn(br, v, n, 1-level)
     else
         error("Method unknown!")
     end
 end
-function StatsBase.confint(br::BootstrapResult; level::Float64=0.95, method=:jn)
+function StatsBase.confint(br::BootstrapResult; level::Float64=0.95, method=:bp, delrml = false)
     l = length(first(br.bv))
     v = Vector{Tuple}(undef, l)
     for i = 1:l
-        v[i] = confint(br, i; level = level, method = method)
+        v[i] = confint(br, i; level = level, method = method, delrml = false)
     end
     v
 end
 ####
-function confint_q(bt::BootstrapResult, i::Int, alpha)
-    v = getindex.(bt.bv, i)
-    if length(bt.rml) > 0
-         deleteat!(v, bt.rml)
-    end
+function confint_q(bt::BootstrapResult, v, i::Int, alpha)
     (quantile(v, alpha/2), quantile(v, 1-alpha/2))
 end
-function confint_rq(bt::BootstrapResult, i::Int, alpha)
-    v = getindex.(bt.bv, i)
-    if length(bt.rml) > 0
-         deleteat!(v, bt.rml)
-    end
+function confint_rq(bt::BootstrapResult, v, i::Int, alpha)
     (2bt.beta[i]-quantile(v, 1-alpha/2), 2bt.beta[i]-quantile(v, alpha/2))
 end
-function confint_n(bt::BootstrapResult, i::Int, alpha)
-    v = getindex.(bt.bv, i)
-    if length(bt.rml) > 0
-         deleteat!(v, bt.rml)
-    end
+function confint_n(bt::BootstrapResult, v, i::Int, alpha)
     d = Normal(bt.beta[i], sqrt(var(v)))
+    (quantile(d, alpha/2), quantile(d, 1-alpha/2))
+end
+function confint_bcn(bt::BootstrapResult, v, i::Int, alpha)
+    d = Normal(2bt.beta[i] - mean(v), sqrt(var(v)))
     (quantile(d, alpha/2), quantile(d, 1-alpha/2))
 end
 function jn(v)
     s  = sum(v)
     n  = length(v)
-    (s .- v) ./ (n-1)
+    @. (s - v) / (n-1)
 end
-function confint_jn(bt::BootstrapResult, i::Int, alpha)
-    v     = getindex.(bt.bv, i)
-    if length(bt.rml) > 0
-         deleteat!(v, bt.rml)
-    end
+function confint_jn(bt::BootstrapResult, v, i::Int, alpha)
+
     m0    = bt.beta[i]
     n     = length(v)
     j     = jn(v)
-    theta = sum(j)/n
+    theta = sum(j)/n  # - CHECK THIS theta = m0
     sum1 = sum(x->(theta-x)^3, j)
     sum2 = sum(x->(theta-x)^2, j)
     a    = sum1 / sqrt(sum2^3) / 6
