@@ -706,7 +706,7 @@ end
 
     #@test_nowarn Base.show(io, Metida.bootstrap(lmm; n = 10, double = false, verbose = false, rng = MersenneTwister(1263)))
     #@test_nowarn
-    Metida.METIDA_SETTINGS[:MAX_THREADS] = 1
+    #Metida.METIDA_SETTINGS[:MAX_THREADS] = 1
 
     br = Metida.bootstrap(lmm; n = 10, double = false, verbose = false, rng = MersenneTwister(1263))
     br = Metida.bootstrap(lmm; n = 10, double = true, verbose = false, rng = MersenneTwister(1263))
