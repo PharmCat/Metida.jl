@@ -46,7 +46,7 @@ const LOGLDCORR = log(sqrt(eps()))
 const NEWTON_OM = Optim.Newton(;alphaguess = LineSearches.InitialHagerZhang(), linesearch = LineSearches.HagerZhang())
 const LBFGS_OM  = Optim.LBFGS(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.Static())
 
-const METIDA_SETTINGS = Dict(:MAX_THREADS => num_cores())
+const METIDA_SETTINGS = Dict(:MAX_THREADS => num_cores(), :CHUNK_SIZE => 1)
 
 include("exceptions.jl")
 include("sweep.jl")
