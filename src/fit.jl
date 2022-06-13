@@ -106,8 +106,8 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Initial θ: "*string(θ)))
     end
     # Initial step with modified Newton method
-    #chunk  = ForwardDiff.Chunk{min(10, length(θ))}()
-    chunk  = ForwardDiff.Chunk{1}()
+    chunk  = ForwardDiff.Chunk{min(10, length(θ))}()
+    #chunk  = ForwardDiff.Chunk{1}()
     if isa(aifirst, Bool)
         if aifirst aifirst == :ai else aifirst == :default end
     end
@@ -198,8 +198,8 @@ function optstep!(lmm, data, θ; method::Symbol = :ai, maxopt::Int=10)
     if method == :ai ai_func = sweep_ai else ai_func = sweep_score end
     reml, beta, θs₂, θ₃, rt = reml_sweep_β(lmm, data, θ)
     rt || error("Wrong initial conditions.")
-    #chunk  = ForwardDiff.Chunk{min(length(θ), 10)}()
-    chunk  = ForwardDiff.Chunk{1}()
+    chunk  = ForwardDiff.Chunk{min(length(θ), 10)}()
+    #chunk  = ForwardDiff.Chunk{1}()
     aif(x) = ai_func(lmm, data, x, beta)
     grf(x) = reml_sweep_β(lmm, data, x, beta)[1]
     aihcfg = ForwardDiff.HessianConfig(aif, θ, chunk)
