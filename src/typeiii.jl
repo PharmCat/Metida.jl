@@ -14,15 +14,15 @@ end
 
 Type III table.
 """
-function typeiii(lmm::LMM{T}; ddf::Symbol = :satter) where T
+function typeiii(lmm::LMM; ddf::Symbol = :satter)
     if !isfitted(lmm) error("Model not fitted!") end
     c           = nterms(lmm.mf)
     d           = Vector{Int}(undef, 0)
     fac         = Vector{String}(undef, c)
-    F           = Vector{T}(undef,c)
-    df          = Vector{T}(undef, c)
-    ndf         = Vector{T}(undef, c)
-    pval        = Vector{T}(undef, c)
+    F           = Vector{Float64}(undef,c)
+    df          = Vector{Float64}(undef, c)
+    ndf         = Vector{Float64}(undef, c)
+    pval        = Vector{Float64}(undef, c)
     for i = 1:c
         if typeof(lmm.mf.f.rhs.terms[i]) <: InterceptTerm{true}
             fac[i] = "(Intercept)"

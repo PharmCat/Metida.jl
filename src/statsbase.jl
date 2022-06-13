@@ -48,6 +48,31 @@ function StatsBase.confint(lmm::LMM{T}; level::Real=0.95, ddf::Symbol = :satter)
     cis
 end
 
+"""
+    StatsBase.confint(lmm::LMM{T}, i::Int; level::Real=0.95, ddf::Symbol = :satter) where T
+
+Confidece interval for coefficient `i`.
+"""
+function StatsBase.confint(lmm::LMM{T}, i::Int; level::Real=0.95, ddf::Symbol = :satter) where T
+    isfitted(lmm) || error("Model not fitted")
+    if i < 1 || i > coefn(lmm)
+        error("Wrong coef number")
+    end
+    alpha = 1.0 - level
+    if ddf == :satter
+        ddfv = dof_satter(lmm, i)
+    elseif ddf == :contain
+        ddfv = dof_contain(lmm, i)
+    elseif ddf == :residual
+        ddfv = dof_residual(lmm)
+    end
+
+    #ERROR: ArgumentError: TDist: the condition ν > zero(ν) is not satisfied
+    d = lmm.result.se[i] * quantile(TDist(ddfv), 1.0 - alpha / 2)
+    (lmm.result.beta[i] - d, lmm.result.beta[i] + d)
+
+end
+
 
 #=
 REML: n = total number of observation - number fixed effect parameters; d = number of covariance parameters

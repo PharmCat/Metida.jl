@@ -63,7 +63,9 @@ struct MILMMResult{T}
     end
 end
 struct BootstrapResult{T} #<: BootstrapSample
+    cn::Vector{String}
     beta::Vector{T}
+    se::Vector{T}
     theta::Vector{T}
     bv::Vector{Vector{T}}  # Coef vector
     vv::Vector{Vector{T}}  # SE vector
@@ -71,6 +73,7 @@ struct BootstrapResult{T} #<: BootstrapSample
     rml::Vector{Int}       # iterations with warn and errors
     log::Vector{LMMLogMsg}
 end
+
 struct MIBootResult{T1, T2}
     mir::MILMMResult{T1}
     br::Vector{BootstrapResult{T2}}
@@ -90,6 +93,9 @@ Bootstrap.straps(br::BootstrapResult, idx::Int) = getindex.(br.bv, idx)
 
 Bootstrap.nvar(br::BootstrapResult) = length(br.beta)
 =#
+nvar(br::BootstrapResult) = length(br.beta)
+straps(br::BootstrapResult, idx::Int)  = getindex.(br.bv, idx)
+sdstraps(br::BootstrapResult, idx::Int) = getindex.(br.vv, idx)
 
 """
     bootstrap(lmm::LMM; double = true, n = 100, varn = n, verbose = true, init = lmm.result.theta, rng = default_rng())
@@ -187,9 +193,9 @@ end
 """
 function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng) where T
     #nb   = nblocks(lmm)
-    bv   = Vector{Vector{T}}(undef, n)
-    vv   = Vector{Vector{T}}(undef, n)
-    tv   = Vector{Vector{T}}(undef, n)
+    bv   = Vector{Vector{Float64}}(undef, n)
+    vv   = Vector{Vector{Float64}}(undef, n)
+    tv   = Vector{Vector{Float64}}(undef, n)
     rml  = Vector{Int}(undef, 0)
     log  = Vector{LMMLogMsg}(undef, 0)
 
@@ -216,16 +222,16 @@ function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng) where T
         check_lmm!(rml, log, lmmb, tlmm, tv[i], vi, i, ll, ul)
     end
     lmmlog!(log, 1, LMMLogMsg(:INFO, "End bootstrap..."))
-    BootstrapResult(coef(lmm), theta(lmm), bv, vv, tv, rml, log)
+    BootstrapResult(coefnames(lmm), coef(lmm), stderror(lmm), theta(lmm), bv, vv, tv, rml, log)
 end
 """
     Double bootstrap.
 """
 function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng) where T
     nb   = nblocks(lmm)
-    bv   = Vector{Vector{T}}(undef, n)
-    vv   = Vector{Vector{T}}(undef, n)
-    tv   = Vector{Vector{T}}(undef, varn)
+    bv   = Vector{Vector{Float64}}(undef, n)
+    vv   = Vector{Vector{Float64}}(undef, n)
+    tv   = Vector{Vector{Float64}}(undef, varn)
     rml  = Vector{Int}(undef, 0)
     log  = Vector{LMMLogMsg}(undef, 0)
     lmmb = deepcopy(lmm)
@@ -305,7 +311,7 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng) where T
         #if verbose next!(p) end
     end
     lmmlog!(log, 1, LMMLogMsg(:INFO, "End bootstrap..."))
-    BootstrapResult(coef(lmm), theta(lmm), bv, vv, tv, rml, log)
+    BootstrapResult(coefnames(lmm), coef(lmm), stderror(lmm), theta(lmm), bv, vv, tv, rml, log)
 end
 """
     milmm(mi::MILMM; n = 100, verbose = true, rng = default_rng())
@@ -410,7 +416,7 @@ function missblocks(yv)
 end
 # return distribution vector for
 function mrsdist(lmm, mb, covstr, xv, yv)
-    dist = Vector{MvNormal}(undef, length(mb))
+    dist = Vector{FullNormal}(undef, length(mb))
     #Base.Threads.@threads
     for i in 1:length(mb)
         v       = vmatrix(lmm.result.theta, covstr, mb[i][1])
@@ -439,8 +445,8 @@ function covmatreorder(v::AbstractMatrix{T}, vec) where T
     Symmetric(mx), nm
 end
 # conditional vovariance matrix
-function mvconddist(mx, nm, vec, beta, xv::AbstractMatrix{T}, yv) where T #₁₂₃₄¹²³⁴⁵⁶⁷⁸⁹⁺⁻
-    m  = Vector{T}(undef, length(yv))
+function mvconddist(mx::AbstractMatrix, nm::AbstractVector, vec::AbstractVector, beta::AbstractVector, xv::AbstractMatrix, yv::AbstractVector)  #₁₂₃₄¹²³⁴⁵⁶⁷⁸⁹⁺⁻
+    m  = Vector{Float64}(undef, length(yv))
     mul!(m, xv, beta)
     q  = length(vec)
     N  = length(nm)
@@ -497,7 +503,7 @@ Confidence interval for bootstrap result.
 - :jn - bias corrected (jackknife resampling).
 """
 function StatsBase.confint(br::BootstrapResult, n::Int; level::Float64=0.95, method=:bp, delrml = false)
-    v = getindex.(br.bv, n)
+    v = straps(br, n)
     if length(br.rml) > 0 && delrml
          deleteat!(v, br.rml)
     end
@@ -516,7 +522,7 @@ function StatsBase.confint(br::BootstrapResult, n::Int; level::Float64=0.95, met
     end
 end
 function StatsBase.confint(br::BootstrapResult; level::Float64=0.95, method=:bp, delrml = false)
-    l = length(first(br.bv))
+    l = nvar(br)
     v = Vector{Tuple}(undef, l)
     for i = 1:l
         v[i] = confint(br, i; level = level, method = method, delrml = false)
@@ -624,6 +630,26 @@ function Base.show(io::IO, br::BootstrapResult)
     println(io, "    Errors: $(msgnum(br, :ERROR))               ")
     println(io, "    Warnings: $(msgnum(br, :WARN))              ")
     print(io, "    Excluded/suspicious: $(length(br.rml))      ")
+    if bvlength(br) > 1
+
+        β    = zeros(nvar(br))
+        σ    = zeros(nvar(br))
+        vβ   = zeros(nvar(br))
+
+        #βii  = zeros(nvar(br))
+        #βtv  = zeros(nvar(br))
+        for i = 1:nvar(br)
+            isr    = straps(br, i)
+            β[i]   = mean(isr)
+            vβ[i]  = sqrt(var(isr))
+            isr    = sdstraps(br, i)
+            σ[i]   = sqrt(sum(x-> x^2, isr)/bvlength(br))
+        end
+
+        println(io, "")
+        mt = metida_table(br.cn, br.beta, br.se,  β, vβ, σ; names = (Symbol("Coef. name"), Symbol("β*"), Symbol("σ*"), Symbol("β"), Symbol("var(β)"), Symbol("σ")))
+        show(io, mt)
+    end
 end
 
 function Base.show(io::IO, mb::MIBootResult)

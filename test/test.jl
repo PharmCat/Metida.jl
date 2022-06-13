@@ -74,6 +74,7 @@ include("testdata.jl")
     @test Metida.nblocks(lmm) == 5
     @test length(coefnames(lmm)) == 6
     @test Metida.confint(lmm)[end][1] ≈ -0.7630380758015894 atol=1E-4
+    @test Metida.confint(lmm, 6)[1] ≈ -0.7630380758015894 atol=1E-4
     @test Metida.confint(lmm; ddf = :residual)[end][1] ≈ -0.6740837049617738 atol=1E-4
 
     Metida.confint(lmm; ddf = :contain)[end][1] #NOT VALIDATED

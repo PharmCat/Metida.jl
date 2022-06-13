@@ -2,26 +2,26 @@
 
 struct LMMData{T}
     # Fixed effect matrix
-    xv::Matrix{T}
+    xv::Matrix{Float64}
     # Responce vector
     yv::Vector{T}
-    function LMMData(xa::Matrix{T}, ya::Vector{T}) where T
+    function LMMData(xa::Matrix{Float64}, ya::Vector{T}) where T
         new{T}(xa, ya)
     end
 end
 
 struct LMMDataViews{T} <: AbstractLMMDataBlocks
     # Fixed effect matrix views
-    xv::Vector{Matrix{T}}
+    xv::Vector{Matrix{Float64}}
     # Responce vector views
     yv::Vector{Vector{T}}
-    function LMMDataViews(xv::Vector{Matrix{T}}, yv::Vector{Vector{T}}) where T
+    function LMMDataViews(xv::Vector{Matrix{Float64}}, yv::Vector{Vector{T}}) where T
         new{T}(xv, yv)
     end
-    function LMMDataViews(xv::Matrix{T}, yv::Vector{T}, vcovblock) where T
+    function LMMDataViews(xv::Matrix{Float64}, yv::Vector{T}, vcovblock) where T
         #x1 = view(xv, vcovblock[1],:)
         #y1 = view(yv, vcovblock[1])
-        x = Vector{Matrix{T}}(undef, length(vcovblock))
+        x = Vector{Matrix{Float64}}(undef, length(vcovblock))
         y = Vector{Vector{T}}(undef, length(vcovblock))
         #x[1] = x1
         #y[1] = y1

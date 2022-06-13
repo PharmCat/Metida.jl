@@ -21,7 +21,7 @@ Make Linear-Mixed Model object.
 
 `repeated`: is a repeated effect (only one)
 """
-struct LMM{T} <: MetidaModel
+struct LMM{T<:AbstractFloat} <: MetidaModel
     model::FormulaTerm
     mf::ModelFrame
     mm::ModelMatrix
