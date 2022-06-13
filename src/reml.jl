@@ -52,7 +52,7 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
     #logdetθ₂      = zero(T)
     gvec          = gmatvec(θ, lmm.covstr)
     noerror       = true
-        ncore     = min(num_cores(), n, METIDA_SETTINGS[:MAX_THREADS])
+        ncore     = min(num_cores(), n, 16)
         accθ₁     = zeros(T, ncore)
         accθ₂     = Vector{Matrix{T}}(undef, ncore)
         accβm     = Vector{Vector{T}}(undef, ncore)
@@ -143,7 +143,7 @@ function reml_sweep_β(lmm, θ::Vector{T}, β::Vector) where T <: Number
 end
 =#
 function core_sweep_β(lmm, data, θ::Vector{T}, β, n) where T
-    ncore     = min(num_cores(), n, METIDA_SETTINGS[:MAX_THREADS])
+    ncore     = min(num_cores(), n, 16)
     accθ₁     = zeros(T, ncore)
     accθ₂     = Vector{Matrix{T}}(undef, ncore)
     accθ₃     = zeros(T, ncore)
