@@ -104,32 +104,23 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
         noerror = noerror * checkmatrix!(θ₂)
         θs₂     = Symmetric(θ₂)
         # Cholesky decomposition for matrix inverse θs₂ - Symmetric(θ₂); C = θ₂⁻¹
-        local logdetθ₂
-        #local cθs₂
-        try
-            cθs₂    = cholesky(θs₂)
-        # β calculation
+
+        cθs₂    = cholesky(θs₂, check = false)
+
+        if issuccess(cθs₂)
+            # β calculation
             mul!(β, inv(cθs₂), βm)
         # final θ₂
             logdetθ₂ = logdet(cθs₂)
-            #detθ₂ = det(cθs₂)
-            #if detθ₂ > 0
-            #    logdetθ₂ = log(detθ₂)
-            #else
-            #    noerror  = false
-            #    logdetθ₂ = -Inf
-            #    β .= NaN
-            #end
-        catch
-            #mul!(β, inv(θs₂), βm)
-            #logdetθ₂ = logdet(θs₂)
-            logdetθ₂ = Inf
-            β .= NaN
+            @inbounds @simd for i = 1:n
+                θ₃ += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹[i])
+            end
+        else
+            β       .= NaN
+            return   Inf, β, Inf, Inf, false
         end
         # θ₃
-        @inbounds @simd for i = 1:n
-            θ₃ += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹[i])
-        end
+
 
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θs₂, θ₃, noerror #REML, β, iC, θ₃, errors
 end
