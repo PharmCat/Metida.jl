@@ -94,8 +94,8 @@ Bootstrap.straps(br::BootstrapResult, idx::Int) = getindex.(br.bv, idx)
 Bootstrap.nvar(br::BootstrapResult) = length(br.beta)
 =#
 nvar(br::BootstrapResult) = length(br.beta)
-straps(br::BootstrapResult, idx::Int)  = getindex.(br.bv, idx)
-sdstraps(br::BootstrapResult, idx::Int) = getindex.(br.vv, idx)
+straps(br::BootstrapResult, idx::Int)  = getindex(br.bv, idx)
+sdstraps(br::BootstrapResult, idx::Int) = getindex(br.vv, idx)
 
 """
     bootstrap(lmm::LMM; double = true, n = 100, varn = n, verbose = true, init = lmm.result.theta, rng = default_rng())
@@ -124,12 +124,12 @@ confint(bt)
 
 See also: [`confint`](@ref), [`Metida.miboot`](@ref)
 """
-function bootstrap(lmm::LMM; double = true, n = 100, varn = n, verbose = true, init = lmm.result.theta, rng = default_rng())
+function bootstrap(lmm::LMM; double = true, n = 100, varn = n, verbose = true, init = lmm.result.theta, del = true, rng = default_rng())
     isfitted(lmm) || throw(ArgumentError("lmm not fitted!"))
     if double
-        return dbootstrap_(lmm; n = n, varn = varn, verbose = verbose, maxiter = 5, init = init, rng = rng)
+        return dbootstrap_(lmm; n = n, varn = varn, verbose = verbose, maxiter = 5, init = init,  del = del, rng = rng)
     else
-        return bootstrap_(lmm; n = n, verbose = verbose, maxiter = 5, init = init, rng = rng)
+        return bootstrap_(lmm; n = n, verbose = verbose, maxiter = 5, init = init,  del = del, rng = rng)
     end
 end
 """
@@ -138,8 +138,7 @@ end
 function make_dist_vec!(dist, lmm::LMM)
     nb   = nblocks(lmm)
     #dist = Vector{FullNormal}(undef, nb)
-    #Base.Threads.@threads
-    for i = 1:nb
+    Base.Threads.@threads for i = 1:nb
         q    = length(lmm.covstr.vcovblock[i])
         m    = Vector{Float64}(undef, q)
         mul!(m, lmm.dv.xv[i], lmm.result.beta)
@@ -153,20 +152,12 @@ end
     Try to fit temprorary made lmm object
 """
 function fit_lmm!(lmmb, init, dist, rng)
-    #local success = false
     nb = nblocks(lmmb)
-
     for j = 1:nb
-            # Generate data from 'dist' distribution vector
+        # Generate data from 'dist' distribution vector
         rand!(rng, dist[j], lmmb.dv.yv[j])
     end
-        #try
-            # try to fit; using different first step?
     fit!(lmmb; init = init, hes = false)
-        #    success = isfitted(lmmb)
-        #catch
-        #    lmmlog!(log, 1, LMMLogMsg(:WARN, "Step I: Error in iteration $i. Try $(maxiter - iter + 1).$(iter == 1 ? " This was last try." : "")"))
-        #end
     lmmb
 end
 """
@@ -191,15 +182,25 @@ end
 """
     Simple bootstrap.
 """
-function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng) where T
-    #nb   = nblocks(lmm)
-    bv   = Vector{Vector{Float64}}(undef, n)
-    vv   = Vector{Vector{Float64}}(undef, n)
-    tv   = Vector{Vector{Float64}}(undef, n)
+function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng, del) where T
+    #nb   = nblocks(lmm) thetalength(lmm) coefn(lmm)
+    bv   = Vector{Vector{Float64}}(undef, coefn(lmm))
+    vv   = Vector{Vector{Float64}}(undef, coefn(lmm))
+    for i = 1:coefn(lmm)
+        bv[i] = Vector{Float64}(undef, n)
+        vv[i] = Vector{Float64}(undef, n)
+    end
+    tv   = Vector{Vector{Float64}}(undef, thetalength(lmm))
+    for i = 1:thetalength(lmm)
+        tv[i] = Vector{Float64}(undef, n)
+    end
     rml  = Vector{Int}(undef, 0)
     log  = Vector{LMMLogMsg}(undef, 0)
 
-    lmmb = deepcopy(lmm)
+    #lmmb = deepcopy(lmm)
+
+    lmmb = LMM(lmm.model, lmm.mf, lmm.mm, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, ModelResult(), lmm.maxvcbl, Vector{LMMLogMsg}(undef, 0))
+
     vi   = findall(x-> x == :var, lmm.covstr.ct)
     tlmm = theta_(lmm) .^ 2
     ll   = quantile(FDist(1, 1), 1/n)
@@ -215,26 +216,56 @@ function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng) where T
             barlen=20)
     for i = 1:n
         fit_lmm!(lmmb, init, dist, rng)
-        bv[i] = coef(lmmb)
-        vv[i] = stderror(lmmb)
-        tv[i] = theta(lmmb)
+        c = coef_(lmmb)
+        s = stderror_(lmmb)
+        t = theta_(lmmb)
+        for j = 1:coefn(lmm)
+            bv[j][i] = c[j]
+            vv[j][i] = s[j]
+        end
+        for j = 1:thetalength(lmm)
+            tv[j][i] = t[j]
+        end
+        check_lmm!(rml, log, lmmb, tlmm, t, vi, i, ll, ul)
+        lmmb.result.fit = false
         if verbose next!(p) end
-        check_lmm!(rml, log, lmmb, tlmm, tv[i], vi, i, ll, ul)
     end
     lmmlog!(log, 1, LMMLogMsg(:INFO, "End bootstrap..."))
+    if del && length(rml) > 0
+        for j = 1:coefn(lmm)
+            deleteat!(bv[j], rml)
+            deleteat!(vv[j], rml)
+        end
+        for j = 1:thetalength(lmm)
+            deleteat!(tv[j], rml)
+        end
+        lmmlog!(log, 1, LMMLogMsg(:WARN, "Some results ($(length(rml))) was deleted."))
+    end
     BootstrapResult(coefnames(lmm), coef(lmm), stderror(lmm), theta(lmm), bv, vv, tv, rml, log)
 end
 """
     Double bootstrap.
 """
-function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng) where T
+function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng, del) where T
     nb   = nblocks(lmm)
-    bv   = Vector{Vector{Float64}}(undef, n)
-    vv   = Vector{Vector{Float64}}(undef, n)
+    #bv   = Vector{Vector{Float64}}(undef, coefn(lmm))
+    vv   = Vector{Vector{Float64}}(undef, coefn(lmm))
+    for i = 1:coefn(lmm)
+        #bv[i] = Vector{Float64}(undef, n)
+        vv[i] = Vector{Float64}(undef, n)
+    end
+    tvr   = Vector{Vector{Float64}}(undef, thetalength(lmm))
+    bvr   = Vector{Vector{Float64}}(undef, coefn(lmm))
+
     tv   = Vector{Vector{Float64}}(undef, varn)
+    bv   = Vector{Vector{Float64}}(undef, varn)
+
     rml  = Vector{Int}(undef, 0)
     log  = Vector{LMMLogMsg}(undef, 0)
-    lmmb = deepcopy(lmm)
+
+    #lmmb = deepcopy(lmm)
+    lmmb = LMM(lmm.model, lmm.mf, lmm.mm, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, ModelResult(), lmm.maxvcbl, Vector{LMMLogMsg}(undef, 0))
+
     vi   = findall(x-> x == :var, lmm.covstr.ct)
     tlmm = theta_(lmm) .^ 2
     ll   = quantile(FDist(1, 1), 1/varn)
@@ -250,12 +281,17 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng) where T
     # STEP 1
     for i = 1:varn
         fit_lmm!(lmmb, init, dist, rng)
-        tv[i] = theta(lmmb)
-        check_lmm!(rml, log, lmmb, tlmm, tv[i], vi, i, ll, ul)
+        t = theta(lmmb)
+        b = coef(lmmb)
+        tv[i]  = t
+        bv[i]  = b
+        check_lmm!(rml, log, lmmb, tlmm, t, vi, i, ll, ul)
+        lmmb.result.fit = false
         if verbose next!(p) end
     end
     if length(rml) > 0
         deleteat!(tv, rml)
+        deleteat!(bv, rml)
         lmmlog!(log, 1, LMMLogMsg(:WARN, "Step I: Some variance results ($(length(rml))) was deleted."))
         resize!(rml, 0)
     end
@@ -273,16 +309,17 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng) where T
     ul   = quantile(FDist(1, 1), 1 - 1/n)
 
     for i = 1:n
-        #success = false
 
         # Iteration if number of bootstram more than on step I
         r = rem(i, tvl)
-        theta = tv[r == 0 ? tvl : r]
+        ind = r == 0 ? tvl : r
+        theta = tv[ind]
+        beta  = bv[ind]
             # make distributions and generate responce
         for j = 1:nb
             q    = length(lmm.covstr.vcovblock[j])
             if length(m) != q resize!(m, q) end
-            mul!(m, lmm.dv.xv[j], lmm.result.beta)
+            mul!(m, lmm.dv.xv[j], beta)
             if size(V, 1) != q
                 V    = view(Vt, 1:q, 1:q)
             end
@@ -293,25 +330,33 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng) where T
         # fit
 
         fit!(lmmb; init = init, hes = false)
-        bv[i] = coef(lmmb)
-        vv[i] = stderror(lmmb)
-        if verbose next!(p) end
+        #c = coef_(lmmb)
+        s = stderror_(lmmb)
+        for j = 1:coefn(lmm)
+            #bv[j][i] = c[j]
+            vv[j][i] = s[j]
+        end
+
         check_lmm!(rml, log, lmmb, tlmm, theta_(lmmb), vi, i, ll, ul)
-        #    success = isfitted(lmmb)
-        #catch
-        #    lmmlog!(log, 1, LMMLogMsg(:WARN, "Step II: Error in iteration $i. Try $(maxiter - iter + 1).$(iter == 1 ? " This was last try." : "")"))
-        #end
-        #iter -=1
-        #end
-        #if !isfitted(lmmb)
-        #    push!(rml, i)
-        #    lmmlog!(log, 1, LMMLogMsg(:ERROR, "Step II: Itaration $i was not successful."))
-        #end
-        #bv[i] = coef(lmmb)
-        #if verbose next!(p) end
+        lmmb.result.fit = false
+        if verbose next!(p) end
+
     end
     lmmlog!(log, 1, LMMLogMsg(:INFO, "End bootstrap..."))
-    BootstrapResult(coefnames(lmm), coef(lmm), stderror(lmm), theta(lmm), bv, vv, tv, rml, log)
+    for j = 1:thetalength(lmm)
+        tvr[j] = getindex.(tv, j)
+    end
+    for j = 1:coefn(lmm)
+        bvr[j] = getindex.(bv, j)
+    end
+    if del && length(rml) > 0
+        for j = 1:coefn(lmm)
+            #deleteat!(bv[j], rml)
+            deleteat!(vv[j], rml)
+        end
+        lmmlog!(log, 1, LMMLogMsg(:WARN, "Step II: Some results ($(length(rml))) was deleted."))
+    end
+    BootstrapResult(coefnames(lmm), coef(lmm), stderror(lmm), theta(lmm), bvr, vv, tvr, rml, log)
 end
 """
     milmm(mi::MILMM; n = 100, verbose = true, rng = default_rng())
@@ -515,6 +560,10 @@ function StatsBase.confint(br::BootstrapResult, n::Int; level::Float64=0.95, met
         confint_n(br, v, n, 1-level)
     elseif method == :bcnorm
         confint_bcn(br, v, n, 1-level)
+    elseif method == :var
+        confint_var(br, v, n, 1-level)
+    elseif method == :var2
+        confint_var2(br, v, n, 1-level)
     elseif method == :jn
         confint_jn(br, v, n, 1-level)
     else
@@ -543,6 +592,17 @@ end
 function confint_bcn(bt::BootstrapResult, v, i::Int, alpha)
     d = Normal(2bt.beta[i] - mean(v), sqrt(var(v)))
     (quantile(d, alpha/2), quantile(d, 1-alpha/2))
+end
+function confint_var(bt::BootstrapResult, v, i::Int, alpha)
+    sd = sqrt(mean(x->x^2, bt.vv[5]))
+    d  = Normal(2bt.beta[i] - mean(v), sd)
+    (quantile(d, alpha/2), quantile(d, 1-alpha/2))
+end
+function confint_var2(bt::BootstrapResult, v, i::Int, alpha)
+    sd   = sqrt(mean(x->x^2, bt.vv[5]))
+    bias = abs(bt.beta[i] - mean(v))
+    d = Normal(bt.beta[i], sd)
+    (quantile(d, alpha/2) - bias, quantile(d, 1-alpha/2) + bias)
 end
 function jn(v)
     s  = sum(v)
@@ -615,10 +675,10 @@ function Base.show(io::IO, mr::MILMMResult)
 end
 
 function tvlength(br::BootstrapResult)
-    length(br.tv)
+    length(first(br.tv))
 end
 function bvlength(br::BootstrapResult)
-    length(br.bv)
+    length(first(br.bv))
 end
 function msgnum(br::BootstrapResult, type)
     msgnum(br.log, type)

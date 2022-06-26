@@ -1,6 +1,6 @@
 # Metida
 
-using  Test, CSV, DataFrames, StatsModels, StatsBase, LinearAlgebra, CategoricalArrays, Random
+using  Test, CSV, DataFrames, StatsModels, StatsBase, LinearAlgebra, CategoricalArrays, Random, StableRNGs
 
 path    = dirname(@__FILE__)
 include("testdata.jl")
@@ -544,13 +544,16 @@ end
     )
     Metida.fit!(lmm)
     #@test Metida.m2logreml(lmm) ≈ 710.0962305879676 atol=1E-6
+
+    @test  mean(Metida.rand(StableRNG(1234), lmm)) ≈ 50.435413902238096
     @test_nowarn Metida.rand(lmm)
-    @test_nowarn Metida.rand(lmm, [4.54797, 2.82342, 1.05771, 0.576979])
-    @test_nowarn Metida.rand(lmm, [4.54797, 2.82342, 1.05771, 0.576979], [44.3, 5.3, 0.5, 0.29])
+    Metida.rand(lmm, [4.54797, 2.82342, 1.05771, 0.576979])
+    Metida.rand(lmm, [4.54797, 2.82342, 1.05771, 0.576979], [44.3, 5.3, 0.5, 0.29])
     v = zeros(nobs(lmm))
+    @test mean(Metida.rand!(StableRNG(1234), v, lmm)) ≈  50.435413902238096
     @test_nowarn Metida.rand!(v, lmm)
-    @test_nowarn Metida.rand!(v, lmm, [4.54797, 2.82342, 1.05771, 0.576979])
-    @test_nowarn Metida.rand!(v, lmm, [4.54797, 2.82342, 1.05771, 0.576979], [44.3, 5.3, 0.5, 0.29])
+    Metida.rand!(v, lmm, [4.54797, 2.82342, 1.05771, 0.576979])
+    Metida.rand!(v, lmm, [4.54797, 2.82342, 1.05771, 0.576979], [44.3, 5.3, 0.5, 0.29])
 
 end
 
@@ -708,8 +711,8 @@ end
     #@test_nowarn
     #Metida.METIDA_SETTINGS[:MAX_THREADS] = 1
 
-    br = Metida.bootstrap(lmm; n = 10, double = false, verbose = false, rng = MersenneTwister(1263))
-    br = Metida.bootstrap(lmm; n = 10, double = true, verbose = false, rng = MersenneTwister(1263))
+    br = Metida.bootstrap(lmm; n = 10, double = false, verbose = false, rng = StableRNG(1234))
+    br = Metida.bootstrap(lmm; n = 10, double = true, verbose = false, rng = StableRNG(1234))
     Base.show(io, br)
     confint(br)
     confint(br, 1; method = :bp)
@@ -720,11 +723,11 @@ end
 
     mi = Metida.MILMM(lmm, df0m)
     Base.show(io, mi)
-    mir = Metida.milmm(mi; n = 10, verbose = false, rng = MersenneTwister(1234))
+    mir = Metida.milmm(mi; n = 10, verbose = false, rng = StableRNG(1234))
     Base.show(io, mir)
 
     if !(VERSION < v"1.7")
-        mb =  Metida.miboot(mi; n = 10, bootn = 10, varn = 10, double = true, verbose = false, rng = MersenneTwister(1234))
+        mb =  Metida.miboot(mi; n = 10, bootn = 10, varn = 10, double = true, verbose = false, rng = StableRNG(1234))
         Base.show(io, mb)
     end
 
