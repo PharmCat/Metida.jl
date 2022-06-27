@@ -546,12 +546,12 @@ end
     #@test Metida.m2logreml(lmm) ≈ 710.0962305879676 atol=1E-6
 
     @test  mean(Metida.rand(StableRNG(1234), lmm)) ≈ 50.435413902238096
-    @test_nowarn Metida.rand(lmm)
+    Metida.rand(lmm)
     Metida.rand(lmm, [4.54797, 2.82342, 1.05771, 0.576979])
     Metida.rand(lmm, [4.54797, 2.82342, 1.05771, 0.576979], [44.3, 5.3, 0.5, 0.29])
     v = zeros(nobs(lmm))
     @test mean(Metida.rand!(StableRNG(1234), v, lmm)) ≈  50.435413902238096
-    @test_nowarn Metida.rand!(v, lmm)
+    Metida.rand!(v, lmm)
     Metida.rand!(v, lmm, [4.54797, 2.82342, 1.05771, 0.576979])
     Metida.rand!(v, lmm, [4.54797, 2.82342, 1.05771, 0.576979], [44.3, 5.3, 0.5, 0.29])
 
