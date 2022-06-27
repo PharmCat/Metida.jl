@@ -63,6 +63,7 @@ struct MILMMResult{T}
     end
 end
 struct BootstrapResult{T} #<: BootstrapSample
+    lmm
     cn::Vector{String}
     beta::Vector{T}
     se::Vector{T}
@@ -241,7 +242,7 @@ function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng, del) where T
         end
         lmmlog!(log, 1, LMMLogMsg(:WARN, "Some results ($(length(rml))) was deleted."))
     end
-    BootstrapResult(coefnames(lmm), coef(lmm), stderror(lmm), theta(lmm), bv, vv, tv, rml, log)
+    BootstrapResult(lmm, coefnames(lmm), coef(lmm), stderror(lmm), theta(lmm), bv, vv, tv, rml, log)
 end
 """
     Double bootstrap.
@@ -356,7 +357,7 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng, del) whe
         end
         lmmlog!(log, 1, LMMLogMsg(:WARN, "Step II: Some results ($(length(rml))) was deleted."))
     end
-    BootstrapResult(coefnames(lmm), coef(lmm), stderror(lmm), theta(lmm), bvr, vv, tvr, rml, log)
+    BootstrapResult(lmm, coefnames(lmm), coef(lmm), stderror(lmm), theta(lmm), bvr, vv, tvr, rml, log)
 end
 """
     milmm(mi::MILMM; n = 100, verbose = true, rng = default_rng())
