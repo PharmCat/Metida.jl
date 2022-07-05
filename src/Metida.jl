@@ -4,7 +4,7 @@
 __precompile__()
 module Metida
 
-using Distributions, LinearAlgebra, StatsBase, ForwardDiff, CategoricalArrays, Random, Optim, LineSearches, MetidaBase#, SparseArrays#, Polyester#, LoopVectorization
+using Distributions, LinearAlgebra, StatsBase, ForwardDiff, DiffResults, CategoricalArrays, Random, Optim, LineSearches, MetidaBase#, SparseArrays#, Polyester#, LoopVectorization
 using ProgressMeter
 using StatsModels
 import MetidaBase: Tables, MetidaModel, AbstractCovarianceStructure, AbstractCovmatMethod, AbstractCovarianceType, AbstractLMMDataBlocks, MetidaTable, metida_table, PrettyTables#, indsdict!

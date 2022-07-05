@@ -107,7 +107,7 @@ end
 """
     StatsBase.dof_residual(lmm::LMM)
 
-DOF residuals: N - rank(X).
+DOF residuals: N - rank(X), where N - total number of observations.
 """
 function StatsBase.dof_residual(lmm::LMM)
     nobs(lmm) - lmm.rankx

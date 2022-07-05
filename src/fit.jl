@@ -1,4 +1,5 @@
 # fit.jl
+#using DiffResults
 
 fit_nlopt!(lmm::MetidaModel; kwargs...)  = error("MetidaNLopt not found. \n - Run `using MetidaNLopt` before.")
 
@@ -106,7 +107,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Initial θ: "*string(θ)))
     end
     # Initial step with modified Newton method
-    chunk  = ForwardDiff.Chunk{min(10, length(θ))}()
+    chunk  = ForwardDiff.Chunk{min(8, length(θ))}()
     #chunk  = ForwardDiff.Chunk{1}()
     if isa(aifirst, Bool)
         if aifirst aifirst == :ai else aifirst == :default end
@@ -120,13 +121,23 @@ function fit!(lmm::LMM{T}; kwargs...) where T
 
     # Twice differentiable object
     vloptf(x) = optfunc(lmm, lmm.dv, varlinkvecapply(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf))[1]
+
     gcfg   = ForwardDiff.GradientConfig(vloptf, θ, chunk)
     hcfg   = ForwardDiff.HessianConfig(vloptf, θ, chunk)
-    gfunc!(g, x) = ForwardDiff.gradient!(g, vloptf, x, gcfg)
+
+    gfunc!(g, x) = begin
+         ForwardDiff.gradient!(g, vloptf, x, gcfg)
+         #ForwardDiff.gradient!(gres, vloptf, x, gcfg)
+    end
+    fgfunc!(g, x) = begin
+        gres = DiffResults.DiffResult(1.0, g)
+        ForwardDiff.gradient!(gres, vloptf, x, gcfg)
+        return DiffResults.value(gres)
+    end
     hfunc!(h, x) = begin
         ForwardDiff.hessian!(h, vloptf, x, hcfg)
     end
-    td = TwiceDifferentiable(vloptf, gfunc!, hfunc!, θ)
+    td = TwiceDifferentiable(vloptf, gfunc!, fgfunc!, hfunc!, θ)
     # Optimization object
     try
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
