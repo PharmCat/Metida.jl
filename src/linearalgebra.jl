@@ -137,3 +137,22 @@ vec = rz * θ
     end
     vec
 end
+
+#=
+function diag!(v, m)
+    l = checksquare(m)
+    l == length(v) || error("Length not equal")
+    for i = 1:l
+        v[i] = m[i, i]
+    end
+    v
+end
+=#
+function diag!(f, v, m)
+    l = checksquare(m)
+    l == length(v) || error("Length not equal")
+    for i = 1:l
+        v[i] = f(m[i, i])
+    end
+    v
+end

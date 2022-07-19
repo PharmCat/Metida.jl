@@ -90,7 +90,8 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         if rankx != size(lmmdata.xv, 2)
             lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Fixed-effect matrix not full-rank!"))
         end
-        LMM(model, mf, mm, covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, ModelResult(), findmax(length, covstr.vcovblock)[1], lmmlog)
+        mres = ModelResult(false, nothing, fill(NaN, covstr.tl), NaN, fill(NaN, rankx), nothing, fill(NaN, rankx, rankx), fill(NaN, rankx), nothing, false)
+        LMM(model, mf, mm, covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, mres, findmax(length, covstr.vcovblock)[1], lmmlog)
         #LMM(model, mf, mm, covstr, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, ModelResult(), findmax(length, covstr.vcovblock)[1], lmmlog)
     end
 end

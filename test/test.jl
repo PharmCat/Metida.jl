@@ -47,6 +47,7 @@ include("testdata.jl")
     l = [0 0 1 0 0 0; 0 0 0 1 0 0; 0 0 0 0 1 0]
     @test Metida.logreml(lmm)   ≈ -8.120556322253035 atol=1E-6
     @test isfitted(lmm) == true
+    @test islinear(lmm) == true
     @test bic(lmm)              ≈ 24.558878811225412 atol=1E-6
     @test aic(lmm)              ≈ 22.241112644506067 atol=1E-6
     @test aicc(lmm)             ≈ 24.241112644506067 atol=1E-6
@@ -616,6 +617,11 @@ end
     @test_throws ErrorException Metida.hessian(lmm)
     @test_throws ErrorException Metida.dof_satter(lmm)
     @test_throws ErrorException Metida.confint(lmm)
+
+    @test_throws ErrorException deviance(lmm)
+    @test_throws ErrorException nulldeviance(lmm)
+    @test_throws ErrorException nullloglikelihood(lmm)
+    @test_throws ErrorException score(lmm)
 
     @test_throws ErrorException  Metida.LMM(@formula(var~sequence+period+formulation), df0;)
 

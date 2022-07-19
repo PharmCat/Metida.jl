@@ -1,11 +1,6 @@
 
-#=
-
-StatsBase.coeftable(model::LMM) = error("coeftable is not defined for $(typeof(model)).")
 
 StatsBase.deviance(model::LMM) = error("deviance is not defined for $(typeof(model)).")
-
-StatsBase.islinear(model::LMM) = error("islinear is not defined for $(typeof(model)).")
 
 StatsBase.nulldeviance(model::LMM) =
     error("nulldeviance is not defined for $(typeof(model)).")
@@ -15,7 +10,9 @@ StatsBase.nullloglikelihood(model::LMM) =
 
 StatsBase.score(model::LMM) = error("score is not defined for $(typeof(model)).")
 
-=#
+StatsBase.islinear(model::LMM) = true
+
+
 """
     StatsBase.confint(lmm::LMM{T}; level::Real=0.95, ddf::Symbol = :satter) where T
 

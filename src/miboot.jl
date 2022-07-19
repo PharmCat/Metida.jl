@@ -199,8 +199,8 @@ function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng, del) where T
     log  = Vector{LMMLogMsg}(undef, 0)
 
     #lmmb = deepcopy(lmm)
-
-    lmmb = LMM(lmm.model, lmm.mf, lmm.mm, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, ModelResult(), lmm.maxvcbl, Vector{LMMLogMsg}(undef, 0))
+    mres = ModelResult(false, nothing, fill(NaN, thetalength(lmm)), NaN, fill(NaN, coefn(lmm)), nothing, fill(NaN, coefn(lmm), coefn(lmm)), fill(NaN, coefn(lmm)), nothing, false)
+    lmmb = LMM(lmm.model, lmm.mf, lmm.mm, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, mres, lmm.maxvcbl, Vector{LMMLogMsg}(undef, 0))
 
     vi   = findall(x-> x == :var, lmm.covstr.ct)
     tlmm = theta_(lmm) .^ 2
@@ -265,7 +265,8 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng, del) whe
     log  = Vector{LMMLogMsg}(undef, 0)
 
     #lmmb = deepcopy(lmm)
-    lmmb = LMM(lmm.model, lmm.mf, lmm.mm, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, ModelResult(), lmm.maxvcbl, Vector{LMMLogMsg}(undef, 0))
+    mres = ModelResult(false, nothing, fill(NaN, thetalength(lmm)), NaN, fill(NaN, coefn(lmm)), nothing, fill(NaN, coefn(lmm), coefn(lmm)), fill(NaN, coefn(lmm)), nothing, false)
+    lmmb = LMM(lmm.model, lmm.mf, lmm.mm, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, mres, lmm.maxvcbl, Vector{LMMLogMsg}(undef, 0))
 
     vi   = findall(x-> x == :var, lmm.covstr.ct)
     tlmm = theta_(lmm) .^ 2

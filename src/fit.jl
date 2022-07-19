@@ -147,20 +147,24 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     end
         # Theta (θ) vector
-    lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf)
+    copyto!(lmm.result.theta, Optim.minimizer(lmm.result.optim))
+    varlinkvecapply!(lmm.result.theta, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf)
+    #lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf)
     lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Resulting θ: "*string(lmm.result.theta)*"; $(Optim.iterations(lmm.result.optim)) iterations."))
 
         # -2 LogREML, β, iC
-    lmm.result.reml, lmm.result.beta, iC, θ₃, noerrors = optfunc(lmm, lmm.dv, lmm.result.theta)
+    lmm.result.reml, beta, iC, θ₃, noerrors = optfunc(lmm, lmm.dv, lmm.result.theta)
+    copyto!(lmm.result.beta, beta)
         # If errors in last evaluetion - log it.
     if !noerrors LMMLogMsg(:ERROR, "The last optimization step wasn't accurate. Results can be wrong!") end
         # Fit true
     if !isnan(lmm.result.reml) && !isinf(lmm.result.reml) && rank(iC) == size(iC, 1)
         # Variance-covariance matrix of β
-        lmm.result.c            = inv(Matrix(iC))
+        copyto!(lmm.result.c, inv(iC))
         # SE
         if  !any(x -> x < 0.0, diag(lmm.result.c))
-            lmm.result.se           = sqrt.(diag(lmm.result.c))
+            diag!(sqrt, lmm.result.se, lmm.result.c)
+            #lmm.result.se           = sqrt.(diag(lmm.result.c))
             if any(x-> x < singtol, lmm.result.se) && minimum(lmm.result.se)/maximum(lmm.result.se) < singtol lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Some of the SE parameters is suspicious.")) end
             lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model fitted."))
             lmm.result.fit      = true
