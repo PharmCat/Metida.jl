@@ -466,6 +466,17 @@ end
     @test anovatable.pval ≈ [0.9176105002855397, 0.6522549061174356, 0.0020109339157131302] atol=1E-4
 end
 
+@testset "  Model: BE RDS 1, 2X2                                     "  begin
+    dfrds        = CSV.File(joinpath(path, "csv", "berds2x2", "rds1.csv"), types = Dict(:Var => Float64, :Subject => String, :Period => String, :Sequence => String, :Formulation => String )) |> DataFrame
+    dropmissing!(dfrds)
+    lmm = Metida.LMM(@formula(log(Var)~Sequence+Period+Formulation), dfrds;
+    random = Metida.VarEffect(Metida.@covstr(1|Subject)),
+    )
+    Metida.fit!(lmm)
+    anovatable = Metida.typeiii(lmm)
+    @test Metida.m2logreml(lmm)  ≈ -1.0745407333692825 atol=1E-8
+end
+
 
 @testset "  Model: Custom covariance type                            " begin
     struct CustomCovarianceStructure <: Metida.AbstractCovarianceType end
