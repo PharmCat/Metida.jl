@@ -232,6 +232,10 @@ function StatsBase.coeftable(lmm::LMM)
     )
 end
 
+function StatsBase.responsename(lmm::LMM)
+    string(lmm.model.lhs.sym)
+end
+
 
 #=
 StatsBase.mss(model::LMM) = error("mss is not defined for $(typeof(model)).")
@@ -292,7 +296,7 @@ end
 
 const adjr² = adjr2
 
-StatsBase.responsename(model::LMM) = error("responsename is not defined for $(typeof(model)).")
+
 
 StatsBase.meanresponse(model::LMM) = error("meanresponse is not defined for $(typeof(model)).")
 

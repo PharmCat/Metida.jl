@@ -186,10 +186,9 @@ function fit!(lmm::LMM{T}; kwargs...) where T
                 lmm.result.ipd =  false
                 lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Variance-covariance matrix (G) of random effect $(i) is not positive definite."))
             end
-            #dg = det(gmatrix(lmm, i))
-            #if dg < singtol lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "det(G) of random effect $(i) is less $(singtol).")) end
         end
     end
+
     # Check Hessian
     if hes && lmm.result.fit
             # Hessian
@@ -217,7 +216,7 @@ function optstep!(lmm, data, θ; method::Symbol = :ai, maxopt::Int=10)
     if method == :ai ai_func = sweep_ai else ai_func = sweep_score end
     reml, beta, θs₂, θ₃, rt = reml_sweep_β(lmm, data, θ)
     rt || error("Wrong initial conditions.")
-    chunk  = ForwardDiff.Chunk{min(length(θ), 10)}()
+    chunk  = ForwardDiff.Chunk{min(length(θ), 8)}()
     #chunk  = ForwardDiff.Chunk{1}()
     aif(x) = ai_func(lmm, data, x, beta)
     grf(x) = reml_sweep_β(lmm, data, x, beta)[1]
