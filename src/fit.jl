@@ -21,9 +21,13 @@ Fit LMM model.
 * `f_tol` - absolute tolerance in changes of the REML
 * `hes` - calculate REML Hessian
 * `init` - initial theta values
+* `io` - output IO
+* `time_limit` - time limit = 120 sec
+* `iterations` - maximum iterations = 300
 * `refitinit` - true/false - if true - use last values for initial condition
 * `optmethod` - Optimization method. Look at Optim.jl documentation. (Newton by default)
-* `io` - output IO
+* `singtol` - singular tolerance = 1e-8
+
 """
 function fit!(lmm::LMM{T}; kwargs...) where T
 

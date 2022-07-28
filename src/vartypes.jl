@@ -370,7 +370,7 @@ function covstrparam(ct::SPPOWD_, ::Int)::Tuple{Int, Int}
 end
 
 function covstrparam(ct::ZERO, ::Int)::Tuple{Int, Int}
-    return (0,0)
+    return (0, 0)
 end
 function covstrparam(ct::AbstractCovarianceType, ::Int)
     error("Unknown covariance type!")
@@ -399,7 +399,8 @@ function rcoefnames(s, t, ct::Union{CSH_, ARH_})
         l  = 1
     end
     v  = Vector{String}(undef, t)
-    view(v, 1:l) .= (fill!(Vector{String}(undef, l), "σ² ") .*string.(cn))
+    @. $(view(v, 1:l)) = "σ² " * string(cn)
+    #view(v, 1:l) .= (fill!(Vector{String}(undef, l), "σ² ") .*string.(cn))
     v[end] = "ρ "
     return v
 end
@@ -424,7 +425,7 @@ function rcoefnames(s, t, ct::Union{TOEPH_, TOEPHP_})
         l  = 1
     end
     v  = Vector{String}(undef, t)
-    view(v, 1:l) .= (fill!(Vector{String}(undef, l), "σ² ") .*string.(cn))
+    @. $(view(v, 1:l)) = "σ² " * string(cn)
     if length(v) > l
         for i = l+1:length(v)
             v[i] = "ρ band $(i-l) "
@@ -444,6 +445,41 @@ end
 function rcoefnames(s, t, ct::SPPOWD_)
     return ["σ² ", "σ²s ", "ρ "]
 end
+
+
+function indfromtn(ind, s)
+    b = 0
+    m = 0
+    for i in 1:s-1
+        b += s - i
+        if b >= ind
+            m = i
+            break
+        end
+    end
+    m, s + ind - b
+end
+
+function rcoefnames(s, t, ct::UN_)
+    cn = coefnames(s)
+    if isa(cn, Vector)
+        l  = length(cn)
+    else
+        l  = 1
+    end
+    v  = Vector{String}(undef, t)
+    view(v, 1:l) .= string.(cn)
+    if l > 1
+        for i = 1:t-l
+            m, n = indfromtn(i, l)
+            v[i+l] = "ρ: " * v[m] * " × " * v[n]
+        end
+    end
+    @. $(view(v, 1:l)) = "σ² " * $(view(v, 1:l))
+    return v
+end
+
+
 function rcoefnames(s, t, ct::AbstractCovarianceType)
     v = Vector{String}(undef, t)
     v .= "Val "

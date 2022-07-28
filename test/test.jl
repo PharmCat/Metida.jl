@@ -199,7 +199,7 @@ end
     @test std[1] ≈ 0.3097740704892435 atol=1E-8
     @test cn[1]  ≈ 1.609999999999999 atol=1E-8
 end
-@testset "  Model: Noblock, equal subjects, CSH/CS                   " begin
+@testset "  Model: Noblock, equal subjects, CSH/CS + UN euqiv        " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.CSH),
     repeated = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.CS),
@@ -212,6 +212,13 @@ end
     @test std[1] ≈ 0.33581840553609543 atol=1E-8
     @test cn[1]  ≈ 1.6100000000000012 atol=1E-8
 
+
+    lmm_un = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.UN),
+    repeated = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.CS),
+    )
+    Metida.fit!(lmm_un)
+    @test Metida.m2logreml(lmm) ≈ Metida.m2logreml(lmm_un)
 end
 @testset "  Model: Different subjects, INT, CSH/DIAG                 " begin
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;

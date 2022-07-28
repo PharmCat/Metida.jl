@@ -300,3 +300,31 @@ function rmat!(mx, θ, rz,  ::SPGAUD_)
     end
     nothing
 end
+
+#UN
+
+function unrmat(θ::AbstractVector{T}, rz) where T
+    rm = size(rz, 2)
+    mx = zeros(T, rm, rm)
+    for i = 1:rm
+        mx[i, i] = θ[i]
+    end
+    if rm > 1
+        for m = 1:rm - 1
+            @inbounds @simd for n = m + 1:rm
+                mx[m, n] += mx[m, m] * mx[n, n] * θ[rm+tpnum(m, n, rm)]
+            end
+        end
+    end
+    @inbounds @simd for m = 1:rm
+        mx[m, m] *= mx[m, m]
+    end
+    Symmetric(mx)
+end
+function rmat!(mx, θ, rz::AbstractMatrix, ::UN_)
+    vec    = tmul_unsafe(rz, θ)
+    rm     = size(mx, 1)
+    rcov  = unrmat(θ, rz)
+    mulαβαtinc!(mx, rz, rcov)
+    nothing
+end

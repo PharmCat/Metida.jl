@@ -225,3 +225,30 @@ function gmat!(mx, θ, ct::TOEPHP_)
     end
     nothing
 end
+#UN
+function gmat!(mx, θ, ::UN_)
+    s = size(mx, 1)
+    @inbounds @simd for m = 1:s
+        mx[m, m] = θ[m]
+    end
+    if s > 1
+        for m = 1:s - 1
+            @inbounds @simd for n = m + 1:s
+                mx[m, n] = mx[m, m] * mx[n, n] * θ[s+tpnum(m, n, s)]
+            end
+        end
+    end
+    @inbounds @simd for m = 1:s
+        v = mx[m, m]
+        mx[m, m] = v * v
+    end
+    nothing
+end
+
+function tpnum(m, n, s)
+    b = 0
+    for i in 1:m
+        b += s - i
+    end
+    b -= s - n
+end
