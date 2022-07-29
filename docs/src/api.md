@@ -91,6 +91,11 @@ Metida.SpatialPower
 Metida.SpatialGaussian
 ```
 
+### Metida.Unstructured
+```@docs
+Metida.Unstructured
+```
+
 ### Metida.typeiii
 ```@docs
 Metida.typeiii

@@ -58,6 +58,15 @@ nothing # hide
 
 #### Step 2: Make model
 
+Make model with `@formula` macro from `StatsModels`.
+Define `random` and `repreated` effects with [`Metida.VarEffect`](@ref) using [`Metida.@covstr`](@ref) macros. Left side of `@covstr` is model of effect and
+right side is a effect itself. [`Metida.HeterogeneousCompoundSymmetry`](@ref) and [`Metida.Diagonal`](@ref) in example bellow is a model of variance-covariance structure.
+
+!!! note
+  In some cases levels of repeated effect should not be equal inside each level of subject or model will not have any sense. For example, it is assumed that usually CSH or UN (Unstructured) using with levels of repeated effect is different inside each level of subject.
+  Metida does not check this!
+
+
 ```@example lmmexample
 lmm = LMM(@formula(var~sequence+period+formulation), df;
 random = VarEffect(@covstr(formulation|subject), CSH),
@@ -65,6 +74,8 @@ repeated = VarEffect(@covstr(formulation|subject), DIAG));
 ```
 
 #### Step 3: Fit
+
+Just fit the model.
 
 ```@example lmmexample
 fit!(lmm)
@@ -93,7 +104,7 @@ Metida.LMM
 
 * `model` - example: `@formula(var ~ sequence + period + formulation)`
 
-* `random` - effects can be specified like this: `VarEffect(@covstr(formulation|subject), CSH)`. `@covstr` is a effect model: `@covstr(formulation|subject)`. `CSH` is a  CovarianceType structure. Premade constants: SI, DIAG, AR, ARH, CS, CSH, ARMA. If not specified only repeated used.
+* `random` - effects can be specified like this: `VarEffect(@covstr(formulation|subject), CSH)`. `@covstr` is a effect model: `@covstr(formulation|subject)`. `CSH` is a  CovarianceType structure. Premade constants: SI, DIAG, AR, ARH, CS, CSH, ARMA, TOEP, TOEPH, UN. If not specified only repeated used.
 
 * `repeated` - can be specified like random effect. If not specified `VarEffect(@covstr(1|1), SI)` used. If no repeated effects specified vector of ones used.
 
