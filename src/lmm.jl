@@ -287,3 +287,14 @@ Return fitting log.
 function getlog(lmm::LMM)
     lmm.log
 end
+
+################################################################################
+
+function Base.getproperty(x::LMM, s::Symbol)
+    if s == :θ
+        return x.result.theta
+    elseif s == :β
+        return x.result.beta
+    end
+    getfield(x, s)
+end

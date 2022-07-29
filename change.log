@@ -1,5 +1,9 @@
-v0.13
+v0.14
+  * Unstructured Covariance (UN)
+  * initial functions for analytical gradient vector
+  * docs
 
+v0.13
   * Bootstrap
   * MI
   * Changes in types

@@ -27,6 +27,7 @@ Implemented covariance structures:
   * Spatial Exponential (SPEXP)
   * Spatial Power (SPPOW)
   * Spatial Gaussian (SPGAU)
+  * Unstructured (UN) 
   * Custom Covariance Type
 
 ## Limitations

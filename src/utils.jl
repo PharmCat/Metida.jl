@@ -237,8 +237,8 @@ function vmatrix!(V, G, θ, lmm::LMM, i::Int)
     zgz_base_inc!(V, G, θ, lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
     rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
 end
-function vmatrix(θ, lmm::LMM, i::Int)
-    V    = zeros(length(lmm.covstr.vcovblock[i]), length(lmm.covstr.vcovblock[i]))
+function vmatrix(θ::AbstractVector{T}, lmm::LMM, i::Int) where T
+    V    = zeros(T, length(lmm.covstr.vcovblock[i]), length(lmm.covstr.vcovblock[i]))
     gvec = gmatvec(θ, lmm.covstr)
     vmatrix!(V, gvec, θ, lmm, i)
     Symmetric(V)
@@ -259,6 +259,18 @@ function vmatrix(θ::Vector, covstr::CovStructure, i::Int)
     rmat_base_inc!(V, θ[covstr.tr[end]], covstr, covstr.vcovblock[i], covstr.sblock[i])
     Symmetric(V)
 end
+#=
+function grad_vmatrix(θ::AbstractVector{T}, lmm::LMM, i::Int)
+    V    = zeros(T, length(lmm.covstr.vcovblock[i]), length(lmm.covstr.vcovblock[i]))
+    gvec = gmatvec(θ, lmm.covstr)
+    vmatrix!(V, gvec, θ, lmm, i)
+    Symmetric(V)
+end
+=#
+
+
+
+
 function nblocks(lmm::LMM)
     return length(lmm.covstr.vcovblock)
 end

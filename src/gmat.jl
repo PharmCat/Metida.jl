@@ -8,7 +8,7 @@ function gmat_switch!(G, θ, covstr, r)
     G
 end
 function gmatvec(θ::Vector{T}, covstr) where T
-    gt = Tuple(Symmetric(Matrix{T}(undef, covstr.q[r], covstr.q[r])) for r in 1:covstr.rn)
+    gt = [Symmetric(Matrix{T}(undef, covstr.q[r], covstr.q[r])) for r in 1:covstr.rn] #<: fix to vec
     for r = 1:covstr.rn
         fill!(gt[r].data, zero(T))
         if covstr.random[r].covtype.z
@@ -18,9 +18,8 @@ function gmatvec(θ::Vector{T}, covstr) where T
     gt
 end
 ################################################################################
-function zgz_base_inc!(mx::AbstractArray{T}, θ::AbstractArray{T}, covstr, block, sblock) where T
+function zgz_base_inc!(mx::AbstractArray, θ::AbstractArray{T}, covstr, block, sblock) where T
     if covstr.random[1].covtype.z
-        #length of random to covstr
         for r = 1:covstr.rn
             G = fill!(Symmetric(Matrix{T}(undef, covstr.q[r], covstr.q[r])), zero(T))
             gmat_switch!(G.data, θ, covstr, r)
@@ -30,24 +29,17 @@ function zgz_base_inc!(mx::AbstractArray{T}, θ::AbstractArray{T}, covstr, block
             end
         end
     end
-    #    fill!(mx, zero(T))
-    #end
     mx
 end
-function zgz_base_inc!(mx::AbstractArray{T}, G, θ::AbstractArray{T}, covstr, block, sblock) where T
+function zgz_base_inc!(mx::AbstractArray, G, θ, covstr, block, sblock)
     if covstr.random[1].covtype.z
-        #length of random to covstr
         for r = 1:covstr.rn
-            #G = fill!(Symmetric(Matrix{T}(undef, covstr.q[r], covstr.q[r])), zero(T))
-            #gmat_switch!(G.data, θ, covstr, r)
             zblock    = view(covstr.z, block, covstr.zrndur[r])
             @inbounds for i = 1:length(sblock[r])
                 mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i]), view(zblock, sblock[r][i], :), G[r])
             end
         end
     end
-    #    fill!(mx, zero(T))
-    #end
     mx
 end
 ################################################################################
@@ -64,18 +56,15 @@ Base.@propagate_inbounds function gmat!(mx, θ, ::SI_)
     @inbounds @simd for i = 1:size(mx, 1)
         mx[i, i] = val
     end
-    nothing
+    mx
 end
 #DIAG
 function gmat!(mx, θ, ::DIAG_)
     @inbounds @simd for i = 1:size(mx, 1)
         mx[i, i] = θ[i] ^ 2
     end
-    nothing
+    mx
 end
-#function gmat_vc!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
-#    nothing
-#end
 #AR
 function gmat!(mx, θ, ::AR_)
     de  = θ[1] ^ 2
@@ -90,7 +79,7 @@ function gmat!(mx, θ, ::AR_)
             end
         end
     end
-    nothing
+    mx
 end
 #ARH
 function gmat!(mx, θ, ::ARH_)
@@ -108,7 +97,7 @@ function gmat!(mx, θ, ::ARH_)
     @inbounds @simd for m = 1:s
         mx[m, m] = mx[m, m] * mx[m, m]
     end
-    nothing
+    mx
 end
 #CS
 function gmat!(mx, θ, ::CS_)
@@ -121,7 +110,7 @@ function gmat!(mx, θ, ::CS_)
             end
         end
     end
-    nothing
+    mx
 end
 #CSH
 function gmat!(mx, θ, ::CSH_)
@@ -139,7 +128,7 @@ function gmat!(mx, θ, ::CSH_)
     @inbounds @simd for m = 1:s
         mx[m, m] = mx[m, m] * mx[m, m]
     end
-    nothing
+    mx
 end
 ################################################################################
 #ARMA
@@ -156,7 +145,7 @@ function gmat!(mx, θ, ::ARMA_)
             end
         end
     end
-    nothing
+    mx
 end
 #TOEP
 function gmat!(mx, θ, ::TOEP_)
@@ -172,7 +161,7 @@ function gmat!(mx, θ, ::TOEP_)
             end
         end
     end
-    nothing
+    mx
 end
 function gmat!(mx, θ, ct::TOEPP_)
     de  = θ[1] ^ 2    #diagonal element
@@ -187,7 +176,7 @@ function gmat!(mx, θ, ct::TOEPP_)
             end
         end
     end
-    nothing
+    mx
 end
 #TOEPH
 function gmat!(mx, θ, ::TOEPH_)
@@ -205,7 +194,7 @@ function gmat!(mx, θ, ::TOEPH_)
     @inbounds @simd for m = 1:s
         mx[m, m] = mx[m, m] * mx[m, m]
     end
-    nothing
+    mx
 end
 #TOEPHP
 function gmat!(mx, θ, ct::TOEPHP_)
@@ -223,7 +212,7 @@ function gmat!(mx, θ, ct::TOEPHP_)
     @inbounds @simd for m = 1:s
         mx[m, m] = mx[m, m] * mx[m, m]
     end
-    nothing
+    mx
 end
 #UN
 function gmat!(mx, θ, ::UN_)
@@ -242,7 +231,7 @@ function gmat!(mx, θ, ::UN_)
         v = mx[m, m]
         mx[m, m] = v * v
     end
-    nothing
+    mx
 end
 
 function tpnum(m, n, s)
@@ -252,3 +241,44 @@ function tpnum(m, n, s)
     end
     b -= s - n
 end
+
+################################################################################
+
+# Grads
+#=
+function sim_gmat(s, θ::AbstractVector{T}, ct::AbstractCovarianceType) where T
+    mxt = zeros(T, s, s)
+    Symmetric(gmat!(mxt, θ, ct))
+end
+
+function grad_gmat!(s, θ, ct::AbstractCovarianceType)
+    mxg = zeros(s, s, length(θ))
+    gm  = ForwardDiff.jacobian!(mxg, x-> sim_gmat(s, x, ct), θ)
+    mxg
+end
+
+function grad_gmatvec(θ::Vector{T}, covstr) where T
+    gt = [Matrix{T}(undef, covstr.q[r], covstr.q[r], length(θ)) for r in 1:covstr.rn] #<: fix to vec
+    for r = 1:covstr.rn
+        if covstr.random[r].covtype.z
+            gt[r] = grad_gmat!(covstr.q[r], view(θ, covstr.tr[r]), covstr.random[r].covtype.s)
+        end
+    end
+    gt
+end
+
+function grad_zgz_base_inc!(mx::AbstractArray, G, θ::AbstractArray{T}, covstr, block, sblock) where T
+    if covstr.random[1].covtype.z
+        gl = size(mx, 3)
+        for r = 1:covstr.rn
+            zblock    = view(covstr.z, block, covstr.zrndur[r])
+            @inbounds for i = 1:length(sblock[r])
+                for gn = 1:gl
+                    mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i], gn), view(zblock, sblock[r][i], :), view(G[r], :, :, gn))
+                end
+            end
+        end
+    end
+    mx
+end
+=#

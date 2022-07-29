@@ -25,7 +25,7 @@ Base.@propagate_inbounds function rmat!(mx, θ, ::AbstractMatrix, ::SI_)
     @inbounds @simd for i ∈ axes(mx, 1)
             mx[i, i] += θsq
     end
-    nothing
+    mx
 end
 #DIAG
 function rmat!(mx, θ, rz, ::DIAG_)
@@ -34,7 +34,7 @@ function rmat!(mx, θ, rz, ::DIAG_)
             mx[i, i] += rz[i, c] * θ[c] * θ[c]
         end
     end
-    nothing
+    mx
 end
 #AR
 function rmat!(mx, θ, ::AbstractMatrix, ::AR_)
@@ -50,7 +50,7 @@ function rmat!(mx, θ, ::AbstractMatrix, ::AR_)
             end
         end
     end
-    nothing
+    mx
 end
 #ARH
 function rmat!(mx, θ, rz, ::ARH_)
@@ -66,7 +66,7 @@ function rmat!(mx, θ, rz, ::ARH_)
     @inbounds  for m ∈ axes(mx, 1)
         mx[m, m] += vec[m] * vec[m]
     end
-    nothing
+    mx
 end
 #CS
 function rmat!(mx, θ, ::AbstractMatrix,  ::CS_)
@@ -83,19 +83,10 @@ function rmat!(mx, θ, ::AbstractMatrix,  ::CS_)
             end
         end
     end
-    nothing
+    mx
 end
 #CSH
 function rmat!(mx, θ, rz, ::CSH_)
-    #vec   = rz * (θ[1:end-1])
-    #=
-    vec = zeros(T, size(rz, 1))
-    #=@turbo=# @inbounds  for r ∈ axes(rz, 1)
-        for i ∈ axes(rz, 2)
-            vec[r] += rz[r, i] * θ[i]
-        end
-    end
-    =#
     vec = tmul_unsafe(rz, θ)
     rn    = size(mx, 1)
     if rn > 1
@@ -108,7 +99,7 @@ function rmat!(mx, θ, rz, ::CSH_)
     #=@turbo=# @inbounds  for m ∈ axes(mx, 1)
         mx[m, m] += vec[m] * vec[m]
     end
-    nothing
+    mx
 end
 ################################################################################
 #ARMA
@@ -125,7 +116,7 @@ function rmat!(mx, θ, ::AbstractMatrix,  ::ARMA_)
             end
         end
     end
-    nothing
+    mx
 end
 ################################################################################
 #TOEPP
@@ -142,7 +133,7 @@ function rmat!(mx, θ, ::AbstractMatrix, ct::TOEPP_)
             end
         end
     end
-    nothing
+    mx
 end
 ################################################################################
 #TOEPHP
@@ -160,7 +151,7 @@ function rmat!(mx, θ, rz, ct::TOEPHP_)
     @inbounds @simd for m = 1:s
         mx[m, m] += vec[m] * vec[m]
     end
-    nothing
+    mx
 end
 ################################################################################
 #=
@@ -199,7 +190,7 @@ function rmat!(mx, θ, rz,  ::SPEXP_)
             end
         end
     end
-    nothing
+    mx
 end
 ################################################################################
 #SPPOW
@@ -219,7 +210,7 @@ function rmat!(mx, θ, rz,  ::SPPOW_)
             end
         end
     end
-    nothing
+    mx
 end
 
 #SPGAU
@@ -241,7 +232,7 @@ function rmat!(mx, θ, rz,  ::SPGAU_)
             end
         end
     end
-    nothing
+    mx
 end
 ################################################################################
 #SPEXPD cos(pidij)
@@ -261,7 +252,7 @@ function rmat!(mx, θ, rz,  ::SPEXPD_)
             end
         end
     end
-    nothing
+    mx
 end
 #SPPOWD
 function rmat!(mx, θ, rz,  ::SPPOWD_)
@@ -279,7 +270,7 @@ function rmat!(mx, θ, rz,  ::SPPOWD_)
             end
         end
     end
-    nothing
+    mx
 end
 #SPGAUD
 function rmat!(mx, θ, rz,  ::SPGAUD_)
@@ -298,11 +289,10 @@ function rmat!(mx, θ, rz,  ::SPGAUD_)
             end
         end
     end
-    nothing
+    mx
 end
 
 #UN
-
 function unrmat(θ::AbstractVector{T}, rz) where T
     rm = size(rz, 2)
     mx = zeros(T, rm, rm)
@@ -326,5 +316,5 @@ function rmat!(mx, θ, rz::AbstractMatrix, ::UN_)
     rm     = size(mx, 1)
     rcov  = unrmat(θ, rz)
     mulαβαtinc!(mx, rz, rcov)
-    nothing
+    mx
 end

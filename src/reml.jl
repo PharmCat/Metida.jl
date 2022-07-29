@@ -33,12 +33,7 @@ end
 ################################################################################
 #                     REML without provided β
 ################################################################################
-#=
-function reml_sweep_β(lmm, θ::Vector{T}; syrkblas::Bool = false) where T <: Number
-    data = LMMDataViews(lmm)
-    reml_sweep_β(lmm, data, θ; syrkblas = syrkblas)
-end
-=#
+
 function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
@@ -110,8 +105,9 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
         if issuccess(cθs₂)
             # β calculation
             mul!(β, inv(cθs₂), βm)
-        # final θ₂
+            # final θ₂
             logdetθ₂ = logdet(cθs₂)
+            # θ₃
             @inbounds @simd for i = 1:n
                 θ₃ += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹[i])
             end
@@ -119,20 +115,13 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
             β       .= NaN
             return   Inf, β, Inf, Inf, false
         end
-        # θ₃
-
 
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θs₂, θ₃, noerror #REML, β, iC, θ₃, errors
 end
 ################################################################################
 #                     REML with provided β
 ################################################################################
-#=
-function reml_sweep_β(lmm, θ::Vector{T}, β::Vector) where T <: Number
-    data = LMMDataViews(lmm)
-    reml_sweep_β(lmm, data, θ, β)
-end
-=#
+
 function core_sweep_β(lmm, data, θ::Vector{T}, β, n) where T
     ncore     = min(num_cores(), n, 16)
     accθ₁     = zeros(T, ncore)

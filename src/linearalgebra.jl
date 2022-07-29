@@ -19,7 +19,7 @@ end
 
 Change θ (only upper triangle). B is symmetric.
 """
-function mulαβαtinc!(θ::AbstractMatrix{T}, A::AbstractMatrix, B::AbstractMatrix) where T
+function mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
     axb  = axes(B, 1)
     sa   = size(A, 1)
     for m ∈ 1:sa
@@ -38,7 +38,7 @@ end
 
 Change θ (only upper triangle). B is symmetric.
 """
-function mulαβαtinc!(θ::AbstractMatrix{T}, A::AbstractMatrix, B::AbstractMatrix, alpha) where T
+function mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, alpha)
     if  !(size(B, 1) == size(B, 2) == size(A, 2)) || !(size(A, 1) == size(θ, 1) == size(θ, 2)) throw(ArgumentError("Wrong dimentions!")) end
     axb  = axes(B, 1)
     sa   = size(A, 1)
@@ -58,7 +58,7 @@ end
 
 Change θ (only upper triangle). B is symmetric.
 """
-function mulαβαtinc!(θ::AbstractVector{T}, A::AbstractMatrix, B::AbstractMatrix, a::AbstractVector, b::AbstractVector, alpha) where T
+function mulαβαtinc!(θ::AbstractVector, A::AbstractMatrix, B::AbstractMatrix, a::AbstractVector, b::AbstractVector, alpha)
     if !(size(B, 2) == length(a) == length(b)) || size(B, 1) != size(A, 2) || size(A, 1) != length(θ) throw(ArgumentError("Wrong dimentions.")) end
     axb  = axes(B, 1)
     sa   = size(A, 1)

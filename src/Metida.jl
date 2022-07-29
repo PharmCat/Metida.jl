@@ -16,7 +16,7 @@ import MetidaBase.PrettyTables: TextFormat, pretty_table, tf_borderless, ft_prin
 import LinearAlgebra:checksquare, BlasFloat
 import StatsModels: @formula, termvars, ModelFrame, FunctionTerm, AbstractTerm, CategoricalTerm, AbstractContrasts, ConstantTerm, InterceptTerm, Term, InteractionTerm, FormulaTerm, ModelMatrix, schema, apply_schema, MatrixTerm, modelcols
 import StatsBase: fit, fit!, coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, mean, var, stderror, modelmatrix, response, CoefTable, coeftable
-import Base:show, rand, ht_keyindex
+import Base:show, rand, ht_keyindex, getproperty
 import Random: default_rng, AbstractRNG, rand!
 
 export @formula, @covstr,
