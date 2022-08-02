@@ -103,6 +103,9 @@ sdstraps(br::BootstrapResult, idx::Int) = getindex(br.vv, idx)
 
 Parametric bootstrap.
 
+!!! warning
+    Experimental: API not stable, results not validated
+
 - double - use double approach (default - true);
 - n - number of bootstrap samples for coefficient estimtion;
 - varn - number of bottstrap samples for varianvce estimation;
@@ -365,6 +368,9 @@ end
 
 Multiple imputation.
 
+!!! warning
+    Experimental: API not stable, results not validated
+
 For each subject random vector of missing values generated from distribution:
 
 ```math
@@ -420,6 +426,9 @@ end
     miboot(mi::MILMM; n = 100, verbose = true, rng = default_rng())
 
 Multiple imputation with parametric bootstrap step.
+
+!!! warning
+    Experimental: API not stable, results not validated
 
 Example:
 

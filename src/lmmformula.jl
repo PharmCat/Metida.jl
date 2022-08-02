@@ -28,10 +28,10 @@ repeated = Metida.VarEffect(@covstr(formulation|subject), DIAG),
 )
 ```
 
-`@lmmformula` have 3 components - 1'st is a formula for fixed effect, it defined
+`@lmmformula` have 3 components - 1'st is a formula for fixed effect, it's defined
 like in `StstsModels` (1st argument just provided to `@formula` macro). Other arguments
 should be defined like keywords. `repeated` keyword define repeated effect part,
-`random` define random effect part. You can use several random factors as in example bellow:
+`random` - define random effect part. You can use several random factors as in example bellow:
 
 ```
 lmm = Metida.LMM(Metida.@lmmformula(var~sequence+period+formulation,
@@ -46,8 +46,10 @@ df0)
 `effect formula` | `blocking factor` [/ `nested factor`] [: `covariance structure`]
 
 `|` - devide effect formula form blocking factor definition (necessarily),
-`/` and `:` modificator are optional. `/` work like in MixedModels or in RegressionFormulae -
-expand factor `f|a/b` to `f|a` + `f|a&b`. It can't be used in repeated effect defenition.
+`/` and `:` modificator are optional.
+
+`/` work like in MixedModels or in RegressionFormulae -
+expand factor `f|a/b` to `f|a` + `f|a&b`. It can't be used in repeated effect definition.
 
 `:` - covariance structure defined right after `:` (SI, DIAG, CS, CSH, ets...),
 if `:` not used then SI used for this effect.
@@ -120,4 +122,20 @@ macro lmmformula(formula, args...)
     end
     if length(ranfac) == 0 ranfac = nothing end
     return LMMformula(f, ranfac, repeff)
+end
+
+function Base.show(io::IO, f::LMMformula)
+    println(io, "LMM formula:")
+    print(io, "Fixed-effect formula: ")
+    println(io, f.formula)
+    if !isnothing(f.random)
+        for i = 1:length(f.random)
+            println(io, "Radom-effect $i formula:")
+            println(io, f.random[i])
+        end
+    end
+    if !isnothing(f.repeated)
+        println(io, "Repeated-effect formula:")
+        println(io, f.repeated)
+    end
 end
