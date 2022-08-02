@@ -20,6 +20,8 @@ Make Linear-Mixed Model object.
 `random`: vector of random effects or single random effect
 
 `repeated`: is a repeated effect (only one)
+
+See also: [`@lmmformula`](@ref)
 """
 struct LMM{T<:AbstractFloat} <: MetidaModel
     model::FormulaTerm
@@ -75,6 +77,7 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         if repeated === nothing
             repeated = NOREPEAT
         end
+
         if random === nothing
             random = VarEffect(Metida.@covstr(0|1), Metida.RZero())
         end
@@ -94,6 +97,10 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         LMM(model, mf, mm, covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, mres, findmax(length, covstr.vcovblock)[1], lmmlog)
         #LMM(model, mf, mm, covstr, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, ModelResult(), findmax(length, covstr.vcovblock)[1], lmmlog)
     end
+end
+
+function LMM(f::LMMformula, data; contrasts=Dict{Symbol,Any}())
+    LMM(f.formula, data; contrasts=contrasts,  random = f.random, repeated = f.repeated)
 end
 
 ################################################################################

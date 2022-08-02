@@ -16,6 +16,11 @@
 
 [`fit!`](@ref)
 
+### @lmmformula
+```@docs
+Metida.@lmmformula
+```
+
 ### Metida.CovarianceType
 ```@docs
 Metida.CovarianceType
