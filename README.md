@@ -30,6 +30,14 @@ repeated = VarEffect(@covstr(formulation|subject), DIAG),
 )
 
 fit!(lmm)
+
+# Or you can use macro @lmmformula
+
+lmm = LMM(@lmmformula(var~sequence+period+formulation,
+    random = formulation|subject:CSH,
+    repeated = formulation|subject:DIAG),
+    df0)
+fit!(lmm)
 ```
 
 Also you can use this package with [MatidaNLopt.jl](https://github.com/PharmCat/MetidaNLopt.jl) and [MetidaCu.jl](https://github.com/PharmCat/MetidaCu.jl).
