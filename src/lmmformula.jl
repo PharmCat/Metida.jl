@@ -23,8 +23,8 @@ equal to:
 
 ```
 lmm = LMM(@formula(var~sequence+period+formulation), df0;
-random = Metida.VarEffect(@covstr(formulation|subject), CSH),
-repeated = Metida.VarEffect(@covstr(formulation|subject), DIAG),
+random = VarEffect(@covstr(formulation|subject), CSH),
+repeated = VarEffect(@covstr(formulation|subject), DIAG),
 )
 ```
 
@@ -34,7 +34,7 @@ should be defined like keywords. `repeated` keyword define repeated effect part,
 `random` - define random effect part. You can use several random factors as in example bellow:
 
 ```
-lmm = Metida.LMM(Metida.@lmmformula(var~sequence+period+formulation,
+lmm = LMM(@lmmformula(var~sequence+period+formulation,
 random = formulation|subject:CSH,
 random = 1|subject:DIAG,
 repeated = formulation|subject:DIAG),

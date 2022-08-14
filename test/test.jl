@@ -335,14 +335,17 @@ end
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 697.2241355154041 atol=1E-8
 
-
-    lmm = Metida.LMM(Metida.@lmmformula(response ~ 1 + factor,
+    lmmf = Metida.@lmmformula(response ~ 1 + factor,
     random = 1|subject/r1,
-    repeated = p|subject:Metida.CSH),
+    repeated = p|subject:Metida.CSH)
+
+    lmm = Metida.LMM(lmmf,
     ftdf3; contrasts=Dict(:factor => DummyCoding(; base=1.0)))
 
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 697.2241355154041 atol=1E-8
+    io = IOBuffer();
+    @test_nowarn show(io, lmmf)
     #@test Metida.dof_satter(lmm)[2] ≈ 21.944891442712407 atol=1E-8
 end
 @testset "  Model: AR/SI                                             " begin

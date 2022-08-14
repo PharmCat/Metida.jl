@@ -1,4 +1,8 @@
-uv0.14
+v0.14.1
+  * docs
+  * test
+
+v0.14
   * lmmformula
   * Unstructured Covariance (UN)
   * initial functions for analytical gradient vector
