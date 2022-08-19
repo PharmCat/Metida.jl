@@ -222,11 +222,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                     dicts[i]  = Dict{Tuple{eltype.(cdata)...}, Vector{Int}}()
                     indsdict!(dicts[i], cdata)
                 else
-<<<<<<< HEAD
                     dicts[i]  = Dict(1 => collect(1:rown)) #changed to range
-=======
-                    dicts[i]  = Dict(1 => 1:rown) #changed to range
->>>>>>> 3c9b0ea50e3d615aea78ea4b68467991fc2e6b69
                 end
 
                 sn[i]     = length(dicts[i])
@@ -246,11 +242,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             dicts[end]  = Dict{Tuple{eltype.(cdata)...}, Vector{Int}}()
             indsdict!(dicts[end], cdata)
         else
-<<<<<<< HEAD
             dicts[end]  = Dict(1 => collect(1:rown)) #changed to range
-=======
-            dicts[end]  = Dict(1 => 1:rown) #changed to range
->>>>>>> 3c9b0ea50e3d615aea78ea4b68467991fc2e6b69
         end
 
         sn[end]     = length(dicts[end])
@@ -262,15 +254,9 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         #Theta length
         tl  = sum(t)
         ########################################################################
-<<<<<<< HEAD
         #if any(x-> 1 in keys(x), dicts[1:end-1])
         #    blocks = [first(dicts)[1]]
         #else
-=======
-        if any(x-> 1 in keys(x), dicts[1:end-1])
-            blocks = [first(dicts)[1]]
-        else
->>>>>>> 3c9b0ea50e3d615aea78ea4b68467991fc2e6b69
             if random[1].covtype.z  # if first random effect not null
                 subjblockdict = dicts[1]
                 if length(dicts) > 2 # if more than 2 random effects
@@ -287,11 +273,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                 subjblockdict = dicts[end]
             end
             blocks  = collect(values(subjblockdict))
-<<<<<<< HEAD
         #end
-=======
-        end
->>>>>>> 3c9b0ea50e3d615aea78ea4b68467991fc2e6b69
 
         sblock = Vector{Vector{Vector{Vector{Int}}}}(undef, length(blocks))
         ########################################################################
