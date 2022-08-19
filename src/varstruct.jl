@@ -139,6 +139,9 @@ function sabjcrossdicts(d1, d2)
     v
 end
 
+tabcols(data, symbs) = Tuple(Tables.getcolumn(Tables.columns(data), x) for x in symbs)
+
+
 struct CovStructure{T} <: AbstractCovarianceStructure
     # Random effects
     random::Vector{VarEffect}
@@ -215,33 +218,17 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                 fillur!(tr, i, t)
                 symbs       = StatsModels.termvars(random[i].subj)
                 if length(symbs) > 0
-                    cdata     = Tuple(Tables.getcolumn(Tables.columns(data), x) for x in StatsModels.termvars(random[i].subj))
+                    cdata     = tabcols(data, symbs) # Tuple(Tables.getcolumn(Tables.columns(data), x) for x in symbs)
                     dicts[i]  = Dict{Tuple{eltype.(cdata)...}, Vector{Int}}()
                     indsdict!(dicts[i], cdata)
                 else
-                    dicts[i]  = Dict(1 => collect(1:rown))
+                    dicts[i]  = Dict(1 => 1:rown) #changed to range
                 end
-                    #subjz[i]  = convert(BitMatrix, modelcols(MatrixTerm(apply_schema(random[i].subj, StatsModels.schema(data, fulldummycodingdict(random[i].subj)))), data))
-                #subjz[i]  = convert(BitMatrix, modelmatrix(random[i].subj, data; hints=fulldummycodingdict(random[i].subj), mod=MetidaModel))
-                    #sn[i]     = size(subjz[i], 2)
+
                 sn[i]     = length(dicts[i])
                 updatenametype!(ct, rcnames, csp, schema[i], random[i].covtype.s)
             end
-        #=
-        else
-            schema[1] = apply_schema(random[1].model, StatsModels.schema(data, random[1].coding))
-            ztemp     = modelcols(MatrixTerm(schema[1]), data)
-            z         = hcat(z, ztemp)
-            q[1]      = 0
-            csp       = covstrparam(random[1].covtype.s, q[1])
-            t[1]      = sum(csp)
-            fillur!(zrndur, 1, q)
-            fillur!(tr, 1, t)
-            sn[1]     = 0
 
-            updatenametype!(ct, rcnames, csp, schema[1], random[1].covtype.s)
-        end
-        =#
         # REPEATED EFFECTS
         if length(repeated.coding) == 0
             fill_coding_dict!(repeated.model, repeated.coding, data)
@@ -251,15 +238,13 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         rz          = modelcols(MatrixTerm(schema[end]), data)
         symbs       = StatsModels.termvars(repeated.subj)
         if length(symbs) > 0
-            cdata       = Tuple(Tables.getcolumn(Tables.columns(data), x) for x in StatsModels.termvars(repeated.subj))
+            cdata       = tabcols(data, symbs) # Tuple(Tables.getcolumn(Tables.columns(data), x) for x in symbs)
             dicts[end]  = Dict{Tuple{eltype.(cdata)...}, Vector{Int}}()
             indsdict!(dicts[end], cdata)
         else
-            dicts[end]  = Dict(1 => collect(1:rown))
+            dicts[end]  = Dict(1 => 1:rown) #changed to range
         end
-        #subjz[end]  = convert(BitMatrix, modelcols(MatrixTerm(apply_schema(repeated.subj, StatsModels.schema(data, fulldummycodingdict(repeated.subj)))), data))
-        #subjz[end]  = convert(BitMatrix, modelmatrix(repeated.subj, data; hints=fulldummycodingdict(repeated.subj), mod=MetidaModel))
-        #sn[end]     = size(subjz[end], 2)
+
         sn[end]     = length(dicts[end])
         q[end]      = size(rz, 2)
         csp         = covstrparam(repeated.covtype.s, q[end])
@@ -269,41 +254,37 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         #Theta length
         tl  = sum(t)
         ########################################################################
-        if random[1].covtype.z
-            #subjblockmat  = subjz[1]
-            subjblockdict = dicts[1]
-            if length(dicts) > 2
-                for i = 2:length(dicts)-1
-            #        subjblockmat = noncrossmodelmatrix(subjblockmat, subjz[i])
-                    subjblockdict = sabjcrossdicts(subjblockdict, dicts[i])
-                end
-            end
-            if !(isa(repeated.covtype.s, SI_) || isa(repeated.covtype.s, DIAG_))
-            #    subjblockmat = noncrossmodelmatrix(subjblockmat, subjz[end])
-                subjblockdict = sabjcrossdicts(subjblockdict, dicts[end])
-            else
-                dicts[end] = subjblockdict
-            end
+        if any(x-> 1 in keys(x), dicts[1:end-1])
+            blocks = [first(dicts)[1]]
         else
-            #subjblockmat = subjz[end]
-            subjblockdict = dicts[end]
+            if random[1].covtype.z  # if first random effect not null
+                subjblockdict = dicts[1]
+                if length(dicts) > 2 # if more than 2 random effects
+                    for i = 2:length(dicts)-1
+                        subjblockdict = sabjcrossdicts(subjblockdict, dicts[i])
+                    end
+                end
+                if !(isa(repeated.covtype.s, SI_) || isa(repeated.covtype.s, DIAG_)) # if repeated effect have non-diagonal structure
+                    subjblockdict = sabjcrossdicts(subjblockdict, dicts[end])
+                else
+                    dicts[end] = subjblockdict
+                end
+            else
+                subjblockdict = dicts[end]
+            end
+            blocks  = collect(values(subjblockdict))
         end
-        #blocks = makeblocks(subjblockmat) #vcovblock
-        blocks  = collect(values(subjblockdict))
+
         sblock = Vector{Vector{Vector{Vector{Int}}}}(undef, length(blocks))
         ########################################################################
-        @inbounds for i = 1:length(blocks)
+        @inbounds for i = 1:length(blocks) # i - block number
             sblock[i] = Vector{Vector{Vector{Int}}}(undef, alleffl)
-            @inbounds for s = 1:alleffl
+            @inbounds for s = 1:alleffl # s - effect number
                 sblock[i][s] = Vector{Vector{Int}}(undef, 0)
-                #=
-                @inbounds for col in eachcol(view(subjz[s], blocks[i], :))
-                    if any(col) push!(sblock[i][s], findall(col)) end
-                end
-                =#
+
                 for (k, v) in dicts[s]
                     fa = findall(x-> x in v, blocks[i])
-                    #fa = findall(x-> x in blocks[i], v)
+
                     if length(fa) > 0 push!(sblock[i][s], fa) end
                 end
             end
