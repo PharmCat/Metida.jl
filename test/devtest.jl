@@ -1,6 +1,7 @@
-using DataFrames, CSV, StatsModels, LinearAlgebra, ForwardDiff, ForwardDiff, Optim, Distributions, CategoricalArrays
 #using NLopt
 using Metida
+
+using DataFrames, CSV, StatsModels, LinearAlgebra, ForwardDiff, ForwardDiff, Optim, Distributions, CategoricalArrays
 #using SnoopCompile
 #using LineSearches
 using BenchmarkTools

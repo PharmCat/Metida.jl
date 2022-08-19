@@ -15,6 +15,20 @@ include("testdata.jl")
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
 
+    # Casuistic case - random
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation|1), Metida.DIAG),
+    )
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
+
+    # Casuistic case - repeated
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    repeated = Metida.VarEffect(Metida.@covstr(formulation|1), Metida.DIAG),
+    )
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 25.00077786912235 atol=1E-6
+
 
 
     #Missing

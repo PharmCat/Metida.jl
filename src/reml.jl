@@ -39,7 +39,7 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)
     #---------------------------------------------------------------------------
-    #V⁻¹           = Vector{AbstractMatrix{T}}(undef, n)
+    #V⁻¹           = Vector{Matrix{T}}(undef, n)
     V⁻¹           = Vector{SubArray{T, 2, Matrix{T}, Tuple{UnitRange{Int64}, UnitRange{Int64}}, false}}(undef, n)
     θ₃            = zero(T)
     β             = Vector{T}(undef, lmm.rankx)
@@ -52,24 +52,26 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
         accθ₂     = Vector{Matrix{T}}(undef, ncore)
         accβm     = Vector{Vector{T}}(undef, ncore)
         swtw      = Vector{Vector{T}}(undef, ncore)
+        #Vpt       = Vector{Matrix{T}}(undef, ncore)
         erroracc  = trues(ncore)
-        d, r = divrem(n, ncore)
+        d, r      = divrem(n, ncore)
         Base.Threads.@threads for t = 1:ncore
         #@batch for t = 1:ncore
         #for t = 1:ncore
             # Vp - matrix for sweep operation
             # [V  X
             #  X' 0]
-            offset   = min(t-1, r) + (t-1)*d
+            offset   = min(t - 1, r) + (t - 1)*d
             accθ₂[t] = zeros(T, lmm.rankx, lmm.rankx)
             accβm[t] = zeros(T, lmm.rankx)
             swtw[t]  = zeros(T, lmm.maxvcbl)
-            #Vp       = Matrix{T}(undef, lmm.maxvcbl, lmm.maxvcbl)
-            @inbounds for j ∈ 1:d+(t ≤ r)
-                i =  offset + j
+            #Vpt[t]   = Matrix{T}(undef, lmm.maxvcbl, lmm.maxvcbl)
+            @inbounds for j ∈ 1:d + (t ≤ r)
+                i    =  offset + j
                 q    = length(lmm.covstr.vcovblock[i])
                 qswm = q + lmm.rankx
                 Vp   = Matrix{T}(undef, qswm, qswm)
+                #Vp   = view(Vpt[t], qswm, qswm)
                 V    = view(Vp, 1:q, 1:q)
                 Vx   = view(Vp, 1:q, q+1:qswm)
                 Vc   = view(Vp, q+1:qswm, q+1:qswm)
@@ -83,7 +85,8 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
                 if length(swtw[t]) != qswm resize!(swtw[t], qswm) end
                 swm, swr, ne  = sweepb!(swtw[t], Vp, 1:q; logdet = true, syrkblas = syrkblas)
                 V⁻¹[i] = V
-
+                #V⁻¹[i] = Matrix{T}(undef, q, q)
+                #copyto!(V⁻¹[i], V)
             #-----------------------------------------------------------------------
                 if ne == false erroracc[t] = false end
                 accθ₁[t] += swr

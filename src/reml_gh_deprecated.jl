@@ -69,7 +69,7 @@ function reml_grad(yv, Zv, p, Xv, θvec, β)
     end
     return - (θ1 .+ θ2 .+ θ3)
 end
-=#
+
 """
     2 log Restricted Maximum Likelihood hessian matrix
 """
