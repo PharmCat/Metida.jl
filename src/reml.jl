@@ -34,7 +34,7 @@ end
 #                     REML without provided β
 ################################################################################
 
-function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
+function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T # Main optimization way - make gradient / hessian analytical / semi-analytical functions
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)

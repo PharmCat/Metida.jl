@@ -1,3 +1,61 @@
+################################################################################
+#=
+function makeblocks(subjz)
+    blocks = Vector{Vector{UInt32}}(undef, 0)
+    for i = 1:size(subjz, 2)
+        b = findall(x->!iszero(x), view(subjz, :, i))
+        if length(b) > 0 push!(blocks, b) end
+    end
+    blocks
+end
+=#
+################################################################################
+#=
+function noncrossmodelmatrix(mx::AbstractArray, my::AbstractArray)
+    size(mx, 2) > size(my, 2) ?  (mat = mx' * my; a = mx) : (mat = my' * mx; a = my)
+    #mat = mat * mat'
+    T = eltype(mat)
+    @inbounds for n = 1:size(mat, 2)-1
+        fr = findfirst(x->!iszero(x), view(mat, n, :))
+        if !isnothing(fr)
+            @inbounds for m = fr:size(mat, 1)
+                if !iszero(mat[m, n])
+                    fc = findfirst(x->!iszero(x), view(mat, m, n+1:size(mat, 2)))
+                    if !isnothing(fc)
+                        @inbounds for c = n+fc:size(mat, 2)
+                            if !iszero(mat[m, c])
+                                #view(mat, :, n) .+= view(mat, :, c)
+                                A = view(mat, :, n)
+                                broadcast!(+, A, A, view(mat, :, c))
+                                fill!(view(mat, :, c), zero(T))
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    cols = Vector{Int}(undef, 0)
+    @inbounds for i = 1:size(mat, 2)
+        if !iszero(sum(view(mat,:, i)))
+            push!(cols, i)
+        end
+    end
+    res = replace(x -> iszero(x) ?  0 : 1, view(mat, :, cols))
+    a * res
+end
+=#
+
+#=
+function diag!(v, m)
+    l = checksquare(m)
+    l == length(v) || error("Length not equal")
+    for i = 1:l
+        v[i] = m[i, i]
+    end
+    v
+end
+=#
 #=
 function fillzeroutri!(a::AbstractArray{T}) where T
     s = size(a,1)

@@ -8,9 +8,9 @@ function mulαtβα(a::AbstractVector, B::AbstractMatrix{T}) where T
     for i ∈ axes(B, 1)::Base.OneTo{Int}
         ct = zero(T)
         for i2 ∈ axes(B, 2)::Base.OneTo{Int}
-            @inbounds  ct += B[i, i2]*a[i2]
+            @inbounds  ct += B[i, i2] * a[i2]
         end
-        @inbounds c += ct*a[i]
+        @inbounds c += ct * a[i]
     end
     c
 end
@@ -78,7 +78,7 @@ end
 
 use only upper triangle of V
 """
-function mulθ₃(y, X, β, V::AbstractArray{T}) where T
+function mulθ₃(y, X, β, V::AbstractArray{T}) where T # check for optimization
     q = size(V, 1)
     p = size(X, 2)
     θ = zero(T)
@@ -116,18 +116,14 @@ function mulαtβinc!(θ::AbstractVector, A::AbstractMatrix, b::AbstractVector)
     q = size(A, 1)
     if q != length(b) throw(DimensionMismatch("size(A, 1) should be equal length(b)")) end
     p = size(A, 2)
-    #=@turbo=# @inbounds  for n in 1:p, m in 1:q
+    #=@turbo=# @inbounds  for m in 1:q, n in 1:p
         θ[n] += b[m] * A[m, n]
     end
     θ
 end
 ################################################################################
 
-#=
-If length θ >= size(rz, 2)
-!!! without checking
-vec = rz * θ
-=#
+
 @inline function tmul_unsafe(rz, θ::AbstractVector{T}) where T
     vec = zeros(T, size(rz, 1))
     #=@turbo=# for r ∈ axes(rz, 1)
@@ -138,16 +134,6 @@ vec = rz * θ
     vec
 end
 
-#=
-function diag!(v, m)
-    l = checksquare(m)
-    l == length(v) || error("Length not equal")
-    for i = 1:l
-        v[i] = m[i, i]
-    end
-    v
-end
-=#
 function diag!(f, v, m)
     l = checksquare(m)
     l == length(v) || error("Length not equal")

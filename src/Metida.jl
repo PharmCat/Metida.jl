@@ -11,7 +11,7 @@ import MetidaBase: StatsBase, StatsModels, CategoricalArrays, Distributions
 import MetidaBase.CategoricalArrays: CategoricalArray
 import MetidaBase.Distributions: Normal, TDist, FDist, Chisq, MvNormal, FullNormal, ccdf, cdf, quantile
 
-import MetidaBase: Tables, MetidaModel, AbstractCovarianceStructure, AbstractCovmatMethod, AbstractCovarianceType, AbstractLMMDataBlocks, MetidaTable, metida_table, PrettyTables#, indsdict!
+import MetidaBase: Tables, MetidaModel, AbstractCovarianceStructure, AbstractCovmatMethod, AbstractCovarianceType, AbstractLMMDataBlocks, MetidaTable, metida_table, PrettyTables, indsdict!
 import MetidaBase.PrettyTables: TextFormat, pretty_table, tf_borderless, ft_printf
 import LinearAlgebra:checksquare, BlasFloat
 import StatsModels: @formula, termvars, ModelFrame, FunctionTerm, AbstractTerm, CategoricalTerm, AbstractContrasts, ConstantTerm, InterceptTerm, Term, InteractionTerm, FormulaTerm, ModelMatrix, schema, apply_schema, MatrixTerm, modelcols

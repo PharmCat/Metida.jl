@@ -81,7 +81,8 @@ end
 ################################################################################
 #                            COVARIANCE STRUCTURE
 ################################################################################
-function indsdict!(d::Dict, cdata::Union{Tuple, NamedTuple})
+#=
+function indsdict!(d::Dict, cdata::Union{Tuple, NamedTuple, AbstractVector{AbstractVector}})
     @inbounds for (i, element) in enumerate(zip(cdata...))
         ind = ht_keyindex(d, element)
         if ind > 0
@@ -107,6 +108,7 @@ function indsdict!(d::Dict, cdata::AbstractVector)
     end
     d
 end
+=#
 function sabjcrossdicts(d1, d2)
     if length(d1) == 1 return d1 end
     if length(d2) == 1 return d2 end
@@ -283,8 +285,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                 sblock[i][s] = Vector{Vector{Int}}(undef, 0)
 
                 for (k, v) in dicts[s]
-                    fa = findall(x-> x in v, blocks[i])
-
+                    fa = findall(x-> x in v, blocks[i]) # Try to optimize it
                     if length(fa) > 0 push!(sblock[i][s], fa) end
                 end
             end
@@ -318,53 +319,6 @@ function updatenametype!(ct, rcnames, csp, schema, s)
     append!(rcnames, rcoefnames(schema, sum(csp), s))
 end
 
-################################################################################
-#=
-function makeblocks(subjz)
-    blocks = Vector{Vector{UInt32}}(undef, 0)
-    for i = 1:size(subjz, 2)
-        b = findall(x->!iszero(x), view(subjz, :, i))
-        if length(b) > 0 push!(blocks, b) end
-    end
-    blocks
-end
-=#
-################################################################################
-#=
-function noncrossmodelmatrix(mx::AbstractArray, my::AbstractArray)
-    size(mx, 2) > size(my, 2) ?  (mat = mx' * my; a = mx) : (mat = my' * mx; a = my)
-    #mat = mat * mat'
-    T = eltype(mat)
-    @inbounds for n = 1:size(mat, 2)-1
-        fr = findfirst(x->!iszero(x), view(mat, n, :))
-        if !isnothing(fr)
-            @inbounds for m = fr:size(mat, 1)
-                if !iszero(mat[m, n])
-                    fc = findfirst(x->!iszero(x), view(mat, m, n+1:size(mat, 2)))
-                    if !isnothing(fc)
-                        @inbounds for c = n+fc:size(mat, 2)
-                            if !iszero(mat[m, c])
-                                #view(mat, :, n) .+= view(mat, :, c)
-                                A = view(mat, :, n)
-                                broadcast!(+, A, A, view(mat, :, c))
-                                fill!(view(mat, :, c), zero(T))
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-    cols = Vector{Int}(undef, 0)
-    @inbounds for i = 1:size(mat, 2)
-        if !iszero(sum(view(mat,:, i)))
-            push!(cols, i)
-        end
-    end
-    res = replace(x -> iszero(x) ?  0 : 1, view(mat, :, cols))
-    a * res
-end
-=#
 ################################################################################
 #                            CONTRAST CODING
 ################################################################################
