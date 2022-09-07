@@ -35,7 +35,7 @@ struct ZERO <: AbstractCovarianceType end
 """
     CovarianceType(cm::AbstractCovmatMethod)
 
-Make covariance type with CovmatMethod.
+Make covariance type with AbstractCovmatMethod.
 
 """
 struct CovarianceType
@@ -322,7 +322,7 @@ const SPGAUD = SpatialGaussianD()
 """
     Unstructured()
 
-Unstructured covariance structure with `t*(t+1)/2-t` paremeters where `t` - number of factor levels, `t*(t+1)/2-2t` of them is covariance (ρ) patemeters. 
+Unstructured covariance structure with `t*(t+1)/2-t` paremeters where `t` - number of factor levels, `t*(t+1)/2-2t` of them is covariance (ρ) patemeters.
 
 UN = Unstructured()
 """
