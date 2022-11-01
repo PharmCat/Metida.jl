@@ -1,19 +1,25 @@
 #linearalgebra.jl
+
+# Fine
 """
 a' * B * a
 """
 function mulαtβα(a::AbstractVector, B::AbstractMatrix{T}) where T
     if length(a) != size(B, 2)::Int  || size(B, 2)::Int  != size(B, 1)::Int  error("Dimention error") end
+    axbm  = axes(B, 1)
+    axbn  = axes(B, 2)
     c = zero(T)
-    for i ∈ axes(B, 1)::Base.OneTo{Int}
+    for i ∈ axbm
         ct = zero(T)
-        for i2 ∈ axes(B, 2)::Base.OneTo{Int}
-            @inbounds  ct += B[i, i2] * a[i2]
+        for j ∈ axbn
+            @inbounds  ct += B[i, j] * a[j]
         end
         @inbounds c += ct * a[i]
     end
     c
 end
+
+# Fine
 """
 θ + A * B * A'
 
@@ -33,6 +39,7 @@ function mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix
     end
     θ
 end
+
 """
 θ + A * B * A' * alpha
 
@@ -53,6 +60,7 @@ function mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix
     end
     θ
 end
+
 """
 θ + A * B * (a - b) * alpha
 
@@ -71,6 +79,7 @@ function mulαβαtinc!(θ::AbstractVector, A::AbstractMatrix, B::AbstractMatrix
     end
     θ
 end
+
 """
     mulθ₃(y, X, β, V::AbstractMatrix{T})::T where T
 
@@ -107,6 +116,7 @@ function mulθ₃(y, X, β, V::AbstractArray{T}) where T # check for optimizatio
 
     return θ
 end
+
 """
 θ + A' * b
 

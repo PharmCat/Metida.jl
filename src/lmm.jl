@@ -252,7 +252,7 @@ function Base.show(io::IO, lmm::LMM)
         for i = 1:lmm.covstr.tl
             if mx[i, 3] == :var mx[i, 4] = round.(mx[i, 4]^2, sigdigits = 6) end
         end
-        pretty_table(io, mx;  noheader = true, alignment=:l, tf = tf_borderless)
+        pretty_table(io, mx; show_header = false, alignment=:l, tf = tf_borderless)
         #printmatrix(io, mx)
     else
         if !any(x-> x.type == :WARN, lmm.log)

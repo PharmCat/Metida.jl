@@ -3,21 +3,32 @@
 ################################################################################
 
 ################################################################################
-function gmat_switch!(G, θ, covstr, r)
-    gmat!(G, view(θ, covstr.tr[r]), covstr.random[r].covtype.s)
-    G
-end
 function gmatvec(θ::Vector{T}, covstr) where T
-    gt = [Symmetric(Matrix{T}(undef, covstr.q[r], covstr.q[r])) for r in 1:covstr.rn] #<: fix to vec
+    gt = [Symmetric(zeros(T, covstr.q[r], covstr.q[r])) for r in 1:covstr.rn] #<: fix to vec
     for r = 1:covstr.rn
-        fill!(gt[r].data, zero(T))
+        #fill!(gt[r].data, zero(T))
         if covstr.random[r].covtype.z
             gmat!(gt[r].data, view(θ, covstr.tr[r]), covstr.random[r].covtype.s)
         end
     end
     gt
 end
+# Main
+function zgz_base_inc!(mx::AbstractArray, G, θ, covstr, block, sblock)
+    if covstr.random[1].covtype.z
+        for r = 1:covstr.rn
+            zblock    = view(covstr.z, block, covstr.zrndur[r])
+            @inbounds for i = 1:length(sblock[r])
+                mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i]), view(zblock, sblock[r][i], :), G[r])
+            end
+        end
+    end
+    mx
+end
+
+
 ################################################################################
+
 function zgz_base_inc!(mx::AbstractArray, θ::AbstractArray{T}, covstr, block, sblock) where T
     if covstr.random[1].covtype.z
         for r = 1:covstr.rn
@@ -31,16 +42,9 @@ function zgz_base_inc!(mx::AbstractArray, θ::AbstractArray{T}, covstr, block, s
     end
     mx
 end
-function zgz_base_inc!(mx::AbstractArray, G, θ, covstr, block, sblock)
-    if covstr.random[1].covtype.z
-        for r = 1:covstr.rn
-            zblock    = view(covstr.z, block, covstr.zrndur[r])
-            @inbounds for i = 1:length(sblock[r])
-                mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i]), view(zblock, sblock[r][i], :), G[r])
-            end
-        end
-    end
-    mx
+function gmat_switch!(G, θ, covstr, r)
+    gmat!(G, view(θ, covstr.tr[r]), covstr.random[r].covtype.s)
+    G
 end
 ################################################################################
 #SI
@@ -258,7 +262,7 @@ function grad_gmat!(s, θ, ct::AbstractCovarianceType)
 end
 
 function grad_gmatvec(θ::Vector{T}, covstr) where T
-    gt = [Matrix{T}(undef, covstr.q[r], covstr.q[r], length(θ)) for r in 1:covstr.rn] #<: fix to vec
+    gt = [Array{T}(undef, covstr.q[r], covstr.q[r], length(θ)) for r in 1:covstr.rn] #<: fix to vec
     for r = 1:covstr.rn
         if covstr.random[r].covtype.z
             gt[r] = grad_gmat!(covstr.q[r], view(θ, covstr.tr[r]), covstr.random[r].covtype.s)
