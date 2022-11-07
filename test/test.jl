@@ -152,6 +152,12 @@ include("testdata.jl")
     # EXPERIMENTAL
     @test Metida.dof_contain(lmm, 1) == 12
     @test Metida.dof_contain(lmm, 5) == 8
+    tt = Metida.typeiii(lmm)
+    @test tt.f[2] ≈ 0.185268  atol=1E-5
+    @test tt.ndf[2] ≈ 3.0 atol=1E-5
+    @test tt.df[2] ≈ 3.39086 atol=1E-5
+    @test tt.pval[2] ≈ 0.900636 atol=1E-5
+
 end
 ################################################################################
 #                                  df0

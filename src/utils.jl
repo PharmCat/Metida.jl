@@ -26,13 +26,16 @@ function nterms(rhs::Union{Tuple{Vararg{AbstractTerm}}, Nothing, AbstractTerm})
     end
     p
 end
+tname(t::AbstractTerm) = "$(t.sym)"
+tname(t::InteractionTerm) = join(tname.(t.terms), " & ")
+tname(t::InterceptTerm) = "(Intercept)"
 """
     lcontrast(lmm::LMM, i::Int)
 
 L-contrast matrix for `i` fixed effect.
 """
 function lcontrast(lmm::LMM, i::Int)
-    n = length(obj.mf.f.rhs.terms)
+    n = length(lmm.mf.f.rhs.terms)
     p = size(lmm.mm.m, 2)
     if i > n || n < 1 error("Factor number out of range 1-$(n)") end
     inds = findall(x -> x==i, lmm.mm.assign)
