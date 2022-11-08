@@ -800,6 +800,11 @@ end
     mir = Metida.milmm(mi; n = 10, verbose = false, rng = StableRNG(1234))
     Base.show(io, mir)
 
+    @test_nowarn @test_nowarn  Metida.milmm(lmm, df0m; n = 10, verbose = false, rng = StableRNG(1234))
+
+    @test_throws ErrorException Metida.milmm(lmm; n = 10, verbose = false, rng = StableRNG(1234))
+
+
     if !(VERSION < v"1.7")
         mb =  Metida.miboot(mi; n = 10, bootn = 10, varn = 10, double = true, verbose = false, rng = StableRNG(1234))
         Base.show(io, mb)

@@ -1,6 +1,7 @@
 #linearalgebra.jl
 
-# Fine
+# use dot(a,b,a) instead
+#=
 """
 a' * B * a
 """
@@ -18,7 +19,7 @@ function mulαtβα(a::AbstractVector, B::AbstractMatrix{T}) where T
     end
     c
 end
-
+=#
 # Fine
 """
 θ + A * B * A'
