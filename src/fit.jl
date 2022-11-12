@@ -4,6 +4,41 @@
 fit_nlopt!(lmm::MetidaModel; kwargs...)  = error("MetidaNLopt not found. \n - Run `using MetidaNLopt` before.")
 
 """
+    fit(::Type{T}, f::FormulaTerm, data;
+    contrasts=Dict{Symbol,Any}(),  
+    random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, 
+    repeated::Union{Nothing, VarEffect} = nothing,
+    kwargs...)
+
+Fit LMM model with @formula.
+
+Keywords see [`fit!`](@ref)
+"""
+function fit(::Type{T}, f::FormulaTerm, data;
+    contrasts=Dict{Symbol,Any}(),  
+    random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, 
+    repeated::Union{Nothing, VarEffect} = nothing,
+    kwargs...) where T <: LMM
+    lmm = LMM(f, data, contrasts = contrasts, random = random, repeated = repeated)
+    fit!(lmm; kwargs...)
+end
+"""
+    fit(::Type{T}, f::LMMformula, data;
+    contrasts=Dict{Symbol,Any}(),  
+    kwargs...) where T <: LMM
+
+Fit LMM model with [`@lmmformula`](@ref).
+
+Keywords see [`fit!`](@ref)
+"""
+function fit(::Type{T}, f::LMMformula, data;
+    contrasts=Dict{Symbol,Any}(),  
+    kwargs...) where T <: LMM
+    lmm = LMM(f, data, contrasts = contrasts)
+    fit!(lmm; kwargs...)
+end
+
+"""
     fit!(lmm::LMM{T}; kwargs...
     ) where T
 

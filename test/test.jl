@@ -47,6 +47,14 @@ include("testdata.jl")
     Metida.fit!(lmm; aifirst = true)
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
 
+    lmm = Metida.fit(Metida.LMM, @formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
+    )
+    @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
+
+    lmm = Metida.fit(Metida.LMM, Metida.@lmmformula(var~sequence+period+formulation,
+    random = formulation|subject:Metida.DIAG), df0)
+    @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
 
 
     t3table = Metida.typeiii(lmm;  ddf = :contain) # NOT VALIDATED

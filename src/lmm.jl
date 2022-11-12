@@ -97,11 +97,12 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         LMM(model, mf, mm, covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, mres, findmax(length, covstr.vcovblock)[1], lmmlog)
         #LMM(model, mf, mm, covstr, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, ModelResult(), findmax(length, covstr.vcovblock)[1], lmmlog)
     end
+    function LMM(f::LMMformula, data; contrasts=Dict{Symbol,Any}(), kwargs...)
+        LMM(f.formula, data; contrasts=contrasts,  random = f.random, repeated = f.repeated)
+    end
 end
 
-function LMM(f::LMMformula, data; contrasts=Dict{Symbol,Any}())
-    LMM(f.formula, data; contrasts=contrasts,  random = f.random, repeated = f.repeated)
-end
+
 
 ################################################################################
 """
