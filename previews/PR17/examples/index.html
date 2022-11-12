@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Examples · Metida.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">Metida.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="../instanduse/">First step</a></li><li class="is-active"><a class="tocitem" href>Examples</a></li><li><a class="tocitem" href="../custom/">Custom structures</a></li><li><a class="tocitem" href="../bioequivalence/">Bioequivalence</a></li><li><a class="tocitem" href="../nlopt/">NLopt</a></li><li><a class="tocitem" href="../cuda/">CUDA</a></li><li><a class="tocitem" href="../faq/">F.A.Q.</a></li></ul></li><li><a class="tocitem" href="../details/">Details</a></li><li><a class="tocitem" href="../boot/">Bootstrap</a></li><li><a class="tocitem" href="../mi/">Multiple imputation</a></li><li><a class="tocitem" href="../bench/">Benchmark</a></li><li><a class="tocitem" href="../validation/">Validation</a></li><li><a class="tocitem" href="../api/">API</a></li><li><a class="tocitem" href="../ref/">Citation &amp; Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User guide</a></li><li class="is-active"><a href>Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Examples</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/PharmCat/Metida.jl/blob/master/docs/src/examples.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h3 id="Example-1-Continuous-and-categorical-predictors"><a class="docs-heading-anchor" href="#Example-1-Continuous-and-categorical-predictors">Example 1 - Continuous and categorical predictors</a><a id="Example-1-Continuous-and-categorical-predictors-1"></a><a class="docs-heading-anchor-permalink" href="#Example-1-Continuous-and-categorical-predictors" title="Permalink"></a></h3><pre><code class="language-julia hljs">using Metida, CSV, DataFrames, MixedModels, CategoricalArrays;
+
+rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1fptime.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame</code></pre><p><img src="../plot1.png" alt/></p><p>Metida result:</p><pre><code class="language-julia hljs">lmm = LMM(@formula(response ~1 + factor*time), rds;
+random = VarEffect(@covstr(1 + time|subject&amp;factor), CSH),
+)
+fit!(lmm)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear Mixed Model: response ~ 1 + factor + time + factor &amp; time
+Random 1: 
+    Model: 1 + time|subject &amp; factor
+    Type: CSH (3), Subjects: 40
+Repeated: 
+    Residual only
+Blocks: 40, Maximum block size: 10
+Status: converged (No Errors)
+    -2 logREML: 1300.18    BIC: 1324.12
+
+    Fixed-effects parameters:
+──────────────────────────────────────────────────────────
+                        Coef.  Std. Error      z  Pr(&gt;|z|)
+──────────────────────────────────────────────────────────
+(Intercept)         22.1331     0.304339   72.73    &lt;1e-99
+factor: 1.0          2.00049    0.430401    4.65    &lt;1e-05
+time                 1.11853    0.0264038  42.36    &lt;1e-99
+factor: 1.0 &amp; time   0.404971   0.0373406  10.85    &lt;1e-26
+──────────────────────────────────────────────────────────
+    Variance components:
+    θ vector: [1.2401, 0.101122, -0.0427208, 0.985061]
+  Random 1   σ² (Intercept)   var   1.53785
+  Random 1   σ² time          var   0.0102257
+  Random 1   ρ                rho   -0.0427208
+  Residual   σ²               var   0.970345
+</code></pre><p>MixedModels result:</p><pre><code class="language-julia hljs">fm = @formula(response ~ 1 + factor*time + (1 + time|subject&amp;factor))
+mm = fit(MixedModel, fm, rds, REML=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear mixed model fit by REML
+ response ~ 1 + factor + time + factor &amp; time + (1 + time | subject &amp; factor)
+ REML criterion at convergence: 1300.1807598192281
+
+Variance components:
+                    Column   Variance Std.Dev.   Corr.
+subject &amp; factor (Intercept)  1.537868 1.240108
+                 time         0.010226 0.101123 -0.04
+Residual                      0.970344 0.985060
+ Number of obs: 400; levels of grouping factors: 40
+
+  Fixed-effects parameters:
+──────────────────────────────────────────────────────────
+                        Coef.  Std. Error      z  Pr(&gt;|z|)
+──────────────────────────────────────────────────────────
+(Intercept)         22.1331     0.30434    72.72    &lt;1e-99
+factor: 1.0          2.00049    0.430402    4.65    &lt;1e-05
+time                 1.11853    0.0264038  42.36    &lt;1e-99
+factor: 1.0 &amp; time   0.404971   0.0373407  10.85    &lt;1e-26
+──────────────────────────────────────────────────────────</code></pre><h3 id="Example-2-Two-random-factors-(Penicillin-data)"><a class="docs-heading-anchor" href="#Example-2-Two-random-factors-(Penicillin-data)">Example 2 - Two random factors (Penicillin data)</a><a id="Example-2-Two-random-factors-(Penicillin-data)-1"></a><a class="docs-heading-anchor-permalink" href="#Example-2-Two-random-factors-(Penicillin-data)" title="Permalink"></a></h3><p>Metida:</p><pre><code class="language-julia hljs">df          = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;Penicillin.csv&quot;); types = [String, Float64, String, String]) |&gt; DataFrame
+df.diameter = float.(df.diameter)
+
+lmm = LMM(@formula(diameter ~ 1), df;
+random = [VarEffect(@covstr(1|plate), SI), VarEffect(@covstr(1|sample), SI)]
+)
+fit!(lmm)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear Mixed Model: diameter ~ 1
+Random 1: 
+    Model: 1|plate
+    Type: SI (1), Subjects: 24
+Random 2: 
+    Model: 1|sample
+    Type: SI (1), Subjects: 6
+Repeated: 
+    Residual only
+Blocks: 1, Maximum block size: 144
+Status: converged (No Errors)
+    -2 logREML: 330.861    BIC: 345.749
+
+    Fixed-effects parameters:
+─────────────────────────────────────────────────
+               Coef.  Std. Error      z  Pr(&gt;|z|)
+─────────────────────────────────────────────────
+(Intercept)  22.9722    0.808573  28.41    &lt;1e-99
+─────────────────────────────────────────────────
+    Variance components:
+    θ vector: [0.846704, 1.93156, 0.549923]
+  Random 1   σ²    var   0.716908
+  Random 2   σ²    var   3.73092
+  Residual   σ²    var   0.302415
+</code></pre><p>MixedModels:</p><pre><code class="language-julia hljs">fm2 = @formula(diameter ~ 1 + (1|plate) + (1|sample))
+mm = fit(MixedModel, fm2, df, REML=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear mixed model fit by REML
+ diameter ~ 1 + (1 | plate) + (1 | sample)
+ REML criterion at convergence: 330.8605889909948
+
+Variance components:
+            Column   Variance Std.Dev.
+plate    (Intercept)  0.716908 0.846704
+sample   (Intercept)  3.730909 1.931556
+Residual              0.302415 0.549923
+ Number of obs: 144; levels of grouping factors: 24, 6
+
+  Fixed-effects parameters:
+─────────────────────────────────────────────────
+               Coef.  Std. Error      z  Pr(&gt;|z|)
+─────────────────────────────────────────────────
+(Intercept)  22.9722    0.808572  28.41    &lt;1e-99
+─────────────────────────────────────────────────</code></pre><h3 id="Example-3-Repeated-ARMA/AR/ARH"><a class="docs-heading-anchor" href="#Example-3-Repeated-ARMA/AR/ARH">Example 3 - Repeated ARMA/AR/ARH</a><a id="Example-3-Repeated-ARMA/AR/ARH-1"></a><a class="docs-heading-anchor-permalink" href="#Example-3-Repeated-ARMA/AR/ARH" title="Permalink"></a></h3><pre><code class="language-julia hljs">rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1freparma.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame</code></pre><p><img src="../plot2.png" alt/></p><p>ARMA:</p><pre><code class="language-julia hljs">lmm = LMM(@formula(response ~ 1 + factor*time), rds;
+random = VarEffect(@covstr(factor|subject&amp;factor), DIAG),
+repeated = VarEffect(@covstr(1|subject&amp;factor), ARMA),
+)
+fit!(lmm)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear Mixed Model: response ~ 1 + factor + time + factor &amp; time
+Random 1: 
+    Model: factor|subject &amp; factor
+    Type: DIAG (2), Subjects: 24
+Repeated: 
+    Model: 1|subject &amp; factor
+    Type: ARMA (3)
+Blocks: 24, Maximum block size: 10
+Status: converged  See error(s) in log. Final results can be wrong!
+    -2 logREML: 709.14    BIC: 736.48
+
+    Fixed-effects parameters:
+──────────────────────────────────────────────────────────
+                        Coef.  Std. Error      z  Pr(&gt;|z|)
+──────────────────────────────────────────────────────────
+(Intercept)         44.3896     1.35084    32.86    &lt;1e-99
+factor: 1.0          5.40834    1.60921     3.36    0.0008
+time                 0.508736   0.0481765  10.56    &lt;1e-25
+factor: 1.0 &amp; time   0.286837   0.0681318   4.21    &lt;1e-04
+──────────────────────────────────────────────────────────
+    Variance components:
+    θ vector: [4.53791, 2.8059, 1.12292, 0.625323, 0.713154]
+  Random 1   σ² factor: 0.0   var   20.5926
+  Random 1   σ² factor: 1.0   var   7.87307
+  Residual   σ²               var   1.26095
+  Residual   γ                rho   0.625323
+  Residual   ρ                rho   0.713154
+</code></pre><p>AR:</p><pre><code class="language-julia hljs">lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
+random = VarEffect(@covstr(factor|subject&amp;factor), DIAG),
+repeated = VarEffect(@covstr(1|subject&amp;factor), AR),
+)
+fit!(lmm)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear Mixed Model: response ~ 1 + factor + time + factor &amp; time
+Random 1: 
+    Model: factor|subject &amp; factor
+    Type: DIAG (2), Subjects: 24
+Repeated: 
+    Model: 1|subject &amp; factor
+    Type: AR (2)
+Blocks: 24, Maximum block size: 10
+Status: converged (No Errors)
+    -2 logREML: 710.096    BIC: 731.968
+
+    Fixed-effects parameters:
+──────────────────────────────────────────────────────────
+                        Coef.  Std. Error      z  Pr(&gt;|z|)
+──────────────────────────────────────────────────────────
+(Intercept)         44.3915     1.34686    32.96    &lt;1e-99
+factor: 1.0          5.39757    1.60271     3.37    0.0008
+time                 0.508075   0.0456524  11.13    &lt;1e-28
+factor: 1.0 &amp; time   0.290317   0.0645622   4.50    &lt;1e-05
+──────────────────────────────────────────────────────────
+    Variance components:
+    θ vector: [4.54797, 2.82342, 1.05771, 0.576979]
+  Random 1   σ² factor: 0.0   var   20.684
+  Random 1   σ² factor: 1.0   var   7.9717
+  Residual   σ²               var   1.11875
+  Residual   ρ                rho   0.576979
+</code></pre><p>ARH:</p><pre><code class="language-julia hljs">lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
+random = VarEffect(@covstr(factor|subject&amp;factor), DIAG),
+repeated = VarEffect(@covstr(1|subject&amp;factor), ARH),
+)
+fit!(lmm)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear Mixed Model: response ~ 1 + factor + time + factor &amp; time
+Random 1: 
+    Model: factor|subject &amp; factor
+    Type: DIAG (2), Subjects: 24
+Repeated: 
+    Model: 1|subject &amp; factor
+    Type: ARH (2)
+Blocks: 24, Maximum block size: 10
+Status: converged (No Errors)
+    -2 logREML: 710.096    BIC: 731.968
+
+    Fixed-effects parameters:
+──────────────────────────────────────────────────────────
+                        Coef.  Std. Error      z  Pr(&gt;|z|)
+──────────────────────────────────────────────────────────
+(Intercept)         44.3915     1.34686    32.96    &lt;1e-99
+factor: 1.0          5.39757    1.60271     3.37    0.0008
+time                 0.508075   0.0456524  11.13    &lt;1e-28
+factor: 1.0 &amp; time   0.290317   0.0645622   4.50    &lt;1e-05
+──────────────────────────────────────────────────────────
+    Variance components:
+    θ vector: [4.54797, 2.82342, 1.05771, 0.576979]
+  Random 1   σ² factor: 0.0   var   20.684
+  Random 1   σ² factor: 1.0   var   7.9717
+  Residual   σ² (Intercept)   var   1.11875
+  Residual   ρ                rho   0.576979
+</code></pre><h3 id="Example-4-SAS-relation"><a class="docs-heading-anchor" href="#Example-4-SAS-relation">Example 4 - SAS relation</a><a id="Example-4-SAS-relation-1"></a><a class="docs-heading-anchor-permalink" href="#Example-4-SAS-relation" title="Permalink"></a></h3><h4 id="Model-1"><a class="docs-heading-anchor" href="#Model-1">Model 1</a><a id="Model-1-1"></a><a class="docs-heading-anchor-permalink" href="#Model-1" title="Permalink"></a></h4><pre><code class="nohighlight hljs">df0 = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;df0.csv&quot;)) |&gt; DataFrame
+
+lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
+random   = VarEffect(@covstr(formulation|subject), CSH),
+repeated = VarEffect(@covstr(formulation|subject), DIAG),
+)
+fit!(lmm)</code></pre><p>SAS code:</p><pre><code class="nohighlight hljs">PROC MIXED data=df0;
+CLASSES subject sequence period formulation;
+MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
+RANDOM  formulation/TYPE=CSH SUB=subject G V;
+REPEATED/GRP=formulation SUB=subject R;
+RUN;</code></pre><h4 id="Model-2"><a class="docs-heading-anchor" href="#Model-2">Model 2</a><a id="Model-2-1"></a><a class="docs-heading-anchor-permalink" href="#Model-2" title="Permalink"></a></h4><pre><code class="nohighlight hljs">lmm = LMM(
+    @formula(var ~ sequence + period + formulation), df0;
+    random   = VarEffect(@covstr(formulation|subject), SI),
+    repeated = VarEffect(@covstr(formulation|subject), DIAG),
+)
+fit!(lmm)</code></pre><p>SAS code:</p><pre><code class="nohighlight hljs">PROC MIXED data=df0;
+CLASSES subject sequence period formulation;
+MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
+RANDOM  formulation/TYPE=VC SUB=subject G V;
+REPEATED/GRP=formulation SUB=subject R;
+RUN;</code></pre><h4 id="Model-3"><a class="docs-heading-anchor" href="#Model-3">Model 3</a><a id="Model-3-1"></a><a class="docs-heading-anchor-permalink" href="#Model-3" title="Permalink"></a></h4><pre><code class="nohighlight hljs">lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
+    random = VarEffect(@covstr(subject|1), SI)
+    )
+fit!(lmm)</code></pre><p>SAS code:</p><pre><code class="nohighlight hljs">PROC MIXED data=df0;
+CLASSES subject sequence period formulation;
+MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
+RANDOM  subject/TYPE=VC G V;
+RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../custom/">Custom structures »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Saturday 12 November 2022 16:42">Saturday 12 November 2022</span>. Using Julia version 1.6.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
