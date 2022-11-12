@@ -1,6 +1,5 @@
 ### Custom structures
 
-*Custom structures have been remaken in version 0.12. Now custom structures more simple to construct and use.*
 
 To make your own covariance structure first you should make struct that <: AbstractCovarianceType:
 

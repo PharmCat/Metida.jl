@@ -41,7 +41,7 @@ AbstractCovarianceType, AbstractCovmatMethod, MetidaModel,
 getlog, rand, rand!,
 bootstrap
 
-export coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
+export coef, coefnames, coeftable, crossmodelmatrix, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
 
 num_cores() = Int(MetidaBase.num_cores())
 

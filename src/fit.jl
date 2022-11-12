@@ -47,7 +47,7 @@ Fit LMM model.
 # Keywords:
 
 * `solver` - :default / :nlopt for using with MetidaNLopt.jl/ :cuda for using with MetidaCu.jl
-* `verbose` - :auto / 1 / 2 / 3
+* `verbose` - :auto / 1 / 2 / 3 - - 1 - only log,  2 - log and print,  3 - print only errors, other log, 0 (or any other value) - no logging
 * `varlinkf` - :exp / :sq / :identity [ref](@ref varlink_header)
 * `rholinkf` - :sigm / :atan / :sqsigm / :psigm
 * `aifirst` - first iteration with AI-like method - :default / :ai / :score

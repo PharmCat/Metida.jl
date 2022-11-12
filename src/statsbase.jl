@@ -1,15 +1,6 @@
-
-
-StatsBase.deviance(model::LMM) = error("deviance is not defined for $(typeof(model)).")
-
-StatsBase.nulldeviance(model::LMM) =
-    error("nulldeviance is not defined for $(typeof(model)).")
-
-StatsBase.nullloglikelihood(model::LMM) =
-        error("nullloglikelihood is not defined for $(typeof(model)).")
-
-StatsBase.score(model::LMM) = error("score is not defined for $(typeof(model)).")
-
+"""
+    islinear(model::LMM) = true
+"""
 StatsBase.islinear(model::LMM) = true
 
 
@@ -214,9 +205,18 @@ Response vector.
 """
 StatsBase.response(lmm::LMM) = lmm.data.yv
 
+"""
+    crossmodelmatrix(lmm::LMM)
+
+Return X'X.
+"""
 StatsBase.crossmodelmatrix(lmm::LMM) = (x = modelmatrix(lmm); Symmetric(x' * x))
 
+"""
+    coeftable(lmm::LMM)
 
+Return coefficients table.
+"""
 function StatsBase.coeftable(lmm::LMM)
     co = coef(lmm)
     se = stderror!(similar(co), lmm)
@@ -232,20 +232,43 @@ function StatsBase.coeftable(lmm::LMM)
     )
 end
 
+"""
+    responsename(lmm::LMM)
+
+Return responce name as string.
+"""
 function StatsBase.responsename(lmm::LMM)
     string(lmm.model.lhs.sym)
 end
 
 
+
+# This can be supported
 #=
+StatsBase.weights(model::LMM) = error("weights is not defined for $(typeof(model)).")
+StatsBase.residuals(model::LMM) = error("residuals is not defined for $(typeof(model)).")
+StatsBase.predict(model::LMM) = error("predict is not defined for $(typeof(model)).")
+StatsBase.predict!(model::LMM) = error("predict! is not defined for $(typeof(model)).")
+StatsBase.leverage(model::LMM) = error("leverage is not defined for $(typeof(model)).")
+StatsBase.deviance(model::LMM) = error("deviance is not defined for $(typeof(model)).")
+=#
+
+# Not supported
+#=
+StatsBase.nulldeviance(model::LMM) =
+    error("nulldeviance is not defined for $(typeof(model)).")
+
+StatsBase.nullloglikelihood(model::LMM) =
+        error("nullloglikelihood is not defined for $(typeof(model)).")
+
+StatsBase.score(model::LMM) = error("score is not defined for $(typeof(model)).")
+
 StatsBase.mss(model::LMM) = error("mss is not defined for $(typeof(model)).")
 
 StatsBase.rss(model::LMM) = error("rss is not defined for $(typeof(model)).")
 
 StatsBase.informationmatrix(model::LMM; expected::Bool = true) =
     error("informationmatrix is not defined for $(typeof(model)).")
-
-StatsBase.weights(model::LMM) = error("weights is not defined for $(typeof(model)).")
 
 function StatsBase.r2(model::LMM)
     Base.depwarn("The default r² method for linear models is deprecated. " *
@@ -296,17 +319,5 @@ end
 
 const adjr² = adjr2
 
-
-
 StatsBase.meanresponse(model::LMM) = error("meanresponse is not defined for $(typeof(model)).")
-
-StatsBase.leverage(model::LMM) = error("leverage is not defined for $(typeof(model)).")
-
-StatsBase.residuals(model::LMM) = error("residuals is not defined for $(typeof(model)).")
-
-StatsBase.predict(model::LMM) = error("predict is not defined for $(typeof(model)).")
-
-StatsBase.predict!(model::LMM) = error("predict! is not defined for $(typeof(model)).")
-
-
 =#
