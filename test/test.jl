@@ -694,11 +694,6 @@ end
     @test_throws ErrorException Metida.dof_satter(lmm)
     @test_throws ErrorException Metida.confint(lmm)
 
-    @test_throws ErrorException deviance(lmm)
-    @test_throws ErrorException nulldeviance(lmm)
-    @test_throws ErrorException nullloglikelihood(lmm)
-    @test_throws ErrorException score(lmm)
-
     @test_throws ErrorException  Metida.LMM(@formula(var~sequence+period+formulation), df0;)
 
     @test_throws ErrorException  Metida.LMM(@formula(var~sequence+period+formulation), df0;
