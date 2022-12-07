@@ -142,7 +142,8 @@ end
 Responce varible name.
 """
 function responsename(lmm::LMM)
-    tname(lmm.mf.f.lhs)
+    cnm = coefnames(lmm.mf.f.lhs)
+    return isa(cnm, Vector{String}) ? first(cnm) : cnm
 end
 """
     theta(lmm::LMM)
