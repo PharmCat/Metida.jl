@@ -122,13 +122,27 @@ Coef number.
 function coefn(lmm)
     length(lmm.result.beta)
 end
+
+tname(t::AbstractTerm) = "$(t.sym)"
+tname(t::InteractionTerm) = join(tname.(t.terms), " & ")
+tname(t::InterceptTerm) = "(Intercept)"
+function tname(t::FunctionTerm) 
+    args = string(t.args_parsed[1])
+    if length(t.args_parsed) > 1
+        for i = 2:length(t.args_parsed)
+            args *= ", "*string(t.args_parsed[i])
+        end
+    end
+    string(t.forig)*"("*args*")"
+end
+
 """
-    respname(lmm::LMM)
+    responsename(lmm::LMM)
 
 Responce varible name.
 """
-function respname(lmm::LMM)
-    lmm.mf.f.lhs.sym
+function responsename(lmm::LMM)
+    tname(lmm.mf.f.lhs)
 end
 """
     theta(lmm::LMM)

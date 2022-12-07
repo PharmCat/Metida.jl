@@ -102,6 +102,7 @@ include("testdata.jl")
     @test Metida.confint(lmm)[end][1] ≈ -0.7630380758015894 atol=1E-4
     @test Metida.confint(lmm, 6)[1] ≈ -0.7630380758015894 atol=1E-4
     @test Metida.confint(lmm; ddf = :residual)[end][1] ≈ -0.6740837049617738 atol=1E-4
+    @test Metida.responsename(lmm) == "var"
 
     Metida.confint(lmm; ddf = :contain)[end][1] #NOT VALIDATED
     @test size(crossmodelmatrix(lmm), 1) == 6
@@ -110,6 +111,12 @@ include("testdata.jl")
     @test t3table.pval[3] ≈ ct.pval[1]
     est = Metida.estimate(lmm, [0,0,0,0,0,1]; level = 0.9)
     est = Metida.estimate(lmm; level = 0.9)
+
+    # Function term name
+    lmm = Metida.fit(Metida.LMM, Metida.@lmmformula(log(var)~sequence+period+formulation,
+    random = formulation|subject:Metida.DIAG), df0);
+    Metida.responsename(lmm)
+
     ############################################################################
     # AI like algo
     Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm))

@@ -36,7 +36,7 @@ SPPOW, SpatialPower,
 SPGAU, SpatialGaussian,
 CovarianceType,
 fit, fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, dof_contain, rankx, caic, lcontrast, typeiii, estimate, contrast,
-gmatrix, rmatrix, vmatrix!, respname,
+gmatrix, rmatrix, vmatrix!, responsename,
 AbstractCovarianceType, AbstractCovmatMethod, MetidaModel,
 getlog, rand, rand!,
 bootstrap
