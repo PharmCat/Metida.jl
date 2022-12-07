@@ -115,7 +115,7 @@ include("testdata.jl")
     # Function term name
     lmm = Metida.fit(Metida.LMM, Metida.@lmmformula(log(var)~sequence+period+formulation,
     random = formulation|subject:Metida.DIAG), df0);
-    Metida.responsename(lmm)
+    @test  Metida.responsename(lmm) == "log(var)"
 
     ############################################################################
     # AI like algo
