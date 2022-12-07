@@ -112,10 +112,6 @@ include("testdata.jl")
     est = Metida.estimate(lmm, [0,0,0,0,0,1]; level = 0.9)
     est = Metida.estimate(lmm; level = 0.9)
 
-    # Function term name
-    lmm = Metida.fit(Metida.LMM, Metida.@lmmformula(log(var)~sequence+period+formulation,
-    random = formulation|subject:Metida.DIAG), df0);
-    @test  Metida.responsename(lmm) == "log(var)"
 
     ############################################################################
     # AI like algo
@@ -142,6 +138,11 @@ include("testdata.jl")
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 25.129480634331063 atol=1E-6
+
+    # Function term name
+    lmm = Metida.fit(Metida.LMM, Metida.@lmmformula(log(var)~sequence+period+formulation,
+    random = formulation|subject:Metida.DIAG), df0);
+    @test  Metida.responsename(lmm) == "log(var)"
 
     #BE like
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
