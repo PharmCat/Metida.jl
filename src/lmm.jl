@@ -122,7 +122,14 @@ Coef number.
 function coefn(lmm)
     length(lmm.result.beta)
 end
+"""
+    respname(lmm::LMM)
 
+Responce varible name.
+"""
+function respname(lmm::LMM)
+    lmm.mf.f.lhs.sym
+end
 """
     theta(lmm::LMM)
 
