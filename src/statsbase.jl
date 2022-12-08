@@ -232,7 +232,15 @@ function StatsBase.coeftable(lmm::LMM)
     )
 end
 
+"""
+    responsename(lmm::LMM)
 
+Responce varible name.
+"""
+function StatsBase.responsename(lmm::LMM)
+    cnm = coefnames(lmm.mf.f.lhs)
+    return isa(cnm, Vector{String}) ? first(cnm) : cnm
+end
 
 
 # This can be supported
