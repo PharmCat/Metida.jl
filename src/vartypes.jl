@@ -267,9 +267,6 @@ const SPEXP = SpatialExponential()
 """
     SpatialPower()
 
-!!! warning
-    Experimental
-
 Spatian Power covariance structure. Used only for repeated effect.
 
 ```math
@@ -288,9 +285,6 @@ const SPPOW = SpatialPower()
 """
     SpatialGaussian()
 
-!!! warning
-    Experimental
-
 Spatian Gaussian covariance structure. Used only for repeated effect.
 
 ```math
@@ -306,19 +300,50 @@ function SpatialGaussian()
 end
 const SPGAU = SpatialGaussian()
 
+"""
+    SpatialExponentialD()
 
+!!! warning
+    Experimental
+
+Same as SpatialExponential, but add D to all diagonal elements.
+
+SPEXPD = SpatialExponentialD()
+"""
 function SpatialExponentialD()
     CovarianceType(SPEXPD_())
 end
 const SPEXPD = SpatialExponentialD()
+
+"""
+    SpatialPowerD()
+
+!!! warning
+    Experimental
+
+Same as SpatialPower, but add D to all diagonal elements.
+
+SPPOWD = SpatialPowerD()
+"""
 function SpatialPowerD()
     CovarianceType(SPPOWD_())
 end
 const SPPOWD = SpatialPowerD()
+"""
+    SpatialGaussianD()
+
+!!! warning
+    Experimental
+
+Same as SpatialGaussianD, but add D to all diagonal elements.
+
+SPGAUD = SpatialGaussianD()
+"""
 function SpatialGaussianD()
     CovarianceType(SPGAUD_())
 end
 const SPGAUD = SpatialGaussianD()
+
 """
     Unstructured()
 

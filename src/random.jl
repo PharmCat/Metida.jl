@@ -16,9 +16,6 @@ rand!(v::AbstractVector, lmm::LMM) = rand!(default_rng(), v, lmm, lmm.result.the
 """
     rand(rng::AbstractRNG, lmm::LMM{T}; theta) where T
 
-!!! warning
-    Experimental
-
 Generate random responce vector 'lmm' model, theta covariance vector, and zero means.
 """
 function rand(rng::AbstractRNG, lmm::LMM{T}, theta::AbstractVector) where T

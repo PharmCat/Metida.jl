@@ -35,13 +35,13 @@ SPEXP, SpatialExponential,
 SPPOW, SpatialPower,
 SPGAU, SpatialGaussian,
 CovarianceType,
-fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, dof_contain, rankx, caic, lcontrast, typeiii, estimate, contrast,
-gmatrix, rmatrix, vmatrix!,
+fit, fit!, LMM, VarEffect, theta, logreml, m2logreml, thetalength, dof_satter, dof_contain, rankx, caic, lcontrast, typeiii, estimate, contrast,
+gmatrix, rmatrix, vmatrix!, responsename,
 AbstractCovarianceType, AbstractCovmatMethod, MetidaModel,
 getlog, rand, rand!,
 bootstrap
 
-export coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
+export coef, coefnames, coeftable, crossmodelmatrix, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
 
 num_cores() = Int(MetidaBase.num_cores())
 

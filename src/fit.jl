@@ -4,6 +4,41 @@
 fit_nlopt!(lmm::MetidaModel; kwargs...)  = error("MetidaNLopt not found. \n - Run `using MetidaNLopt` before.")
 
 """
+    fit(::Type{T}, f::FormulaTerm, data;
+    contrasts=Dict{Symbol,Any}(),  
+    random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, 
+    repeated::Union{Nothing, VarEffect} = nothing,
+    kwargs...)
+
+Fit LMM model with @formula.
+
+Keywords see [`fit!`](@ref)
+"""
+function fit(::Type{T}, f::FormulaTerm, data;
+    contrasts=Dict{Symbol,Any}(),  
+    random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, 
+    repeated::Union{Nothing, VarEffect} = nothing,
+    kwargs...) where T <: LMM
+    lmm = LMM(f, data, contrasts = contrasts, random = random, repeated = repeated)
+    fit!(lmm; kwargs...)
+end
+"""
+    fit(::Type{T}, f::LMMformula, data;
+    contrasts=Dict{Symbol,Any}(),  
+    kwargs...) where T <: LMM
+
+Fit LMM model with [`@lmmformula`](@ref).
+
+Keywords see [`fit!`](@ref)
+"""
+function fit(::Type{T}, f::LMMformula, data;
+    contrasts=Dict{Symbol,Any}(),  
+    kwargs...) where T <: LMM
+    lmm = LMM(f, data, contrasts = contrasts)
+    fit!(lmm; kwargs...)
+end
+
+"""
     fit!(lmm::LMM{T}; kwargs...
     ) where T
 
@@ -12,7 +47,7 @@ Fit LMM model.
 # Keywords:
 
 * `solver` - :default / :nlopt for using with MetidaNLopt.jl/ :cuda for using with MetidaCu.jl
-* `verbose` - :auto / 1 / 2 / 3
+* `verbose` - :auto / 1 / 2 / 3 - - 1 - only log,  2 - log and print,  3 - print only errors, other log, 0 (or any other value) - no logging
 * `varlinkf` - :exp / :sq / :identity [ref](@ref varlink_header)
 * `rholinkf` - :sigm / :atan / :sqsigm / :psigm
 * `aifirst` - first iteration with AI-like method - :default / :ai / :score

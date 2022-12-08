@@ -27,22 +27,66 @@ function mulαβαt3(A, B, X)
     mx
 end
 =#
+#=
+"""
+A' * B * A -> + θ
+"""
+function mulαtβαinc!(θ, A, B)
+    q = size(B, 1)
+    p = size(A, 2)
+    c = zeros(eltype(B), q)
+    for i = 1:p
+        fill!(c, zero(eltype(c)))
+        @inbounds for n = 1:q, m = 1:q
+            c[n] += B[m, n] * A[m, i]
+        end
+        @inbounds for n = 1:p, m = 1:q
+            θ[i, n] += A[m, n] * c[m]
+        end
+    end
+end
+
+function trmulαβ(A, B)
+    c = 0
+    @inbounds for n = 1:size(A,1), m = 1:size(B, 1)
+        c += A[n,m] * B[m, n]
+    end
+    c
+end
+
+function covmat_grad(f, Z, θ)
+    #fx = x -> f(gmat(x[3:5]), rmat(x[1:2], Z), Z)
+    #cfg   = ForwardDiff.JacobianConfig(fx, θ)
+    m     = ForwardDiff.jacobian(x -> f(gmat(x[3:5]), rmat(x[1:2], Z), Z), θ);
+    reshape(m, size(Z, 1), size(Z, 1), length(θ))
+end
+
 """
     2 log Restricted Maximum Likelihood gradient vector
 """
-#=
-function reml_grad(yv, Zv, p, Xv, θvec, β)
-    n     = length(yv)
-    G     = gmat(θvec[3:5])
-    θ1    = zeros(length(θvec))
-    θ2    = zeros(length(θvec))
-    θ3    = zeros(length(θvec))
-    iV    = Vector{AbstractMatrix}(undef, n)
-    θ2m   = zeros(p,p)
-    H     = zeros(p, p)
+
+#function reml_grad(yv, Zv, p, Xv, θvec, β)
+function reml_grad(lmm, data, θ::Vector{T}, β; syrkblas::Bool = false)  where T
+    n     = length(lmm.covstr.vcovblock)
+
+    #G     = gmat(θvec[3:5])
+    gvec          = gmatvec(θ, lmm.covstr)
+
+    θ₁    = zeros(length(θvec))
+    θ₂    = zeros(length(θvec))
+    θ₃    = zeros(length(θvec))
+
+    iV    = Vector{Matrix{T}}(undef, n)
+
+    θ₂m   = zeros(T, lmm.rankx, lmm.rankx)
+    H     = zeros(T, lmm.rankx, lmm.rankx)
+
     for i = 1:n
-        iV[i] = inv(vmat(G, rmat(θvec[1:2], Zv[i]), Zv[i]))
-        mulαtβαinc!(H, Xv[i], iV[i])
+        q    = length(lmm.covstr.vcovblock[i])
+        V    = zeros(q, q)
+        vmatrix!(V, gvec, θ, lmm, i)
+        iV[i] = inv(V)
+        mulαtβαinc!(H, data.xv[i], iV[i])
         #H .+= Xv[i]'*inv(vmat(G, rmat(θvec[1:2], Zv[i]), Zv[i]))*Xv[i]
     end
     iH = inv(H)
@@ -51,23 +95,23 @@ function reml_grad(yv, Zv, p, Xv, θvec, β)
     for i = 1:n
         #V   = vmat(G, rmat(θvec[1:2], Zv[i]), Zv[i])
         #iV  = inv(V)
-        r   = yv[i] .- Xv[i]*β
-        jV  = covmat_grad(vmat, Zv[i], θvec)
-        Aj  = zeros(length(yv[i]), length(yv[i]))
+        r   = data.yv[i] .- data.xv[i]*β
+        jV  = covmat_grad(vmat, Zv[i], θvec) #!!!
+        Aj  = zeros(length(data.yv[i]), length(data.yv[i]))
         for j = 1:length(θvec)
 
             mulαβαc!(Aj, iV[i], view(jV, :, :, j))
             #Aj      = iV[i] * view(jV, :, :, j) * iV[i]
 
-            θ1[j]  += trmulαβ(iV[i], view(jV, :, :, j))
+            θ₁[j]  += trmulαβ(iV[i], view(jV, :, :, j))
             #θ1[j]  += tr(iV[i] * view(jV, :, :, j))
 
-            θ2[j]  -= tr(iH * Xv[i]' *Aj * Xv[i])
+            θ₂[j]  -= tr(iH * data.xv[i]' *Aj * data.xv[i])
 
-            θ3[j]  -= r' * Aj * r
+            θ₃[j]  -= r' * Aj * r
         end
     end
-    return - (θ1 .+ θ2 .+ θ3)
+    return - (θ₁ .+ θ₂ .+ θ₃)
 end
 
 """

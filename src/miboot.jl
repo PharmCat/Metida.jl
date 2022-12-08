@@ -201,7 +201,7 @@ function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng, del) where T
     rml  = Vector{Int}(undef, 0)
     log  = Vector{LMMLogMsg}(undef, 0)
 
-    #lmmb = deepcopy(lmm)
+   
     mres = ModelResult(false, nothing, fill(NaN, thetalength(lmm)), NaN, fill(NaN, coefn(lmm)), nothing, fill(NaN, coefn(lmm), coefn(lmm)), fill(NaN, coefn(lmm)), nothing, false)
     lmmb = LMM(lmm.model, lmm.mf, lmm.mm, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, mres, lmm.maxvcbl, Vector{LMMLogMsg}(undef, 0))
 
@@ -253,21 +253,31 @@ end
 function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng, del) where T
     nb   = nblocks(lmm)
     #bv   = Vector{Vector{Float64}}(undef, coefn(lmm))
-    vv   = Vector{Vector{Float64}}(undef, coefn(lmm))
+
+    # Final result vectors 
+    tvr   = Vector{Vector{Float64}}(undef, thetalength(lmm))
+    bvr   = Vector{Vector{Float64}}(undef, coefn(lmm))
+    vvr   = Vector{Vector{Float64}}(undef, coefn(lmm))
+    #=
     for i = 1:coefn(lmm)
         #bv[i] = Vector{Float64}(undef, n)
         vv[i] = Vector{Float64}(undef, n)
     end
-    tvr   = Vector{Vector{Float64}}(undef, thetalength(lmm))
-    bvr   = Vector{Vector{Float64}}(undef, coefn(lmm))
+    =#
 
+    # Vectors for result from step I
     tv   = Vector{Vector{Float64}}(undef, varn)
     bv   = Vector{Vector{Float64}}(undef, varn)
+    vv   = Vector{Vector{Float64}}(undef, varn)
+
+    # Vectors for result from step II
+    #tv2   = Vector{Vector{Float64}}(undef, varn)
+    bv2   = Vector{Vector{Float64}}(undef, n)
+    #vv2   = Vector{Vector{Float64}}(undef, varn)
 
     rml  = Vector{Int}(undef, 0)
     log  = Vector{LMMLogMsg}(undef, 0)
 
-    #lmmb = deepcopy(lmm)
     mres = ModelResult(false, nothing, fill(NaN, thetalength(lmm)), NaN, fill(NaN, coefn(lmm)), nothing, fill(NaN, coefn(lmm), coefn(lmm)), fill(NaN, coefn(lmm)), nothing, false)
     lmmb = LMM(lmm.model, lmm.mf, lmm.mm, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, mres, lmm.maxvcbl, Vector{LMMLogMsg}(undef, 0))
 
@@ -286,14 +296,17 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng, del) whe
     # STEP 1
     for i = 1:varn
         fit_lmm!(lmmb, init, dist, rng)
-        t = theta(lmmb)
-        b = coef(lmmb)
-        tv[i]  = t
-        bv[i]  = b
-        check_lmm!(rml, log, lmmb, tlmm, t, vi, i, ll, ul)
+     
+        #Fill vector for step I
+        tv[i]  = theta(lmmb)
+        bv[i]  = coef(lmmb)
+        vv[i]  = stderror(lmmb)
+
+        check_lmm!(rml, log, lmmb, tlmm, tv[i], vi, i, ll, ul)
         lmmb.result.fit = false
         if verbose next!(p) end
     end
+
     if length(rml) > 0
         deleteat!(tv, rml)
         deleteat!(bv, rml)
@@ -301,6 +314,7 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng, del) whe
         resize!(rml, 0)
     end
     lmmlog!(log, 1, LMMLogMsg(:INFO, "Start step II..."))
+    
     # STEP 2
     p = Progress(n, dt=0.5,
             desc="Bootstrapping II LMMs...",
@@ -318,7 +332,9 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng, del) whe
         # Iteration if number of bootstram more than on step I
         r = rem(i, tvl)
         ind = r == 0 ? tvl : r
+        # Use theta from step I
         theta = tv[ind]
+        # Use beta from step I
         beta  = bv[ind]
             # make distributions and generate responce
         for j = 1:nb
@@ -333,35 +349,29 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng, del) whe
             rand!(rng, MvNormal(m, Symmetric(V)), lmmb.dv.yv[j])
         end
         # fit
-
         fit!(lmmb; init = init, hes = false)
-        #c = coef_(lmmb)
-        s = stderror_(lmmb)
-        for j = 1:coefn(lmm)
-            #bv[j][i] = c[j]
-            vv[j][i] = s[j]
-        end
 
+        bv2[i] = coef(lmmb)
+   
         check_lmm!(rml, log, lmmb, tlmm, theta_(lmmb), vi, i, ll, ul)
         lmmb.result.fit = false
         if verbose next!(p) end
-
     end
     lmmlog!(log, 1, LMMLogMsg(:INFO, "End bootstrap..."))
-    for j = 1:thetalength(lmm)
-        tvr[j] = getindex.(tv, j)
-    end
-    for j = 1:coefn(lmm)
-        bvr[j] = getindex.(bv, j)
-    end
     if del && length(rml) > 0
-        for j = 1:coefn(lmm)
-            #deleteat!(bv[j], rml)
-            deleteat!(vv[j], rml)
-        end
+        deleteat!(bv2, rml)
         lmmlog!(log, 1, LMMLogMsg(:WARN, "Step II: Some results ($(length(rml))) was deleted."))
     end
-    BootstrapResult(lmm, coefnames(lmm), coef(lmm), stderror(lmm), theta(lmm), bvr, vv, tvr, rml, log)
+
+    for j = 1:thetalength(lmm)
+        tvr[j] = getindex.(tv, j) # theta from step I
+    end
+    for j = 1:coefn(lmm)
+        vvr[j] = getindex.(vv, j) # coef-var from step I
+        bvr[j] = getindex.(bv2, j) # beta from step II
+    end
+    
+    BootstrapResult(lmm, coefnames(lmm), coef(lmm), stderror(lmm), theta(lmm), bvr, vvr, tvr, rml, log)
 end
 """
     milmm(mi::MILMM; n = 100, verbose = true, rng = default_rng())
@@ -421,6 +431,19 @@ function milmm(mi::MILMM; n = 100, verbose = true, rng = default_rng())
         if verbose next!(p) end
     end
     MILMMResult(mi, lmm)
+end
+"""
+    milmm(lmm::LMM, data; n = 100, verbose = true, rng = default_rng())
+
+Multiple imputation in one step. `data` for `lmm` and for `milmm` should be the same,
+if different data used resulst can be unpredictable.
+"""
+function milmm(lmm::LMM, data; n = 100, verbose = true, rng = default_rng())
+    milmm(MILMM(lmm, data); n = n, verbose = verbose, rng = rng)
+end
+
+function milmm(lmm::LMM; n = 100, verbose = true, rng = default_rng())
+    error("Method not defined!")
 end
 """
     miboot(mi::MILMM; n = 100, verbose = true, rng = default_rng())

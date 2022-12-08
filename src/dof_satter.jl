@@ -75,11 +75,14 @@ function dof_satter(lmm::LMM{T}, l::AbstractVector) where T
     g  = Vector{T}(undef, length(grad))
     for i = 1:length(grad)
         #g[i] = (l' * grad[i] * l)[1]
-        g[i] = mulαtβα(l, grad[i])
+        #g[i] = mulαtβα(l, grad[i])
+        g[i] = dot(l, grad[i], l)
     end
     #d = g' * A * g
-    d = mulαtβα(g, A)
-    df = 2*(mulαtβα(l, lmm.result.c))^2 / d
+    d = dot(g, A, g)
+    #d = mulαtβα(g, A)
+    df = 2*(dot(l, lmm.result.c, l))^2 / d
+    #df = 2*(mulαtβα(l, lmm.result.c))^2 / d
     if df < 1.0 return 1.0 elseif df > dof_residual(lmm) return dof_residual(lmm) else return df end
 end
 """
@@ -110,11 +113,14 @@ function dof_satter(lmm::LMM{T}) where T
         g     = Vector{T}(undef, length(grad))
         for i = 1:length(grad)
             #g[i] = (l' * grad[i] * l)[1]
-            g[i] = mulαtβα(l, grad[i])
+            #g[i] = mulαtβα(l, grad[i])
+            g[i] = dot(l, grad[i], l)
         end
         #d = g' * A * g
-        d = mulαtβα(g, A)
-        df = 2*(mulαtβα(l, lmm.result.c))^2 / d
+        #d = mulαtβα(g, A)
+        d = dot(g, A, g)
+        #df = 2*(mulαtβα(l, lmm.result.c))^2 / d
+        df = 2*(dot(l, lmm.result.c, l))^2 / d
         if df < 1.0 dof[gi] = 1.0 elseif df > dof_residual(lmm) dof[gi] = dof_residual(lmm) else dof[gi] = df end
     end
     dof
@@ -155,10 +161,12 @@ function dof_satter(lmm::LMM{T}, l::AbstractMatrix) where T
         plm = pl[i,:]
         for i2 = 1:length(grad)
             #g[i2] = (plm' * grad[i2] * plm)[1]
-            g[i2] = mulαtβα(plm, grad[i2])
+            #g[i2] = mulαtβα(plm, grad[i2])
+            g[i2] = dot(plm, grad[i2], plm)
         end
         #d = g' * A * g
-        d = mulαtβα(g, A)
+        #d = mulαtβα(g, A)
+        d = dot(g, A, g)
         vm[i] = 2*lcle.values[i]^2 / d
         if vm[i] > 2.0 em += vm[i] / (vm[i] - 2.0) end
     end

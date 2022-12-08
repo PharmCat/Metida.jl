@@ -176,20 +176,3 @@ where ``k = 0.1``
 ##### Additional parameters (theta) part
 
 No function applied.
-
-#### Not API functions
-
-##### Metida.mulαβαtinc!
-```@docs
-Metida.mulαβαtinc!
-```
-
-##### Metida.mulθ₃
-```@docs
-Metida.mulθ₃
-```
-
-##### Metida.mulαtβinc!
-```@docs
-Metida.mulαtβinc!
-```

@@ -26,27 +26,31 @@ function nterms(rhs::Union{Tuple{Vararg{AbstractTerm}}, Nothing, AbstractTerm})
     end
     p
 end
+tname(t::AbstractTerm) = "$(t.sym)"
+tname(t::InteractionTerm) = join(tname.(t.terms), " & ")
+tname(t::InterceptTerm) = "(Intercept)"
 """
     lcontrast(lmm::LMM, i::Int)
 
 L-contrast matrix for `i` fixed effect.
 """
 function lcontrast(lmm::LMM, i::Int)
-    n = nterms(lmm.mf)
+    n = length(lmm.mf.f.rhs.terms)
+    p = size(lmm.mm.m, 2)
     if i > n || n < 1 error("Factor number out of range 1-$(n)") end
     inds = findall(x -> x==i, lmm.mm.assign)
     if typeof(lmm.mf.f.rhs.terms[i]) <: CategoricalTerm
-        mxc   = zeros(size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1), size(lmm.mm.m, 2))
+        mxc   = zeros(size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1), p)
         mxcv  = view(mxc, :, inds)
         mxcv .= lmm.mf.f.rhs.terms[i].contrasts.matrix
-        mx    = zeros(size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1) - 1, size(lmm.mm.m, 2))
+        mx    = zeros(size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1) - 1, p)
         for i = 2:size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1)
             mx[i-1, :] .= mxc[i, :] - mxc[1, :]
         end
     else
-        mx = zeros(length(inds), size(lmm.mm.m, 2))
-        for i = 1:length(inds)
-            mx[i, inds[i]] = 1
+        mx = zeros(length(inds), p)
+        for j = 1:length(inds)
+            mx[j, inds[j]] = 1
         end
     end
     mx
@@ -228,21 +232,18 @@ end
 
 Update variance-covariance matrix V for i bolock. Upper triangular updated.
 """
-function vmatrix!(V, θ, lmm::LMM, i::Int)
+function vmatrix!(V, θ, lmm::LMM, i::Int) # pub API
     gvec = gmatvec(θ, lmm.covstr)
     zgz_base_inc!(V, gvec, θ, lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
     rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
 end
+
+# !!! Main function REML used
 function vmatrix!(V, G, θ, lmm::LMM, i::Int)
     zgz_base_inc!(V, G, θ, lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
     rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
 end
-function vmatrix(θ::AbstractVector{T}, lmm::LMM, i::Int) where T
-    V    = zeros(T, length(lmm.covstr.vcovblock[i]), length(lmm.covstr.vcovblock[i]))
-    gvec = gmatvec(θ, lmm.covstr)
-    vmatrix!(V, gvec, θ, lmm, i)
-    Symmetric(V)
-end
+
 """
     vmatrix(lmm::LMM, i::Int)
 
@@ -251,6 +252,14 @@ Return variance-covariance matrix V for i bolock.
 function vmatrix(lmm::LMM, i::Int)
     vmatrix(lmm.result.theta, lmm, i)
 end
+
+function vmatrix(θ::AbstractVector{T}, lmm::LMM, i::Int) where T
+    V    = zeros(T, length(lmm.covstr.vcovblock[i]), length(lmm.covstr.vcovblock[i]))
+    gvec = gmatvec(θ, lmm.covstr)
+    vmatrix!(V, gvec, θ, lmm, i)
+    Symmetric(V)
+end
+
 #deprecated
 function vmatrix(θ::Vector, covstr::CovStructure, i::Int)
     V    = zeros(length(covstr.vcovblock[i]), length(covstr.vcovblock[i]))

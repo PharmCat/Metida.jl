@@ -1,20 +1,11 @@
 # API
 
-### LMM
-
-[`LMM`](@ref)
+## Basic
 
 ### @covstr
-
-[`Metida.@covstr`](@ref)
-
-### VarEffect
-
-[`Metida.VarEffect`](@ref)
-
-### fit!
-
-[`fit!`](@ref)
+```@docs
+Metida.@covstr
+```
 
 ### @lmmformula
 ```@docs
@@ -26,34 +17,21 @@ Metida.@lmmformula
 Metida.CovarianceType
 ```
 
-### Metida.ScaledIdentity
+### LMM
 ```@docs
-Metida.ScaledIdentity
+Metida.LMM
 ```
 
-### Metida.Diag
+### VarEffect
 ```@docs
-Metida.Diag
+Metida.VarEffect
 ```
+
+## Covariance structures
 
 ### Metida.Autoregressive
 ```@docs
 Metida.Autoregressive
-```
-
-### Metida.HeterogeneousAutoregressive
-```@docs
-Metida.HeterogeneousAutoregressive
-```
-
-### Metida.CompoundSymmetry
-```@docs
-Metida.CompoundSymmetry
-```
-
-### Metida.HeterogeneousCompoundSymmetry
-```@docs
-Metida.HeterogeneousCompoundSymmetry
 ```
 
 ### Metida.AutoregressiveMovingAverage
@@ -61,14 +39,24 @@ Metida.HeterogeneousCompoundSymmetry
 Metida.AutoregressiveMovingAverage
 ```
 
-### Metida.Toeplitz
+### Metida.CompoundSymmetry
 ```@docs
-Metida.Toeplitz
+Metida.CompoundSymmetry
 ```
 
-### Metida.ToeplitzParameterized
+### Metida.Diag
 ```@docs
-Metida.ToeplitzParameterized
+Metida.Diag
+```
+
+### Metida.HeterogeneousAutoregressive
+```@docs
+Metida.HeterogeneousAutoregressive
+```
+
+### Metida.HeterogeneousCompoundSymmetry
+```@docs
+Metida.HeterogeneousCompoundSymmetry
 ```
 
 ### Metida.HeterogeneousToeplitz
@@ -81,14 +69,14 @@ Metida.HeterogeneousToeplitz
 Metida.HeterogeneousToeplitzParameterized
 ```
 
+### Metida.ScaledIdentity
+```@docs
+Metida.ScaledIdentity
+```
+
 ### Metida.SpatialExponential
 ```@docs
 Metida.SpatialExponential
-```
-
-### Metida.SpatialPower
-```@docs
-Metida.SpatialPower
 ```
 
 ### Metida.SpatialGaussian
@@ -96,19 +84,113 @@ Metida.SpatialPower
 Metida.SpatialGaussian
 ```
 
+### Metida.SpatialPower
+```@docs
+Metida.SpatialPower
+```
+
+### Metida.Toeplitz
+```@docs
+Metida.Toeplitz
+```
+
+### Metida.ToeplitzParameterized
+```@docs
+Metida.ToeplitzParameterized
+```
+
 ### Metida.Unstructured
 ```@docs
 Metida.Unstructured
 ```
 
-### Metida.typeiii
+### Methods
+
+### Metida.caic
 ```@docs
-Metida.typeiii
+Metida.caic
 ```
 
-### Metida.isfitted
+### Metida.dof_satter
 ```@docs
-Metida.isfitted
+Metida.dof_satter
+```
+
+### Metida.estimate
+```@docs
+Metida.estimate
+```
+
+### Metida.getlog
+```@docs
+Metida.getlog
+```
+
+### Metida.gmatrix
+```@docs
+Metida.gmatrix
+```
+
+### Metida.hessian
+```@docs
+Metida.hessian
+```
+
+### Metida.lcontrast
+```@docs
+Metida.lcontrast
+```
+
+### Metida.rand
+```@docs
+Metida.rand
+```
+
+### Metida.rand!
+```@docs
+Metida.rand
+```
+
+### Metida.rankx
+```@docs
+Metida.rankx
+```
+
+### Metida.rmatrix
+```@docs
+Metida.rmatrix
+```
+
+### Metida.theta
+```@docs
+Metida.theta
+```
+
+### Metida.thetalength
+```@docs
+Metida.thetalength
+```
+
+### Metida.vmatrix!
+```@docs
+Metida.vmatrix!
+```
+
+## StatsAPI
+
+### Metida.aic
+```@docs
+Metida.aic
+```
+
+### Metida.aicc
+```@docs
+Metida.aicc
+```
+
+### Metida.bic
+```@docs
+Metida.bic
 ```
 
 ### Metida.coef
@@ -121,14 +203,19 @@ Metida.coef
 Metida.coefnames
 ```
 
+### Metida.coeftable
+```@docs
+Metida.coeftable
+```
+
 ### Metida.confint
 ```@docs
 Metida.confint
 ```
 
-### Metida.nobs
+### Metida.crossmodelmatrix
 ```@docs
-Metida.nobs
+Metida.crossmodelmatrix
 ```
 
 ### Metida.dof
@@ -141,59 +228,19 @@ Metida.dof
 Metida.dof_residual
 ```
 
-### Metida.dof_satter
+### Metida.fit
 ```@docs
-Metida.dof_satter
+Metida.fit
 ```
 
-### Metida.dof_contain
+### Metida.fit!
 ```@docs
-Metida.dof_contain
+Metida.fit!
 ```
 
-### Metida.estimate
+### isfitted
 ```@docs
-Metida.estimate
-```
-
-### Metida.caic
-```@docs
-Metida.caic
-```
-
-### Metida.aic
-```@docs
-Metida.aic
-```
-
-### Metida.bic
-```@docs
-Metida.bic
-```
-
-### Metida.aicc
-```@docs
-Metida.aicc
-```
-
-### Metida.vcov
-```@docs
-Metida.vcov
-```
-
-### Metida.stderror
-```@docs
-Metida.stderror
-```
-
-### Metida.modelmatrix
-```@docs
-Metida.modelmatrix
-```
-
-### Metida.response
-```@docs
-Metida.response
+Metida.isfitted
 ```
 
 ### Metida.loglikelihood
@@ -201,57 +248,92 @@ Metida.response
 Metida.loglikelihood
 ```
 
-### Metida.lcontrast
+### Metida.modelmatrix
 ```@docs
-Metida.lcontrast
+Metida.modelmatrix
 ```
 
-### Metida.gmatrix
+### Metida.nobs
 ```@docs
-Metida.gmatrix
+Metida.nobs
 ```
 
-### Metida.rmatrix
+### Metida.response
 ```@docs
-Metida.rmatrix
+Metida.response
 ```
 
-### Metida.vmatrix!
+### Metida.responsename
 ```@docs
-Metida.vmatrix!
+Metida.responsename
 ```
 
-### Metida.thetalength
+### Metida.stderror
 ```@docs
-Metida.thetalength
+Metida.stderror
 ```
 
-### Metida.theta
+### Metida.vcov
 ```@docs
-Metida.theta
+Metida.vcov
 ```
 
-### Metida.rankx
+## Experimental 
+
+### Metida.SpatialExponentialD
 ```@docs
-Metida.rankx
+Metida.SpatialExponentialD
 ```
 
-### Metida.hessian
+### Metida.SpatialGaussianD
 ```@docs
-Metida.hessian
+Metida.SpatialGaussianD
 ```
 
-### Metida.getlog
+### Metida.SpatialPowerD
 ```@docs
-Metida.getlog
+Metida.SpatialPowerD
 ```
 
-### Metida.rand
+### Metida.dof_contain
 ```@docs
-Metida.rand
+Metida.dof_contain
 ```
 
-### Metida.rand!
+### Metida.typeiii
 ```@docs
-Metida.rand
+Metida.typeiii
+```
+
+## Not API functions
+
+
+### Metida.contrast
+```@docs
+Metida.contrast
+```
+
+### Metida.contrast
+```@docs
+Metida.contrast
+```
+
+### Metida.fvalue
+```@docs
+Metida.fvalue
+```
+
+### Metida.mulαβαtinc!
+```@docs
+Metida.mulαβαtinc!
+```
+
+### Metida.mulθ₃
+```@docs
+Metida.mulθ₃
+```
+
+### Metida.mulαtβinc!
+```@docs
+Metida.mulαtβinc!
 ```

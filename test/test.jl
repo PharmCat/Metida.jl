@@ -47,6 +47,14 @@ include("testdata.jl")
     Metida.fit!(lmm; aifirst = true)
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
 
+    lmm = Metida.fit(Metida.LMM, @formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
+    )
+    @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
+
+    lmm = Metida.fit(Metida.LMM, Metida.@lmmformula(var~sequence+period+formulation,
+    random = formulation|subject:Metida.DIAG), df0)
+    @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
 
 
     t3table = Metida.typeiii(lmm;  ddf = :contain) # NOT VALIDATED
@@ -94,6 +102,7 @@ include("testdata.jl")
     @test Metida.confint(lmm)[end][1] ≈ -0.7630380758015894 atol=1E-4
     @test Metida.confint(lmm, 6)[1] ≈ -0.7630380758015894 atol=1E-4
     @test Metida.confint(lmm; ddf = :residual)[end][1] ≈ -0.6740837049617738 atol=1E-4
+    @test Metida.responsename(lmm) == "var"
 
     Metida.confint(lmm; ddf = :contain)[end][1] #NOT VALIDATED
     @test size(crossmodelmatrix(lmm), 1) == 6
@@ -102,6 +111,8 @@ include("testdata.jl")
     @test t3table.pval[3] ≈ ct.pval[1]
     est = Metida.estimate(lmm, [0,0,0,0,0,1]; level = 0.9)
     est = Metida.estimate(lmm; level = 0.9)
+
+
     ############################################################################
     # AI like algo
     Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm))
@@ -128,6 +139,11 @@ include("testdata.jl")
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 25.129480634331063 atol=1E-6
 
+    # Function term name
+    lmm = Metida.fit(Metida.LMM, Metida.@lmmformula(log(var)~sequence+period+formulation,
+    random = formulation|subject:Metida.DIAG), df0);
+    @test  Metida.responsename(lmm) == "log(var)"
+
     #BE like
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.CSH),
@@ -152,6 +168,12 @@ include("testdata.jl")
     # EXPERIMENTAL
     @test Metida.dof_contain(lmm, 1) == 12
     @test Metida.dof_contain(lmm, 5) == 8
+    tt = Metida.typeiii(lmm)
+    @test tt.f[2] ≈ 0.185268  atol=1E-5
+    @test tt.ndf[2] ≈ 3.0 atol=1E-5
+    @test tt.df[2] ≈ 3.39086 atol=1E-5
+    @test tt.pval[2] ≈ 0.900636 atol=1E-5
+
 end
 ################################################################################
 #                                  df0
@@ -680,11 +702,6 @@ end
     @test_throws ErrorException Metida.dof_satter(lmm)
     @test_throws ErrorException Metida.confint(lmm)
 
-    @test_throws ErrorException deviance(lmm)
-    @test_throws ErrorException nulldeviance(lmm)
-    @test_throws ErrorException nullloglikelihood(lmm)
-    @test_throws ErrorException score(lmm)
-
     @test_throws ErrorException  Metida.LMM(@formula(var~sequence+period+formulation), df0;)
 
     @test_throws ErrorException  Metida.LMM(@formula(var~sequence+period+formulation), df0;
@@ -793,6 +810,11 @@ end
     Base.show(io, mi)
     mir = Metida.milmm(mi; n = 10, verbose = false, rng = StableRNG(1234))
     Base.show(io, mir)
+
+    @test_nowarn @test_nowarn  Metida.milmm(lmm, df0m; n = 10, verbose = false, rng = StableRNG(1234))
+
+    @test_throws ErrorException Metida.milmm(lmm; n = 10, verbose = false, rng = StableRNG(1234))
+
 
     if !(VERSION < v"1.7")
         mb =  Metida.miboot(mi; n = 10, bootn = 10, varn = 10, double = true, verbose = false, rng = StableRNG(1234))

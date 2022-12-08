@@ -97,11 +97,12 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         LMM(model, mf, mm, covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, mres, findmax(length, covstr.vcovblock)[1], lmmlog)
         #LMM(model, mf, mm, covstr, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, ModelResult(), findmax(length, covstr.vcovblock)[1], lmmlog)
     end
+    function LMM(f::LMMformula, data; contrasts=Dict{Symbol,Any}(), kwargs...)
+        LMM(f.formula, data; contrasts=contrasts,  random = f.random, repeated = f.repeated)
+    end
 end
 
-function LMM(f::LMMformula, data; contrasts=Dict{Symbol,Any}())
-    LMM(f.formula, data; contrasts=contrasts,  random = f.random, repeated = f.repeated)
-end
+
 
 ################################################################################
 """
@@ -122,6 +123,28 @@ function coefn(lmm)
     length(lmm.result.beta)
 end
 
+tname(t::AbstractTerm) = "$(t.sym)"
+tname(t::InteractionTerm) = join(tname.(t.terms), " & ")
+tname(t::InterceptTerm) = "(Intercept)"
+function tname(t::FunctionTerm) 
+    args = string(t.args_parsed[1])
+    if length(t.args_parsed) > 1
+        for i = 2:length(t.args_parsed)
+            args *= ", "*string(t.args_parsed[i])
+        end
+    end
+    string(t.forig)*"("*args*")"
+end
+
+"""
+    responsename(lmm::LMM)
+
+Responce varible name.
+"""
+function responsename(lmm::LMM)
+    cnm = coefnames(lmm.mf.f.lhs)
+    return isa(cnm, Vector{String}) ? first(cnm) : cnm
+end
 """
     theta(lmm::LMM)
 
@@ -252,7 +275,7 @@ function Base.show(io::IO, lmm::LMM)
         for i = 1:lmm.covstr.tl
             if mx[i, 3] == :var mx[i, 4] = round.(mx[i, 4]^2, sigdigits = 6) end
         end
-        pretty_table(io, mx;  noheader = true, alignment=:l, tf = tf_borderless)
+        pretty_table(io, mx; show_header = false, alignment=:l, tf = tf_borderless)
         #printmatrix(io, mx)
     else
         if !any(x-> x.type == :WARN, lmm.log)

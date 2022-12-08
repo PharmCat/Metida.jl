@@ -16,7 +16,7 @@ Type III table.
 """
 function typeiii(lmm::LMM; ddf::Symbol = :satter)
     if !isfitted(lmm) error("Model not fitted!") end
-    c           = nterms(lmm.mf)
+    c           = length(lmm.mf.f.rhs.terms)
     d           = Vector{Int}(undef, 0)
     fac         = Vector{String}(undef, c)
     F           = Vector{Float64}(undef,c)
@@ -24,15 +24,16 @@ function typeiii(lmm::LMM; ddf::Symbol = :satter)
     ndf         = Vector{Float64}(undef, c)
     pval        = Vector{Float64}(undef, c)
     for i = 1:c
-        if typeof(lmm.mf.f.rhs.terms[i]) <: InterceptTerm{true}
-            fac[i] = "(Intercept)"
-        elseif typeof(lmm.mf.f.rhs.terms[i]) <: InterceptTerm{false}
+        iterm = lmm.mf.f.rhs.terms[i]
+        
+        if typeof(iterm) <: InterceptTerm{false}
             push!(d, i)
             fac[i] = ""
             continue
-        else
-            fac[i] = string(lmm.mf.f.rhs.terms[i].sym)
         end
+        
+        fac[i] = tname(iterm) 
+        
         L       = lcontrast(lmm, i)
         F[i]    = fvalue(lmm, L)
         ndf[i]  = rank(L)
@@ -43,7 +44,11 @@ function typeiii(lmm::LMM; ddf::Symbol = :satter)
         elseif ddf == :residual
             df[i]  = dof_residual(lmm)
         end
-        pval[i] = ccdf(FDist(ndf[i], df[i]), F[i])
+        if ndf[i] > 0 && df[i] > 0
+            pval[i] = ccdf(FDist(ndf[i], df[i]), F[i])
+        else
+            pval[i] = NaN
+        end
     end
     if length(d) > 0
         deleteat!(fac, d)
@@ -75,7 +80,11 @@ function contrast(lmm, l::AbstractMatrix; name::String = "Contrast", ddf = :satt
     else
         df = ddf
     end
-    pval = ccdf(FDist(ndf, df), F)
+    if ndf > 0 && df > 0
+        pval = ccdf(FDist(ndf, df), F)
+    else
+        pval = NaN
+    end
     ContrastTable([name], [F], [ndf], [df], [pval])
 end
 
