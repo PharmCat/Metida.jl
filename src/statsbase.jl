@@ -232,14 +232,6 @@ function StatsBase.coeftable(lmm::LMM)
     )
 end
 
-"""
-    responsename(lmm::LMM)
-
-Return responce name as string.
-"""
-function StatsBase.responsename(lmm::LMM)
-    string(lmm.model.lhs.sym)
-end
 
 
 
