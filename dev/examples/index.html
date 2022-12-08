@@ -24,19 +24,19 @@ time                 1.11853    0.0264038  42.36    &lt;1e-99
 factor: 1.0 &amp; time   0.404971   0.0373406  10.85    &lt;1e-26
 ──────────────────────────────────────────────────────────
     Variance components:
-    θ vector: [1.2401, 0.101122, -0.0427208, 0.985061]
+    θ vector: [1.2401, 0.101122, -0.0427209, 0.985061]
   Random 1   σ² (Intercept)   var   1.53785
   Random 1   σ² time          var   0.0102257
-  Random 1   ρ                rho   -0.0427208
+  Random 1   ρ                rho   -0.0427209
   Residual   σ²               var   0.970345
 </code></pre><p>MixedModels result:</p><pre><code class="language-julia hljs">fm = @formula(response ~ 1 + factor*time + (1 + time|subject&amp;factor))
 mm = fit(MixedModel, fm, rds, REML=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear mixed model fit by REML
  response ~ 1 + factor + time + factor &amp; time + (1 + time | subject &amp; factor)
- REML criterion at convergence: 1300.1807598188932
+ REML criterion at convergence: 1300.1807598185972
 
 Variance components:
                     Column   Variance Std.Dev.   Corr.
-subject &amp; factor (Intercept)  1.537867 1.240108
+subject &amp; factor (Intercept)  1.537863 1.240106
                  time         0.010226 0.101122 -0.04
 Residual                      0.970345 0.985061
  Number of obs: 400; levels of grouping factors: 40
@@ -45,8 +45,8 @@ Residual                      0.970345 0.985061
 ──────────────────────────────────────────────────────────
                         Coef.  Std. Error      z  Pr(&gt;|z|)
 ──────────────────────────────────────────────────────────
-(Intercept)         22.1331     0.30434    72.72    &lt;1e-99
-factor: 1.0          2.00049    0.430402    4.65    &lt;1e-05
+(Intercept)         22.1331     0.30434    72.73    &lt;1e-99
+factor: 1.0          2.00049    0.430401    4.65    &lt;1e-05
 time                 1.11853    0.0264037  42.36    &lt;1e-99
 factor: 1.0 &amp; time   0.404971   0.0373405  10.85    &lt;1e-26
 ──────────────────────────────────────────────────────────</code></pre><h3 id="Example-2-Two-random-factors-(Penicillin-data)"><a class="docs-heading-anchor" href="#Example-2-Two-random-factors-(Penicillin-data)">Example 2 - Two random factors (Penicillin data)</a><a id="Example-2-Two-random-factors-(Penicillin-data)-1"></a><a class="docs-heading-anchor-permalink" href="#Example-2-Two-random-factors-(Penicillin-data)" title="Permalink"></a></h3><p>Metida:</p><pre><code class="language-julia hljs">df          = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;Penicillin.csv&quot;); types = [String, Float64, String, String]) |&gt; DataFrame
@@ -82,20 +82,20 @@ Status: converged (No Errors)
 </code></pre><p>MixedModels:</p><pre><code class="language-julia hljs">fm2 = @formula(diameter ~ 1 + (1|plate) + (1|sample))
 mm = fit(MixedModel, fm2, df, REML=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear mixed model fit by REML
  diameter ~ 1 + (1 | plate) + (1 | sample)
- REML criterion at convergence: 330.86058899108053
+ REML criterion at convergence: 330.86058899100425
 
 Variance components:
             Column   Variance Std.Dev.
 plate    (Intercept)  0.716908 0.846704
-sample   (Intercept)  3.730910 1.931556
-Residual              0.302415 0.549923
+sample   (Intercept)  3.730903 1.931554
+Residual              0.302416 0.549923
  Number of obs: 144; levels of grouping factors: 24, 6
 
   Fixed-effects parameters:
 ─────────────────────────────────────────────────
                Coef.  Std. Error      z  Pr(&gt;|z|)
 ─────────────────────────────────────────────────
-(Intercept)  22.9722    0.808573  28.41    &lt;1e-99
+(Intercept)  22.9722    0.808572  28.41    &lt;1e-99
 ─────────────────────────────────────────────────</code></pre><h3 id="Example-3-Repeated-ARMA/AR/ARH"><a class="docs-heading-anchor" href="#Example-3-Repeated-ARMA/AR/ARH">Example 3 - Repeated ARMA/AR/ARH</a><a id="Example-3-Repeated-ARMA/AR/ARH-1"></a><a class="docs-heading-anchor-permalink" href="#Example-3-Repeated-ARMA/AR/ARH" title="Permalink"></a></h3><pre><code class="language-julia hljs">rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1freparma.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame</code></pre><p><img src="../plot2.png" alt/></p><p>ARMA:</p><pre><code class="language-julia hljs">lmm = LMM(@formula(response ~ 1 + factor*time), rds;
 random = VarEffect(@covstr(factor|subject&amp;factor), DIAG),
 repeated = VarEffect(@covstr(1|subject&amp;factor), ARMA),
@@ -215,4 +215,4 @@ fit!(lmm)</code></pre><p>SAS code:</p><pre><code class="nohighlight hljs">PROC M
 CLASSES subject sequence period formulation;
 MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
 RANDOM  subject/TYPE=VC G V;
-RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../custom/">Custom structures »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Monday 7 November 2022 23:58">Monday 7 November 2022</span>. Using Julia version 1.6.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../custom/">Custom structures »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Thursday 8 December 2022 11:55">Thursday 8 December 2022</span>. Using Julia version 1.6.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
