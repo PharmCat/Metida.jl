@@ -806,18 +806,21 @@ end
     confint(br, 1; method = :bcnorm)
     confint(br, 1; method = :jn)
 
+    confint(br, 1; metric = :sd, method = :bp)
+    confint(br, 1; metric = :theta, method = :bp)
+
     mi = Metida.MILMM(lmm, df0m)
     Base.show(io, mi)
     mir = Metida.milmm(mi; n = 10, verbose = false, rng = StableRNG(1234))
     Base.show(io, mir)
 
-    @test_nowarn @test_nowarn  Metida.milmm(lmm, df0m; n = 10, verbose = false, rng = StableRNG(1234))
+    @test_nowarn Metida.milmm(lmm, df0m; n = 10, verbose = false, rng = StableRNG(1234))
 
     @test_throws ErrorException Metida.milmm(lmm; n = 10, verbose = false, rng = StableRNG(1234))
 
 
     if !(VERSION < v"1.7")
-        mb =  Metida.miboot(mi; n = 10, bootn = 10, varn = 10, double = true, verbose = false, rng = StableRNG(1234))
+        mb =  Metida.miboot(mi; n = 10, bootn = 10,  double = true, verbose = false, rng = StableRNG(1234))
         Base.show(io, mb)
     end
 

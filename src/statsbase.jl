@@ -235,12 +235,12 @@ end
 """
     responsename(lmm::LMM)
 
-Return responce name as string.
+Responce varible name.
 """
 function StatsBase.responsename(lmm::LMM)
-    string(lmm.model.lhs.sym)
+    cnm = coefnames(lmm.mf.f.lhs)
+    return isa(cnm, Vector{String}) ? first(cnm) : cnm
 end
-
 
 
 # This can be supported
