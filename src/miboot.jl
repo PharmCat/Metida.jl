@@ -72,6 +72,7 @@ struct BootstrapResult{T} #<: BootstrapSample
     vv::Vector{Vector{T}}  # SE vector
     tv::Vector{Vector{T}}  # theta (var-cov) vecor
     rml::Vector{Int}       # iterations with warn and errors
+    deln::Vector{Int}      # number of deleted values
     log::Vector{LMMLogMsg}
 end
 
@@ -94,46 +95,82 @@ Bootstrap.straps(br::BootstrapResult, idx::Int) = getindex.(br.bv, idx)
 
 Bootstrap.nvar(br::BootstrapResult) = length(br.beta)
 =#
+"""
+    nvar(br::BootstrapResult)
+
+Number of coefficient in the model.
+"""
 nvar(br::BootstrapResult) = length(br.beta)
+"""
+    tvar(br::BootstrapResult) = length(br.theta)
+
+Number of theta parameters in the model.
+"""
+tvar(br::BootstrapResult) = length(br.theta)
+"""
+    straps(br::BootstrapResult, idx::Int)
+
+Return coefficients vector.
+"""
 straps(br::BootstrapResult, idx::Int)  = getindex(br.bv, idx)
+"""
+    sdstraps(br::BootstrapResult, idx::Int)
+
+Return sqrt(var(β)) vector.
+"""
 sdstraps(br::BootstrapResult, idx::Int) = getindex(br.vv, idx)
+"""
+    straps(br::BootstrapResult, idx::Int)
+
+Return theta vector.
+"""
+thetastraps(br::BootstrapResult, idx::Int) = getindex(br.tv, idx)
 
 """
-    bootstrap(lmm::LMM; double = true, n = 100, varn = n, verbose = true, init = lmm.result.theta, rng = default_rng())
+    bootstrap(lmm::LMM; double = false, n = 100, verbose = true, init = lmm.result.theta, rng = default_rng())
 
 Parametric bootstrap.
 
 !!! warning
-    Experimental: API not stable, results not validated
+    Experimental: API not stable
 
-- double - use double approach (default - true);
-- n - number of bootstrap samples for coefficient estimtion;
-- varn - number of bottstrap samples for varianvce estimation;
+- double - use double approach (default - false);
+- n - number of bootstrap samples;
 - verbose - show progress bar;
 - init - initial values for lmm;
 - rng - random number generator.
 
 Parametric bootstrap based on generating random responce vector from known distribution, that given from fitted LMM model.
-For one-stage bootstrap variance parameters and coefficients simulated in one step. For double bootstrap (two-tage) variance parameters simulated first,
-than used for simulating coefficients on stage two.
+
+* Simple bootstrap:
+
+For one-stage bootstrap variance parameters and coefficients simulated in one step.  
+
+* Double bootstrap:
+
+For double bootstrap (two-tage) variance parameters simulated in first cycle,
+than they used for simulating coefficients and var(β) on stage two. 
+On second stage parent-model β used for simulations. 
 
 ```julia
 lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0m;
 random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.CSH),
 )
 Metida.fit!(lmm)
-bt = Metida.bootstrap(lmm; n = 1000, varn = 1000, double = true, rng = MersenneTwister(1234))
+bt = Metida.bootstrap(lmm; n = 1000, double = true, rng = MersenneTwister(1234))
 confint(bt)
 ```
 
-See also: [`confint`](@ref), [`Metida.miboot`](@ref)
+
+See also: [`confint`](@ref), [`Metida.miboot`](@ref), [`Metida.nvar`](@ref), [`Metida.tvar`](@ref), 
+[`Metida.straps`](@ref), [`Metida.sdstraps`](@ref), [`Metida.thetastraps`](@ref)
 """
-function bootstrap(lmm::LMM; double = true, n = 100, varn = n, verbose = true, init = lmm.result.theta, del = true, rng = default_rng())
+function bootstrap(lmm::LMM; double = false, n = 100, verbose = true, init = lmm.result.theta, del = true, rng = default_rng())
     isfitted(lmm) || throw(ArgumentError("lmm not fitted!"))
     if double
-        return dbootstrap_(lmm; n = n, varn = varn, verbose = verbose, maxiter = 5, init = init,  del = del, rng = rng)
+        return dbootstrap_(lmm; n = n, verbose = verbose, init = init,  del = del, rng = rng)
     else
-        return bootstrap_(lmm; n = n, verbose = verbose, maxiter = 5, init = init,  del = del, rng = rng)
+        return bootstrap_(lmm; n = n, verbose = verbose, init = init,  del = del, rng = rng)
     end
 end
 """
@@ -186,8 +223,7 @@ end
 """
     Simple bootstrap.
 """
-function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng, del) where T
-    #nb   = nblocks(lmm) thetalength(lmm) coefn(lmm)
+function bootstrap_(lmm::LMM{T}; n, verbose, init, rng, del) where T
     bv   = Vector{Vector{Float64}}(undef, coefn(lmm))
     vv   = Vector{Vector{Float64}}(undef, coefn(lmm))
     for i = 1:coefn(lmm)
@@ -207,6 +243,7 @@ function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng, del) where T
 
     vi   = findall(x-> x == :var, lmm.covstr.ct)
     tlmm = theta_(lmm) .^ 2
+    # ratio limits to delete theta values for var
     ll   = quantile(FDist(1, 1), 1/n)
     ul   = quantile(FDist(1, 1), 1 - 1/n)
     dist = Vector{FullNormal}(undef, nblocks(lmm))
@@ -235,6 +272,7 @@ function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng, del) where T
         if verbose next!(p) end
     end
     lmmlog!(log, 1, LMMLogMsg(:INFO, "End bootstrap..."))
+    deln = [length(length(rml))]
     if del && length(rml) > 0
         for j = 1:coefn(lmm)
             deleteat!(bv[j], rml)
@@ -243,37 +281,23 @@ function bootstrap_(lmm::LMM{T}; n, verbose, maxiter, init, rng, del) where T
         for j = 1:thetalength(lmm)
             deleteat!(tv[j], rml)
         end
+        resize!(rml, 0)
         lmmlog!(log, 1, LMMLogMsg(:WARN, "Some results ($(length(rml))) was deleted."))
     end
-    BootstrapResult(lmm, coefnames(lmm), coef(lmm), stderror(lmm), theta(lmm), bv, vv, tv, rml, log)
+    BootstrapResult(lmm, coefnames(lmm), coef(lmm), stderror(lmm), theta(lmm), bv, vv, tv, rml, deln, log)
 end
 """
     Double bootstrap.
 """
-function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng, del) where T
-    nb   = nblocks(lmm)
-    #bv   = Vector{Vector{Float64}}(undef, coefn(lmm))
-
-    # Final result vectors 
+function dbootstrap_(lmm::LMM{T}; n, verbose, init, rng, del) where T
+    nb    = nblocks(lmm)
+    deln  = [0, 0]
     tvr   = Vector{Vector{Float64}}(undef, thetalength(lmm))
     bvr   = Vector{Vector{Float64}}(undef, coefn(lmm))
     vvr   = Vector{Vector{Float64}}(undef, coefn(lmm))
-    #=
-    for i = 1:coefn(lmm)
-        #bv[i] = Vector{Float64}(undef, n)
-        vv[i] = Vector{Float64}(undef, n)
-    end
-    =#
 
     # Vectors for result from step I
-    tv   = Vector{Vector{Float64}}(undef, varn)
-    bv   = Vector{Vector{Float64}}(undef, varn)
-    vv   = Vector{Vector{Float64}}(undef, varn)
-
-    # Vectors for result from step II
-    #tv2   = Vector{Vector{Float64}}(undef, varn)
-    bv2   = Vector{Vector{Float64}}(undef, n)
-    #vv2   = Vector{Vector{Float64}}(undef, varn)
+    tv   = Vector{Vector{Float64}}(undef, n)
 
     rml  = Vector{Int}(undef, 0)
     log  = Vector{LMMLogMsg}(undef, 0)
@@ -283,24 +307,21 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng, del) whe
 
     vi   = findall(x-> x == :var, lmm.covstr.ct)
     tlmm = theta_(lmm) .^ 2
-    ll   = quantile(FDist(1, 1), 1/varn)
-    ul   = quantile(FDist(1, 1), 1 - 1/varn)
+    ll   = quantile(FDist(1, 1), 1/n)
+    ul   = quantile(FDist(1, 1), 1 - 1/n)
     dist = Vector{FullNormal}(undef, nblocks(lmm))
     make_dist_vec!(dist, lmm)
 
     lmmlog!(log, 1, LMMLogMsg(:INFO, "Start bootstrap, step I..."))
-    p = Progress(varn, dt = 0.5,
+    p = Progress(n, dt = 0.5,
             desc="Bootstrapping I  LMMs...",
             barglyphs=BarGlyphs('|','█', ['▁' ,'▂' ,'▃' ,'▄' ,'▅' ,'▆', '▇'],' ','|',),
             barlen=20)
     # STEP 1
-    for i = 1:varn
+    for i = 1:n
         fit_lmm!(lmmb, init, dist, rng)
-     
         #Fill vector for step I
         tv[i]  = theta(lmmb)
-        bv[i]  = coef(lmmb)
-        vv[i]  = stderror(lmmb)
 
         check_lmm!(rml, log, lmmb, tlmm, tv[i], vi, i, ll, ul)
         lmmb.result.fit = false
@@ -309,12 +330,17 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng, del) whe
 
     if length(rml) > 0
         deleteat!(tv, rml)
-        deleteat!(bv, rml)
         lmmlog!(log, 1, LMMLogMsg(:WARN, "Step I: Some variance results ($(length(rml))) was deleted."))
+        deln[1] = length(rml)
         resize!(rml, 0)
     end
     lmmlog!(log, 1, LMMLogMsg(:INFO, "Start step II..."))
-    
+
+    n = length(tv)
+    # Vectors for result from step II
+    bv2   = Vector{Vector{Float64}}(undef, n)
+    vv2   = Vector{Vector{Float64}}(undef, n)
+
     # STEP 2
     p = Progress(n, dt=0.5,
             desc="Bootstrapping II LMMs...",
@@ -323,20 +349,14 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng, del) whe
     m   = Vector{T}(undef, lmm.maxvcbl)                 # means vector
     Vt  = Matrix{T}(undef, lmm.maxvcbl, lmm.maxvcbl)
     V   = view(Vt, 1:length(m), 1:length(m))
-    tvl = length(tv)
     ll   = quantile(FDist(1, 1), 1/n)
     ul   = quantile(FDist(1, 1), 1 - 1/n)
 
+    # For step II use paren model coefficients
+    beta  = coef(lmm)
     for i = 1:n
-
-        # Iteration if number of bootstram more than on step I
-        r = rem(i, tvl)
-        ind = r == 0 ? tvl : r
         # Use theta from step I
-        theta = tv[ind]
-        # Use beta from step I
-        beta  = bv[ind]
-            # make distributions and generate responce
+        theta = tv[i]
         for j = 1:nb
             q    = length(lmm.covstr.vcovblock[j])
             if length(m) != q resize!(m, q) end
@@ -350,36 +370,43 @@ function dbootstrap_(lmm::LMM{T}; n, varn, verbose, maxiter, init, rng, del) whe
         end
         # fit
         fit!(lmmb; init = init, hes = false)
-
+        # Save results for step II
         bv2[i] = coef(lmmb)
-   
+        vv2[i] = stderror(lmmb)
+
         check_lmm!(rml, log, lmmb, tlmm, theta_(lmmb), vi, i, ll, ul)
         lmmb.result.fit = false
         if verbose next!(p) end
     end
+
     lmmlog!(log, 1, LMMLogMsg(:INFO, "End bootstrap..."))
     if del && length(rml) > 0
+        deleteat!(tv, rml)
         deleteat!(bv2, rml)
+        deleteat!(vv2, rml)
         lmmlog!(log, 1, LMMLogMsg(:WARN, "Step II: Some results ($(length(rml))) was deleted."))
+        deln[2] = length(rml)
+        resize!(rml, 0)
     end
 
     for j = 1:thetalength(lmm)
         tvr[j] = getindex.(tv, j) # theta from step I
     end
     for j = 1:coefn(lmm)
-        vvr[j] = getindex.(vv, j) # coef-var from step I
+        vvr[j] = getindex.(vv2, j) # coef-var from step II
         bvr[j] = getindex.(bv2, j) # beta from step II
     end
     
-    BootstrapResult(lmm, coefnames(lmm), coef(lmm), stderror(lmm), theta(lmm), bvr, vvr, tvr, rml, log)
+    BootstrapResult(lmm, coefnames(lmm), coef(lmm), stderror(lmm), theta(lmm), bvr, vvr, tvr, rml, deln, log)
 end
+
 """
     milmm(mi::MILMM; n = 100, verbose = true, rng = default_rng())
 
 Multiple imputation.
 
 !!! warning
-    Experimental: API not stable, results not validated
+    Experimental: API not stable
 
 For each subject random vector of missing values generated from distribution:
 
@@ -446,12 +473,12 @@ function milmm(lmm::LMM; n = 100, verbose = true, rng = default_rng())
     error("Method not defined!")
 end
 """
-    miboot(mi::MILMM; n = 100, verbose = true, rng = default_rng())
+    miboot(mi::MILMM{T}; n = 100, double = true, bootn = 100, verbose = true, rng = default_rng())
 
 Multiple imputation with parametric bootstrap step.
 
 !!! warning
-    Experimental: API not stable, results not validated
+    Experimental: API not stable
 
 Example:
 
@@ -464,7 +491,7 @@ mi = Metida.MILMM(lmm, df0m)
 bm = Metida.miboot(mi; n = 100, rng = MersenneTwister(1234))
 ```
 """
-function miboot(mi::MILMM{T}; n = 100, double = true, bootn = 100, varn = bootn, verbose = true, rng = default_rng()) where T
+function miboot(mi::MILMM{T}; n = 100, double = true, bootn = 100, verbose = true, rng = default_rng()) where T
     mres = milmm(mi; n = n, verbose = verbose, rng = rng)
     br = Vector{BootstrapResult{T}}(undef, n)
 
@@ -474,7 +501,7 @@ function miboot(mi::MILMM{T}; n = 100, double = true, bootn = 100, varn = bootn,
             barlen=20)
 
     for i = 1:n
-        br[i] = bootstrap(mres.lmm[i]; double = double, n = bootn, varn = varn, verbose = false, init = mres.lmm[i].result.theta, rng = rng)
+        br[i] = bootstrap(mres.lmm[i]; double = double, n = bootn, verbose = false, init = mres.lmm[i].result.theta, rng = rng)
         if verbose next!(p) end
     end
 
@@ -570,7 +597,7 @@ function generate_mi(rng, data, dv::LMMDataViews{T}, vcovblock, mrs, rb, ty)  wh
 end
 ################################################################################
 """
-    StatsBase.confint(br::BootstrapResult, n::Int; level::Float64=0.95, method=:jn)
+StatsBase.confint(br::BootstrapResult, n::Int; level::Float64=0.95, method=:bp, metric = :coef, delrml = false)
 
 Confidence interval for bootstrap result.
 
@@ -581,11 +608,21 @@ Confidence interval for bootstrap result.
 - :bcnorm - Bias corrected Normal distribution;
 - :jn - bias corrected (jackknife resampling).
 """
-function StatsBase.confint(br::BootstrapResult, n::Int; level::Float64=0.95, method=:bp, delrml = false)
-    v = straps(br, n)
-    if length(br.rml) > 0 && delrml
-         deleteat!(v, br.rml)
+function StatsBase.confint(br::BootstrapResult, n::Int; level::Float64=0.95, method=:bp, metric = :coef, delrml = false)
+    if metric == :coef
+        v = straps(br, n)
+    elseif metric == :sd
+        v = sdstraps(br, n)
+    elseif metric == :theta
+        v = thetastraps(br, n)
+    else
+        error("Unknown metric")
     end
+    
+    if length(br.rml) > 0 && delrml
+         v = deleteat(v, br.rml)
+    end
+    
     if method == :bp
         confint_q(br, v, n, 1-level)
     elseif method == :rbp
@@ -594,21 +631,23 @@ function StatsBase.confint(br::BootstrapResult, n::Int; level::Float64=0.95, met
         confint_n(br, v, n, 1-level)
     elseif method == :bcnorm
         confint_bcn(br, v, n, 1-level)
-    elseif method == :var
-        confint_var(br, v, n, 1-level)
-    elseif method == :var2
-        confint_var2(br, v, n, 1-level)
     elseif method == :jn
         confint_jn(br, v, n, 1-level)
     else
         error("Method unknown!")
     end
 end
-function StatsBase.confint(br::BootstrapResult; level::Float64=0.95, method=:bp, delrml = false)
-    l = nvar(br)
+function StatsBase.confint(br::BootstrapResult; level::Float64=0.95, method=:bp, metric = :coef, delrml = false)
+    if metric == :coef || metric == :sd 
+        l = nvar(br)
+    elseif metric == :theta
+        l = tvar(br)
+    else
+        error("Unknown metric")
+    end
     v = Vector{Tuple}(undef, l)
     for i = 1:l
-        v[i] = confint(br, i; level = level, method = method, delrml = false)
+        v[i] = confint(br, i; level = level, method = method, delrml = delrml)
     end
     v
 end
@@ -626,17 +665,6 @@ end
 function confint_bcn(bt::BootstrapResult, v, i::Int, alpha)
     d = Normal(2bt.beta[i] - mean(v), sqrt(var(v)))
     (quantile(d, alpha/2), quantile(d, 1-alpha/2))
-end
-function confint_var(bt::BootstrapResult, v, i::Int, alpha)
-    sd  = sqrt(mean(x->x^2, bt.vv[5]))
-    q   = quantile(TDist(dof_residual(bt.lmm)), 1-alpha/2)
-    (bt.beta[i] - sd*q, bt.beta[i] + sd*q)
-end
-function confint_var2(bt::BootstrapResult, v, i::Int, alpha)
-    bias = abs(bt.beta[i] - mean(v))
-    sd  = sqrt(mean(x->x^2, bt.vv[5]))
-    q   = quantile(TDist(dof_residual(bt.lmm)), 1-alpha/2)
-    (bt.beta[i] - sd*q - bias, bt.beta[i] + sd*q + bias)
 end
 function jn(v)
     s  = sum(v)
@@ -682,8 +710,6 @@ function Base.show(io::IO, mr::MILMMResult)
         σ²   = zeros(cl)
         βii  = zeros(cl)
         βtv  = zeros(cl)
-    #stderror_(lmm::LMM)
-    #coef_(lmm::LMM)
         for i = 1:lmmn
             for c = 1:cl
                 β[c]  += coef_(mr.lmm[i])[c]
@@ -720,28 +746,69 @@ end
 function Base.show(io::IO, br::BootstrapResult)
     println(io, "    Bootstrap results:                          ")
     println(io, "------------------------------------------------")
-    println(io, "    Number of replications: $(tvlength(br))/$(bvlength(br))")
+    println(io, "    Final number of replications: $(tvlength(br))")
     println(io, "    Errors: $(msgnum(br, :ERROR))               ")
     println(io, "    Warnings: $(msgnum(br, :WARN))              ")
-    print(io, "    Excluded/suspicious: $(length(br.rml))      ")
+    if length(br.deln) == 1 
+      print(io, "    Excluded/suspicious: $(br.deln[1])               ")
+    else
+    println(io, "    Excluded/suspicious:")
+    println(io, "       Stage I: $(br.deln[1])")
+      print(io, "       Stage II: $(br.deln[2]) ")
+    end
+    
+    beta = br.beta
     if bvlength(br) > 1
 
         β    = zeros(nvar(br))
-        σ    = zeros(nvar(br))
+        σ²   = zeros(nvar(br))
+        θ    = zeros(tvar(br))
         vβ   = zeros(nvar(br))
+        vσ²  = zeros(nvar(br))
+        vθ   = zeros(tvar(br))
 
-        #βii  = zeros(nvar(br))
-        #βtv  = zeros(nvar(br))
+
         for i = 1:nvar(br)
+            # Coefs
             isr    = straps(br, i)
             β[i]   = mean(isr)
-            vβ[i]  = sqrt(var(isr))
-            isr    = sdstraps(br, i)
-            σ[i]   = sqrt(sum(x-> x^2, isr)/bvlength(br))
+            vβ[i]  = var(isr, mean = beta[i])
+            # SE
+            isr    = sdstraps(br, i) .^ 2
+            σ²[i]  = mean(isr)
+            vσ²[i] = var(isr)
         end
 
+        # THETA
+        for i = 1:tvar(br)
+            isr    = thetastraps(br, i)
+            θ[i]   = mean(isr)
+            vθ[i]  = var(isr)
+        end
+        thetanames = br.lmm.covstr.rcnames
+
+        ci = confint(br; level=0.95, method=:bp, metric = :coef, delrml = false)
+        cil = getindex.(ci, 1)
+        ciu = getindex.(ci, 2)
         println(io, "")
-        mt = metida_table(br.cn, br.beta, br.se,  β, vβ, σ; names = (Symbol("Coef. name"), Symbol("β*"), Symbol("σ*"), Symbol("β"), Symbol("var(β)"), Symbol("σ")))
+        println(io, "β")
+        mt = metida_table(br.cn, br.beta, β, vβ, cil, ciu; names = (Symbol("Coef. name"), Symbol("β"), Symbol("Mean(β)"), Symbol("Var(β)"), Symbol("Upper 2.5 P"), Symbol("Lower 2.5 P")))
+        show(io, mt)
+
+        ci = confint(br; level=0.95, method=:bp, metric = :sd, delrml = false)
+        cil = getindex.(ci, 1)
+        ciu = getindex.(ci, 2)
+        println(io, "")
+        println(io, "σ²")
+        mt = metida_table(br.cn, br.se .^ 2,  σ², vσ², cil, ciu; names = (Symbol("Coef. name"), Symbol("σ²"), Symbol("Mean(σ²)"), Symbol("Var(σ²)"), Symbol("Upper 2.5 P"), Symbol("Lower 2.5 P")))
+        show(io, mt)
+
+        ci = confint(br; level=0.95, method=:bp, metric = :theta, delrml = false)
+        cil = getindex.(ci, 1)
+        ciu = getindex.(ci, 2)
+        println(io, "")
+        println(io, "θ")
+        mt = metida_table(thetanames, br.theta, θ, vθ, cil, ciu; names = (Symbol("Names"), Symbol("θ"), Symbol("Mean(θ)"), Symbol("Var(θ)"), Symbol("Upper 2.5 P"), Symbol("Lower 2.5 P")))
         show(io, mt)
     end
 end
