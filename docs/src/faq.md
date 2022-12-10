@@ -26,6 +26,11 @@ SAS Manual, Mixed Models Analyses Using the SAS System Course Notes:
 >Starting in the Release 8.1, the MIXED procedure produces another information criteria, AICC. AICC is a finite-sample corrected Akaike Information Criterion. For small samples, it reduces the bias produced by AIC; for large samples, AICC converges to AIC. In general, AICC is preferred to AIC. For more information on information criteria, especially AICC, refer to Burnham, K. P. and Anderson, D. R. (1998).
 >The basic idea for repeated measures analysis is that, among plausible within-subject covariance models given a particular study, the model that minimizes AICC or BIC (your choice) is preferable. When AICC or BIC are close, the simpler model is generally preferred.
 
+* Q6: I have a slightly different results for DF calculation, what's wrong?
+
+Check logs. If final hessian matrix for REML function is ill-conditioned results on differet OS can be slightly different. If possible, try to use more stable covariance structure. Or make an issue on github.
+
+
 See also:
 
 * Barnett, A.G., Koper, N., Dobson, A.J., Schmiegelow, F. and Manseau, M. (2010), Using information criteria to select the correct variance–covariance structure for longitudinal data in ecology. Methods in Ecology and Evolution, 1: 15-24. https://doi.org/10.1111/j.2041-210X.2009.00009.x
