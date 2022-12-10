@@ -358,7 +358,9 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 710.4250214813896 atol=1E-8
-    #@test Metida.dof_satter(lmm)[2] ≈ 20.946001137755598 atol=1E-8
+    @test Metida.dof_satter(lmm)[2] ≈ 20.94587351111687 atol=1E-8
+    # Test multiple random effect γ
+    @test_nowarn Metida.raneff(lmm, 1)
 end
 @testset "  Model: SI, SI/CSH                                        " begin
     # no errors
@@ -382,7 +384,9 @@ end
     @test Metida.m2logreml(lmm)  ≈ 697.2241355154041 atol=1E-8
     io = IOBuffer();
     @test_nowarn show(io, lmmf)
-    #@test Metida.dof_satter(lmm)[2] ≈ 21.944891442712407 atol=1E-8
+    @test Metida.dof_satter(lmm)[2] ≈ 21.944891442712407 atol=1E-8
+    # Test multiple random effect γ
+    @test_nowarn Metida.raneff(lmm, 1)
 end
 @testset "  Model: AR/SI                                             " begin
     # SPSS 698.879
@@ -785,12 +789,13 @@ end
     Metida.fit!(lmm, init = [.1, 12.0, 1])
     Base.show(io, lmm)
     Base.show(io, lmm.log)
-
+    Metida.raneff(lmm, 1)
 
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0m;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
     )
     Metida.fit!(lmm)
+    Metida.raneff(lmm, 1)
 
     #@test_nowarn Base.show(io, Metida.bootstrap(lmm; n = 10, double = false, verbose = false, rng = MersenneTwister(1263)))
     #@test_nowarn

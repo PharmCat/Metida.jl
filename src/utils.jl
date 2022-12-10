@@ -196,6 +196,25 @@ function optim_callback(os)
 end
 ################################################################################
 """
+    zeroeff(eff)
+
+Return true if CovarianceType is ZERO.
+"""
+function zeroeff(eff)
+    isa(eff.covtype.s, ZERO)
+end
+"""
+    raneffn(lmm)
+Retuen number of random effects.
+"""
+function raneffn(lmm)
+    if zeroeff(lmm.covstr.random[1]) 
+        return 0
+    end
+    length(lmm.covstr.random)
+end
+
+"""
     gmatrix(lmm::LMM{T}, r::Int) where T
 """
 function gmatrix(lmm::LMM{T}, r::Int) where T
@@ -276,7 +295,53 @@ function grad_vmatrix(θ::AbstractVector{T}, lmm::LMM, i::Int)
     Symmetric(V)
 end
 =#
+function blockgmatrix(lmm::LMM{T}) where T
+    blockgmatrix(lmm, (1, 1))
+end
 
+function blockgmatrix(lmm::LMM{T}, v) where T
+    if raneffn(lmm) == 0 return nothing end
+    p = 0
+    for i = 1:raneffn(lmm)
+        p += lmm.covstr.q[i]*v[i]
+    end
+    G = zeros(T, p, p)
+    s = 1
+    for i = 1:raneffn(lmm)
+        g = gmatrix(lmm, i)
+        for j = 1:v[i]
+            e = s + lmm.covstr.q[i]-1
+            G[s:e, s:e] .= g
+            s = e + 1
+        end
+    end
+    G
+end
+
+function blockzmatrix(lmm::LMM{T}, i) where T
+    sn = length.(lmm.covstr.sblock[i])[1:end-1]
+    mx = Vector{Matrix{T}}(undef, raneffn(lmm))
+    s = 1
+    for j = 1:raneffn(lmm)
+        e  = s + lmm.covstr.q[j] - 1
+        zv = view(lmm.covstr.z, lmm.covstr.vcovblock[i], s:e) 
+        s  = e + 1 
+        mx[j] = kron(ones(sn[j])', zv)
+    end
+   hcat(mx...)
+end
+"""
+    raneff(lmm::LMM{T}, i)
+
+Vector of random effect coefficients for block `i`.
+"""
+function raneff(lmm::LMM{T}, i) where T
+    if raneffn(lmm) == 0 return nothing end
+    sn = length.(lmm.covstr.sblock[i])[1:end-1]
+    G  = blockgmatrix(lmm, sn)
+    Z  = blockzmatrix(lmm, i)
+    G * Z' * inv(vmatrix(lmm, i)) * (lmm.dv.yv[i] - lmm.dv.xv[i]*lmm.result.beta)
+end
 
 
 
