@@ -215,7 +215,7 @@ Metida.confint
 
 ### Metida.crossmodelmatrix
 ```@docs
-Metida.crossmodelmatrix
+StatsBase.crossmodelmatrix
 ```
 
 ### Metida.dof
@@ -307,11 +307,6 @@ Metida.typeiii
 
 ## Not API functions
 
-
-### Metida.contrast
-```@docs
-Metida.contrast
-```
 
 ### Metida.contrast
 ```@docs
