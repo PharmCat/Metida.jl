@@ -1,10 +1,11 @@
-V0.14.2
-  * responce name
-
 v0.14.1
   * docs
   * test
-  * minor changes
+  * minor optimization
+  * internal structure changes
+  * responce name
+  * raneff initial realization
+  * bootstrap changes (output, two-stage botstrap, api)
 
 v0.14
   * lmmformula
