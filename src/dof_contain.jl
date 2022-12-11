@@ -5,10 +5,11 @@ function zmatrix(lmm::LMM, i)
     sn = 1
     for b = 1:length(lmm.covstr.vcovblock)
         zblock    = view(lmm.covstr.z, lmm.covstr.vcovblock[b], lmm.covstr.zrndur[i])
-        for s = 1:length(lmm.covstr.sblock[b][i])
-            zi    = view(zblock, lmm.covstr.sblock[b][i][s], :)
+        for s = 1:subjn(lmm.covstr, i, b)
+            suji  = getsubj(lmm.covstr, i, b, s)
+            zi    = view(zblock, suji, :)
             l[sn] = 1
-            copyto!(view(rzm, lmm.covstr.vcovblock[b][lmm.covstr.sblock[b][i][s]], :), kron(l, zi))
+            copyto!(view(rzm, lmm.covstr.vcovblock[b][suji], :), kron(l, zi))
             l[sn] = 0
             sn   += 1
         end

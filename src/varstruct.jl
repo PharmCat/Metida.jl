@@ -143,7 +143,27 @@ end
 
 tabcols(data, symbs) = Tuple(Tables.getcolumn(Tables.columns(data), x) for x in symbs)
 
-
+struct EffectSubjectBlock
+    sblock::Matrix{Vector{Tuple{Vector{Int}, Int}}}
+    snames::Vector
+end
+function getsubj(covstr, effn, block, sbjn)
+    covstr.esb.sblock[block, effn][sbjn][1]
+end
+function subjn(covstr, effn, block)
+    length(covstr.esb.sblock[block, effn])
+end
+function raneflenv(covstr, block)
+    l = size(covstr.esb.sblock, 2) - 1
+    v = Vector{Int}(undef, l)
+    for i = 1:l
+        v[i] = length(covstr.esb.sblock[block, i])
+    end
+    v
+end
+"""
+    Covarince structure.
+"""
 struct CovStructure{T} <: AbstractCovarianceStructure
     # Random effects
     random::Vector{VarEffect}
@@ -159,7 +179,9 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     z::Matrix{T}
     #subjz::Vector{BitArray{2}}
     # Blocks for each blocking subject, each effect, each effect subject sblock[block][rand eff][subj]
-    sblock::Vector{Vector{Vector{Vector{Int}}}}
+    #sblock::Vector{Vector{Vector{Vector{Int}}}}
+    #
+    esb::EffectSubjectBlock
     #unit range z column range for each random effect
     zrndur::Vector{UnitRange{Int}}
     # repeated effect parametrization matrix
@@ -276,18 +298,23 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             end
             blocks  = collect(values(subjblockdict))
         #end
-
-        sblock = Vector{Vector{Vector{Vector{Int}}}}(undef, length(blocks))
-        ########################################################################
+        sblock = Matrix{Vector{Tuple{Vector{Int}, Int}}}(undef, length(blocks), alleffl)
+        nblock = []
+        #######################################################################
+        #######################################################################
+        nli = 1
         @inbounds for i = 1:length(blocks) # i - block number
-            sblock[i] = Vector{Vector{Vector{Int}}}(undef, alleffl)
             @inbounds for s = 1:alleffl # s - effect number
-                sblock[i][s] = Vector{Vector{Int}}(undef, 0)
-
+                tempv = Vector{Tuple{Vector{Int}, Int}}(undef, 0)
                 for (k, v) in dicts[s]
                     fa = findall(x-> x in v, blocks[i]) # Try to optimize it
-                    if length(fa) > 0 push!(sblock[i][s], fa) end
+                    if length(fa) > 0 
+                        push!(tempv, (fa, nli))
+                        push!(nblock, k)
+                        nli += 1
+                    end
                 end
+                sblock[i, s] = tempv
             end
         end
         #
@@ -296,10 +323,12 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             lvcb = length(i)
             if lvcb > maxn maxn = lvcb end
         end
-        new{eltype(z)}(random, repeated, schema, rcnames, blocks, rn, z, sblock, zrndur, rz, q, t, tr, tl, ct, sn, maxn)
+        esb = EffectSubjectBlock(sblock, nblock)
+        #######################################################################
+        new{eltype(z)}(random, repeated, schema, rcnames, blocks, rn, z, esb, zrndur, rz, q, t, tr, tl, ct, sn, maxn)
     end
 end
-################################################################################
+###############################################################################
 function fillur!(ur, i, v)
     if i > 1
         ur[i]   = UnitRange(sum(v[1:i-1]) + 1, sum(v[1:i-1]) + v[i])

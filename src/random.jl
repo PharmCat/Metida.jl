@@ -27,10 +27,11 @@ function rand!(rng::AbstractRNG, v::AbstractVector, lmm::LMM{T}, theta::Abstract
     v = Vector{T}(undef, nobs(lmm))
     tv = Vector{T}(undef, lmm.maxvcbl)
     gvec = gmatvec(theta, lmm.covstr)
+    rtheta = theta[lmm.covstr.tr[end]]
     for i = 1:n
         q    = length(lmm.covstr.vcovblock[i])
         V    = zeros(q, q)
-        vmatrix!(V, gvec, theta, lmm, i)
+        vmatrix!(V, gvec, rtheta, lmm, i)
         if length(tv) != q resize!(tv, q) end
         Distributions.rand!(rng, MvNormal(Symmetric(V)), tv)
         v[lmm.covstr.vcovblock[i]] .= tv
@@ -54,6 +55,7 @@ function rand!(rng::AbstractRNG, v::AbstractVector, lmm::LMM{T}, theta::Abstract
     tv = Vector{T}(undef, lmm.maxvcbl)
     m  = Vector{T}(undef, lmm.maxvcbl)
     gvec = gmatvec(theta, lmm.covstr)
+    rtheta = theta[lmm.covstr.tr[end]]
     for i = 1:n
         q    = length(lmm.covstr.vcovblock[i])
         if length(tv) != q
@@ -62,7 +64,7 @@ function rand!(rng::AbstractRNG, v::AbstractVector, lmm::LMM{T}, theta::Abstract
         end
         mul!(m, lmm.dv.xv[i], beta)
         V    = zeros(q, q)
-        vmatrix!(V, gvec, theta, lmm, i)
+        vmatrix!(V, gvec, rtheta, lmm, i)
         Distributions.rand!(rng, MvNormal(m, Symmetric(V)), tv)
         v[lmm.covstr.vcovblock[i]] .= tv
     end

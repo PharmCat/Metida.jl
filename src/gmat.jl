@@ -3,10 +3,9 @@
 ################################################################################
 
 ################################################################################
-function gmatvec(θ::Vector{T}, covstr) where T
-    gt = [Symmetric(zeros(T, covstr.q[r], covstr.q[r])) for r in 1:covstr.rn] #<: fix to vec
+@noinline function gmatvec(θ::Vector{T}, covstr) where T
+    gt = [Symmetric(zeros(T, covstr.q[r], covstr.q[r])) for r in 1:covstr.rn]
     for r = 1:covstr.rn
-        #fill!(gt[r].data, zero(T))
         if covstr.random[r].covtype.z
             gmat!(gt[r].data, view(θ, covstr.tr[r]), covstr.random[r].covtype.s)
         end
@@ -14,26 +13,27 @@ function gmatvec(θ::Vector{T}, covstr) where T
     gt
 end
 # Main
-function zgz_base_inc!(mx::AbstractArray, G, θ, covstr, block, sblock)
+@noinline function zgz_base_inc!(mx::AbstractArray, G, covstr, bi)
+    block = covstr.vcovblock[bi]
     if covstr.random[1].covtype.z
         for r = 1:covstr.rn
             zblock    = view(covstr.z, block, covstr.zrndur[r])
-            @inbounds for i = 1:length(sblock[r])
-                mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i]), view(zblock, sblock[r][i], :), G[r])
+            @inbounds for i = 1:subjn(covstr, r, bi)
+                sb = getsubj(covstr, r, bi, i)
+                mulαβαtinc!(view(mx, sb, sb), view(zblock, sb, :), G[r])
             end
         end
     end
     mx
 end
 
-
 ################################################################################
-
-function zgz_base_inc!(mx::AbstractArray, θ::AbstractArray{T}, covstr, block, sblock) where T
+#=
+@noinline function zgz_base_inc!(mx::AbstractArray, θ::AbstractArray{T}, covstr, block, sblock) where T
     if covstr.random[1].covtype.z
         for r = 1:covstr.rn
             G = fill!(Symmetric(Matrix{T}(undef, covstr.q[r], covstr.q[r])), zero(T))
-            gmat_switch!(G.data, θ, covstr, r)
+            gmat!(G.data, view(θ, covstr.tr[r]), covstr.random[r].covtype.s)
             zblock    = view(covstr.z, block, covstr.zrndur[r])
             @inbounds for i = 1:length(sblock[r])
                 mulαβαtinc!(view(mx, sblock[r][i], sblock[r][i]), view(zblock, sblock[r][i], :), G)
@@ -42,10 +42,13 @@ function zgz_base_inc!(mx::AbstractArray, θ::AbstractArray{T}, covstr, block, s
     end
     mx
 end
+=#
+#=
 function gmat_switch!(G, θ, covstr, r)
     gmat!(G, view(θ, covstr.tr[r]), covstr.random[r].covtype.s)
     G
 end
+=#
 ################################################################################
 #SI
 function gmat!(::Any, ::Any, ::AbstractCovarianceType)
