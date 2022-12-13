@@ -243,7 +243,7 @@ function rmatrix(lmm::LMM{T}, i::Int) where T
     if i > length(lmm.covstr.vcovblock) error("Invalid block number: $(i)!") end
     q    = length(lmm.covstr.vcovblock[i])
     R    = zeros(T, q, q)
-    rmat_base_inc!(R, lmm.result.theta[lmm.covstr.tr[end]], lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
+    rmat_base_inc!(R, lmm.result.theta[lmm.covstr.tr[end]], lmm.covstr, i)
     Symmetric(R)
 end
 """
@@ -253,16 +253,21 @@ Update variance-covariance matrix V for i bolock. Upper triangular updated.
 """
 function vmatrix!(V, θ, lmm::LMM, i::Int) # pub API
     gvec = gmatvec(θ, lmm.covstr)
-    zgz_base_inc!(V, gvec, θ, lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
-    rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
+    zgz_base_inc!(V, gvec, lmm.covstr, i)
+    rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, i)
 end
 
 # !!! Main function REML used
+function vmatrix!(V, G, rθ, lmm::LMM, i::Int)
+    zgz_base_inc!(V, G, lmm.covstr, i)
+    rmat_base_inc!(V, rθ, lmm.covstr, i)
+end
+#=
 function vmatrix!(V, G, θ, lmm::LMM, i::Int)
     zgz_base_inc!(V, G, θ, lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
     rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
 end
-
+=#
 """
     vmatrix(lmm::LMM, i::Int)
 
@@ -275,18 +280,18 @@ end
 function vmatrix(θ::AbstractVector{T}, lmm::LMM, i::Int) where T
     V    = zeros(T, length(lmm.covstr.vcovblock[i]), length(lmm.covstr.vcovblock[i]))
     gvec = gmatvec(θ, lmm.covstr)
-    vmatrix!(V, gvec, θ, lmm, i)
+    vmatrix!(V, gvec, θ[lmm.covstr.tr[end]], lmm, i)
     Symmetric(V)
 end
-
-#deprecated
+# For Multiple Imputation
 function vmatrix(θ::Vector, covstr::CovStructure, i::Int)
     V    = zeros(length(covstr.vcovblock[i]), length(covstr.vcovblock[i]))
     gvec = gmatvec(θ, covstr)
-    zgz_base_inc!(V, gvec, θ, covstr, covstr.vcovblock[i], covstr.sblock[i])
-    rmat_base_inc!(V, θ[covstr.tr[end]], covstr, covstr.vcovblock[i], covstr.sblock[i])
+    zgz_base_inc!(V, gvec, covstr, i)
+    rmat_base_inc!(V, θ[covstr.tr[end]], covstr, i)
     Symmetric(V)
 end
+
 #=
 function grad_vmatrix(θ::AbstractVector{T}, lmm::LMM, i::Int)
     V    = zeros(T, length(lmm.covstr.vcovblock[i]), length(lmm.covstr.vcovblock[i]))
@@ -319,7 +324,8 @@ function blockgmatrix(lmm::LMM{T}, v) where T
 end
 
 function blockzmatrix(lmm::LMM{T}, i) where T
-    sn = length.(lmm.covstr.sblock[i])[1:end-1]
+    #sn = length.(lmm.covstr.sblock[i])[1:end-1]
+    sn = raneflenv(lmm.covstr, i)
     mx = Vector{Matrix{T}}(undef, raneffn(lmm))
     s = 1
     for j = 1:raneffn(lmm)
@@ -337,7 +343,8 @@ Vector of random effect coefficients for block `i`.
 """
 function raneff(lmm::LMM{T}, i) where T
     if raneffn(lmm) == 0 return nothing end
-    sn = length.(lmm.covstr.sblock[i])[1:end-1]
+    sn = raneflenv(lmm.covstr, i)
+    #sn = length.(lmm.covstr.esb.sblock[i, :])[1:end-1]
     G  = blockgmatrix(lmm, sn)
     Z  = blockzmatrix(lmm, i)
     G * Z' * inv(vmatrix(lmm, i)) * (lmm.dv.yv[i] - lmm.dv.xv[i]*lmm.result.beta)

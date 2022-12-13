@@ -46,6 +46,7 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
     #---------------------------------------------------------------------------
     #logdetθ₂      = zero(T)
     gvec          = gmatvec(θ, lmm.covstr)
+    rθ            = θ[lmm.covstr.tr[end]] # R part of θ
     noerror       = true
         ncore     = min(num_cores(), n, 16)
         accθ₁     = zeros(T, ncore)
@@ -80,7 +81,7 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
                 fillzeroutri!(Vc)
             #-------------------------------------------------------------------
             # Make V matrix
-                vmatrix!(V, gvec, θ, lmm, i)
+                vmatrix!(V, gvec, rθ, lmm, i)
             #-----------------------------------------------------------------------
                 if length(swtw[t]) != qswm resize!(swtw[t], qswm) end
                 swm, swr, ne  = sweepb!(swtw[t], Vp, 1:q; logdet = true, syrkblas = syrkblas)
@@ -132,10 +133,9 @@ function core_sweep_β(lmm, data, θ::Vector{T}, β, n) where T
     accθ₃     = zeros(T, ncore)
     erroracc  = trues(ncore)
     gvec      = gmatvec(θ, lmm.covstr)
+    rθ        = θ[lmm.covstr.tr[end]] # R part of θ
     d, r = divrem(n, ncore)
     Base.Threads.@threads for t = 1:ncore
-    #@batch for t = 1:ncore
-    #for t = 1:ncore
         offset = min(t-1, r) + (t-1)*d
         accθ₂[t] = zeros(T, lmm.rankx, lmm.rankx)
         @inbounds for j ∈ 1:d+(t ≤ r)
@@ -149,7 +149,7 @@ function core_sweep_β(lmm, data, θ::Vector{T}, β, n) where T
             fillzeroutri!(V)
             copyto!(Vx, data.xv[i])
             fillzeroutri!(Vc)
-            vmatrix!(V, gvec, θ, lmm, i)
+            vmatrix!(V, gvec, rθ, lmm, i)
             #-----------------------------------------------------------------------
             swm, swr, ne = sweepb!(Vector{T}(undef, qswm), Vp, 1:q; logdet = true)
             #-----------------------------------------------------------------------

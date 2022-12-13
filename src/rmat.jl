@@ -15,6 +15,16 @@ function rmat_base_inc!(mx, θ, covstr, block, sblock)
     end
     mx
 end
+@noinline function rmat_base_inc!(mx, θ, covstr, bi)
+    en        = covstr.rn + 1
+    block     = covstr.vcovblock[bi]
+    zblock    = view(covstr.rz, block, :)
+    @simd for i = 1:subjn(covstr, en, bi)
+        sb = getsubj(covstr, en, bi, i)
+        rmat!(view(mx, sb, sb), θ, view(zblock, sb, :), covstr.repeated.covtype.s)
+    end
+    mx
+end
 ################################################################################
 function rmat!(::Any, ::Any, ::Any,  ::AbstractCovarianceType)
     error("No rmat! method defined for thit structure!")
