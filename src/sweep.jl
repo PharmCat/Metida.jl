@@ -4,10 +4,16 @@
 
 function nsyrk!(α, x, A)
     p = checksquare(A)
-    for i in 1:p, j in i:p
-        @inbounds A[i,j] += α * x[i] * x[j]
+    for j in 1:p
+        xj = x[j]
+        for i in 1:j 
+            @inbounds A[i, j] += α * x[i] * xj
+        end
     end
     A
+end
+function nsyrk!(α, x, A::AbstractArray{T}) where T <: AbstractFloat
+    BLAS.syrk!('U', 'N', α, x, one(T), A)
 end
 #=
 function nsyrk!(α::T, x::AbstractArray{<:T}, A::StridedMatrix{T}) where {T<:Union{LinearAlgebra.BlasFloat, LinearAlgebra.BlasComplex}}
@@ -34,11 +40,11 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, i
     #Rank-k update of the symmetric matrix C as alpha*A*transpose(A) + beta*C
     #or alpha*transpose(A)*A + beta*C according to trans.
     #Only the uplo triangle of C is used. Returns C.
-    if syrkblas
-        BLAS.syrk!('U', 'N', -d, akk, one(T), A)
-    else
+    #if syrkblas
+    #    BLAS.syrk!('U', 'N', -d, akk, one(T), A)
+    #else
         nsyrk!(-d, akk, A)
-    end
+    #end
 
     rmul!(akk, d * (-one(T)) ^ inv)
     @simd for i in 1:(k-1)

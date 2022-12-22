@@ -59,9 +59,10 @@ Fit LMM model.
 * `io` - output IO
 * `time_limit` - time limit = 120 sec
 * `iterations` - maximum iterations = 300
-* `refitinit` - true/false - if true - use last values for initial condition
+* `refitinit` - true/false - if `true` - use last values for initial condition  (`false` by default)
 * `optmethod` - Optimization method. Look at Optim.jl documentation. (Newton by default)
 * `singtol` - singular tolerance = 1e-8
+* `maxthreads` - maximum threads = num_cores()
 
 """
 function fit!(lmm::LMM{T}; kwargs...) where T
@@ -85,6 +86,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     :refitinit ∈ kwkeys ? refitinit = kwargs[:refitinit] : refitinit = false
     :optmethod ∈ kwkeys ? optmethod = kwargs[:optmethod] : optmethod = :default
     :singtol ∈ kwkeys ? singtol = kwargs[:singtol] : singtol = 1e-8
+    :maxthreads ∈ kwkeys ? maxthreads = kwargs[:maxthreads] : maxthreads = num_cores()
 
     # If model was fitted, previous results can be used if `refitinit` == true
     # Before fitting clear log
@@ -159,7 +161,8 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     varlinkrvecapply!(θ, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf)
 
     # Twice differentiable object
-    vloptf(x) = optfunc(lmm, lmm.dv, varlinkvecapply(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf))[1]
+    vloptf(x) = optfunc(lmm, lmm.dv, varlinkvecapply(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf); syrkblas = false, maxthreads = maxthreads)[1]
+    #vloptfd(x) = optfunc(lmm, lmm.dv, varlinkvecapply(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf); maxthreads = maxthreads)[1]
 
     gcfg   = ForwardDiff.GradientConfig(vloptf, θ, chunk)
     hcfg   = ForwardDiff.HessianConfig(vloptf, θ, chunk)

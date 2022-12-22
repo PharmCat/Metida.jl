@@ -34,7 +34,7 @@ end
 #                     REML without provided β
 ################################################################################
 
-function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T # Main optimization way - make gradient / hessian analytical / semi-analytical functions
+function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false, maxthreads::Int = 16) where T # Main optimization way - make gradient / hessian analytical / semi-analytical functions
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)
@@ -48,7 +48,7 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
     gvec          = gmatvec(θ, lmm.covstr)
     rθ            = θ[lmm.covstr.tr[end]] # R part of θ
     noerror       = true
-        ncore     = min(num_cores(), n, 16)
+        ncore     = min(num_cores(), n, maxthreads)
         accθ₁     = zeros(T, ncore)
         accθ₂     = Vector{Matrix{T}}(undef, ncore)
         accβm     = Vector{Vector{T}}(undef, ncore)
@@ -71,14 +71,16 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
                 i    =  offset + j
                 q    = length(lmm.covstr.vcovblock[i])
                 qswm = q + lmm.rankx
-                Vp   = Matrix{T}(undef, qswm, qswm)
+                Vp   = zeros(T, qswm, qswm)
+                #Vp   = Matrix{T}(undef, qswm, qswm)
+                #fillzeroutri!(Vp)
                 #Vp   = view(Vpt[t], qswm, qswm)
                 V    = view(Vp, 1:q, 1:q)
                 Vx   = view(Vp, 1:q, q+1:qswm)
                 Vc   = view(Vp, q+1:qswm, q+1:qswm)
-                fillzeroutri!(V)
+                #fillzeroutri!(V)
                 copyto!(Vx, data.xv[i])
-                fillzeroutri!(Vc)
+                #fillzeroutri!(Vc)
             #-------------------------------------------------------------------
             # Make V matrix
                 vmatrix!(V, gvec, rθ, lmm, i)
@@ -91,7 +93,8 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false) where T
             #-----------------------------------------------------------------------
                 if ne == false erroracc[t] = false end
                 accθ₁[t] += swr
-                subutri!(accθ₂[t], Vc)
+                #subutri!(accθ₂[t], Vc)
+                accθ₂[t] .-= Vc
                 mulαtβinc!(accβm[t], Vx, data.yv[i])
             end
             #-----------------------------------------------------------------------
@@ -126,8 +129,8 @@ end
 #                     REML with provided β
 ################################################################################
 
-function core_sweep_β(lmm, data, θ::Vector{T}, β, n) where T
-    ncore     = min(num_cores(), n, 16)
+function core_sweep_β(lmm, data, θ::Vector{T}, β, n; maxthreads::Int = 16) where T
+    ncore     = min(num_cores(), n, maxthreads)
     accθ₁     = zeros(T, ncore)
     accθ₂     = Vector{Matrix{T}}(undef, ncore)
     accθ₃     = zeros(T, ncore)
@@ -142,31 +145,33 @@ function core_sweep_β(lmm, data, θ::Vector{T}, β, n) where T
             i =  offset + j
             q    = length(lmm.covstr.vcovblock[i])
             qswm = q + lmm.rankx
-            Vp   = Matrix{T}(undef, qswm, qswm)
+            Vp   = zeros(T, qswm, qswm)
+            #Vp   = Matrix{T}(undef, qswm, qswm)
             V    = view(Vp, 1:q, 1:q)
             Vx   = view(Vp, 1:q, q+1:qswm)
             Vc   = view(Vp, q+1:qswm, q+1:qswm)
-            fillzeroutri!(V)
+            #fillzeroutri!(V)
             copyto!(Vx, data.xv[i])
-            fillzeroutri!(Vc)
+            #fillzeroutri!(Vc)
             vmatrix!(V, gvec, rθ, lmm, i)
             #-----------------------------------------------------------------------
             swm, swr, ne = sweepb!(Vector{T}(undef, qswm), Vp, 1:q; logdet = true)
             #-----------------------------------------------------------------------
             if ne == false erroracc[t] = false end
             accθ₁[t] += swr
-            subutri!(accθ₂[t], Vc)
+            #subutri!(accθ₂[t], Vc)
+            accθ₂[t] .-= Vc
             accθ₃[t]  += mulθ₃(data.yv[i], data.xv[i], β, V)
         end
     end
     sum(accθ₁), sum(accθ₂), sum(accθ₃), all(erroracc)
 end
 
-function reml_sweep_β(lmm, data, θ::Vector{T}, β) where T
+function reml_sweep_β(lmm, data, θ::Vector{T}, β; kwargs...) where T
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)
-    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, data, θ::Vector{T}, β, n)
+    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, data, θ::Vector{T}, β, n; kwargs...)
     θs₂      = Symmetric(θ₂)
     logdetθ₂ = logdet(θs₂)
     return   θ₁ + logdetθ₂ + θ₃ + c, θs₂, θ₃, noerror #REML, iC, θ₃
@@ -174,21 +179,21 @@ end
 ################################################################################
 #                     REML AI-like / scoring part
 ################################################################################
-function sweep_ai(lmm, data, θ, β)
+function sweep_ai(lmm, data, θ, β; kwargs...)
     n                   = length(lmm.covstr.vcovblock)
-    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, data, θ, β, n)
+    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, data, θ, β, n; kwargs...)
     return  θ₃
 end
-function sweep_score(lmm, data, θ, β)
+function sweep_score(lmm, data, θ, β; kwargs...)
     n                   = length(lmm.covstr.vcovblock)
-    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, data, θ, β, n)
+    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, data, θ, β, n; kwargs...)
     return -θ₁ + θ₃
 end
 ################################################################################
 #                     variance-covariance matrix of β
 ################################################################################
-function sweep_β_cov(lmm, data, θ, β)
+function sweep_β_cov(lmm, data, θ, β; kwargs...)
     n                   = length(lmm.covstr.vcovblock)
-    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, data, θ, β, n)
+    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, data, θ, β, n; kwargs...)
     return Symmetric(θ₂)
 end

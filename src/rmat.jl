@@ -3,11 +3,14 @@
 ################################################################################
 
 ################################################################################
+#=
 function rmat_base_inc_b!(mx, θ, zrv, covstr)
     rmat!(mx, θ, zrv, covstr.repeated.covtype.s)
 end
+=#
 ################################################################################
 ################################################################################
+#=
 function rmat_base_inc!(mx, θ, covstr, block, sblock)
     zblock    = view(covstr.rz, block, :)
     @simd for i ∈ axes(sblock[end], 1)
@@ -15,6 +18,7 @@ function rmat_base_inc!(mx, θ, covstr, block, sblock)
     end
     mx
 end
+=#
 @noinline function rmat_base_inc!(mx, θ, covstr, bi)
     en        = covstr.rn + 1
     block     = covstr.vcovblock[bi]
