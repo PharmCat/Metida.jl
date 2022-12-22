@@ -3,7 +3,7 @@ uuid = "a1dec852-9fe5-11e9-361f-8d9fde67cfa2"
 keywords = ["lenearmodel", "mixedmodel"]
 desc = "Mixed-effects models with flexible covariance structure."
 authors = ["Vladimir Arnautov <mail@pharmcat.net>"]
-version = "0.14.1"
+version = "0.14.2"
 
 [deps]
 DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
