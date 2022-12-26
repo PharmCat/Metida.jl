@@ -24,7 +24,7 @@ function rand(rng::AbstractRNG, lmm::LMM{T}, theta::AbstractVector) where T
 end
 function rand!(rng::AbstractRNG, v::AbstractVector, lmm::LMM{T}, theta::AbstractVector) where T
     n = length(lmm.covstr.vcovblock)
-    v = Vector{T}(undef, nobs(lmm))
+    if length(v) != nobs(lmm) error("Wrong v length!") end
     tv = Vector{T}(undef, lmm.maxvcbl)
     gvec = gmatvec(theta, lmm.covstr)
     rtheta = theta[lmm.covstr.tr[end]]
@@ -51,6 +51,8 @@ function rand(rng::AbstractRNG, lmm::LMM{T}, theta::AbstractVector, beta::Abstra
 end
 function rand!(rng::AbstractRNG, v::AbstractVector, lmm::LMM{T}, theta::AbstractVector, beta::AbstractVector) where T
     if length(beta) != size(lmm.data.xv, 2) error("Wrong beta length!") end
+    if length(theta) != lmm.covstr.tl error("Wrong theta length!") end
+    if length(v) != nobs(lmm) error("Wrong v length!") end
     n = length(lmm.covstr.vcovblock)
     tv = Vector{T}(undef, lmm.maxvcbl)
     m  = Vector{T}(undef, lmm.maxvcbl)

@@ -6,6 +6,8 @@ v0.12.3
   * more Optim methods
   * analytical gradient was tested (commented code, no significant performance until @threads not implemented)
   * LBFGS > BFGS
+  * spatial data
+  * minor changes
 
 v0.14.2
   * minor optimizations and changes

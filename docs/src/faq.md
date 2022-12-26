@@ -30,6 +30,10 @@ SAS Manual, Mixed Models Analyses Using the SAS System Course Notes:
 
 Check logs. If final hessian matrix for REML function is ill-conditioned results on differet OS can be slightly different. If possible, try to use more stable covariance structure. Or make an issue on github.
 
+* Q7: I changed `maxthreads` settings but nothing happend. 
+
+Check the number of execution threads: `Threads.nthreads()`, maybe you should change julia startup settings. See also [julia threads docs](https://docs.julialang.org/en/v1/manual/multi-threading/).
+
 
 See also:
 

@@ -191,7 +191,7 @@ function rmat!(mx, θ, rz,  ::SPEXP_)
     σ²    = θ[1]^2
     #θe    = exp(θ[2])
     θe    = θ[2]
-    θe    = iszero(θe) ? 1e-16 : abs(θe)
+    θe    = abs(θe) < eps() ? sqrt(eps()) : abs(θe)
     #θe    = abs(θ[2])
     rn    = size(mx, 1)
     @simd for i = 1:size(mx, 1)
@@ -232,7 +232,7 @@ function rmat!(mx, θ, rz,  ::SPGAU_)
     σ²    = θ[1]^2
     #θe    = exp(θ[2])
     θe    = θ[2]
-    θe    = iszero(θe) ? 1e-16 : θe^2
+    θe    = abs(θe) < eps() ? sqrt(eps()) : θe^2
     #θe    = θ[2]
     #θe    = abs(θ[2])
     rn    = size(mx, 1)
