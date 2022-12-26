@@ -4,9 +4,9 @@
 
 function nsyrk!(α, x, A)
     p = checksquare(A)
-    for j in 1:p
+    @simd for j in 1:p
         xj = x[j]
-        for i in 1:j 
+        @simd for i in 1:j 
             @inbounds A[i, j] += α * x[i] * xj
         end
     end
@@ -23,10 +23,10 @@ function nsyrk!(α::T, x::AbstractArray{<:T}, A::StridedMatrix{T}) where {T<:Uni
     LinearAlgebra.BLAS.set_num_threads(nt)
 end
 =#
-function sweep!(A::AbstractArray{T}, k::Integer, inv::Bool = false; syrkblas::Bool = false) where T
-    sweepb!(Vector{T}(undef, size(A, 2)), A, k, inv; syrkblas = syrkblas)
+function sweep!(A::AbstractArray{T}, k::Integer, inv::Bool = false) where T
+    sweepb!(Vector{T}(undef, size(A, 2)), A, k, inv)
 end
-function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, inv::Bool = false; syrkblas::Bool = false) where T <: Number
+function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, inv::Bool = false) where T <: Number
     p = checksquare(A)
     #p == length(akk) || throw(DimensionError("incorrect buffer size"))
     @inbounds d = one(T) / A[k, k]
@@ -40,11 +40,9 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, i
     #Rank-k update of the symmetric matrix C as alpha*A*transpose(A) + beta*C
     #or alpha*transpose(A)*A + beta*C according to trans.
     #Only the uplo triangle of C is used. Returns C.
-    #if syrkblas
-    #    BLAS.syrk!('U', 'N', -d, akk, one(T), A)
-    #else
-        nsyrk!(-d, akk, A)
-    #end
+
+    nsyrk!(-d, akk, A)
+    
 
     rmul!(akk, d * (-one(T)) ^ inv)
     @simd for i in 1:(k-1)
@@ -56,11 +54,11 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, i
     @inbounds A[k, k] = -d
     A
 end
-function sweep!(A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; syrkblas::Bool = false, logdet::Bool = false) where {T <: Number, I <: Integer}
+function sweep!(A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; logdet::Bool = false) where {T <: Number, I <: Integer}
     akk = Vector{T}(undef, size(A,2))
-    sweepb!(akk, A, ks, inv; syrkblas = syrkblas, logdet = logdet)
+    sweepb!(akk, A, ks, inv; logdet = logdet)
 end
-function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; syrkblas::Bool = false, logdet::Bool = false) where
+function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; logdet::Bool = false) where
         {T <: Number, I<:Integer}
     ld = NaN
     noerror = true
@@ -78,11 +76,11 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, ks::AbstractV
                     ld += LOGLDCORR
                 end
             end
-            sweepb!(akk, A, k, inv; syrkblas = syrkblas)
+            sweepb!(akk, A, k, inv)
         end
     else
         for k in ks
-            sweepb!(akk, A, k, inv; syrkblas = syrkblas)
+            sweepb!(akk, A, k, inv)
         end
     end
     A, ld, noerror

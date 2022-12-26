@@ -182,7 +182,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     #sblock::Vector{Vector{Vector{Vector{Int}}}}
     #
     esb::EffectSubjectBlock
-    #unit range z column range for each random effect
+    # unit range z column range for each random effect
     zrndur::Vector{UnitRange{Int}}
     # repeated effect parametrization matrix
     rz::Matrix{T}
@@ -196,6 +196,8 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     tl::Int
     # Parameter type :var / :rho
     ct::Vector{Symbol}
+    # map i->j where i - number of paran in theta and j n umber of effect
+    emap::Vector{Int}
     # Nubber of subjects in each effect
     sn::Vector{Int}
     # Maximum number per block
@@ -212,11 +214,18 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         z       = Matrix{Float64}(undef, rown, 0)
         #subjz   = Vector{BitMatrix}(undef, alleffl)
         dicts   = Vector{Dict}(undef, alleffl)
+        # 
         zrndur  = Vector{UnitRange{Int}}(undef, alleffl - 1)
+        # Z Matrix for repeated effect
         rz      = Matrix{Float64}(undef, rown, 0)
+        # Number of random effects
         rn      = length(random)
+        # 
+        
         #Theta parameter type
-        ct  = Vector{Symbol}(undef, 0)
+        ct      = Vector{Symbol}(undef, 0)
+        # emap
+        emap    = Vector{Int}(undef, 0)
         # Names
         rcnames = Vector{String}(undef, 0)
         #
@@ -251,6 +260,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
 
                 sn[i]     = length(dicts[i])
                 updatenametype!(ct, rcnames, csp, schema[i], random[i].covtype.s)
+                append!(emap, fill(i, t[i]))
             end
 
         # REPEATED EFFECTS
@@ -275,8 +285,10 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         t[end]      = sum(csp)
         tr[end]     = UnitRange(sum(t[1:end-1]) + 1, sum(t[1:end-1]) + t[end])
         updatenametype!(ct, rcnames, csp, schema[end], repeated.covtype.s)
-        #Theta length
+        # Theta length
         tl  = sum(t)
+        # emap
+        append!(emap, fill(rn+1, t[end]))
         ########################################################################
         #if any(x-> 1 in keys(x), dicts[1:end-1])
         #    blocks = [first(dicts)[1]]
@@ -325,7 +337,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         end
         esb = EffectSubjectBlock(sblock, nblock)
         #######################################################################
-        new{eltype(z)}(random, repeated, schema, rcnames, blocks, rn, z, esb, zrndur, rz, q, t, tr, tl, ct, sn, maxn)
+        new{eltype(z)}(random, repeated, schema, rcnames, blocks, rn, z, esb, zrndur, rz, q, t, tr, tl, ct, emap, sn, maxn)
     end
 end
 ###############################################################################

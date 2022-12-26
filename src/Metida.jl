@@ -49,7 +49,9 @@ const LDCORR = sqrt(eps())
 const LOGLDCORR = log(sqrt(eps()))
 const NEWTON_OM = Optim.Newton(;alphaguess = LineSearches.InitialHagerZhang(), linesearch = LineSearches.HagerZhang())
 const LBFGS_OM  = Optim.LBFGS(;alphaguess = LineSearches.InitialStatic(), linesearch = LineSearches.Static())
-
+const BFGS_OM   = Optim.BFGS()
+const CG_OM     = Optim.ConjugateGradient()
+const NM_OM     = Optim.NelderMead()
 
 #const METIDA_SETTINGS = Dict(:MAX_THREADS => num_cores())
 

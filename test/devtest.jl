@@ -18,11 +18,23 @@ pkgversion(m::Module) = Pkg.TOML.parsefile(joinpath(dirname(string(first(methods
 ################################################################################
 # Metida
 ################################################################################
+#nt = LinearAlgebra.BLAS.get_num_threads()
+#LinearAlgebra.BLAS.set_num_threads(16)
+#LinearAlgebra.BLAS.set_num_threads(nt)
+
 lmm = Metida.LMM(@formula(response ~1 + factor*time), ftdf;
 random = Metida.VarEffect(Metida.@covstr(1 + time|subject&factor), Metida.CSH),
 )
 b11 = @benchmark Metida.fit!($lmm, hes = false; maxthreads = 16) seconds = 15
+
+#@benchmark Metida.fit!($lmm, optmethod = Metida.LBFGS_OM, hes = false; maxthreads = 16) seconds = 15
+#@benchmark Metida.fit!($lmm, optmethod = Metida.BFGS_OM, hes = false; maxthreads = 16) seconds = 15
+#@benchmark Metida.fit!($lmm, optmethod = Metida.CG_OM, hes = false; maxthreads = 16) seconds = 15
+#@benchmark Metida.fit!($lmm, optmethod = Optim.NelderMead(), hes = false; maxthreads = 16) seconds = 15
+
+
 #@time Metida.fit!(lmm, hes = false)
+
 
 
 ################################################################################

@@ -110,8 +110,6 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         optmethod  = NEWTON_OM
     end
 
-    # Optimization function
-    optfunc = reml_sweep_β
     # Make data views
     #data = LMMDataViews(lmm)
     #Optim options
@@ -160,16 +158,15 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     end
     varlinkrvecapply!(θ, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf)
 
-    # Twice differentiable object
-    vloptf(x) = optfunc(lmm, lmm.dv, varlinkvecapply(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf); syrkblas = false, maxthreads = maxthreads)[1]
-    #vloptfd(x) = optfunc(lmm, lmm.dv, varlinkvecapply(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf); maxthreads = maxthreads)[1]
+    # Twice differentiable object / reml_sweep_β_nlopt
+    vloptf(x)  = reml_sweep_β(lmm, lmm.dv, varlinkvecapply(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf); maxthreads = maxthreads)[1]
+    vloptfd(x) = reml_sweep_β_nlopt(lmm, lmm.dv, varlinkvecapply(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf); maxthreads = maxthreads)[1]
 
     gcfg   = ForwardDiff.GradientConfig(vloptf, θ, chunk)
     hcfg   = ForwardDiff.HessianConfig(vloptf, θ, chunk)
 
     gfunc!(g, x) = begin
          ForwardDiff.gradient!(g, vloptf, x, gcfg)
-         #ForwardDiff.gradient!(gres, vloptf, x, gcfg)
     end
     fgfunc!(g, x) = begin
         gres = DiffResults.DiffResult(1.0, g)
@@ -179,13 +176,13 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     hfunc!(h, x) = begin
         ForwardDiff.hessian!(h, vloptf, x, hcfg)
     end
-    td = TwiceDifferentiable(vloptf, gfunc!, fgfunc!, hfunc!, θ)
+    td = TwiceDifferentiable(vloptfd, gfunc!, fgfunc!, hfunc!, θ)
     # Optimization object
     try
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     catch e
-        lmmlog!(lmm, LMMLogMsg(:ERROR, "Newton method failed, try LBFGS. Error: $e"))
-        optmethod  = LBFGS_OM
+        lmmlog!(lmm, LMMLogMsg(:ERROR, "Newton method failed, try BFGS. Error: $e"))
+        optmethod  = BFGS_OM
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     end
         # Theta (θ) vector
@@ -195,7 +192,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Resulting θ: "*string(lmm.result.theta)*"; $(Optim.iterations(lmm.result.optim)) iterations."))
 
         # -2 LogREML, β, iC
-    lmm.result.reml, beta, iC, θ₃, noerrors = optfunc(lmm, lmm.dv, lmm.result.theta)
+    lmm.result.reml, beta, iC, θ₃, noerrors = reml_sweep_β(lmm, lmm.dv, lmm.result.theta)
     copyto!(lmm.result.beta, beta)
         # If errors in last evaluetion - log it.
     if !noerrors LMMLogMsg(:ERROR, "The last optimization step wasn't accurate. Results can be wrong!") end

@@ -34,15 +34,16 @@ end
 #                     REML without provided β
 ################################################################################
 
-function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false, maxthreads::Int = 16) where T # Main optimization way - make gradient / hessian analytical / semi-analytical functions
+function reml_sweep_β(lmm, data, θ::Vector{T}; maxthreads::Int = 16) where T # Main optimization way - make gradient / hessian analytical / semi-analytical functions
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)
+    p             = size(lmm.data.xv, 2)
     #---------------------------------------------------------------------------
     #V⁻¹           = Vector{Matrix{T}}(undef, n)
     V⁻¹           = Vector{SubArray{T, 2, Matrix{T}, Tuple{UnitRange{Int64}, UnitRange{Int64}}, false}}(undef, n)
     θ₃            = zero(T)
-    β             = Vector{T}(undef, lmm.rankx)
+    β             = Vector{T}(undef, p)
     #---------------------------------------------------------------------------
     #logdetθ₂      = zero(T)
     gvec          = gmatvec(θ, lmm.covstr)
@@ -63,8 +64,8 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false, maxthre
             # [V  X
             #  X' 0]
             offset   = min(t - 1, r) + (t - 1)*d
-            accθ₂[t] = zeros(T, lmm.rankx, lmm.rankx)
-            accβm[t] = zeros(T, lmm.rankx)
+            accθ₂[t] = zeros(T, p, p)
+            accβm[t] = zeros(T, p)
             swtw[t]  = zeros(T, lmm.maxvcbl)
             #Vpt[t]   = Matrix{T}(undef, lmm.maxvcbl, lmm.maxvcbl)
             @inbounds for j ∈ 1:d + (t ≤ r)
@@ -86,7 +87,7 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false, maxthre
                 vmatrix!(V, gvec, rθ, lmm, i)
             #-----------------------------------------------------------------------
                 if length(swtw[t]) != qswm resize!(swtw[t], qswm) end
-                swm, swr, ne  = sweepb!(swtw[t], Vp, 1:q; logdet = true, syrkblas = syrkblas)
+                swm, swr, ne  = sweepb!(swtw[t], Vp, 1:q; logdet = true)
                 V⁻¹[i] = V
                 #V⁻¹[i] = Matrix{T}(undef, q, q)
                 #copyto!(V⁻¹[i], V)
@@ -125,6 +126,192 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; syrkblas::Bool = false, maxthre
 
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θs₂, θ₃, noerror #REML, β, iC, θ₃, errors
 end
+#=
+function logdet_(C::Cholesky)
+    dd = zero(real(eltype(C)))
+    noerror = true
+    @inbounds for i in 1:size(C.factors,1)
+        v = real(C.factors[i,i])
+        if v > 0
+            dd += log(v)
+        else
+            C.factors[i,i] *= -1e-8
+            dd += log(real(C.factors[i,i]+4eps()))
+            noerror = false
+        end
+    end
+    dd + dd, noerror
+end
+=#
+function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) where T
+    n             = length(lmm.covstr.vcovblock)
+    N             = length(lmm.data.yv)
+    c             = (N - lmm.rankx)*log(2π)
+    #---------------------------------------------------------------------------
+    θ₁            = zero(T)
+    θ₂            = zeros(T, lmm.rankx, lmm.rankx)
+    #θ₂tc          = zeros(T, lmm.rankx, lmm.rankx)
+    θ₃            = zero(T)
+    #βtc           = zeros(T, lmm.rankx)
+    #β             = Vector{T}(undef, lmm.rankx)
+    A             = Vector{Matrix{T}}(undef, n)
+    logdetθ₂      = zero(T)
+    gvec          = gmatvec(θ, lmm.covstr)
+    rθ            = θ[lmm.covstr.tr[end]] # R part of θ
+    noerror       = true
+        ncore     = min(num_cores(), n, maxthreads)
+        accθ₁     = zeros(T, ncore)
+        accθ₂     = Vector{Matrix{T}}(undef, ncore)
+        accβm     = Vector{Vector{T}}(undef, ncore)
+        erroracc  = trues(ncore)
+        d, r = divrem(n, ncore)
+        Base.Threads.@threads for t = 1:ncore
+
+            offset   = min(t-1, r) + (t-1)*d
+            accθ₂[t] = zeros(T, lmm.rankx, lmm.rankx)
+            accβm[t] = zeros(T, lmm.rankx)
+            @inbounds for j ∈ 1:d+(t ≤ r)
+                i =  offset + j
+                q    = length(lmm.covstr.vcovblock[i])
+                #qswm = q + lmm.rankx
+                V    = zeros(T, q, q)
+                vmatrix!(V, gvec, rθ, lmm, i)
+        #-------------------------------------------------------------------
+        # Cholesky
+                Ai, info = LinearAlgebra.LAPACK.potrf!('U', V)
+                A[i] = Ai
+                vX   = LinearAlgebra.LAPACK.potrs!('U', Ai, copy(data.xv[i]))
+                vy   = LinearAlgebra.LAPACK.potrs!('U', Ai, copy(data.yv[i]))
+            # Check matrix and make it avialible for logdet computation
+                if info == 0
+                    θ₁ld = logdet(Cholesky(Ai, 'U', 0))
+                    #ne = true
+                else
+                    #θ₁ld, ne = logdet_(Cholesky(Ai, 'U', 0))
+                    erroracc[t] = false
+                    break
+                end
+                #if ne == false erroracc[t] = false end
+                accθ₁[t]  += θ₁ld
+                mul!(accθ₂[t], data.xv[i]', vX, 1, 1)
+                mul!(accβm[t], data.xv[i]', vy, 1, 1)
+            end
+        #-------------------------------------------------------------------
+        end
+        noerror = all(erroracc)
+        if !noerror
+            β = fill(NaN, lmm.rankx)
+            return   Inf, β, Inf, Inf, false
+        end
+        θ₁   = sum(accθ₁)
+        θ₂tc = sum(accθ₂)
+        βtc  = sum(accβm)
+        
+    # Beta calculation
+        copyto!(θ₂, θ₂tc)
+        ldθ₂, info = LinearAlgebra.LAPACK.potrf!('U', θ₂tc)
+        if info != 0
+            β = fill(NaN, lmm.rankx)
+            return   Inf, β, Inf, Inf, false
+        end
+        LinearAlgebra.LAPACK.potrs!('U', θ₂tc, βtc)
+        β = βtc
+    # θ₂ calculation
+        logdetθ₂ = logdet(Cholesky(ldθ₂, 'U', 0))
+    # θ₃ calculation
+        @inbounds @simd for i = 1:n
+            r    = mul!(copy(data.yv[i]), data.xv[i], βtc, -1, 1)
+            vr   = LinearAlgebra.LAPACK.potrs!('U', A[i], copy(r))
+            θ₃  += dot(r, vr)
+        end
+        #if ne == false noerror = false end
+    return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃, noerror
+end
+#=
+"""
+    trmulαβ(A::AbstractMatrix{T}, B::AbstractMatrix) where T
+
+Trace A*B, A and B same size, B - Symmetric, 
+"""
+function trmulαβ(A::AbstractMatrix{T}, B::AbstractMatrix) where T
+    c = zero(T)
+    if LinearAlgebra.checksquare(B) != LinearAlgebra.checksquare(A) error("Not equal size!") end
+    for m = 1:size(B, 1)
+        for n = 1:size(A, 1)
+            c += A[n, m] * B[n, m]
+        end
+    end
+    c
+end
+function lpinv!(A)
+    s = LinearAlgebra.checksquare(A)
+    chV, info = LinearAlgebra.LAPACK.potrf!('U', A)
+    LinearAlgebra.LAPACK.potrs!('U', chV, Matrix{Float64}(I(s)))
+end
+# NEED β calk and @threads 
+function reml_grad(lmm, data, θ::Vector{T}, β; syrkblas::Bool = false, maxthreads::Int = 16)  where T
+    n     = length(lmm.covstr.vcovblock)
+    tl    = lmm.covstr.tl
+    p     = size(lmm.data.xv, 2)
+
+    gvec  = gmatvec(θ, lmm.covstr)
+    gradg = grad_gmatvec(θ, lmm.covstr)
+
+    θ₁    = zeros(tl)
+    θ₂    = zeros(tl)
+    θ₃    = zeros(tl)
+
+    iV    = Vector{Matrix{T}}(undef, n)
+
+    H     = zeros(T, p, p)
+    rθ    = θ[lmm.covstr.tr[end]] # R part of θ
+    info  = 0
+    for i = 1:n
+        q    = length(lmm.covstr.vcovblock[i])
+        V    = zeros(q, q)
+        vmatrix!(V, gvec, rθ, lmm, i)
+        #iV[i] = inv(Symmetric(V))
+        iV[i] = lpinv!(V)         
+        mulαβαtinc!(H, data.xv[i]', iV[i])
+        #H  += data.xv[i]' * iV[i] * data.xv[i]
+    end
+    iH = lpinv!(H)
+    #iH = inv(Symmetric(H))
+    for i = 1:n
+        q    = length(lmm.covstr.vcovblock[i])
+
+        r   = copy(data.yv[i]) 
+        mul!(r, data.xv[i], β, -1, 1)
+        #r   = data.yv[i] .- data.xv[i] * β
+
+        jV   = grad_vmatrix(gradg, rθ, lmm, i)
+        Aj  = Symmetric(zeros(q, q))
+
+        iVi = iV[i]
+        XtAjX   = zeros(p, p) 
+        for j = 1:tl
+            
+            jVj = jV[j]
+
+            fill!(Aj, zero(T))
+            mulαβαtinc!(Aj.data, iVi, jVj)
+            #Aj      = iV[i] * jV[j] * iV[i]
+
+            θ₁[j]  += trmulαβ(iVi, jVj)
+            #θ₁[j]  += tr(iV[i] * jV[j])
+
+            fill!(XtAjX, zero(T))
+            mulαβαtinc!(XtAjX, data.xv[i]', Aj)
+            θ₂[j] -= trmulαβ(iH, Symmetric(XtAjX))
+            #θ₂[j]  -= tr(iH * data.xv[i]' * Aj * data.xv[i])
+
+            θ₃[j]  -= dot(r, Aj, r)
+            #θ₃[j]  -= r' * Aj * r
+        end
+    end
+    return @. θ₁ + θ₂ + θ₃
+end
+=#
 ################################################################################
 #                     REML with provided β
 ################################################################################

@@ -35,9 +35,9 @@ function rmat!(::Any, ::Any, ::Any,  ::AbstractCovarianceType)
 end
 #SI
 Base.@propagate_inbounds function rmat!(mx, θ, ::AbstractMatrix, ::SI_)
-    θsq = θ[1]*θ[1]
+    val = θ[1]^2
     @inbounds @simd for i ∈ axes(mx, 1)
-            mx[i, i] += θsq
+            mx[i, i] += val
     end
     mx
 end
@@ -191,7 +191,7 @@ function rmat!(mx, θ, rz,  ::SPEXP_)
     σ²    = θ[1]^2
     #θe    = exp(θ[2])
     θe    = θ[2]
-    θe    = iszero(θe) ? 1e-16 : abs(θe)
+    θe    = abs(θe) < eps() ? sqrt(eps()) : abs(θe)
     #θe    = abs(θ[2])
     rn    = size(mx, 1)
     @simd for i = 1:size(mx, 1)
@@ -232,7 +232,7 @@ function rmat!(mx, θ, rz,  ::SPGAU_)
     σ²    = θ[1]^2
     #θe    = exp(θ[2])
     θe    = θ[2]
-    θe    = iszero(θe) ? 1e-16 : θe^2
+    θe    = abs(θe) < eps() ? sqrt(eps()) : θe^2
     #θe    = θ[2]
     #θe    = abs(θ[2])
     rn    = size(mx, 1)
@@ -332,3 +332,43 @@ function rmat!(mx, θ, rz::AbstractMatrix, ::UN_)
     mulαβαtinc!(mx, rz, rcov)
     mx
 end
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+# Grads
+#=
+function rmat_g!(mx, θ, rz::AbstractMatrix, g::Int, ct::AbstractCovarianceType)
+    T = ForwardDiff.Dual{Nothing, Float64, 1}
+    gθ  = Vector{T}(undef, length(θ))
+    for i = 1:length(θ)
+        if i == g gθ[i] = ForwardDiff.Dual(θ[i], 1) else gθ[i] = ForwardDiff.Dual(θ[i], 0) end
+    end
+    gmx = zeros(T, size(mx))
+    Metida.rmat!(gmx, gθ, rz, ct)
+    for n = 1:size(gmx, 2)
+        for m = 1:n
+            mx[m, n] = ForwardDiff.partials(gmx[m, n])[1]
+        end
+    end
+    mx
+end
+#SI
+function rmat_g!(mx, θ, ::AbstractMatrix, ::Int, ::SI_)
+    val = 2θ[1]
+    for i ∈ axes(mx, 1)
+            mx[i, i] += val
+    end
+    mx
+end
+#DIAG
+function rmat_g!(mx, θ, rz, g::Int, ::DIAG_)
+    for i ∈ axes(mx, 1)
+        for c ∈ axes(θ, 1)
+            if c == g mx[i, i] += rz[i, c] * 2θ[c] end
+        end
+    end
+    mx
+end
+
+=#

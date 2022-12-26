@@ -1,3 +1,14 @@
+v0.14.3
+  * reml function for nlopt
+  * separate functions for forward diff
+  * minor changes in covstr struct
+  * remove syrkblas keyword
+  * more Optim methods
+  * analytical gradient was tested (commented code, no significant performance until @threads not implemented)
+  * LBFGS > BFGS
+  * spatial data
+  * minor changes
+
 v0.14.2
   * minor optimizations and changes
   * potential bug fix
