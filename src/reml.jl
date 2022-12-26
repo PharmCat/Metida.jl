@@ -126,7 +126,7 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; maxthreads::Int = 16) where T #
 
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θs₂, θ₃, noerror #REML, β, iC, θ₃, errors
 end
-
+#=
 function logdet_(C::Cholesky)
     dd = zero(real(eltype(C)))
     noerror = true
@@ -142,7 +142,7 @@ function logdet_(C::Cholesky)
     end
     dd + dd, noerror
 end
-
+=#
 function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) where T
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
@@ -173,23 +173,25 @@ function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) whe
             @inbounds for j ∈ 1:d+(t ≤ r)
                 i =  offset + j
                 q    = length(lmm.covstr.vcovblock[i])
-                qswm = q + lmm.rankx
+                #qswm = q + lmm.rankx
                 V    = zeros(T, q, q)
                 vmatrix!(V, gvec, rθ, lmm, i)
         #-------------------------------------------------------------------
         # Cholesky
                 Ai, info = LinearAlgebra.LAPACK.potrf!('U', V)
                 A[i] = Ai
-                vX   = LinearAlgebra.LAPACK.potrs!('U', A[i], copy(data.xv[i]))
-                vy   = LinearAlgebra.LAPACK.potrs!('U', A[i], copy(data.yv[i]))
+                vX   = LinearAlgebra.LAPACK.potrs!('U', Ai, copy(data.xv[i]))
+                vy   = LinearAlgebra.LAPACK.potrs!('U', Ai, copy(data.yv[i]))
             # Check matrix and make it avialible for logdet computation
                 if info == 0
-                    θ₁ld = logdet(Cholesky(A[i], 'U', 0))
-                    ne = true
+                    θ₁ld = logdet(Cholesky(Ai, 'U', 0))
+                    #ne = true
                 else
-                    θ₁ld, ne = logdet_(Cholesky(A[i], 'U', 0))
+                    #θ₁ld, ne = logdet_(Cholesky(Ai, 'U', 0))
+                    erroracc[t] = false
+                    break
                 end
-                if ne == false erroracc[t] = false end
+                #if ne == false erroracc[t] = false end
                 accθ₁[t]  += θ₁ld
                 mul!(accθ₂[t], data.xv[i]', vX, 1, 1)
                 mul!(accβm[t], data.xv[i]', vy, 1, 1)
@@ -246,7 +248,7 @@ function lpinv!(A)
     chV, info = LinearAlgebra.LAPACK.potrf!('U', A)
     LinearAlgebra.LAPACK.potrs!('U', chV, Matrix{Float64}(I(s)))
 end
-
+# NEED β calk and @threads 
 function reml_grad(lmm, data, θ::Vector{T}, β; syrkblas::Bool = false, maxthreads::Int = 16)  where T
     n     = length(lmm.covstr.vcovblock)
     tl    = lmm.covstr.tl
@@ -286,7 +288,7 @@ function reml_grad(lmm, data, θ::Vector{T}, β; syrkblas::Bool = false, maxthre
         Aj  = Symmetric(zeros(q, q))
 
         iVi = iV[i]
-
+        XtAjX   = zeros(p, p) 
         for j = 1:tl
             
             jVj = jV[j]
@@ -298,7 +300,7 @@ function reml_grad(lmm, data, θ::Vector{T}, β; syrkblas::Bool = false, maxthre
             θ₁[j]  += trmulαβ(iVi, jVj)
             #θ₁[j]  += tr(iV[i] * jV[j])
 
-            XtAjX   = zeros(p, p) 
+            fill!(XtAjX, zero(T))
             mulαβαtinc!(XtAjX, data.xv[i]', Aj)
             θ₂[j] -= trmulαβ(iH, Symmetric(XtAjX))
             #θ₂[j]  -= tr(iH * data.xv[i]' * Aj * data.xv[i])

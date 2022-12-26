@@ -181,8 +181,8 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     try
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     catch e
-        lmmlog!(lmm, LMMLogMsg(:ERROR, "Newton method failed, try LBFGS. Error: $e"))
-        optmethod  = LBFGS_OM
+        lmmlog!(lmm, LMMLogMsg(:ERROR, "Newton method failed, try BFGS. Error: $e"))
+        optmethod  = BFGS_OM
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     end
         # Theta (θ) vector

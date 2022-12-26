@@ -4,9 +4,9 @@
 
 function nsyrk!(α, x, A)
     p = checksquare(A)
-    for j in 1:p
+    @simd for j in 1:p
         xj = x[j]
-        for i in 1:j 
+        @simd for i in 1:j 
             @inbounds A[i, j] += α * x[i] * xj
         end
     end
@@ -40,11 +40,9 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, i
     #Rank-k update of the symmetric matrix C as alpha*A*transpose(A) + beta*C
     #or alpha*transpose(A)*A + beta*C according to trans.
     #Only the uplo triangle of C is used. Returns C.
-    #if syrkblas
-    #    BLAS.syrk!('U', 'N', -d, akk, one(T), A)
-    #else
-        nsyrk!(-d, akk, A)
-    #end
+
+    nsyrk!(-d, akk, A)
+    
 
     rmul!(akk, d * (-one(T)) ^ inv)
     @simd for i in 1:(k-1)
