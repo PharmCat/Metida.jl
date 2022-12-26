@@ -108,25 +108,25 @@ Repeated:
     Model: 1|subject &amp; factor
     Type: ARMA (3)
 Blocks: 24, Maximum block size: 10
-Status: converged  See error(s) in log. Final results can be wrong!
-    -2 logREML: 709.14    BIC: 736.48
+Status: converged See warnings in log.
+    -2 logREML: 348.11    BIC: 375.451
 
     Fixed-effects parameters:
 ──────────────────────────────────────────────────────────
                         Coef.  Std. Error      z  Pr(&gt;|z|)
 ──────────────────────────────────────────────────────────
-(Intercept)         44.3896     1.35084    32.86    &lt;1e-99
-factor: 1.0          5.40834    1.60921     3.36    0.0008
-time                 0.508736   0.0481765  10.56    &lt;1e-25
-factor: 1.0 &amp; time   0.286837   0.0681318   4.21    &lt;1e-04
+(Intercept)         44.3198     0.718497   61.68    &lt;1e-99
+factor: 1.0          5.60925    0.979922    5.72    &lt;1e-07
+time                 0.514843   0.0316349  16.27    &lt;1e-58
+factor: 1.0 &amp; time   0.267151   0.0447385   5.97    &lt;1e-08
 ──────────────────────────────────────────────────────────
     Variance components:
-    θ vector: [4.53791, 2.8059, 1.12292, 0.625323, 0.713154]
-  Random 1   σ² factor: 0.0   var   20.5926
-  Random 1   σ² factor: 1.0   var   7.87307
-  Residual   σ²               var   1.26095
-  Residual   γ                rho   0.625323
-  Residual   ρ                rho   0.713154
+    θ vector: [2.39579, 2.20751, 0.773677, 0.621233, -0.814062]
+  Random 1   σ² factor: 0.0   var   5.73981
+  Random 1   σ² factor: 1.0   var   4.8731
+  Residual   σ²               var   0.598576
+  Residual   γ                rho   0.621233
+  Residual   ρ                rho   -0.814062
 </code></pre><p>AR:</p><pre><code class="language-julia hljs">lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
 random = VarEffect(@covstr(factor|subject&amp;factor), DIAG),
 repeated = VarEffect(@covstr(1|subject&amp;factor), AR),
@@ -215,4 +215,4 @@ fit!(lmm)</code></pre><p>SAS code:</p><pre><code class="nohighlight hljs">PROC M
 CLASSES subject sequence period formulation;
 MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
 RANDOM  subject/TYPE=VC G V;
-RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../custom/">Custom structures »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Friday 23 December 2022 11:13">Friday 23 December 2022</span>. Using Julia version 1.6.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+RUN;</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../custom/">Custom structures »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Monday 26 December 2022 23:40">Monday 26 December 2022</span>. Using Julia version 1.6.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
