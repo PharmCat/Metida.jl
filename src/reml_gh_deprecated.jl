@@ -46,6 +46,27 @@ function mulαtβαinc!(θ, A, B)
     end
 end
 
+"""
+A' * B * A -> + θ
+"""
+function mulαtβαinc!(θ::AbstractMatrix{T}, A::AbstractMatrix, B::AbstractMatrix) where T
+    axb  = axes(B, 1)
+    sa   = size(A, 2)
+    for n ∈ 1:sa
+        for m ∈ 1:n
+            θmn = zero(T)
+            for j ∈ axb
+                Ajn = A[j, n]
+                for i ∈ axb
+                    θmn +=  A[i, m] * B[i, j] * Ajn
+                end
+            end
+            θ[m, n] += θmn
+        end
+    end
+    θ
+end
+
 function trmulαβ(A, B)
     c = 0
     @inbounds for n = 1:size(A,1), m = 1:size(B, 1)

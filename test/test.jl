@@ -507,6 +507,7 @@ end
     random = Metida.VarEffect(Metida.@covstr(r1|subject), Metida.SI),
     repeated = Metida.VarEffect(Metida.@covstr(r1&r2|subject), Metida.TOEPHP(3)),
     )
+    Metida.fit!(lmm)
     Metida.fit!(lmm; optmethod = Metida.LBFGS_OM)
     Base.show(io, lmm)
     @test Metida.m2logreml(lmm)  ≈ 713.5850978377632 atol=1E-8
@@ -742,10 +743,10 @@ end
  4  3  4  4  5
  1  5  2  5  5]
     iA =  inv(A[1:4, 1:4])
-    iAs = Symmetric(-Metida.sweep!(copy(A), 1:4; syrkblas = true)[1][1:4, 1:4])
+    iAs = Symmetric(-Metida.sweep!(copy(A), 1:4)[1][1:4, 1:4])
     B = copy(A)
     for i = 1:4
-        Metida.sweep!(B, i; syrkblas = false)
+        Metida.sweep!(B, i)
     end
     iAss = Symmetric(-B[1:4, 1:4])
     akk = zeros(5)
