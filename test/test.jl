@@ -783,26 +783,26 @@ end
     @test Metida.dof_satter(lmm)[1] ≈ 87.23260061576238 atol=1E-2
 
 ###############################################################################
-    lmm = Metida.LMM(@formula(r2 ~ f), spatdf;
+    lmm = Metida.LMM(@formula(r4 ~ f), spatdf;
     repeated = Metida.VarEffect(Metida.@covstr(x+y|1), Metida.SPEXPD),
     )
     Metida.fit!(lmm, maxthreads = 1)
-    #@test Metida.m2logreml(lmm) ≈ 1924.1371609697842 atol=1E-6
-    #@test Metida.dof_satter(lmm)[1] ≈ 87.23260061576238 atol=1E-2
+    @test Metida.m2logreml(lmm) ≈ 1835.8648295317691 atol=1E-6
+    @test Metida.dof_satter(lmm)[1] ≈ 6.200022611925939 atol=1E-2
 
-    lmm = Metida.LMM(@formula(r2 ~ f), spatdf;
+    lmm = Metida.LMM(@formula(r3 ~ f), spatdf;
     repeated = Metida.VarEffect(Metida.@covstr(x+y|1), Metida.SPPOWD),
     )
     Metida.fit!(lmm, maxthreads = 1)
-    #@test Metida.m2logreml(lmm) ≈ 1924.1371609697842 atol=1E-6
-    #@test Metida.dof_satter(lmm)[1] ≈ 87.23260061576238 atol=1E-2
+    @test Metida.m2logreml(lmm) ≈ 1899.3636384223198 atol=1E-6
+    @test Metida.dof_satter(lmm)[1] ≈ 58.794026556017556 atol=1E-2
 
-    lmm = Metida.LMM(@formula(r2 ~ f), spatdf;
+    lmm = Metida.LMM(@formula(r5 ~ f), spatdf;
     repeated = Metida.VarEffect(Metida.@covstr(x+y|1), Metida.SPGAUD),
     )
     Metida.fit!(lmm, maxthreads = 1)
-    #@test Metida.m2logreml(lmm) ≈ 1924.1371609697842 atol=1E-6
-    #@test Metida.dof_satter(lmm)[1] ≈ 87.23260061576238 atol=1E-2
+    @test Metida.m2logreml(lmm) ≈ 1860.4865219180099 atol=1E-6
+    @test Metida.dof_satter(lmm)[1] ≈ 120.33321588847883 atol=1E-2
     Base.show(io, lmm)
     Base.show(io, lmm.log)
     Metida.raneff(lmm, 1)
