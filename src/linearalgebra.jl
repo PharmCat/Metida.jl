@@ -6,7 +6,7 @@
 
 Change θ (only upper triangle). B is symmetric.
 """
-function mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
+@noinline function mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
     axb  = axes(B, 1)
     sa   = size(A, 1)
     @simd  for j ∈ axb
@@ -14,21 +14,28 @@ function mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix
             @inbounds Bij = B[i, j]
             @simd  for n ∈ 1:sa
                 @inbounds Anj = A[n, j]
+                BijAnj = Bij * Anj
                 @simd for m ∈ 1:n
-                    @inbounds θ[m, n] +=  A[m, i] * Bij * Anj
+                    @inbounds θ[m, n] +=  A[m, i] * BijAnj
                 end
             end
         end
     end
     θ
 end
-
+#=
+function mulαβαtinc!(θ::AbstractMatrix{T}, A::AbstractMatrix{T}, B::AbstractMatrix{T}) where T <: AbstractFloat
+    if  !(size(B, 1) == size(B, 2) == size(A, 2)) || !(size(A, 1) == size(θ, 1) == size(θ, 2)) throw(ArgumentError("Wrong dimentions!")) end
+    t = A*B
+    mul!(θ, t, A', true, true)
+end
+=#
 """
 θ + A * B * A' * alpha
 
 Change θ (only upper triangle). B is symmetric.
 """
-function mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, alpha)
+@noinline function mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, alpha)
     if  !(size(B, 1) == size(B, 2) == size(A, 2)) || !(size(A, 1) == size(θ, 1) == size(θ, 2)) throw(ArgumentError("Wrong dimentions!")) end
     axb  = axes(B, 1)
     sa   = size(A, 1)
@@ -37,21 +44,21 @@ function mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix
             @inbounds Bij = B[i, j]
             @simd  for n ∈ 1:sa 
                 @inbounds Anj = A[n, j]
+                BijAnjalpha = Bij * Anj * alpha
                 @simd for m ∈ 1:n
-                    @inbounds θ[m, n] +=  A[m, i] * Bij * Anj * alpha
+                    @inbounds θ[m, n] +=  A[m, i] * BijAnjalpha
                 end
             end
         end
     end
     θ
 end
-
 """
 θ + A * B * (a - b) * alpha
 
 Change θ (only upper triangle). B is symmetric.
 """
-function mulαβαtinc!(θ::AbstractVector{T}, A::AbstractMatrix, B::AbstractMatrix, a::AbstractVector, b::AbstractVector, alpha) where T
+@noinline function mulαβαtinc!(θ::AbstractVector{T}, A::AbstractMatrix, B::AbstractMatrix, a::AbstractVector, b::AbstractVector, alpha) where T
     if !(size(B, 2) == length(a) == length(b)) || size(B, 1) != size(A, 2) || size(A, 1) != length(θ) throw(ArgumentError("Wrong dimentions.")) end
     axb  = axes(B, 1)
     sa   = size(A, 1)
@@ -59,8 +66,9 @@ function mulαβαtinc!(θ::AbstractVector{T}, A::AbstractMatrix, B::AbstractMat
         @inbounds abi = a[i] - b[i]
         @simd for j ∈ axb
             @inbounds Bji = B[j, i]
+            Bjiabialpha = Bji * abi * alpha
             @simd for m ∈ 1:sa
-                @inbounds θ[m] +=  A[m, j] * Bji * abi * alpha
+                @inbounds θ[m] +=  A[m, j] * Bjiabialpha
             end
         end
     end
@@ -74,7 +82,7 @@ end
 
 use only upper triangle of V
 """
-function mulθ₃(y, X, β, V::AbstractArray{T}) where T # check for optimization
+@noinline function mulθ₃(y, X, β, V::AbstractArray{T}) where T # check for optimization
     q = size(V, 1)
     p = size(X, 2)
     θ = zero(T)
@@ -94,9 +102,9 @@ function mulθ₃(y, X, β, V::AbstractArray{T}) where T # check for optimizatio
         end
     end
     @simd for m = 2:q
-        @inbounds ycm = y[m] - c[m]
+        @inbounds ycm2 = (y[m] - c[m])*2
         @simd for n = 1:m-1
-            @inbounds θ -= V[n, m] * (y[n] - c[n]) * ycm * 2
+            @inbounds θ -= V[n, m] * (y[n] - c[n]) * ycm2
         end
     end
     @simd for m = 1:q
@@ -110,7 +118,7 @@ end
 
 Change θ.
 """
-function mulαtβinc!(θ::AbstractVector{T}, A::AbstractMatrix, b::AbstractVector) where T
+@noinline function mulαtβinc!(θ::AbstractVector{T}, A::AbstractMatrix, b::AbstractVector) where T
     q = size(A, 1)
     if q != length(b) throw(DimensionMismatch("size(A, 1) should be equal length(b)")) end
     p = size(A, 2)

@@ -8,9 +8,7 @@ function makeblocks(subjz)
     end
     blocks
 end
-=#
-################################################################################
-#=
+
 function noncrossmodelmatrix(mx::AbstractArray, my::AbstractArray)
     size(mx, 2) > size(my, 2) ?  (mat = mx' * my; a = mx) : (mat = my' * mx; a = my)
     #mat = mat * mat'
@@ -44,9 +42,7 @@ function noncrossmodelmatrix(mx::AbstractArray, my::AbstractArray)
     res = replace(x -> iszero(x) ?  0 : 1, view(mat, :, cols))
     a * res
 end
-=#
 
-#=
 function diag!(v, m)
     l = checksquare(m)
     l == length(v) || error("Length not equal")
@@ -55,8 +51,7 @@ function diag!(v, m)
     end
     v
 end
-=#
-#=
+
 function fillzeroutri!(a::AbstractArray{T}) where T
     s = size(a,1)
     if s == 1 return @inbounds a[1,1] = zero(T) end
@@ -67,8 +62,7 @@ function fillzeroutri!(a::AbstractArray{T}) where T
     end
     a
 end
-=#
-#=
+
 function logerror!(e, lmm)
     if isa(e, DomainError)
         lmmlog!(lmm, LMMLogMsg(:ERROR, "DomainError ($(e.val), $(e.msg)) during REML calculation."))
@@ -84,12 +78,7 @@ function logerror!(e, lmm)
         lmmlog!(lmm, LMMLogMsg(:ERROR, "Unknown error during REML calculation."))
     end
 end
-=#
 
-################################################################################
-#                     β calculation
-################################################################################
-#=
 function sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T <: Number
     n             = length(lmm.covstr.vcovblock)
     θ₂            = zeros(T, lmm.rankx, lmm.rankx)
@@ -117,15 +106,12 @@ function sweep_β(lmm, data::AbstractLMMDataBlocks, θ::Vector{T}) where T <: Nu
     mul!(β, inv(Symmetric(θ₂)), βm)
     return  β
 end
-=#
 
-#=
 function gmat_zero!(mx, θ::Vector{T}, ::Int, ::CovarianceType) where T
     mx .= zero(T)
     nothing
 end
-=#
-#=
+
 function lcontrast(lmm::LMM, i::Int)
     n = nterms(lmm.mf)
     if i > n || n < 1 error("Factor number out of range 1-$(n)") end
@@ -136,11 +122,7 @@ function lcontrast(lmm::LMM, i::Int)
     end
     mx
 end
-=#
-################################################################################
-# Intersect dataframe.
-################################################################################
-#=
+
 function intersectdf(df, s)::Vector
     if isa(s, Nothing) return [collect(1:size(df, 1))] end
     if isa(s, Symbol) s = [s] end
@@ -193,8 +175,7 @@ function intersectsubj(random)
     end
     intersect(a...)
 end
-=#
-#=
+
 function varlinkvec(v)
     fv = Vector{Function}(undef, length(v))
     for i = 1:length(v)
@@ -209,8 +190,7 @@ function varlinkrvec(v)
     end
     fv
 end
-=#
-#=
+
 function makepmatrix(m::Matrix)
     sm = string.(m)
     lv = maximum(length.(sm), dims = 1)
@@ -220,8 +200,7 @@ function makepmatrix(m::Matrix)
         end
     end
 end
-=#
-#=
+
 function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:SI}) where T
     Matrix{T}(I(zn)*(θ[1] ^ 2))
     #I(zn)*(θ[1] ^ 2)
@@ -279,8 +258,7 @@ function gmat(θ::Vector{T}, zn::Int, ::CovarianceType, ::Val{:CSH}) where T
     Matrix{T}(Symmetric(mx))
     #Symmetric(mx)
 end
-=#
-#=
+
 function gmat_blockdiag(θ::Vector{T}, covstr) where T
     vm = Vector{AbstractMatrix{T}}(undef, length(covstr.ves) - 1)
     for i = 1:length(covstr.random)
@@ -288,8 +266,7 @@ function gmat_blockdiag(θ::Vector{T}, covstr) where T
     end
     BlockDiagonal(vm)
 end
-=#
-#=
+
 @inline function rmat(θ::Vector{T}, rz, rn, ct, ::Val{:SI}) where T
     I(rn) * (θ[1] ^ 2)
 end
@@ -336,8 +313,7 @@ end
     end
     Symmetric(mx)
 end
-=#
-#=
+
 function get_z_matrix(data, covstr::CovStructure{Vector{VarEffect}})
     rschema = apply_schema(covstr.random[1].model, schema(data, covstr.random[1].coding))
     Z       = modelcols(rschema, data)
@@ -358,8 +334,7 @@ end
 function get_term_vec(covstr::CovStructure)
     covstr.random.model
 end
-=#
-#=
+
 """
 
 """
@@ -376,9 +351,7 @@ end
 function covmat_hessian(f, θ)
     ForwardDiff.jacobian(x -> ForwardDiff.jacobian(f, x), θ)
 end
-=#
-################################################################################
-#=
+
 function covmat_grad2(f, Z, θ)
     #fx = x -> f(gmat(x[3:5]), rmat(x[1:2], Z), Z)
     #cfg   = ForwardDiff.JacobianConfig(fx, θ)
@@ -401,12 +374,12 @@ function fgh!(F, G, H, x; remlβcalc::Function, remlcalc::Function)
   end
   nothing
 end
-=#
+
 
 """
     Make X, Z matrices and vector y for each subject;
 """
-#=
+
 function subjblocks(df, sbj::Symbol, x::Matrix{T}, z::Matrix{T}, y::Vector{T}, rz::Matrix{T}) where T
     u = unique(df[!, sbj])
     xa  = Vector{Matrix{T}}(undef, length(u))
@@ -450,10 +423,7 @@ function subjblocks(df, sbj)
     r[1] = collect(1:size(df, 1))
     r
 end
-=#
 
-
-#=
 function intersectsubj(covstr)
     a  = Vector{Vector{Symbol}}(undef, length(covstr.random)+1)
     eq = true
@@ -469,14 +439,12 @@ function intersectsubj(covstr)
     end
     intersect(a...), eq
 end
-=#
-#=
+
 function diffsubj!(a, subj)
     push!(a, subj)
     symdiff(a...)
 end
-=#
-#=
+
 function varlinkvecapply(v, f)
     rv = similar(v)
     for i = 1:length(v)
@@ -491,10 +459,9 @@ function varlinkvecapply!(v, f)
     end
     v
 end
-=#
+
 #varlinkvecapply(v, f) = map.(f,v) #Test
 
-#=
 function varlinkrvecapply2(v, p; varlinkf = :exp, rholinkf = :sigm)
     s = similar(v)
     for i = 1:length(v)
@@ -506,9 +473,7 @@ function varlinkrvecapply2(v, p; varlinkf = :exp, rholinkf = :sigm)
     end
     s
 end
-=#
-################################################################################
-#=
+
 function vmatr(lmm, i)
     θ  = lmm.result.theta
     G  = gmat_base(θ, lmm.covstr)
@@ -525,9 +490,7 @@ function gmatr(lmm, i)
     θ  = lmm.result.theta
     gmat_base(θ, lmm.covstr)
 end
-=#
 
-#=
 function rmat_basep_z!(mx, θ::AbstractVector{T}, zrv, covstr) where T
     for i = 1:length(covstr.block[end])
         if covstr.repeated.covtype.s == :SI
@@ -548,12 +511,11 @@ function rmat_basep_z!(mx, θ::AbstractVector{T}, zrv, covstr) where T
     end
     mx
 end
-=#
 
 """
     -2 log Restricted Maximum Likelihood;
 """
-#=
+
 function reml_sweep(lmm, β, θ::Vector{T})::T where T <: Number
     n  = length(lmm.data.yv)
     N  = sum(length.(lmm.data.yv))
@@ -578,9 +540,7 @@ function reml_sweep(lmm, β, θ::Vector{T})::T where T <: Number
     θ₂       = logdet(θ2m)
     return   -(θ₁ + θ₂ + θ₃ + c)
 end
-=#
 
-#=
 function gfunc!(g, x, f)
     chunk  = ForwardDiff.Chunk{1}()
     gcfg   = ForwardDiff.GradientConfig(f, x, chunk)
@@ -591,12 +551,10 @@ function hfunc!(h, x, f)
     hcfg   = ForwardDiff.HessianConfig(f, x, chunk)
     ForwardDiff.hessian!(h, f, x, hcfg)
 end
-=#
 
 """
 A * B * A' + C
 """
-#=
 function mulαβαtc(A, B, C)
     q  = size(B, 1)
     p  = size(A, 1)
@@ -618,11 +576,11 @@ function mulαβαtc(A, B, C)
     end
     Symmetric(mx)
 end
-=#
+
 """
 A * B * A'
 """
-#=
+
 function mulαβαt(A, B)
     q  = size(B, 1)
     p  = size(A, 1)
@@ -689,13 +647,11 @@ function mulαβαtc3(A, B, C, X)
     mx[p+1:end, 1:p] = X'
     mx
 end
-=#
-
 """
 A' * B * A -> +θ
 A' * B * C -> +β
 """
-#=
+
 function mulθβinc!(θ, β, A::AbstractMatrix, B::AbstractMatrix, C::AbstractVector)
     q = size(B, 1)
     p = size(A, 2)
@@ -716,12 +672,11 @@ function mulθβinc!(θ, β, A::AbstractMatrix, B::AbstractMatrix, C::AbstractVe
     end
     θ, β
 end
-=#
-#-------------------------------------------------------------------------------
+
 """
 A' * B * A -> + θ
 """
-#=
+
 function mulαtβαinc!(θ, A, B)
     q = size(B, 1)
     p = size(A, 2)
@@ -736,12 +691,10 @@ function mulαtβαinc!(θ, A, B)
         end
     end
 end
-=#
 
 """
 A' * B * A -> θ
 """
-#=
 function mulαtβα!(θ, A, B)
     q = size(B, 1)
     p = size(A, 2)
@@ -758,11 +711,11 @@ function mulαtβα!(θ, A, B)
     end
     θ
 end
-=#
+
 """
 A * B * A -> θ
 """
-#=
+
 function mulαβα!(θ, A, B)
     q = size(B, 1)
     p = size(A, 2)
@@ -779,11 +732,11 @@ function mulαβα!(θ, A, B)
     end
     θ
 end
-=#
+
 """
 tr(A * B)
 """
-#=
+
 function trmulαβ(A, B)
     c = 0
     @inbounds for n = 1:size(A,1), m = 1:size(B, 1)
@@ -791,19 +744,19 @@ function trmulαβ(A, B)
     end
     c
 end
-=#
+
 """
 tr(H * A' * B * A)
 """
-#=
+
 function trmulhαtβα(H, A, B)
 end
-=#
+
 
 """
 (y - X * β)
 """
-#=
+
 function mulr!(v::AbstractVector, y::AbstractVector, X::AbstractMatrix, β::AbstractVector)
     fill!(v, zero(eltype(v)))
     q = length(y)
@@ -828,11 +781,7 @@ function mulr(y::AbstractVector, X::AbstractMatrix, β::AbstractVector)
     end
     return v
 end
-=#
 
-
-
-#=
 
 function get_symb(t::Union{ConstantTerm, InterceptTerm, FunctionTerm}; v = Vector{Symbol}(undef, 0))
     v
@@ -853,9 +802,7 @@ function get_symb(t::Tuple{Vararg{AbstractTerm}}; v = Vector{Symbol}(undef, 0))
     end
     v
 end
-=#
 
-#=
 """
 ```math
     \\begin{bmatrix} A * B * A' & X \\\\ X' & 0 \\end{bmatrix}
@@ -883,8 +830,7 @@ function mulαβαt3(A, B, X)
     mx[p+1:end, 1:p] = X'
     mx
 end
-=#
-#=
+
 """
 A' * B * A -> + θ
 """
@@ -995,7 +941,7 @@ end
 """
     2 log Restricted Maximum Likelihood hessian matrix
 """
-#=
+
 function reml_hessian(yv, Zv, p, Xv, θvec, β)
     n     = length(yv)
     G     = gmat(θvec[3:5])
@@ -1043,9 +989,7 @@ function reml_hessian(yv, Zv, p, Xv, θvec, β)
     end
     return - (θ1 .+ θ2 .+ θ3)
 end
-=#
-################################################################################
-#=
+
 function reml_grad2(yv, Zv, p, Xv, θvec, β)
     n     = length(yv)
     for i = 1:n
@@ -1056,9 +1000,7 @@ function reml_grad3(yv, Zv, p, Xv, θvec, β)
     n     = length(yv)
     covmat_grad2(vmatvec, Zv, θvec)
 end
-=#
 
-#=
 function logdet_(C::Cholesky)
     dd = zero(real(eltype(C)))
     noerror = true
@@ -1074,9 +1016,7 @@ function logdet_(C::Cholesky)
     end
     dd + dd, noerror
 end
-=#
 
-#=
 @noinline function zgz_base_inc!(mx::AbstractArray, θ::AbstractArray{T}, covstr, block, sblock) where T
     if covstr.random[1].covtype.z
         for r = 1:covstr.rn
@@ -1090,22 +1030,18 @@ end
     end
     mx
 end
-=#
-#=
+
 function gmat_switch!(G, θ, covstr, r)
     gmat!(G, view(θ, covstr.tr[r]), covstr.random[r].covtype.s)
     G
 end
-=#
 
-#=
 function tpnum(m, n, s)
     div(m*(2s - 1 - m), 2) - s + n 
 end
-=#
 
 # use dot(a,b,a) instead
-#=
+
 """
 a' * B * a
 """
@@ -1123,8 +1059,7 @@ function mulαtβα(a::AbstractVector, B::AbstractMatrix{T}) where T
     end
     c
 end
-=#
-#=
+
 function mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
     axb  = axes(B, 1)
     sa   = size(A, 1)
@@ -1139,8 +1074,7 @@ function mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix
     end
     θ
 end
-=#
-#=
+
 function mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, alpha)
     if  !(size(B, 1) == size(B, 2) == size(A, 2)) || !(size(A, 1) == size(θ, 1) == size(θ, 2)) throw(ArgumentError("Wrong dimentions!")) end
     axb  = axes(B, 1)
@@ -1156,8 +1090,7 @@ function mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix
     end
     θ
 end
-=#
-#=
+
 function mulαβαtinc!(θ::AbstractVector, A::AbstractMatrix, B::AbstractMatrix, a::AbstractVector, b::AbstractVector, alpha)
     if !(size(B, 2) == length(a) == length(b)) || size(B, 1) != size(A, 2) || size(A, 1) != length(θ) throw(ArgumentError("Wrong dimentions.")) end
     axb  = axes(B, 1)
@@ -1172,8 +1105,7 @@ function mulαβαtinc!(θ::AbstractVector, A::AbstractMatrix, B::AbstractMatrix
     end
     θ
 end
-=#
-#=
+
 function mulθ₃(y, X, β, V::AbstractArray{T}) where T # check for optimization
     q = size(V, 1)
     p = size(X, 2)
@@ -1206,9 +1138,7 @@ function mulθ₃(y, X, β, V::AbstractArray{T}) where T # check for optimizatio
 
     return θ
 end
-=#
 
-#=
 function addspace(s::String, n::Int; first = false)::String
     if n > 0
         for i = 1:n
@@ -1244,26 +1174,20 @@ function printmatrix(io::IO, m::Matrix; header = false)
         print(io, "\n")
     end
 end
-=#
 
-#=
 function vmatrix!(V, G, θ, lmm::LMM, i::Int)
     zgz_base_inc!(V, G, θ, lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
     rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
 end
-=#
 
-#=
 function grad_vmatrix(θ::AbstractVector{T}, lmm::LMM, i::Int)
     V    = zeros(T, length(lmm.covstr.vcovblock[i]), length(lmm.covstr.vcovblock[i]))
     gvec = gmatvec(θ, lmm.covstr)
     vmatrix!(V, gvec, θ, lmm, i)
     Symmetric(V)
 end
-=#
 
 # logdet with check
-#=
 function logdet_(C::Cholesky, noerror)
     dd = zero(real(eltype(C)))
     @inbounds for i in 1:size(C.factors,1)
@@ -1278,8 +1202,7 @@ function logdet_(C::Cholesky, noerror)
     end
     dd + dd, noerror
 end
-=#
-#=
+
 function indsdict!(d::Dict, cdata::Union{Tuple, NamedTuple, AbstractVector{AbstractVector}})
     @inbounds for (i, element) in enumerate(zip(cdata...))
         ind = ht_keyindex(d, element)
@@ -1306,15 +1229,14 @@ function indsdict!(d::Dict, cdata::AbstractVector)
     end
     d
 end
-=#
 
-#function fill_coding_dict!(t::T, d::Dict, data) where T <: CategoricalTerm
-#    if typeof(data[!, t.sym])  <: CategoricalArray
-#        d[t.sym] = StatsModels.FullDummyCoding()
-#    end
-#end
 
-#=
+function fill_coding_dict!(t::T, d::Dict, data) where T <: CategoricalTerm
+    if typeof(data[!, t.sym])  <: CategoricalArray
+        d[t.sym] = StatsModels.FullDummyCoding()
+    end
+end
+
 function fulldummycodingdict(t::InteractionTerm)
     d = Dict{Symbol, AbstractContrasts}()
     for i in t.terms
@@ -1338,4 +1260,5 @@ function fulldummycodingdict(t::Tuple{Vararg{AbstractTerm}})
     end
     d
 end
+
 =#
