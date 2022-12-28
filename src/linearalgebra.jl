@@ -31,9 +31,9 @@ function mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix
     sa   = size(A, 1)
     @simd  for j ∈ axb
         @simd for i ∈ axb
-            Bij = B[i, j]
+            @inbounds Bij = B[i, j]
             @simd  for n ∈ 1:sa
-                Anj = A[n, j]
+                @inbounds Anj = A[n, j]
                 @simd for m ∈ 1:n
                     @inbounds θ[m, n] +=  A[m, i] * Bij * Anj
                 end
@@ -107,10 +107,11 @@ function mulαβαtinc!(θ::AbstractVector{T}, A::AbstractMatrix, B::AbstractMat
     axb  = axes(B, 1)
     sa   = size(A, 1)
     @simd for i ∈ axb
-        abi = a[i] - b[i]
+        @inbounds abi = a[i] - b[i]
         @simd for j ∈ axb
+            @inbounds Bji = B[j, i]
             @simd for m ∈ 1:sa
-                @inbounds θ[m] +=  A[m, j] * B[j, i] * abi * alpha
+                @inbounds θ[m] +=  A[m, j] * Bji * abi * alpha
             end
         end
     end
@@ -153,13 +154,13 @@ function mulθ₃(y, X, β, V::AbstractArray{T}) where T # check for optimizatio
     end
     c = zeros(T, q)
     @simd for m = 1:p
-        βm = β[m]
+        @inbounds βm = β[m]
         @simd for n = 1:q
             @inbounds c[n] += X[n, m] * βm
         end
     end
     @simd for m = 2:q
-        ycm = y[m] - c[m]
+        @inbounds ycm = y[m] - c[m]
         @simd for n = 1:m-1
             @inbounds θ -= V[n, m] * (y[n] - c[n]) * ycm * 2
         end
@@ -227,7 +228,7 @@ end
 @inline function tmul_unsafe(rz, θ::AbstractVector{T}) where T
     vec = zeros(T, size(rz, 1))
     for i ∈ axes(rz, 2)
-        θi = θ[i]
+        @inbounds θi = θ[i]
         for r ∈ axes(rz, 1)
             @inbounds vec[r] += rz[r, i] * θi
         end

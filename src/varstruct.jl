@@ -150,9 +150,18 @@ end
 function getsubj(covstr, effn, block, sbjn)
     covstr.esb.sblock[block, effn][sbjn][1]
 end
+function getsubjnn(covstr, effn, block, sbjn)
+    covstr.esb.sblock[block, effn][sbjn][2]
+end
+function getsubjname(covstr, i)
+    covstr.esb.snames[i]
+end
 function subjn(covstr, effn, block)
     length(covstr.esb.sblock[block, effn])
 end
+"""
+    Return number of subject foe each random effet in current block.
+"""
 function raneflenv(covstr, block)
     l = size(covstr.esb.sblock, 2) - 1
     v = Vector{Int}(undef, l)

@@ -253,9 +253,19 @@ Metida.loglikelihood
 Metida.modelmatrix
 ```
 
+### Metida.nblocks
+```@docs
+Metida.nblocks
+```
+
 ### Metida.nobs
 ```@docs
 Metida.nobs
+```
+
+### Metida.raneff
+```@docs
+Metida.raneff
 ```
 
 ### Metida.response

@@ -330,9 +330,16 @@ function blockzmatrix(lmm::LMM{T}, i) where T
     s = 1
     for j = 1:raneffn(lmm)
         e  = s + lmm.covstr.q[j] - 1
-        zv = view(lmm.covstr.z, lmm.covstr.vcovblock[i], s:e) 
-        s  = e + 1 
-        mx[j] = kron(ones(sn[j])', zv)
+        obsn = length(lmm.covstr.vcovblock[i])
+        zv   = view(lmm.covstr.z, lmm.covstr.vcovblock[i], s:e) 
+        smx  = zeros(T, obsn, length(lmm.covstr.esb.sblock[i,j])*lmm.covstr.q[j])
+        for k = 1:length(lmm.covstr.esb.sblock[i,j])
+            s1 = 1 + (k - 1) * lmm.covstr.q[j]
+            e1 = s1 + lmm.covstr.q[j] - 1
+            smx[lmm.covstr.esb.sblock[i,j][k][1], s1:e1] .= view(zv, lmm.covstr.esb.sblock[i,j][k][1], :)
+        end
+        s  = e + 1
+        mx[j] = smx
     end
    hcat(mx...)
 end
@@ -341,17 +348,56 @@ end
 
 Vector of random effect coefficients for block `i`.
 """
-function raneff(lmm::LMM{T}, i) where T
+function raneff(lmm::LMM{T}, block) where T
     if raneffn(lmm) == 0 return nothing end
-    sn = raneflenv(lmm.covstr, i)
-    #sn = length.(lmm.covstr.esb.sblock[i, :])[1:end-1]
+    sn = raneflenv(lmm.covstr, block)
     G  = blockgmatrix(lmm, sn)
-    Z  = blockzmatrix(lmm, i)
-    G * Z' * inv(vmatrix(lmm, i)) * (lmm.dv.yv[i] - lmm.dv.xv[i]*lmm.result.beta)
+    Z  = blockzmatrix(lmm, block)
+    rv = G * Z' * inv(vmatrix(lmm, block)) * (lmm.dv.yv[block] - lmm.dv.xv[block]*lmm.result.beta)
+    
+    rvsbj = Vector{Vector}(undef, length(sn))
+    for i = 1:raneffn(lmm)
+        rvsbj[i] = Vector{Pair}(undef, sn[i])
+        st = 1
+        if i > 1
+            for j = 1:i-1
+                st += sn[j] * lmm.covstr.q[j]
+            end
+        end
+        for j = 1:sn[i]
+            s = st + (j - 1) * lmm.covstr.q[i]
+            e = s  + lmm.covstr.q[i] - 1
+            sbnn     = getsubjnn(lmm.covstr, i, block, j)
+            subjname = getsubjname(lmm.covstr, sbnn)
+            rvsbj[i][j] =  subjname => rv[s:e]
+        end
+    end
+    rvsbj
+    
+end
+"""
+    raneff(lmm::LMM{T})
+
+Vector of random effect coefficients for all subjects by each random effect.
+"""
+function raneff(lmm::LMM)
+    fb = raneff(lmm, 1)
+    n = nblocks(lmm)
+    if n > 1
+        for i = 2:n
+            sb = raneff(lmm, i)
+            for j = 1:raneffn(lmm)
+                append!(fb[j], sb[j])
+            end
+        end
+    end
+    fb
 end
 
 
-
+"""
+    Number of blocks
+"""
 function nblocks(lmm::LMM)
     return length(lmm.covstr.vcovblock)
 end
