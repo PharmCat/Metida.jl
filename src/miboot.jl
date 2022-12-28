@@ -44,9 +44,7 @@ struct MILMM{T} <: MetidaModel
         lmmlog       = Vector{LMMLogMsg}(undef, 0)
         mf           = ModelFrame(lmm.mf.f, lmm.mf.schema, data, MetidaModel)
         mm           = ModelMatrix(mf)
-        #mmf     = convert(Matrix{Float64}, mm.m)
         mmf          = mm.m
-        #mmf    = float.(mm.m)
         lmmdata      = LMMData(mmf, data[rv])
         covstr       = CovStructure(lmm.covstr.random, lmm.covstr.repeated, data)
         dv           = LMMDataViews(mmf, lmmdata.yv, covstr.vcovblock)
@@ -84,17 +82,6 @@ struct MIBootResult{T1, T2}
     end
 end
 
-#=
-Bootstrap.original(br::BootstrapResult) = br.beta
-
-Bootstrap.original(br::BootstrapResult, idx::Int) = original(br)[idx]
-
-#Bootstrap.straps(br::BootstrapResult) = bs.t1
-
-Bootstrap.straps(br::BootstrapResult, idx::Int) = getindex.(br.bv, idx)
-
-Bootstrap.nvar(br::BootstrapResult) = length(br.beta)
-=#
 """
     nvar(br::BootstrapResult)
 
@@ -178,7 +165,6 @@ end
 """
 function make_dist_vec!(dist, lmm::LMM)
     nb   = nblocks(lmm)
-    #dist = Vector{FullNormal}(undef, nb)
     Base.Threads.@threads for i = 1:nb
         q    = length(lmm.covstr.vcovblock[i])
         m    = Vector{Float64}(undef, q)
@@ -564,14 +550,14 @@ function mvconddist(mx::AbstractMatrix, nm::AbstractVector, vec::AbstractVector,
         Σ₁₂= view(mx, 1:q, p:N)
         Σ₂₂= mx[p:N, p:N]
         Σ⁻¹= inv(Σ₂₂)
-        #Σ  = Symmetric(Σ₁ - Σ₁₂ * Σ⁻¹ * Σ₁₂')
+        # Σ  = Symmetric(Σ₁ - Σ₁₂ * Σ⁻¹ * Σ₁₂')
         Σ  = Symmetric(mulαβαtinc!(Σ₁, Σ₁₂, Σ⁻¹, -1))
         μ₁ = μ[1:q]
         μ₂ = view(μ, p:N)
         a  = view(y, p:N)
-        #M  = μ₁ - Σ₁₂ * Σ⁻¹ * (a - μ₂)
+        # M  = μ₁ - Σ₁₂ * Σ⁻¹ * (a - μ₂)
         M  = mulαβαtinc!(μ₁, Σ₁₂, Σ⁻¹, a, μ₂, -1)
-    #p,N
+    # p,N
         return MvNormal(M, Σ)
     else
         return MvNormal(m[nm], mx)
@@ -652,7 +638,7 @@ function StatsBase.confint(br::BootstrapResult; level::Float64=0.95, method=:bp,
     v
 end
 ####
-function confint_q(bt::BootstrapResult, v, i::Int, alpha)
+function confint_q(::BootstrapResult, v, i::Int, alpha)
     (quantile(v, alpha/2), quantile(v, 1-alpha/2))
 end
 function confint_rq(bt::BootstrapResult, v, i::Int, alpha)
@@ -766,7 +752,6 @@ function Base.show(io::IO, br::BootstrapResult)
         vβ   = zeros(nvar(br))
         vσ²  = zeros(nvar(br))
         vθ   = zeros(tvar(br))
-
 
         for i = 1:nvar(br)
             # Coefs

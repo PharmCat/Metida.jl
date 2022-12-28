@@ -32,8 +32,7 @@ function typeiii(lmm::LMM; ddf::Symbol = :satter)
             continue
         end
         
-        fac[i] = tname(iterm) 
-        
+        fac[i]  = tname(iterm) 
         L       = lcontrast(lmm, i)
         F[i]    = fvalue(lmm, L)
         ndf[i]  = rank(L)

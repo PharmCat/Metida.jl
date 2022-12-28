@@ -5,7 +5,6 @@ struct LMMLogMsg
     msg::String
 end
 
-
 """
     LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
 
@@ -48,7 +47,6 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         maxvcbl::Int,
         log::Vector{LMMLogMsg}) where T
         new{eltype(mm.m)}(model, mf, mm, covstr, data, dv, nfixed, rankx, result, maxvcbl, log)
-        #new{eltype(mm.m)}(model, mf, mm, covstr, dv, nfixed, rankx, result, maxvcbl, log)
     end
     function LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
         #need check responce - Float
@@ -86,7 +84,6 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         if repeated.covtype.s == :SI && !isa(repeated.model, ConstantTerm)
             lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Repeated effect not a constant, but covariance type is SI. "))
         end
-        #lmmdata = LMMData(mm.m, response(mf))
         lmmdata = LMMData(modelmatrix(mf), response(mf))
         covstr = CovStructure(random, repeated, data)
         rankx =  rank(lmmdata.xv)
@@ -95,14 +92,11 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         end
         mres = ModelResult(false, nothing, fill(NaN, covstr.tl), NaN, fill(NaN, rankx), nothing, fill(NaN, rankx, rankx), fill(NaN, rankx), nothing, false)
         LMM(model, mf, mm, covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, mres, findmax(length, covstr.vcovblock)[1], lmmlog)
-        #LMM(model, mf, mm, covstr, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, ModelResult(), findmax(length, covstr.vcovblock)[1], lmmlog)
     end
     function LMM(f::LMMformula, data; contrasts=Dict{Symbol,Any}(), kwargs...)
         LMM(f.formula, data; contrasts=contrasts,  random = f.random, repeated = f.repeated)
     end
 end
-
-
 
 ################################################################################
 """
@@ -212,7 +206,7 @@ function Base.show(io::IO, lmm::LMM)
         end
         println(io, "    Model: $(lmm.covstr.random[i].model === nothing ? "nothing" : string(lmm.covstr.random[i].model, "|", lmm.covstr.random[i].subj))")
         println(io, "    Type: $(lmm.covstr.random[i].covtype.s) ($(lmm.covstr.t[i])), Subjects: $(lmm.covstr.sn[i])")
-        #println(io, "   Coefnames: $(coefnames(lmm.covstr.schema[i]))")
+        
     end
     println(io, "Repeated: ")
     if lmm.covstr.repeated.formula == NOREPEAT.formula
@@ -222,7 +216,7 @@ function Base.show(io::IO, lmm::LMM)
         println(io, "    Type: $(lmm.covstr.repeated.covtype.s) ($(lmm.covstr.t[end]))")
     end
     println(io, "Blocks: $(nblocks(lmm)), Maximum block size: $(maxblocksize(lmm))")
-    #println(io, "")
+
     if lmm.result.fit
         print(io, "Status: ")
         printresult(io, lmm.result.optim)
@@ -233,27 +227,16 @@ function Base.show(io::IO, lmm::LMM)
         else
             println(io, " (No Errors)")
         end
-        #Optim.converged(lmm.result.optim) ? printstyled(io, "converged \n"; color = :green) : printstyled(io, "not converged \n"; color = :red)
-        #if length(lmm.log) > 0  printstyled(io, "Warnings! See lmm.log \n"; color = :yellow) end
-        ##println(io, "")
+
         println(io, "    -2 logREML: ", round(lmm.result.reml, sigdigits = 6), "    BIC: ", round(bic(lmm), sigdigits = 6))
         println(io, "")
         println(io, "    Fixed-effects parameters:")
-        #println(io, "")
-        #chl = '─'
+
         ct = coeftable(lmm)
         println(io, ct)
-        #z = lmm.result.beta ./ lmm.result.se
-        #mx  = hcat(coefnames(lmm.mf), round.(lmm.result.beta, sigdigits = 6), round.(lmm.result.se, sigdigits = 6), round.(z, sigdigits = 6), round.(ccdf.(Chisq(1), abs2.(z)), sigdigits = 6))
-        #pretty_table(io, mx;  header = ["Name", "Estimate", "SE", "z", "Pr(>|z|)"], alignment=:l, header_alignment = :c, tf = tf_line)
 
-        #mx  = vcat(["Name" "Estimate" "SE" "z" "Pr(>|z|)"], mx)
-        #printmatrix(io, mx)
-        #println(io, "")
         println(io, "    Variance components:")
-        #println(io, "")
         println(io, "    θ vector: ", round.(lmm.result.theta, sigdigits = 6))
-        #println(io, "")
 
         mx = hcat(Matrix{Any}(undef, lmm.covstr.tl, 1), lmm.covstr.rcnames, lmm.covstr.ct, round.(lmm.result.theta, sigdigits = 6))
 
@@ -267,7 +250,6 @@ function Base.show(io::IO, lmm::LMM)
             if mx[i, 3] == :var mx[i, 4] = round.(mx[i, 4]^2, sigdigits = 6) end
         end
         pretty_table(io, mx; show_header = false, alignment=:l, tf = tf_borderless)
-        #printmatrix(io, mx)
     else
         if !any(x-> x.type == :WARN, lmm.log)
             println(io, "Not fitted.")

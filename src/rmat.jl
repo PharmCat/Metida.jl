@@ -336,37 +336,3 @@ end
 ###############################################################################
 ###############################################################################
 ###############################################################################
-# Grads
-
-function rmat_g!(mx, θ, rz::AbstractMatrix, g::Int, ct::AbstractCovarianceType)
-    T = ForwardDiff.Dual{Nothing, Float64, 1}
-    gθ  = Vector{T}(undef, length(θ))
-    for i = 1:length(θ)
-        if i == g gθ[i] = ForwardDiff.Dual(θ[i], 1) else gθ[i] = ForwardDiff.Dual(θ[i], 0) end
-    end
-    gmx = zeros(T, size(mx))
-    Metida.rmat!(gmx, gθ, rz, ct)
-    for n = 1:size(gmx, 2)
-        for m = 1:n
-            mx[m, n] = ForwardDiff.partials(gmx[m, n])[1]
-        end
-    end
-    mx
-end
-#SI
-function rmat_g!(mx, θ, ::AbstractMatrix, ::Int, ::SI_)
-    val = 2θ[1]
-    for i ∈ axes(mx, 1)
-            mx[i, i] += val
-    end
-    mx
-end
-#DIAG
-function rmat_g!(mx, θ, rz, g::Int, ::DIAG_)
-    for i ∈ axes(mx, 1)
-        for c ∈ axes(θ, 1)
-            if c == g mx[i, i] += rz[i, c] * 2θ[c] end
-        end
-    end
-    mx
-end
