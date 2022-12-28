@@ -17,11 +17,7 @@ mutable struct ModelResult
     function ModelResult()
         ModelResult(false, nothing, nothing, NaN, nothing, nothing, nothing, nothing, nothing, false)
     end
-    #function ModelResult(tn::Int, bn::Int)
-    #    new(false, nothing, Vector{Float64}(undef, tn), NaN, Vector{Float64}(undef, bn), Matrix{Float64}(undef, tn, tn),  Matrix{Float64}(undef, bn, bn), Vector{Float64}(undef, bn), nothing, false)
-    #end
 end
-
 
 function Base.show(io::IO, lmmr::ModelResult)
     println(io, "Theta :" , lmmr.theta)

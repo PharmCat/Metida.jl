@@ -3,7 +3,7 @@
 ################################################################################
 
 ################################################################################
-#abstract type AbstractCType end
+
 struct SI_ <: AbstractCovarianceType end
 struct DIAG_ <: AbstractCovarianceType end
 struct AR_ <: AbstractCovarianceType end
@@ -27,7 +27,6 @@ struct SPPOWD_ <: AbstractCovarianceType end
 struct SPGAUD_ <: AbstractCovarianceType end
 struct UN_ <: AbstractCovarianceType end
 struct ZERO <: AbstractCovarianceType end
-
 
 ################################################################################
 #                          COVARIANCE TYPE
@@ -407,8 +406,6 @@ function covstrparam(ct::AbstractCovarianceType, ::Int)
     error("Unknown covariance type!")
 end
 
-
-
 ################################################################################
 # RCOEFNAMES
 ################################################################################
@@ -431,7 +428,6 @@ function rcoefnames(s, t, ct::Union{CSH_, ARH_})
     end
     v  = Vector{String}(undef, t)
     @. $(view(v, 1:l)) = "σ² " * string(cn)
-    #view(v, 1:l) .= (fill!(Vector{String}(undef, l), "σ² ") .*string.(cn))
     v[end] = "ρ "
     return v
 end
@@ -477,7 +473,6 @@ function rcoefnames(s, t, ct::SPPOWD_)
     return ["σ² ", "σ²s ", "ρ "]
 end
 
-
 function indfromtn(ind, s)
     b = 0
     m = 0
@@ -509,7 +504,6 @@ function rcoefnames(s, t, ct::UN_)
     @. $(view(v, 1:l)) = "σ² " * $(view(v, 1:l))
     return v
 end
-
 
 function rcoefnames(s, t, ct::AbstractCovarianceType)
     v = Vector{String}(undef, t)

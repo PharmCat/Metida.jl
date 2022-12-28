@@ -81,34 +81,6 @@ end
 ################################################################################
 #                            COVARIANCE STRUCTURE
 ################################################################################
-#=
-function indsdict!(d::Dict, cdata::Union{Tuple, NamedTuple, AbstractVector{AbstractVector}})
-    @inbounds for (i, element) in enumerate(zip(cdata...))
-        ind = ht_keyindex(d, element)
-        if ind > 0
-            push!(d.vals[ind], i)
-        else
-            v = Vector{Int}(undef, 1)
-            v[1] = i
-            d[element] = v
-        end
-    end
-    d
-end
-function indsdict!(d::Dict, cdata::AbstractVector)
-    for i = 1:length(cdata)
-        ind = ht_keyindex(d, cdata[i])
-        if ind > 0
-            push!(d.vals[ind], i)
-        else
-            v = Vector{Int}(undef, 1)
-            v[1] = i
-            d[cdata[i]] = v
-        end
-    end
-    d
-end
-=#
 function sabjcrossdicts(d1, d2)
     if length(d1) == 1 return d1 end
     if length(d2) == 1 return d2 end
@@ -188,7 +160,6 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     z::Matrix{T}
     #subjz::Vector{BitArray{2}}
     # Blocks for each blocking subject, each effect, each effect subject sblock[block][rand eff][subj]
-    #sblock::Vector{Vector{Vector{Vector{Int}}}}
     #
     esb::EffectSubjectBlock
     # unit range z column range for each random effect
@@ -230,7 +201,6 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         # Number of random effects
         rn      = length(random)
         # 
-        
         #Theta parameter type
         ct      = Vector{Symbol}(undef, 0)
         # emap
@@ -382,11 +352,6 @@ function fill_coding_dict!(t::T, d::Dict, data) where T <: Term
     end
     d
 end
-#function fill_coding_dict!(t::T, d::Dict, data) where T <: CategoricalTerm
-#    if typeof(data[!, t.sym])  <: CategoricalArray
-#        d[t.sym] = StatsModels.FullDummyCoding()
-#    end
-#end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: InteractionTerm
     for i in t.terms
         if typeof(Tables.getcolumn(data, i.sym))  <: CategoricalArray || !(typeof(Tables.getcolumn(data, i.sym)) <: Vector{T} where T <: Real)
@@ -407,31 +372,6 @@ function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple{Vararg{Abstract
     end
     d
 end
-#=
-function fulldummycodingdict(t::InteractionTerm)
-    d = Dict{Symbol, AbstractContrasts}()
-    for i in t.terms
-        d[i.sym] = StatsModels.FullDummyCoding()
-    end
-    d
-end
-function fulldummycodingdict(t::T) where T <: Union{CategoricalTerm, Term}
-    d = Dict{Symbol, AbstractContrasts}()
-    d[t.sym] = StatsModels.FullDummyCoding()
-    d
-end
-function fulldummycodingdict(t::T) where T <: Union{ConstantTerm, InterceptTerm}
-    d = Dict{Symbol, AbstractContrasts}()
-    d
-end
-function fulldummycodingdict(t::Tuple{Vararg{AbstractTerm}})
-    d = Dict{Symbol, AbstractContrasts}()
-    for i in t
-        merge!(d, fulldummycodingdict(i))
-    end
-    d
-end
-=#
 ################################################################################
 # SHOW
 ################################################################################

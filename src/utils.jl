@@ -262,12 +262,7 @@ function vmatrix!(V, G, rθ, lmm::LMM, i::Int)
     zgz_base_inc!(V, G, lmm.covstr, i)
     rmat_base_inc!(V, rθ, lmm.covstr, i)
 end
-#=
-function vmatrix!(V, G, θ, lmm::LMM, i::Int)
-    zgz_base_inc!(V, G, θ, lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
-    rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, lmm.covstr.vcovblock[i], lmm.covstr.sblock[i])
-end
-=#
+
 """
     vmatrix(lmm::LMM, i::Int)
 
@@ -292,14 +287,6 @@ function vmatrix(θ::Vector, covstr::CovStructure, i::Int)
     Symmetric(V)
 end
 
-#=
-function grad_vmatrix(θ::AbstractVector{T}, lmm::LMM, i::Int)
-    V    = zeros(T, length(lmm.covstr.vcovblock[i]), length(lmm.covstr.vcovblock[i]))
-    gvec = gmatvec(θ, lmm.covstr)
-    vmatrix!(V, gvec, θ, lmm, i)
-    Symmetric(V)
-end
-=#
 function blockgmatrix(lmm::LMM{T}) where T
     blockgmatrix(lmm, (1, 1))
 end
@@ -324,7 +311,6 @@ function blockgmatrix(lmm::LMM{T}, v) where T
 end
 
 function blockzmatrix(lmm::LMM{T}, i) where T
-    #sn = length.(lmm.covstr.sblock[i])[1:end-1]
     sn = raneflenv(lmm.covstr, i)
     mx = Vector{Matrix{T}}(undef, raneffn(lmm))
     s = 1
@@ -394,13 +380,13 @@ function raneff(lmm::LMM)
     fb
 end
 
-
 """
     Number of blocks
 """
 function nblocks(lmm::LMM)
     return length(lmm.covstr.vcovblock)
 end
+
 """
     hessian(lmm, theta)
 
@@ -410,7 +396,6 @@ function hessian(lmm, theta)
     #if !lmm.result.fit error("Model not fitted!") end
     vloptf(x) = reml_sweep_β(lmm, lmm.dv, x, lmm.result.beta)[1]
     chunk  = ForwardDiff.Chunk{min(8, length(theta))}()
-    #chunk  = ForwardDiff.Chunk{1}()
     hcfg   = ForwardDiff.HessianConfig(vloptf, theta, chunk)
     ForwardDiff.hessian(vloptf, theta, hcfg)
 end
@@ -420,24 +405,6 @@ function hessian(lmm)
 end
 ################################################################################
 ################################################################################
-# logdet with check
-#=
-function logdet_(C::Cholesky, noerror)
-    dd = zero(real(eltype(C)))
-    @inbounds for i in 1:size(C.factors,1)
-        v = real(C.factors[i,i])
-        if v > 0
-            dd += log(v)
-        else
-            C.factors[i,i] = LOGDETCORR
-            dd += log(real(C.factors[i,i]))
-            noerror = false
-        end
-    end
-    dd + dd, noerror
-end
-=#
-
 function StatsModels.termvars(ve::VarEffect)
     termvars(ve.formula)
 end

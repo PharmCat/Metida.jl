@@ -133,7 +133,6 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         end
     else
         initθ = sqrt(initvar(lmm.data.yv, lmm.mm.m)[1])/(length(lmm.covstr.random)+1)
-        #θ                      .= initθ
         for i = 1:length(θ)
             if lmm.covstr.ct[i] == :var
                 θ[i] = initθ
@@ -147,7 +146,6 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     end
     # Initial step with modified Newton method
     chunk  = ForwardDiff.Chunk{min(8, length(θ))}()
-    #chunk  = ForwardDiff.Chunk{1}()
     if isa(aifirst, Bool)
         if aifirst aifirst == :ai else aifirst == :default end
     end
@@ -203,7 +201,6 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         # SE
         if  !any(x -> x < 0.0, diag(lmm.result.c))
             diag!(sqrt, lmm.result.se, lmm.result.c)
-            #lmm.result.se           = sqrt.(diag(lmm.result.c))
             if any(x-> x < singtol, lmm.result.se) && minimum(lmm.result.se)/maximum(lmm.result.se) < singtol lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Some of the SE parameters is suspicious.")) end
             lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model fitted."))
             lmm.result.fit      = true
@@ -252,7 +249,6 @@ function optstep!(lmm, data, θ; method::Symbol = :ai, maxopt::Int=10)
     reml, beta, θs₂, θ₃, rt = reml_sweep_β(lmm, data, θ)
     rt || error("Wrong initial conditions.")
     chunk  = ForwardDiff.Chunk{min(length(θ), 8)}()
-    #chunk  = ForwardDiff.Chunk{1}()
     aif(x) = ai_func(lmm, data, x, beta)
     grf(x) = reml_sweep_β(lmm, data, x, beta)[1]
     aihcfg = ForwardDiff.HessianConfig(aif, θ, chunk)

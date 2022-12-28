@@ -16,7 +16,6 @@ Estimate table for l vector. Satter DF used.
 """
 function estimate(lmm, l::AbstractVector; level = 0.95, name = "Estimate")
     est  = coef(lmm)'*l
-    #se   = sqrt(mulαtβα(l, vcov(lmm)))
     se   = sqrt(dot(l, vcov(lmm), l))
     df   = dof_satter(lmm, l)
     t    = abs(est/se)
@@ -47,7 +46,6 @@ function estimate(lmm; level = 0.95)
         fill!(l, 0)
         l[i]  = 1
         vest[i] = coe'*l
-        #vse[i]  = sqrt(mulαtβα(l, vcov(lmm)))
         vse[i]  = sqrt(dot(l, vcov(lmm), l))
         vdf[i]  = dof_satter(lmm, l)
         vt[i]   = abs(vest[i]/vse[i])
