@@ -227,7 +227,7 @@ function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) whe
         #if ne == false noerror = false end
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃, noerror
 end
-#=
+
 """
     trmulαβ(A::AbstractMatrix{T}, B::AbstractMatrix) where T
 
@@ -244,12 +244,12 @@ function trmulαβ(A::AbstractMatrix{T}, B::AbstractMatrix) where T
     c
 end
 function lpinv!(A)
-    s = LinearAlgebra.checksquare(A)
-    chV, info = LinearAlgebra.LAPACK.potrf!('U', A)
-    LinearAlgebra.LAPACK.potrs!('U', chV, Matrix{Float64}(I(s)))
+    LinearAlgebra.checksquare(A)
+    LinearAlgebra.LAPACK.potrf!('U', A)
+    LinearAlgebra.LAPACK.potri!('U', A)
 end
 # NEED β calk and @threads 
-function reml_grad(lmm, data, θ::Vector{T}, β; syrkblas::Bool = false, maxthreads::Int = 16)  where T
+function reml_grad(lmm, data, θ::Vector{T}, β; maxthreads::Int = 16)  where T
     n     = length(lmm.covstr.vcovblock)
     tl    = lmm.covstr.tl
     p     = size(lmm.data.xv, 2)
@@ -257,61 +257,94 @@ function reml_grad(lmm, data, θ::Vector{T}, β; syrkblas::Bool = false, maxthre
     gvec  = gmatvec(θ, lmm.covstr)
     gradg = grad_gmatvec(θ, lmm.covstr)
 
-    θ₁    = zeros(tl)
-    θ₂    = zeros(tl)
-    θ₃    = zeros(tl)
+    #θ₁    = zeros(tl)
+    #θ₂    = zeros(tl)
+    #θ₃    = zeros(tl)
 
-    iV    = Vector{Matrix{T}}(undef, n)
+    iV    = Vector{Symmetric{T, Matrix{T}}}(undef, n)
 
-    H     = zeros(T, p, p)
+    #H     = zeros(T, p, p)
     rθ    = θ[lmm.covstr.tr[end]] # R part of θ
     info  = 0
-    for i = 1:n
-        q    = length(lmm.covstr.vcovblock[i])
-        V    = zeros(q, q)
-        vmatrix!(V, gvec, rθ, lmm, i)
-        #iV[i] = inv(Symmetric(V))
-        iV[i] = lpinv!(V)         
-        mulαβαtinc!(H, data.xv[i]', iV[i])
-        #H  += data.xv[i]' * iV[i] * data.xv[i]
-    end
-    iH = lpinv!(H)
-    #iH = inv(Symmetric(H))
-    for i = 1:n
-        q    = length(lmm.covstr.vcovblock[i])
+    ncore     = min(num_cores(), n, maxthreads)
+    
+    accH      = Vector{Matrix{T}}(undef, ncore)
+    d, r      = divrem(n, ncore)
+    Base.Threads.@threads for t = 1:ncore
+        offset   = min(t - 1, r) + (t - 1)*d
 
-        r   = copy(data.yv[i]) 
-        mul!(r, data.xv[i], β, -1, 1)
-        #r   = data.yv[i] .- data.xv[i] * β
-
-        jV   = grad_vmatrix(gradg, rθ, lmm, i)
-        Aj  = Symmetric(zeros(q, q))
-
-        iVi = iV[i]
-        XtAjX   = zeros(p, p) 
-        for j = 1:tl
-            
-            jVj = jV[j]
-
-            fill!(Aj, zero(T))
-            mulαβαtinc!(Aj.data, iVi, jVj)
-            #Aj      = iV[i] * jV[j] * iV[i]
-
-            θ₁[j]  += trmulαβ(iVi, jVj)
-            #θ₁[j]  += tr(iV[i] * jV[j])
-
-            fill!(XtAjX, zero(T))
-            mulαβαtinc!(XtAjX, data.xv[i]', Aj)
-            θ₂[j] -= trmulαβ(iH, Symmetric(XtAjX))
-            #θ₂[j]  -= tr(iH * data.xv[i]' * Aj * data.xv[i])
-
-            θ₃[j]  -= dot(r, Aj, r)
-            #θ₃[j]  -= r' * Aj * r
+        for j ∈ 1:d+(t ≤ r)
+            i       =  offset + j
+            q       = length(lmm.covstr.vcovblock[i])
+            V       = zeros(q, q)
+            vmatrix!(V, gvec, rθ, lmm, i)
+         #iV[i] = inv(Symmetric(V))
+            iVi     = Symmetric(lpinv!(V))
+            iV[i]   = iVi
+            accH[t] = zeros(T, p, p)
+            mulαβαtinc!(accH[t], data.xv[i]', iVi)
+            #H  += data.xv[i]' * iV[i] * data.xv[i]
         end
     end
+    iH = Symmetric(lpinv!(sum(accH)))
+    #iH = inv(Symmetric(H))
+
+    d, r      = divrem(n, ncore)
+    accθ₁     = Vector{Vector{T}}(undef, ncore)
+    accθ₂     = Vector{Vector{T}}(undef, ncore) 
+    accθ₃     = Vector{Vector{T}}(undef, ncore) 
+    Base.Threads.@threads for t = 1:ncore
+        accθ₁[t]     = zeros(T, tl)
+        accθ₂[t]     = zeros(T, tl)
+        accθ₃[t]     = zeros(T, tl)
+        offset   = min(t - 1, r) + (t - 1)*d
+        for j ∈ 1:d + (t ≤ r)
+            i       =  offset + j
+    
+    #for i = 1:n
+            q    = length(lmm.covstr.vcovblock[i])
+
+            rv   = copy(data.yv[i]) 
+            mul!(rv, data.xv[i], β, -1, 1)
+            #rv   = data.yv[i] .- data.xv[i] * β
+
+            jV   = grad_vmatrix(gradg, rθ, lmm, i)
+            Aj   = Symmetric(zeros(q, q))
+
+            iVi = iV[i]
+            XtAjX   = zeros(p, p) 
+            for k = 1:tl
+            
+                jVk = jV[k]
+
+                fill!(Aj, zero(T))
+                mulαβαtinc!(Aj.data, iVi, jVk)
+                #Aj      = iV[i] * jV[j] * iV[i]
+
+                accθ₁[t][k]  += trmulαβ(iVi, jVk)
+                #θ₁[k]  += trmulαβ(iVi, jVk)
+                #θ₁[j]  += tr(iV[i] * jV[j])
+
+                fill!(XtAjX, zero(T))
+                mulαβαtinc!(XtAjX, data.xv[i]', Aj)
+                accθ₂[t][k] -= trmulαβ(iH, Symmetric(XtAjX))
+                #θ₂[k] -= trmulαβ(iH, Symmetric(XtAjX))
+                #θ₂[j]  -= tr(iH * data.xv[i]' * Aj * data.xv[i])
+
+                accθ₃[t][k]  -= dot(rv, Aj, rv)
+                #θ₃[k]  -= dot(rv, Aj, rv)
+                #θ₃[j]  -= r' * Aj * r
+            end
+        end
+    end
+
+    #end
+    θ₁ = sum(accθ₁)
+    θ₂ = sum(accθ₂)
+    θ₃ = sum(accθ₃)
     return @. θ₁ + θ₂ + θ₃
 end
-=#
+
 ################################################################################
 #                     REML with provided β
 ################################################################################

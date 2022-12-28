@@ -256,7 +256,7 @@ end
 
 ################################################################################
 # Grads
-#=
+
 function gmat_g!(mx, θ, g::Int, ct::AbstractCovarianceType)
     T = ForwardDiff.Dual{Nothing, Float64, 1}
     gθ  = Vector{T}(undef, length(θ))
@@ -356,4 +356,4 @@ function grad_vmatrix(G, rθ::AbstractVector{T}, lmm, i::Int) where T
     end
     gv
 end
-=#
+

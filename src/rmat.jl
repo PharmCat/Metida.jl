@@ -337,7 +337,7 @@ end
 ###############################################################################
 ###############################################################################
 # Grads
-#=
+
 function rmat_g!(mx, θ, rz::AbstractMatrix, g::Int, ct::AbstractCovarianceType)
     T = ForwardDiff.Dual{Nothing, Float64, 1}
     gθ  = Vector{T}(undef, length(θ))
@@ -370,5 +370,3 @@ function rmat_g!(mx, θ, rz, g::Int, ::DIAG_)
     end
     mx
 end
-
-=#
