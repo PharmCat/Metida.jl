@@ -5,9 +5,9 @@
 function nsyrk!(α, x, A)
     p = checksquare(A)
     @simd for j in 1:p
-        xj = x[j]
+        xjα = x[j] * α
         @simd for i in 1:j 
-            @inbounds A[i, j] += α * x[i] * xj
+            @inbounds A[i, j] += x[i] * xjα
         end
     end
     A
