@@ -157,8 +157,8 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     varlinkrvecapply!(θ, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf)
 
     # Twice differentiable object / reml_sweep_β_nlopt
-    vloptf(x)  = reml_sweep_β(lmm, lmm.dv, varlinkvecapply(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf); maxthreads = maxthreads)[1]
-    vloptfd(x) = reml_sweep_β_nlopt(lmm, lmm.dv, varlinkvecapply(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf); maxthreads = maxthreads)[1]
+    vloptf(x)  = reml_sweep_β(lmm, lmm.dv, varlinkvecapply!(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf); maxthreads = maxthreads)[1]
+    vloptfd(x) = reml_sweep_β_nlopt(lmm, lmm.dv, varlinkvecapply!(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf); maxthreads = maxthreads)[1]
 
     gcfg   = ForwardDiff.GradientConfig(vloptf, θ, chunk)
     hcfg   = ForwardDiff.HessianConfig(vloptf, θ, chunk)
