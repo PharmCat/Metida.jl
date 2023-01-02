@@ -9,10 +9,10 @@ Change θ (only upper triangle). B is symmetric.
 @noinline function mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
     axb  = axes(B, 1)
     sa   = size(A, 1)
-    @simd  for j ∈ axb
-        @simd for i ∈ axb
+    for j ∈ axb
+        for i ∈ axb
             @inbounds Bij = B[i, j]
-            @simd  for n ∈ 1:sa
+           for n ∈ 1:sa
                 @inbounds Anj = A[n, j]
                 BijAnj = Bij * Anj
                 @simd for m ∈ 1:n
@@ -39,10 +39,10 @@ Change θ (only upper triangle). B is symmetric.
     if  !(size(B, 1) == size(B, 2) == size(A, 2)) || !(size(A, 1) == size(θ, 1) == size(θ, 2)) throw(ArgumentError("Wrong dimentions!")) end
     axb  = axes(B, 1)
     sa   = size(A, 1)
-    @simd for j ∈ axb
-        @simd for i ∈ axb
+   for j ∈ axb
+        for i ∈ axb
             @inbounds Bij = B[i, j]
-            @simd  for n ∈ 1:sa 
+            for n ∈ 1:sa 
                 @inbounds Anj = A[n, j]
                 BijAnjalpha = Bij * Anj * alpha
                 @simd for m ∈ 1:n
@@ -62,9 +62,9 @@ Change θ (only upper triangle). B is symmetric.
     if !(size(B, 2) == length(a) == length(b)) || size(B, 1) != size(A, 2) || size(A, 1) != length(θ) throw(ArgumentError("Wrong dimentions.")) end
     axb  = axes(B, 1)
     sa   = size(A, 1)
-    @simd for i ∈ axb
+    for i ∈ axb
         @inbounds abi = a[i] - b[i]
-        @simd for j ∈ axb
+       for j ∈ axb
             @inbounds Bji = B[j, i]
             Bjiabialpha = Bji * abi * alpha
             @simd for m ∈ 1:sa
@@ -95,13 +95,13 @@ use only upper triangle of V
         return -V[1, 1] * (y[1] - cs)^2
     end
     c = zeros(T, q)
-    @simd for m = 1:p
+    for m = 1:p
         @inbounds βm = β[m]
         @simd for n = 1:q
             @inbounds c[n] += X[n, m] * βm
         end
     end
-    @simd for m = 2:q
+    for m = 2:q
         @inbounds ycm2 = (y[m] - c[m])*2
         @simd for n = 1:m-1
             @inbounds θ -= V[n, m] * (y[n] - c[n]) * ycm2
@@ -124,7 +124,7 @@ Change θ.
     p = size(A, 2)
     for n in 1:p
         θn = zero(T)
-        for m in 1:q
+        @simd for m in 1:q
             @inbounds θn += b[m] * A[m, n]
         end
         @inbounds θ[n] += θn
@@ -136,7 +136,7 @@ end
     vec = zeros(T, size(rz, 1))
     for i ∈ axes(rz, 2)
         @inbounds θi = θ[i]
-        for r ∈ axes(rz, 1)
+        @simd for r ∈ axes(rz, 1)
             @inbounds vec[r] += rz[r, i] * θi
         end
     end
@@ -146,8 +146,8 @@ end
 @inline function diag!(f, v, m)
     l = checksquare(m)
     l == length(v) || error("Length not equal")
-    for i = 1:l
-        v[i] = f(m[i, i])
+    @simd for i = 1:l
+        @inbounds v[i] = f(m[i, i])
     end
     v
 end

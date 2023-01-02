@@ -102,15 +102,17 @@ end
 #CSH
 function rmat!(mx, θ, rz, ::CSH_)
     vec = tmul_unsafe(rz, θ)
-    rn    = size(mx, 1)
-    if rn > 1
-        for m = 1:rn - 1
-            @inbounds @simd for n = m + 1:rn
-                mx[m, n] += vec[m] * vec[n] * θ[end]
+    s    = size(mx, 1)
+    if s > 1
+        θend = last(θ)
+        for n = 2:s
+            @inbounds vecnθend = vec[n] * θend
+            @inbounds @simd for m = 1:n-1
+                mx[m, n] += vec[m] * vecnθend
             end
         end
     end
-    #=@turbo=# @inbounds  for m ∈ axes(mx, 1)
+    @inbounds  for m ∈ axes(mx, 1)
         mx[m, m] += vec[m] * vec[m]
     end
     mx

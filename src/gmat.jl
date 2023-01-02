@@ -88,9 +88,10 @@ function gmat!(mx, θ, ::CS_)
     s = size(mx, 1)
     mx .= θ[1]^2
     if s > 1
-        for m = 1:s - 1
-            @inbounds @simd for n = m + 1:s
-                mx[m, n] = mx[m, m] * θ[2]
+        mxθ2 = θ[1]^2 * θ[2]
+        for n = 2:s
+            @inbounds @simd for m = 1:n-1
+                mx[m, n] = mxθ2
             end
         end
     end
@@ -103,9 +104,10 @@ function gmat!(mx, θ, ::CSH_)
         mx[m, m] = θ[m]
     end
     if s > 1
-        for m = 1:s - 1
-            @inbounds @simd for n = m + 1:s
-                mx[m, n] = mx[m, m] * mx[n, n] * θ[end]
+        for n = 2:s
+            @inbounds mxnθe = mx[n, n] * θ[end]
+            @inbounds @simd for m = 1:n-1
+                mx[m, n] = mx[m, m] * mxnθe
             end
         end
     end
