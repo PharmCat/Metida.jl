@@ -7,7 +7,7 @@ function initvar(y::Vector, X::Matrix{T}) where T
     r    = copy(y)
     LinearAlgebra.BLAS.gemv!('N', one(T), X, β, -one(T), r)
     #r    = y .- X * β
-    sum(x -> x * x, r)/(length(r) - size(X, 2)), β
+    dot(r, r)/(length(r) - size(X, 2)), β
 end
 ################################################################################
 function nterms(lmm::LMM)
@@ -90,31 +90,31 @@ function vlinksqr(σ::T) where T <: Real
 end
 
 function rholinkpsigmoid(ρ::T) where T <: Real
-    return 1.0/(1.0 + exp(-ρ * 0.5))
+    return 1/(1 + exp(-ρ / 2))
 end
 function rholinkpsigmoidr(ρ::T) where T <: Real
-    return - log(1.0/ρ - 1.0) / 0.5
+    return - log(1/ρ - 1) * 2
 end
 
 function rholinksigmoid(ρ::T) where T <: Real
-    return 1.0/(1.0 + exp(- ρ * 0.1)) * 2.0 - 1.0
+    return 1/(1 + exp(- ρ * 0.1)) * 2 - 1
 end
 function rholinksigmoidr(ρ::T) where T <: Real
-    return - log(1.0/(ρ+1.0)*2.0 - 1.0) / 0.1
+    return - log(1/(ρ + 1) * 2 - 1) / 0.1
 end
 
 function rholinksqsigmoid(ρ::T) where T <: Real
-    return ρ/sqrt(1.0 + (ρ)^2)
+    return ρ/sqrt(1 + (ρ)^2)
 end
 function rholinksqsigmoidr(ρ::T) where T <: Real
-    return sign(ρ)*sqrt(ρ^2/(1.0 - ρ^2))
+    return sign(ρ)*sqrt(ρ^2/(1 - ρ^2))
 end
 
 function rholinksigmoidatan(ρ::T) where T <: Real
-    return atan(ρ)/pi*2.0
+    return atan(ρ) / pi * 2
 end
 function rholinksigmoidatanr(ρ::T) where T <: Real
-    return tan(ρ*pi/2.0)
+    return tan(ρ * pi / 2)
 end
 
 ################################################################################

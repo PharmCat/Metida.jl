@@ -347,14 +347,14 @@ function fill_coding_dict!(t::T, d::Dict, data) where T <: Union{ConstantTerm, I
     d
 end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Term
-    if typeof(Tables.getcolumn(data, t.sym)) <: CategoricalArray || !(typeof(Tables.getcolumn(data, t.sym)) <: Vector{T} where T <: Real)
+    if typeof(Tables.getcolumn(data, t.sym)) <: AbstractCategoricalVector || !(typeof(Tables.getcolumn(data, t.sym)) <: AbstractVector{V} where V <: Real)
         d[t.sym] = StatsModels.FullDummyCoding()
     end
     d
 end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: InteractionTerm
     for i in t.terms
-        if typeof(Tables.getcolumn(data, i.sym))  <: CategoricalArray || !(typeof(Tables.getcolumn(data, i.sym)) <: Vector{T} where T <: Real)
+        if typeof(Tables.getcolumn(data, i.sym))  <: AbstractCategoricalVector || !(typeof(Tables.getcolumn(data, i.sym)) <: AbstractVector{V} where V <: Real)
             d[i.sym] = StatsModels.FullDummyCoding()
         end
     end
@@ -363,7 +363,7 @@ end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple{Vararg{AbstractTerm}}
     for i in t
         if isa(i, Term)
-            if typeof(Tables.getcolumn(data, i.sym)) <: CategoricalArray || !(typeof(Tables.getcolumn(data, i.sym)) <: Vector{T} where T <: Real)
+            if typeof(Tables.getcolumn(data, i.sym)) <: AbstractCategoricalVector || !(typeof(Tables.getcolumn(data, i.sym)) <: AbstractVector{V} where V <: Real)
                 d[i.sym] = StatsModels.FullDummyCoding()
             end
         else

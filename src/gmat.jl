@@ -57,9 +57,10 @@ function gmat!(mx, θ, ::AR_)
         mx[i, i] = de
     end
     if s > 1
-        for m = 1:s - 1
-            @inbounds @simd for n = m + 1:s
-                mx[m, n] = de * θ[2] ^ (n - m)
+        @inbounds θ2 = θ[2]
+        for n = 2:s
+            @inbounds @simd for m = 1:n-1
+                mx[m, n] = de * θ2 ^ (n - m)
             end
         end
     end
@@ -72,14 +73,16 @@ function gmat!(mx, θ, ::ARH_)
         mx[m, m] = θ[m]
     end
     if s > 1
-        for m = 1:s - 1
-            @inbounds @simd for n = m + 1:s
-                mx[m, n] = mx[m, m] * mx[n, n] * θ[end] ^ (n - m)
+        θe = last(θ)
+        for n = 2:s
+            mxnn = mx[n, n]
+            @inbounds @simd for m = 1:n-1
+                mx[m, n] = mx[m, m] * mxnn * θe ^ (n - m)
             end
         end
     end
     @inbounds @simd for m = 1:s
-        mx[m, m] = mx[m, m] * mx[m, m]
+        mx[m, m] *= mx[m, m] 
     end
     mx
 end
@@ -88,9 +91,10 @@ function gmat!(mx, θ, ::CS_)
     s = size(mx, 1)
     mx .= θ[1]^2
     if s > 1
-        for m = 1:s - 1
-            @inbounds @simd for n = m + 1:s
-                mx[m, n] = mx[m, m] * θ[2]
+        mxθ2 = θ[1]^2 * θ[2]
+        for n = 2:s
+            @inbounds @simd for m = 1:n-1
+                mx[m, n] = mxθ2
             end
         end
     end
@@ -103,14 +107,15 @@ function gmat!(mx, θ, ::CSH_)
         mx[m, m] = θ[m]
     end
     if s > 1
-        for m = 1:s - 1
-            @inbounds @simd for n = m + 1:s
-                mx[m, n] = mx[m, m] * mx[n, n] * θ[end]
+        for n = 2:s
+            @inbounds mxnθe = mx[n, n] * last(θ)
+            @inbounds @simd for m = 1:n-1
+                mx[m, n] = mx[m, m] * mxnθe
             end
         end
     end
     @inbounds @simd for m = 1:s
-        mx[m, m] = mx[m, m] * mx[m, m]
+        mx[m, m] *= mx[m, m]
     end
     mx
 end
@@ -123,9 +128,10 @@ function gmat!(mx, θ, ::ARMA_)
         mx[i, i] = de
     end
     if s > 1
-        for m = 1:s - 1
-            @inbounds @simd for n = m + 1:s
-                mx[m, n] = de * θ[2] * θ[3] ^ (n - m - 1)
+        deθ2 = de * θ[2]
+        for n = 2:s
+            @inbounds @simd for m = 1:n-1
+                mx[m, n] = deθ2 * θ[3] ^ (n - m - 1)
             end
         end
     end
@@ -139,8 +145,8 @@ function gmat!(mx, θ, ::TOEP_)
         mx[i, i] = de
     end
     if s > 1
-        for m = 1:s - 1
-            @inbounds @simd for n = m + 1:s
+        for n = 2:s
+            @inbounds @simd for m = 1:n-1
                 mx[m, n] = de * θ[n-m+1]
             end
         end
@@ -169,14 +175,14 @@ function gmat!(mx, θ, ::TOEPH_)
         mx[m, m] = θ[m]
     end
     if s > 1
-        for m = 1:s - 1
-            @inbounds @simd for n = m + 1:s
+        for n = 2:s
+            @inbounds @simd for m = 1:n-1
                 mx[m, n] = mx[m, m] * mx[n, n] * θ[n-m+s]
             end
         end
     end
     @inbounds @simd for m = 1:s
-        mx[m, m] = mx[m, m] * mx[m, m]
+        mx[m, m] *= mx[m, m]
     end
     mx
 end
@@ -194,7 +200,7 @@ function gmat!(mx, θ, ct::TOEPHP_)
         end
     end
     @inbounds @simd for m = 1:s
-        mx[m, m] = mx[m, m] * mx[m, m]
+        mx[m, m] *= mx[m, m]
     end
     mx
 end
@@ -205,15 +211,14 @@ function gmat!(mx, θ, ::UN_)
         mx[m, m] = θ[m]
     end
     if s > 1
-        for m = 1:s - 1
-            @inbounds @simd for n = m + 1:s
+        for n = 2:s
+            @inbounds @simd for m = 1:n-1
                 mx[m, n] = mx[m, m] * mx[n, n] * θ[s+tpnum(m, n, s)]
             end
         end
     end
     @inbounds @simd for m = 1:s
-        v = mx[m, m]
-        mx[m, m] = v * v
+        mx[m, m] *= mx[m, m]
     end
     mx
 end

@@ -141,6 +141,11 @@ Metida.hessian
 Metida.lcontrast
 ```
 
+### Metida.nblocks
+```@docs
+Metida.nblocks
+```
+
 ### Metida.rand
 ```@docs
 Metida.rand
@@ -148,7 +153,12 @@ Metida.rand
 
 ### Metida.rand!
 ```@docs
-Metida.rand
+Metida.rand!
+```
+
+### Metida.raneff
+```@docs
+Metida.raneff
 ```
 
 ### Metida.rankx
@@ -215,7 +225,7 @@ Metida.confint
 
 ### Metida.crossmodelmatrix
 ```@docs
-StatsBase.crossmodelmatrix
+Metida.crossmodelmatrix
 ```
 
 ### Metida.dof
@@ -253,19 +263,9 @@ Metida.loglikelihood
 Metida.modelmatrix
 ```
 
-### Metida.nblocks
-```@docs
-Metida.nblocks
-```
-
 ### Metida.nobs
 ```@docs
 Metida.nobs
-```
-
-### Metida.raneff
-```@docs
-Metida.raneff
 ```
 
 ### Metida.response

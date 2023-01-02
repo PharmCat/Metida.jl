@@ -3,22 +3,6 @@
 ################################################################################
 
 ################################################################################
-#=
-function rmat_base_inc_b!(mx, θ, zrv, covstr)
-    rmat!(mx, θ, zrv, covstr.repeated.covtype.s)
-end
-=#
-################################################################################
-################################################################################
-#=
-function rmat_base_inc!(mx, θ, covstr, block, sblock)
-    zblock    = view(covstr.rz, block, :)
-    @simd for i ∈ axes(sblock[end], 1)
-        @inbounds rmat_base_inc_b!(view(mx, sblock[end][i],  sblock[end][i]), θ, view(zblock,  sblock[end][i], :), covstr)
-    end
-    mx
-end
-=#
 @noinline function rmat_base_inc!(mx, θ, covstr, bi)
     en        = covstr.rn + 1
     block     = covstr.vcovblock[bi]
@@ -43,23 +27,23 @@ Base.@propagate_inbounds function rmat!(mx, θ, ::AbstractMatrix, ::SI_)
 end
 #DIAG
 function rmat!(mx, θ, rz, ::DIAG_)
-    #=@turbo=#  for i ∈ axes(mx, 1)
+    for i ∈ axes(mx, 1)
         @inbounds @simd for c ∈ axes(θ, 1)
-            mx[i, i] += rz[i, c] * θ[c] * θ[c]
+            mx[i, i] += rz[i, c] * θ[c] ^ 2
         end
     end
     mx
 end
 #AR
 function rmat!(mx, θ, ::AbstractMatrix, ::AR_)
-    rn  = size(mx, 1)
+    s  = size(mx, 1)
     de  = θ[1] ^ 2
-    @inbounds @simd for m = 1:rn
+    @inbounds @simd for m = 1:s
         mx[m, m] += de
     end
-    if rn > 1
-        for m = 1:rn - 1
-            @inbounds @simd for n = m + 1:rn
+    if s > 1
+        for n = 2:s
+            @inbounds @simd for m = 1:n-1
                 mx[m, n] += de * θ[2] ^ (n - m)
             end
         end
@@ -69,10 +53,10 @@ end
 #ARH
 function rmat!(mx, θ, rz, ::ARH_)
     vec = tmul_unsafe(rz, θ)
-    rn    = size(mx, 1)
-    if rn > 1
-        for m = 1:rn - 1
-            @inbounds @simd for n = m + 1:rn
+    s    = size(mx, 1)
+    if s > 1
+        for n = 2:s
+            @inbounds @simd for m = 1:n-1
                  mx[m, n] += vec[m] * vec[n] * θ[end] ^ (n - m)
             end
         end
@@ -84,15 +68,15 @@ function rmat!(mx, θ, rz, ::ARH_)
 end
 #CS
 function rmat!(mx, θ, ::AbstractMatrix,  ::CS_)
-    rn    = size(mx, 1)
+    s    = size(mx, 1)
     θsq   =  θ[1]*θ[1]
     θsqp  =  θsq*θ[2]
     @inbounds @simd for i = 1:size(mx, 1)
         mx[i, i] += θsq
     end
-    if rn > 1
-        for m = 1:rn - 1
-            @inbounds @simd for n = m + 1:rn
+    if s > 1
+        for n = 2:s
+            @inbounds @simd for m = 1:n-1
                 mx[m, n] += θsqp
             end
         end
@@ -102,15 +86,17 @@ end
 #CSH
 function rmat!(mx, θ, rz, ::CSH_)
     vec = tmul_unsafe(rz, θ)
-    rn    = size(mx, 1)
-    if rn > 1
-        for m = 1:rn - 1
-            @inbounds @simd for n = m + 1:rn
-                mx[m, n] += vec[m] * vec[n] * θ[end]
+    s    = size(mx, 1)
+    if s > 1
+        θend = last(θ)
+        for n = 2:s
+            @inbounds vecnθend = vec[n] * θend
+            @inbounds @simd for m = 1:n-1
+                mx[m, n] += vec[m] * vecnθend
             end
         end
     end
-    #=@turbo=# @inbounds  for m ∈ axes(mx, 1)
+    @inbounds  for m ∈ axes(mx, 1)
         mx[m, m] += vec[m] * vec[m]
     end
     mx
@@ -118,15 +104,16 @@ end
 ################################################################################
 #ARMA
 function rmat!(mx, θ, ::AbstractMatrix,  ::ARMA_)
-    rn  = size(mx, 1)
+    s  = size(mx, 1)
     de  = θ[1] ^ 2
-    @inbounds @simd for m = 1:rn
+    @inbounds @simd for m = 1:s
         mx[m, m] += de
     end
-    if rn > 1
-        for m = 1:rn - 1
-            @inbounds @simd for n = m + 1:rn
-                mx[m, n] += de * θ[2] * θ[3] ^ (n - m - 1)
+    if s > 1
+        deθ2 = de * θ[2]
+        for n = 2:s
+            @inbounds @simd for m = 1:n-1
+                mx[m, n] += deθ2 * θ[3] ^ (n - m - 1)
             end
         end
     end
@@ -193,13 +180,13 @@ function rmat!(mx, θ, rz,  ::SPEXP_)
     θe    = θ[2]
     θe    = abs(θe) < eps() ? sqrt(eps()) : abs(θe)
     #θe    = abs(θ[2])
-    rn    = size(mx, 1)
+    s    = size(mx, 1)
     @simd for i = 1:size(mx, 1)
         @inbounds mx[i, i] += σ²
     end
-    if rn > 1
-        for m = 1:rn - 1
-            @simd for n = m + 1:rn
+    if s > 1
+        for m = 1:s - 1
+            @simd for n = m + 1:s
                 mx[m, n] += σ² * exp(-edistance(rz, m, n) / θe)
             end
         end
@@ -211,13 +198,13 @@ end
 function rmat!(mx, θ, rz,  ::SPPOW_)
     σ²    = θ[1]^2
     ρ     = θ[2]
-    rn    = size(mx, 1)
+    s    = size(mx, 1)
     @simd for i = 1:size(mx, 1)
         @inbounds mx[i, i] += σ²
     end
-    if rn > 1
-        for m = 1:rn - 1
-            @simd for n = m + 1:rn
+    if s > 1
+        for m = 1:s - 1
+            @simd for n = m + 1:s
                 ed = edistance(rz, m, n)
                 mx[m, n] += ρ > 0 ? σ² * ρ^ed : σ² * ρ^ed * cos(π * ed)
                 #mx[m, n] += ρ > 0 ? σ² * ρ^ed : σ² * abs(ρ)^ed * sign(ρ)
@@ -235,13 +222,13 @@ function rmat!(mx, θ, rz,  ::SPGAU_)
     θe    = abs(θe) < eps() ? sqrt(eps()) : θe^2
     #θe    = θ[2]
     #θe    = abs(θ[2])
-    rn    = size(mx, 1)
+    s    = size(mx, 1)
     @simd for i = 1:size(mx, 1)
         @inbounds mx[i, i] += σ²
     end
-    if rn > 1
-        for m = 1:rn - 1
-            @simd for n = m + 1:rn
+    if s > 1
+        for m = 1:s - 1
+            @simd for n = m + 1:s
                 mx[m, n] += σ² * exp(- (edistance(rz, m, n)^2) / θe)
             end
         end
@@ -255,13 +242,13 @@ function rmat!(mx, θ, rz,  ::SPEXPD_)
     σ²d   = θ[1]^2 + σ²
     θe    = θ[3]
     θe    = iszero(θe) ? 1e-16 : abs(θe)
-    rn    = size(mx, 1)
+    s    = size(mx, 1)
     @simd for i = 1:size(mx, 1)
         @inbounds mx[i, i] += σ²d
     end
-    if rn > 1
-        for m = 1:rn - 1
-            @simd for n = m + 1:rn
+    if s > 1
+        for m = 1:s - 1
+            @simd for n = m + 1:s
                 mx[m, n] += σ² * exp(-edistance(rz, m, n) / θe)
             end
         end
@@ -273,13 +260,13 @@ function rmat!(mx, θ, rz,  ::SPPOWD_)
     σ²    = θ[2]^2
     σ²d   = θ[1]^2 + σ²
     ρ     = θ[3]
-    rn    = size(mx, 1)
+    s    = size(mx, 1)
     @simd for i = 1:size(mx, 1)
         @inbounds mx[i, i] += σ²d
     end
-    if rn > 1
-        for m = 1:rn - 1
-            @simd for n = m + 1:rn
+    if s > 1
+        for m = 1:s - 1
+            @simd for n = m + 1:s
                 mx[m, n] += σ² * ρ^edistance(rz, m, n)
             end
         end
@@ -292,13 +279,13 @@ function rmat!(mx, θ, rz,  ::SPGAUD_)
     σ²d   = θ[1]^2 + σ²
     θe    = θ[3]
     θe    = iszero(θe) ? 1e-16 : θe^2
-    rn    = size(mx, 1)
+    s    = size(mx, 1)
     @simd for i = 1:size(mx, 1)
         @inbounds mx[i, i] += σ²d
     end
-    if rn > 1
-        for m = 1:rn - 1
-            @simd for n = m + 1:rn
+    if s > 1
+        for m = 1:s - 1
+            @simd for n = m + 1:s
                 mx[m, n] += σ² * exp(- (edistance(rz, m, n)^2) / θe)
             end
         end

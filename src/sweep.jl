@@ -4,8 +4,8 @@
 
 function nsyrk!(α, x, A)
     p = checksquare(A)
-    @simd for j in 1:p
-        xjα = x[j] * α
+    for j in 1:p
+        @inbounds xjα = x[j] * α
         @simd for i in 1:j 
             @inbounds A[i, j] += x[i] * xjα
         end
@@ -56,8 +56,8 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, ks::AbstractV
     noerror = true
     if logdet
         ld = 0
-        @inbounds for k in ks
-            Akk = A[k,k]
+        for k in ks
+            @inbounds Akk = A[k,k]
             if Akk > 0
                 ld += log(Akk)
             else
