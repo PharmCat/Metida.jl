@@ -2,6 +2,8 @@
 
 # Fine
 """
+    mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
+
 θ + A * B * A'
 
 Change θ (only upper triangle). B is symmetric.
@@ -31,6 +33,8 @@ function mulαβαtinc!(θ::AbstractMatrix{T}, A::AbstractMatrix{T}, B::Abstract
 end
 =#
 """
+    mulαβαtinc!(θ::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, alpha)
+
 θ + A * B * A' * alpha
 
 Change θ (only upper triangle). B is symmetric.
@@ -54,6 +58,8 @@ Change θ (only upper triangle). B is symmetric.
     θ
 end
 """
+    mulαβαtinc!(θ::AbstractVector{T}, A::AbstractMatrix, B::AbstractMatrix, a::AbstractVector, b::AbstractVector, alpha) where T
+
 θ + A * B * (a - b) * alpha
 
 Change θ (only upper triangle). B is symmetric.
@@ -114,6 +120,8 @@ use only upper triangle of V
 end
 
 """
+    mulαtβinc!(θ::AbstractVector{T}, A::AbstractMatrix, b::AbstractVector) where T
+
 θ + A' * b
 
 Change θ.
