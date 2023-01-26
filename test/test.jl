@@ -29,8 +29,6 @@ include("testdata.jl")
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 25.00077786912235 atol=1E-6
 
-
-
     #Missing
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0m;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
@@ -39,7 +37,6 @@ include("testdata.jl")
     @test Metida.m2logreml(lmm) ≈ 16.636012616466203 atol=1E-6
 
     #milmm = Metida.MILMM(lmm, df0m)
-
     #Basic, Subject block
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
@@ -56,13 +53,11 @@ include("testdata.jl")
     random = formulation|subject:Metida.DIAG), df0)
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
 
-
     t3table = Metida.typeiii(lmm;  ddf = :contain) # NOT VALIDATED
     t3table = Metida.typeiii(lmm;  ddf = :residual)
     t3table = Metida.typeiii(lmm)
 
     ############################################################################
-
     ############################################################################
     # API test
     ############################################################################
@@ -173,7 +168,6 @@ include("testdata.jl")
     @test tt.ndf[2] ≈ 3.0 atol=1E-5
     @test tt.df[2] ≈ 3.39086 atol=1E-5
     @test tt.pval[2] ≈ 0.900636 atol=1E-5
-
 end
 ################################################################################
 #                                  df0
@@ -292,7 +286,6 @@ end
     df0)
     Metida.fit!(lmm; rholinkf = :psigm)
     @test Metida.m2logreml(lmm) ≈ 10.065239006121315 atol=1E-6
-
 end
 ################################################################################
 #                                  ftdf / 1fptime.csv
@@ -459,6 +452,7 @@ end
     random = Metida.VarEffect(Metida.@covstr(1 + r2 * r1|subject), Metida.DIAG; coding=Dict(:r1 => DummyCoding(), :r2 => DummyCoding()))
     )
     Metida.fit!(lmm)
+    @test Metida.theta(lmm)  ≈ [2.796694409004289, 2.900485570555582, 3.354913215348968, 2.0436114769223237, 1.8477830405766895, 2.0436115732330955, 1.0131934233937254] atol=1E-8
     @test Metida.m2logreml(lmm)  ≈ 713.0655862252027 atol=1E-8
 end
 @testset "  Model: &, DIAG/SI                                        " begin
@@ -466,6 +460,7 @@ end
     random = Metida.VarEffect(Metida.@covstr(r1&r2|subject), Metida.DIAG),
     )
     Metida.fit!(lmm)
+    @test Metida.theta(lmm)  ≈ [3.0325005960015985, 3.343826588448401, 1.8477830405766895, 1.8477830405766895, 1.8477830405766895, 4.462942536844632, 1.0082345219318216] atol=1E-8
     @test Metida.m2logreml(lmm)  ≈ 719.9413776641368 atol=1E-8
 end
 @testset "  Model: INT, +,  TOEPHP(3)/SI                             " begin
@@ -473,6 +468,7 @@ end
     random = Metida.VarEffect(Metida.@covstr(1 + r1 + r2|subject), Metida.TOEPHP(3); coding = Dict(:r1 => DummyCoding(), :r2 => DummyCoding())),
     )
     Metida.fit!(lmm)
+    @test Metida.theta(lmm)  ≈ [2.843269324925114, 3.3598654954863423, 7.582560427911907e-10, 4.133572859333964, -0.24881591201506625, 0.46067672264107506, 1.0091887333170306] atol=1E-8
     @test Metida.m2logreml(lmm)  ≈ 705.9946274598822 atol=1E-8
 end
 @testset "  Model: TOEP/SI                                           " begin
@@ -631,7 +627,6 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 8.740095378772942 atol=1E-8
-
 end
 
 @testset "  Model: Spatial Exponential                               " begin
@@ -662,7 +657,6 @@ end
     Metida.rand!(v, lmm)
     Metida.rand!(v, lmm, [4.54797, 2.82342, 1.05771, 0.576979])
     Metida.rand!(v, lmm, [4.54797, 2.82342, 1.05771, 0.576979], [44.3, 5.3, 0.5, 0.29])
-
 end
 
 @testset "  Show functions                                           " begin
@@ -772,7 +766,6 @@ end
     @test iAs ≈ iAb  atol=1E-6
 end
 
-
 @testset "  Experimental                                             " begin
     io = IOBuffer();
     lmm = Metida.LMM(@formula(r2 ~ f), spatdf;
@@ -855,10 +848,8 @@ end
 
     @test_throws ErrorException Metida.milmm(lmm; n = 10, verbose = false, rng = StableRNG(1234))
 
-
     if !(VERSION < v"1.7")
         mb =  Metida.miboot(mi; n = 10, bootn = 10,  double = true, verbose = false, rng = StableRNG(1234))
         Base.show(io, mb)
     end
-
 end
