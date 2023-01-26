@@ -176,7 +176,7 @@ function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) whe
     # θ₂ calculation
         logdetθ₂ = logdet(Cholesky(ldθ₂, 'U', 0))
     # θ₃ calculation
-        @inbounds @simd for i = 1:n
+        @inbounds for i = 1:n
             r    = mul!(copy(data.yv[i]), data.xv[i], βtc, -1, 1)
             vr   = LinearAlgebra.LAPACK.potrs!('U', A[i], copy(r))
             θ₃  += dot(r, vr)

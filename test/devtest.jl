@@ -27,6 +27,14 @@ random = Metida.VarEffect(Metida.@covstr(1 + time|subject&factor), Metida.CSH),
 )
 b11 = @benchmark Metida.fit!($lmm, hes = false; maxthreads = 16) seconds = 15
 
+#=
+lmm = Metida.LMM(@formula(response ~1 + factor2), ftdf3;
+repeated = Metida.VarEffect(Metida.@covstr(p|subject), Metida.CSH),
+)
+@benchmark Metida.fit!($lmm, hes = false; maxthreads = 16) seconds = 15
+=#
+#:LN_BOBYQA :LN_NEWUOA 
+#@benchmark Metida.fit!($lmm, hes = false; maxthreads = 16, solver = :nlopt, optmethod = :LN_NEWUOA) seconds = 15
 #@benchmark Metida.fit!($lmm, optmethod = Metida.LBFGS_OM, hes = false; maxthreads = 16) seconds = 15
 #@benchmark Metida.fit!($lmm, optmethod = Metida.BFGS_OM, hes = false; maxthreads = 16) seconds = 15
 #@benchmark Metida.fit!($lmm, optmethod = Metida.CG_OM, hes = false; maxthreads = 16) seconds = 15
