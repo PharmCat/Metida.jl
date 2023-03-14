@@ -94,6 +94,7 @@ include("testdata.jl")
     @test sum(Metida.hessian(lmm))    ≈ 1118.160713481362 atol=1E-2
     @test Metida.nblocks(lmm) == 5
     @test length(coefnames(lmm)) == 6
+    @test Metida.gmatrixipd(lmm)
     @test Metida.confint(lmm)[end][1] ≈ -0.7630380758015894 atol=1E-4
     @test Metida.confint(lmm, 6)[1] ≈ -0.7630380758015894 atol=1E-4
     @test Metida.confint(lmm; ddf = :residual)[end][1] ≈ -0.6740837049617738 atol=1E-4
@@ -767,6 +768,8 @@ end
 end
 
 @testset "  Experimental                                             " begin
+
+    
     io = IOBuffer();
     lmm = Metida.LMM(@formula(r2 ~ f), spatdf;
     repeated = Metida.VarEffect(Metida.@covstr(x+y|1), Metida.SPEXP),
@@ -852,4 +855,8 @@ end
         mb =  Metida.miboot(mi; n = 10, bootn = 10,  double = true, verbose = false, rng = StableRNG(1234))
         Base.show(io, mb)
     end
+
+    # Other 
+    @test Metida.varlinkvecapply([0.1, 0.1], [:var, :rho]; varlinkf = :exp, rholinkf = :sigm) ≈ [1.1051709180756477, 0.004999958333749888] atol=1E-6
+
 end

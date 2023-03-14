@@ -355,6 +355,7 @@ function fill_coding_dict!(t::T, d::Dict, data) where T <: Term
     end
     d
 end
+#=
 function fill_coding_dict!(t::T, d::Dict, data) where T <: InteractionTerm
     for i in t.terms
         if typeof(Tables.getcolumn(data, i.sym))  <: AbstractCategoricalVector || !(typeof(Tables.getcolumn(data, i.sym)) <: AbstractVector{V} where V <: Real)
@@ -363,6 +364,7 @@ function fill_coding_dict!(t::T, d::Dict, data) where T <: InteractionTerm
     end
     d
 end
+=#
 function fill_coding_dict_ct!(t, d, data)
     for i in t
         if isa(i, Term)
@@ -375,9 +377,11 @@ function fill_coding_dict_ct!(t, d, data)
     end
     d
 end
+#=
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple{Vararg{AbstractTerm}}
     fill_coding_dict_ct!(t, d, data)
 end
+=#
 function fill_coding_dict!(t::T, d::Dict, data) where T <: CType
     fill_coding_dict_ct!(t.args, d, data)
 end
