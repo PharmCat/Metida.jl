@@ -288,3 +288,9 @@ function Base.getproperty(x::LMM, s::Symbol)
     end
     getfield(x, s)
 end
+
+#=
+function Base.convert(::Type{StatsModels.TableRegressionModel}, lmm::LMM)
+    StatsModels.TableRegressionModel(lmm, lmm.mf, lmm.mm)
+end
+=#

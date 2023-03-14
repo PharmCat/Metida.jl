@@ -156,3 +156,20 @@ MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
 RANDOM  subject/TYPE=VC G V;
 RUN;
 ```
+
+### Example 5 - Working with Effects.jl
+
+```
+using Effects, StatsModels
+
+lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
+    random = VarEffect(@covstr(subject|1), SI)
+    )
+fit!(lmm)
+
+table_model = StatsModels.TableRegressionModel(lmm, lmm.mf, lmm.mm)
+
+emmeans(tm)
+
+effects(Dict(:period => ["1", "2", "3", "4"]), tm)
+```
