@@ -1,7 +1,7 @@
 ### Example 1 - Continuous and categorical predictors
 
 ```@example lmmexample
-using Metida, CSV, DataFrames, MixedModels, CategoricalArrays;
+using Metida, CSV, DataFrames, CategoricalArrays;
 
 import Pkg
 Pkg.activate("MixedModels")

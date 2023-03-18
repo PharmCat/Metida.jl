@@ -12,6 +12,11 @@ function rand!(rng::AbstractRNG, v::AbstractVector, lmm::LMM)
     if !lmm.result.fit error("Model not fitted!") end
     rand!(rng, v, lmm, lmm.result.theta, lmm.result.beta)
 end
+"""
+    rand!(v::AbstractVector, lmm::LMM) = rand!(default_rng(), v, lmm, lmm.result.theta, lmm.result.beta)
+
+Generate random responce vector for fitted 'lmm' model, store results in `v`.
+"""
 rand!(v::AbstractVector, lmm::LMM) = rand!(default_rng(), v, lmm, lmm.result.theta, lmm.result.beta)
 """
     rand(rng::AbstractRNG, lmm::LMM{T}; theta) where T
@@ -22,6 +27,11 @@ function rand(rng::AbstractRNG, lmm::LMM{T}, theta::AbstractVector) where T
     v = Vector{T}(undef, nobs(lmm))
     rand!(rng, v, lmm, theta)
 end
+"""
+    rand!(rng::AbstractRNG, lmm::LMM{T}; theta) where T
+
+Generate random responce vector 'lmm' model, theta covariance vector, and zero means, store results in `v`.
+"""
 function rand!(rng::AbstractRNG, v::AbstractVector, lmm::LMM{T}, theta::AbstractVector) where T
     n = length(lmm.covstr.vcovblock)
     if length(v) != nobs(lmm) error("Wrong v length!") end
