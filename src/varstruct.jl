@@ -1,6 +1,9 @@
+const CType = Union{FunctionTerm{typeof(+), Vector{Term}}, FunctionTerm{typeof(*), Vector{Term}}, FunctionTerm{typeof(&), Vector{Term}}}
+
 ################################################################################
 #                     @covstr macro
 ################################################################################
+
 """
     @covstr(ex)
 
@@ -16,8 +19,8 @@ macro covstr(ex)
     return :(@formula(nothing ~ $ex).rhs)
 end
 function modelparse(term::FunctionTerm{typeof(|)})
-    eff, subj = term.args_parsed
-    if !isa(subj, AbstractTerm) throw(FormulaException("Subject term type not <: AbstractTerm. Use `term` or `interaction term` only. Maybe you are using something like this: `@covstr(factor|term1*term2)` or `@covstr(factor|(term1+term2))`. Use only `@covstr(factor|term)` or `@covstr(factor|term1&term2)`.")) end
+    eff, subj = term.args
+    if !isa(subj, AbstractTerm) || isa(subj, FunctionTerm{typeof(*), Vector{Term}}) throw(FormulaException("Subject term type not <: AbstractTerm. Use `term` or `interaction term` only. Maybe you are using something like this: `@covstr(factor|term1*term2)` or `@covstr(factor|(term1+term2))`. Use only `@covstr(factor|term)` or `@covstr(factor|term1&term2)`.")) end
     eff, subj
 end
 function modelparse(term)
@@ -352,6 +355,7 @@ function fill_coding_dict!(t::T, d::Dict, data) where T <: Term
     end
     d
 end
+#=
 function fill_coding_dict!(t::T, d::Dict, data) where T <: InteractionTerm
     for i in t.terms
         if typeof(Tables.getcolumn(data, i.sym))  <: AbstractCategoricalVector || !(typeof(Tables.getcolumn(data, i.sym)) <: AbstractVector{V} where V <: Real)
@@ -360,7 +364,8 @@ function fill_coding_dict!(t::T, d::Dict, data) where T <: InteractionTerm
     end
     d
 end
-function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple{Vararg{AbstractTerm}}
+=#
+function fill_coding_dict_ct!(t, d, data)
     for i in t
         if isa(i, Term)
             if typeof(Tables.getcolumn(data, i.sym)) <: AbstractCategoricalVector || !(typeof(Tables.getcolumn(data, i.sym)) <: AbstractVector{V} where V <: Real)
@@ -372,6 +377,40 @@ function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple{Vararg{Abstract
     end
     d
 end
+#=
+function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple{Vararg{AbstractTerm}}
+    fill_coding_dict_ct!(t, d, data)
+end
+=#
+function fill_coding_dict!(t::T, d::Dict, data) where T <: CType
+    fill_coding_dict_ct!(t.args, d, data)
+end
+#=
+function fill_coding_dict!(t::T, d::Dict, data) where T <: FunctionTerm{typeof(&), Vector{Term}}
+    for i in t.args
+        if isa(i, Term)
+            if typeof(Tables.getcolumn(data, i.sym)) <: AbstractCategoricalVector || !(typeof(Tables.getcolumn(data, i.sym)) <: AbstractVector{V} where V <: Real)
+                d[i.sym] = StatsModels.FullDummyCoding()
+            end
+        else
+            fill_coding_dict!(i, d, data)
+        end
+    end
+    d
+end
+function fill_coding_dict!(t::T, d::Dict, data) where T <: FunctionTerm{typeof(+), Vector{Term}}
+    for i in t.args
+        if isa(i, Term)
+            if typeof(Tables.getcolumn(data, i.sym)) <: AbstractCategoricalVector || !(typeof(Tables.getcolumn(data, i.sym)) <: AbstractVector{V} where V <: Real)
+                d[i.sym] = StatsModels.FullDummyCoding()
+            end
+        else
+            fill_coding_dict!(i, d, data)
+        end
+    end
+    d
+end
+=#
 ################################################################################
 # SHOW
 ################################################################################

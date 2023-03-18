@@ -4,19 +4,18 @@
 __precompile__()
 module Metida
 
-using  ProgressMeter, LinearAlgebra, ForwardDiff, DiffResults, Random, Optim, LineSearches, MetidaBase#, SparseArrays#, Polyester#, LoopVectorization
+using ProgressMeter, LinearAlgebra, ForwardDiff, DiffResults, Random, Optim, LineSearches, MetidaBase#, SparseArrays#, Polyester#, LoopVectorization
+import StatsBase, StatsModels, Distributions
 
-import MetidaBase: StatsBase, StatsModels, CategoricalArrays, Distributions
-
+import MetidaBase: CategoricalArrays, Tables, MetidaModel, AbstractCovarianceStructure, AbstractCovmatMethod, AbstractCovarianceType, AbstractLMMDataBlocks, MetidaTable, metida_table, PrettyTables, indsdict!
 import MetidaBase.CategoricalArrays: CategoricalArray, AbstractCategoricalVector
-import MetidaBase.Distributions: Normal, TDist, FDist, Chisq, MvNormal, FullNormal, ccdf, cdf, quantile
-
-import MetidaBase: Tables, MetidaModel, AbstractCovarianceStructure, AbstractCovmatMethod, AbstractCovarianceType, AbstractLMMDataBlocks, MetidaTable, metida_table, PrettyTables, indsdict!
 import MetidaBase.PrettyTables: TextFormat, pretty_table, tf_borderless, ft_printf
-import LinearAlgebra:checksquare, BlasFloat
+
+import Distributions: Normal, TDist, FDist, Chisq, MvNormal, FullNormal, ccdf, cdf, quantile
+import LinearAlgebra: checksquare, BlasFloat
 import StatsModels: @formula, termvars, ModelFrame, FunctionTerm, AbstractTerm, CategoricalTerm, AbstractContrasts, ConstantTerm, InterceptTerm, Term, InteractionTerm, FormulaTerm, ModelMatrix, schema, apply_schema, MatrixTerm, modelcols
 import StatsBase: fit, fit!, coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, mean, var, stderror, modelmatrix, response, responsename, CoefTable, coeftable, crossmodelmatrix
-import Base:show, rand, ht_keyindex, getproperty
+import Base: show, rand, ht_keyindex, getproperty
 import Random: default_rng, AbstractRNG, rand!
 
 export @formula, @covstr, @lmmformula,

@@ -1,7 +1,13 @@
 ### Example 1 - Continuous and categorical predictors
 
 ```@example lmmexample
-using Metida, CSV, DataFrames, MixedModels, CategoricalArrays;
+using Metida, CSV, DataFrames, CategoricalArrays;
+
+import Pkg
+Pkg.activate("MixedModels")
+Pkg.add(name="Example", version="3.1.5")
+using MixedModels
+
 
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 
@@ -155,4 +161,21 @@ CLASSES subject sequence period formulation;
 MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
 RANDOM  subject/TYPE=VC G V;
 RUN;
+```
+
+### Example 5 - Working with Effects.jl
+
+```
+using Effects, StatsModels
+
+lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
+    random = VarEffect(@covstr(subject|1), SI)
+    )
+fit!(lmm)
+
+table_model = StatsModels.TableRegressionModel(lmm, lmm.mf, lmm.mm)
+
+emmeans(tm)
+
+effects(Dict(:period => ["1", "2", "3", "4"]), tm)
 ```
