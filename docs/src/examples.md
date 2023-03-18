@@ -3,6 +3,12 @@
 ```@example lmmexample
 using Metida, CSV, DataFrames, MixedModels, CategoricalArrays;
 
+import Pkg
+Pkg.activate("MixedModels")
+Pkg.add(name="Example", version="3.1.5")
+using MixedModels
+
+
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 
 nothing; # hide
