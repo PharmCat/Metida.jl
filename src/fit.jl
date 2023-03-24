@@ -51,6 +51,7 @@ Fit LMM model.
 * `varlinkf` - :exp / :sq / :identity [ref](@ref varlink_header)
 * `rholinkf` - :sigm / :atan / :sqsigm / :psigm
 * `aifirst` - first iteration with AI-like method - :default / :ai / :score
+* `aifmax` - maximum pre-optimization steps
 * `g_tol` - absolute tolerance in the gradient
 * `x_tol` - absolute tolerance of theta vector
 * `f_tol` - absolute tolerance in changes of the REML

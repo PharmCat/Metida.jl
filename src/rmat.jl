@@ -9,7 +9,7 @@
     zblock    = view(covstr.rz, block, :)
     @simd for i = 1:subjn(covstr, en, bi)
         sb = getsubj(covstr, en, bi, i)
-        rmat!(view(mx, sb, sb), θ, view(zblock, sb, :), covstr.repeated.covtype.s)
+        rmat!(view(mx, sb, sb), θ, view(zblock, sb, :), covstr.repeated[1].covtype.s)
     end
     mx
 end

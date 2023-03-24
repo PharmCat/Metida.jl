@@ -80,10 +80,13 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
             random = VarEffect(Metida.@covstr(0|1), Metida.RZero())
         end
         if !isa(random, Vector) random = [random] end
-
-        if repeated.covtype.s == :SI && !isa(repeated.model, ConstantTerm)
-            lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Repeated effect not a constant, but covariance type is SI. "))
+        if !isa(repeated, Vector) repeated = [repeated] end
+        for r in repeated
+            if r.covtype.s == :SI && !isa(r.model, ConstantTerm)
+                lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Repeated effect not a constant, but covariance type is SI. "))
+            end
         end
+
         lmmdata = LMMData(modelmatrix(mf), response(mf))
         covstr = CovStructure(random, repeated, data)
         rankx =  rank(lmmdata.xv)
@@ -196,11 +199,11 @@ function Base.show(io::IO, lmm::LMM)
         
     end
     println(io, "Repeated: ")
-    if lmm.covstr.repeated.formula == NOREPEAT.formula
+    if lmm.covstr.repeated[1].formula == NOREPEAT.formula
         println(io,"    Residual only")
     else
-        println(io, "    Model: $(lmm.covstr.repeated.model === nothing ? "nothing" : string(lmm.covstr.repeated.model, "|", lmm.covstr.repeated.subj))")
-        println(io, "    Type: $(lmm.covstr.repeated.covtype.s) ($(lmm.covstr.t[end]))")
+        println(io, "    Model: $(lmm.covstr.repeated[1].model === nothing ? "nothing" : string(lmm.covstr.repeated[1].model, "|", lmm.covstr.repeated[1].subj))")
+        println(io, "    Type: $(lmm.covstr.repeated[1].covtype.s) ($(lmm.covstr.t[end]))")
     end
     println(io, "Blocks: $(nblocks(lmm)), Maximum block size: $(maxblocksize(lmm))")
 
