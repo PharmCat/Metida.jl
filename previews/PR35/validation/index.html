@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Validation · Metida.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">Metida.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="../instanduse/">First step</a></li><li><a class="tocitem" href="../examples/">Examples</a></li><li><a class="tocitem" href="../custom/">Custom structures</a></li><li><a class="tocitem" href="../bioequivalence/">Bioequivalence</a></li><li><a class="tocitem" href="../nlopt/">NLopt</a></li><li><a class="tocitem" href="../cuda/">CUDA</a></li><li><a class="tocitem" href="../faq/">F.A.Q.</a></li></ul></li><li><a class="tocitem" href="../details/">Details</a></li><li><a class="tocitem" href="../boot/">Bootstrap</a></li><li><a class="tocitem" href="../mi/">Multiple imputation</a></li><li><a class="tocitem" href="../bench/">Benchmark</a></li><li class="is-active"><a class="tocitem" href>Validation</a><ul class="internal"><li><a class="tocitem" href="#Section-1:-REML-validation-for-public-datasets-Metida-and-SPSS"><span>Section 1: REML validation for public datasets Metida &amp; SPSS</span></a></li><li><a class="tocitem" href="#Section-2:-Parameters-validation-for-public-datasets-Metida-and-SPSS-and-MixedModels"><span>Section 2: Parameters validation for public datasets Metida &amp; SPSS &amp; MixedModels</span></a></li><li><a class="tocitem" href="#Section-3:-Validation-with-bioequivalence-datasets-with-Metida-and-SPSS"><span>Section 3: Validation with bioequivalence datasets with Metida &amp; SPSS</span></a></li></ul></li><li><a class="tocitem" href="../api/">API</a></li><li><a class="tocitem" href="../ref/">Citation &amp; Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Validation</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Validation</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/PharmCat/Metida.jl/blob/master/docs/src/validation.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Validation"><a class="docs-heading-anchor" href="#Validation">Validation</a><a id="Validation-1"></a><a class="docs-heading-anchor-permalink" href="#Validation" title="Permalink"></a></h1><p>Validation provided with 3 sections:</p><ul><li>REML validation for public datasets with Metida &amp; SPSS</li><li>Parameters validation for public datasets Metida &amp; SPSS &amp; MixedModels</li><li>Validation with bioequivalence datasets with Metida &amp; SPSS</li></ul><p>To run validation:</p><pre><code class="nohighlight hljs">using Metida; include(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;validation.jl&quot;))</code></pre><h2 id="Section-1:-REML-validation-for-public-datasets-Metida-and-SPSS"><a class="docs-heading-anchor" href="#Section-1:-REML-validation-for-public-datasets-Metida-and-SPSS">Section 1: REML validation for public datasets Metida &amp; SPSS</a><a id="Section-1:-REML-validation-for-public-datasets-Metida-and-SPSS-1"></a><a class="docs-heading-anchor-permalink" href="#Section-1:-REML-validation-for-public-datasets-Metida-and-SPSS" title="Permalink"></a></h2><h4 id="REML-result-table"><a class="docs-heading-anchor" href="#REML-result-table">REML result table</a><a id="REML-result-table-1"></a><a class="docs-heading-anchor-permalink" href="#REML-result-table" title="Permalink"></a></h4><table><tr><th style="text-align: right">Model</th><th style="text-align: right">DataSet</th><th style="text-align: right">Used cov. types</th><th style="text-align: right">REML  Metida</th><th style="text-align: right">REML SPSS</th></tr><tr><td style="text-align: right">1</td><td style="text-align: right">sleepstudy.csv</td><td style="text-align: right">SI/SI</td><td style="text-align: right">1729.4925602367025</td><td style="text-align: right">1729.492560</td></tr><tr><td style="text-align: right">2</td><td style="text-align: right">sleepstudy.csv</td><td style="text-align: right">CS/SI</td><td style="text-align: right">1904.3265170722132</td><td style="text-align: right">1904.327</td></tr><tr><td style="text-align: right">3</td><td style="text-align: right">sleepstudy.csv</td><td style="text-align: right">CSH/SI</td><td style="text-align: right">1772.0953251997046</td><td style="text-align: right">1772.095</td></tr><tr><td style="text-align: right">4</td><td style="text-align: right">sleepstudy.csv</td><td style="text-align: right">ARH/SI</td><td style="text-align: right">1730.1895427398322</td><td style="text-align: right">1730.189543</td></tr><tr><td style="text-align: right">5</td><td style="text-align: right">Pastes.csv</td><td style="text-align: right">SI,SI/SI</td><td style="text-align: right">246.99074585348623</td><td style="text-align: right">246.990746</td></tr><tr><td style="text-align: right">6</td><td style="text-align: right">Pastes.csv</td><td style="text-align: right">ARMA/SI</td><td style="text-align: right">246.81895071012508</td><td style="text-align: right">246.818951</td></tr><tr><td style="text-align: right">7</td><td style="text-align: right">Penicillin.csv</td><td style="text-align: right">SI,SI/SI</td><td style="text-align: right">330.86058899109184</td><td style="text-align: right">330.860589</td></tr><tr><td style="text-align: right">8</td><td style="text-align: right">RepeatedPulse.csv</td><td style="text-align: right">SI/AR</td><td style="text-align: right">453.3395435627574</td><td style="text-align: right">453.339544</td></tr><tr><td style="text-align: right">9</td><td style="text-align: right">RepeatedPulse.csv</td><td style="text-align: right">0/AR</td><td style="text-align: right">471.85107712169827</td><td style="text-align: right">471.851077</td></tr><tr><td style="text-align: right">10</td><td style="text-align: right">RepeatedPulse.csv</td><td style="text-align: right">AR/SI</td><td style="text-align: right">453.3395560121246</td><td style="text-align: right">453.339555</td></tr></table><h4 id="sleepstudy.csv"><a class="docs-heading-anchor" href="#sleepstudy.csv">sleepstudy.csv</a><a id="sleepstudy.csv-1"></a><a class="docs-heading-anchor-permalink" href="#sleepstudy.csv" title="Permalink"></a></h4><h5 id="Model-1"><a class="docs-heading-anchor" href="#Model-1">Model 1</a><a id="Model-1-1"></a><a class="docs-heading-anchor-permalink" href="#Model-1" title="Permalink"></a></h5><pre><code class="nohighlight hljs">lmm = LMM(@formula(Reaction~Days), df;
+  random = VarEffect(@covstr(1|Subject), SI),
+  )
+  fit!(lmm)</code></pre><p>SPSS:</p><pre><code class="nohighlight hljs">MIXED Reaction BY Days
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=Days | SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=INTERCEPT | SUBJECT(Subject) COVTYPE(ID).</code></pre><h5 id="Model-2"><a class="docs-heading-anchor" href="#Model-2">Model 2</a><a id="Model-2-1"></a><a class="docs-heading-anchor-permalink" href="#Model-2" title="Permalink"></a></h5><pre><code class="nohighlight hljs">lmm = LMM(@formula(Reaction~1), df;
+  random = VarEffect(Metida.@covstr(Days|Subject), CS),
+  )
+  fit!(lmm)</code></pre><p>SPSS:</p><pre><code class="nohighlight hljs">MIXED Reaction BY Days
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=INTERCEPT | SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=Days | SUBJECT(Subject) COVTYPE(CS).</code></pre><h5 id="Model-3"><a class="docs-heading-anchor" href="#Model-3">Model 3</a><a id="Model-3-1"></a><a class="docs-heading-anchor-permalink" href="#Model-3" title="Permalink"></a></h5><pre><code class="nohighlight hljs">lmm = LMM(@formula(Reaction~1), df;
+  random = VarEffect(@covstr(Days|Subject), CSH)
+  )
+  fit!(lmm)</code></pre><p>SPSS:</p><pre><code class="nohighlight hljs">MIXED Reaction BY Days
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=INTERCEPT | SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=Days | SUBJECT(Subject) COVTYPE(CSH).</code></pre><h5 id="Model-4"><a class="docs-heading-anchor" href="#Model-4">Model 4</a><a id="Model-4-1"></a><a class="docs-heading-anchor-permalink" href="#Model-4" title="Permalink"></a></h5><pre><code class="nohighlight hljs">lmm = LMM(@formula(Reaction~1), df;
+  random = VarEffect(@covstr(Days|Subject), ARH)
+  )
+   fit!(lmm)</code></pre><p>SPSS:</p><pre><code class="nohighlight hljs">MIXED Reaction BY Days
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=INTERCEPT | SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=Days | SUBJECT(Subject) COVTYPE(ARH1).</code></pre><h4 id="pastes.csv"><a class="docs-heading-anchor" href="#pastes.csv">pastes.csv</a><a id="pastes.csv-1"></a><a class="docs-heading-anchor-permalink" href="#pastes.csv" title="Permalink"></a></h4><h5 id="Model-5"><a class="docs-heading-anchor" href="#Model-5">Model 5</a><a id="Model-5-1"></a><a class="docs-heading-anchor-permalink" href="#Model-5" title="Permalink"></a></h5><pre><code class="nohighlight hljs">lmm =  LMM(@formula(strength~1), df;
+random = [VarEffect(@covstr(1|batch), SI),  VarEffect(@covstr(1|batch &amp; cask), SI)]
+)
+fit!(lmm)</code></pre><p>SPSS:</p><pre><code class="nohighlight hljs">MIXED strength
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=| SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=INTERCEPT | SUBJECT(batch) COVTYPE(ID)
+  /RANDOM=INTERCEPT | SUBJECT(cask * batch) COVTYPE(ID).</code></pre><h5 id="Model-6"><a class="docs-heading-anchor" href="#Model-6">Model 6</a><a id="Model-6-1"></a><a class="docs-heading-anchor-permalink" href="#Model-6" title="Permalink"></a></h5><pre><code class="nohighlight hljs">lmm =  LMM(@formula(strength~1), df;
+random = VarEffect(Metida.@covstr(cask|batch),  ARMA),
+)
+fit!(lmm)</code></pre><p>SPSS:</p><pre><code class="nohighlight hljs">MIXED strength by cask
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=| SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=cask | SUBJECT(batch) COVTYPE(ARMA11).</code></pre><h4 id="penicillin.csv"><a class="docs-heading-anchor" href="#penicillin.csv">penicillin.csv</a><a id="penicillin.csv-1"></a><a class="docs-heading-anchor-permalink" href="#penicillin.csv" title="Permalink"></a></h4><h5 id="Model-7"><a class="docs-heading-anchor" href="#Model-7">Model 7</a><a id="Model-7-1"></a><a class="docs-heading-anchor-permalink" href="#Model-7" title="Permalink"></a></h5><pre><code class="nohighlight hljs">lmm =  LMM(@formula(diameter ~ 1), df;
+random = [VarEffect(@covstr(1|plate), SI), VarEffect(@covstr(1|sample), SI)]
+)
+fit!(lmm)</code></pre><p>SPSS:</p><pre><code class="nohighlight hljs">MIXED diameter
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=| SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=INTERCEPT | SUBJECT(plate) COVTYPE(ID)
+  /RANDOM=INTERCEPT | SUBJECT(sample) COVTYPE(ID).</code></pre><h4 id="RepeatedPulse.csv"><a class="docs-heading-anchor" href="#RepeatedPulse.csv">RepeatedPulse.csv</a><a id="RepeatedPulse.csv-1"></a><a class="docs-heading-anchor-permalink" href="#RepeatedPulse.csv" title="Permalink"></a></h4><h5 id="Model-8"><a class="docs-heading-anchor" href="#Model-8">Model 8</a><a id="Model-8-1"></a><a class="docs-heading-anchor-permalink" href="#Model-8" title="Permalink"></a></h5><pre><code class="nohighlight hljs">sort!(df, :Day)
+lmm =  LMM(@formula(Pulse~1), df;
+random =  VarEffect(Metida.@covstr(Time|Time),  SI),
+repeated =  VarEffect(Metida.@covstr(Day|Time),  AR),
+)
+fit!(lmm)</code></pre><p>SPSS:</p><pre><code class="nohighlight hljs">MIXED Pulse BY Day Time
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=| SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=Time | SUBJECT(Time) COVTYPE(ID)
+  /REPEATED = Day | SUBJCET(Time) COVTYPE(AR1).</code></pre><h5 id="Model-9"><a class="docs-heading-anchor" href="#Model-9">Model 9</a><a id="Model-9-1"></a><a class="docs-heading-anchor-permalink" href="#Model-9" title="Permalink"></a></h5><pre><code class="nohighlight hljs">sort!(df, :Day)
+lmm =  LMM(@formula(Pulse~1), df;
+repeated = VarEffect(Metida.@covstr(Day|Time),  AR),
+)
+ fit!(lmm)</code></pre><p>SPSS:</p><pre><code class="nohighlight hljs">MIXED Pulse BY Day Time
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=| SSTYPE(3)
+  /METHOD=REML
+  /REPEATED = Day | SUBJCET(Time) COVTYPE(AR1).</code></pre><h5 id="Model-10"><a class="docs-heading-anchor" href="#Model-10">Model 10</a><a id="Model-10-1"></a><a class="docs-heading-anchor-permalink" href="#Model-10" title="Permalink"></a></h5><pre><code class="nohighlight hljs">sort!(df, :Day)
+lmm =  LMM(@formula(Pulse~1), df;
+random =  VarEffect(Metida.@covstr(Day|Time),  AR),
+)
+ fit!(lmm)</code></pre><p>SPSS:</p><pre><code class="nohighlight hljs">MIXED Pulse BY Day Time
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=| SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=Day | SUBJECT(Time) COVTYPE(AR1).</code></pre><h2 id="Section-2:-Parameters-validation-for-public-datasets-Metida-and-SPSS-and-MixedModels"><a class="docs-heading-anchor" href="#Section-2:-Parameters-validation-for-public-datasets-Metida-and-SPSS-and-MixedModels">Section 2: Parameters validation for public datasets Metida &amp; SPSS &amp; MixedModels</a><a id="Section-2:-Parameters-validation-for-public-datasets-Metida-and-SPSS-and-MixedModels-1"></a><a class="docs-heading-anchor-permalink" href="#Section-2:-Parameters-validation-for-public-datasets-Metida-and-SPSS-and-MixedModels" title="Permalink"></a></h2><h5 id="Model-7-2"><a class="docs-heading-anchor" href="#Model-7-2">Model 7</a><a class="docs-heading-anchor-permalink" href="#Model-7-2" title="Permalink"></a></h5><p>Metida:</p><pre><code class="nohighlight hljs">lmm = LMM(@formula(diameter ~ 1), df;
+random = [VarEffect(@covstr(1|plate), SI), VarEffect(@covstr(1|sample), SI)]
+)
+fit!(lmm)</code></pre><p>MixedModels:</p><pre><code class="nohighlight hljs">fm = @formula(diameter ~ 1 + (1|plate) + (1|sample))
+mm  = fit(MixedModel, fm, df, REML=true)</code></pre><p>SPSS:</p><pre><code class="nohighlight hljs">MIXED diameter
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=| SSTYPE(3)
+  /METHOD=REML
+  /EMMEANS=TABLES(OVERALL)
+  /RANDOM=INTERCEPT | SUBJECT(plate) COVTYPE(ID)
+  /RANDOM=INTERCEPT | SUBJECT(sample) COVTYPE(ID).</code></pre><table><tr><th style="text-align: right">Model</th><th style="text-align: right">Parameter</th><th style="text-align: right">Value Metida</th><th style="text-align: right">Value MM</th><th style="text-align: right">Value SPSS</th></tr><tr><td style="text-align: right">7</td><td style="text-align: right">(Intercept) estimate</td><td style="text-align: right">22.9722</td><td style="text-align: right">22.9722</td><td style="text-align: right">22.972</td></tr><tr><td style="text-align: right">7</td><td style="text-align: right">(Intercept) SE</td><td style="text-align: right">0.808573</td><td style="text-align: right">0.808572</td><td style="text-align: right">0.809</td></tr><tr><td style="text-align: right">7</td><td style="text-align: right">plate   σ²</td><td style="text-align: right">0.716908</td><td style="text-align: right">0.716908</td><td style="text-align: right">0.716908</td></tr><tr><td style="text-align: right">7</td><td style="text-align: right">sample   σ²</td><td style="text-align: right">3.73092</td><td style="text-align: right">3.730901</td><td style="text-align: right">3.730918</td></tr><tr><td style="text-align: right">7</td><td style="text-align: right">Residual   σ²</td><td style="text-align: right">0.302415</td><td style="text-align: right">0.302416</td><td style="text-align: right">0.302415</td></tr></table><h2 id="Section-3:-Validation-with-bioequivalence-datasets-with-Metida-and-SPSS"><a class="docs-heading-anchor" href="#Section-3:-Validation-with-bioequivalence-datasets-with-Metida-and-SPSS">Section 3: Validation with bioequivalence datasets with Metida &amp; SPSS</a><a id="Section-3:-Validation-with-bioequivalence-datasets-with-Metida-and-SPSS-1"></a><a class="docs-heading-anchor-permalink" href="#Section-3:-Validation-with-bioequivalence-datasets-with-Metida-and-SPSS" title="Permalink"></a></h2><h4 id="Model-BE-B"><a class="docs-heading-anchor" href="#Model-BE-B">Model BE-B</a><a id="Model-BE-B-1"></a><a class="docs-heading-anchor-permalink" href="#Model-BE-B" title="Permalink"></a></h4><pre><code class="nohighlight hljs">lmm =  LMM(@formula(lnpk~sequence+period+treatment), dfrds;
+random =  VarEffect(Metida.@covstr(1|subject),  SI),
+)
+fit!(lmm)</code></pre><h4 id="Model-BE-C"><a class="docs-heading-anchor" href="#Model-BE-C">Model BE-C</a><a id="Model-BE-C-1"></a><a class="docs-heading-anchor-permalink" href="#Model-BE-C" title="Permalink"></a></h4><pre><code class="nohighlight hljs">lmm =  LMM(@formula(lnpk~sequence+period+treatment), dfrds;
+    random =  VarEffect(Metida.@covstr(treatment|subject),  CSH),
+    repeated =  VarEffect(Metida.@covstr(treatment|subject),  DIAG),
+    )
+     fit!(lmm)</code></pre><h4 id="Typical-SPSS-code"><a class="docs-heading-anchor" href="#Typical-SPSS-code">Typical SPSS code</a><a id="Typical-SPSS-code-1"></a><a class="docs-heading-anchor-permalink" href="#Typical-SPSS-code" title="Permalink"></a></h4><pre><code class="nohighlight hljs">MIXED lnpk BY period sequence treatment subject
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE) PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=period sequence treatment | SSTYPE(3)
+  /METHOD=REML
+  /RANDOM= subject(sequence) | COVTYPE(ID)
+  /EMMEANS=TABLES(treatment) COMPARE REFCAT(FIRST) ADJ(LSD).
+
+MIXED lnpk BY period treatment sequence subject
+  /CRITERIA=CIN(90) MXITER(200) MXSTEP(20) SCORING(2) SINGULAR(0.000000000001) HCONVERGE(0,
+    RELATIVE) LCONVERGE(0.0000000000001, RELATIVE) PCONVERGE(0, RELATIVE)
+  /FIXED=period treatment sequence | SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=treatment | SUBJECT(subject) COVTYPE(CSH)
+  /REPEATED=treatment | SUBJECT(subject*period) COVTYPE(DIAG)
+  /EMMEANS=TABLES(treatment) COMPARE REFCAT(FIRST) ADJ(LSD).</code></pre><h4 id="Results"><a class="docs-heading-anchor" href="#Results">Results</a><a id="Results-1"></a><a class="docs-heading-anchor-permalink" href="#Results" title="Permalink"></a></h4><pre><code class="language- hljs">using Metida; # hide
+include(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;validation_init.jl&quot;)); # hide
+include(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;validation_s3.jl&quot;))</code></pre><p>Full SPSS code provided in validation folder (<a href="https://github.com/PharmCat/Metida.jl/blob/master/validation/spssrdscode.sps.txt">here</a>).</p><p>SPSS <a href="https://github.com/PharmCat/Metida.jl/blob/master/validation/RDS-OUTPUT.docx">output</a> in DOCX format.</p><p>Validation dataset available <a href="https://link.springer.com/article/10.1208%2Fs12248-020-0427-6">here</a>, <a href="https://static-content.springer.com/esm/art%3A10.1208%2Fs12248-020-0427-6/MediaObjects/12248_2020_427_MOESM2_ESM.xls">12248<em>2020</em>427<em>MOESM2</em>ESM.xls</a>.</p><h4 id="Validation-report"><a class="docs-heading-anchor" href="#Validation-report">Validation report</a><a id="Validation-report-1"></a><a class="docs-heading-anchor-permalink" href="#Validation-report" title="Permalink"></a></h4><p>Validation and report can be done on local machine with Weave.jl and Pandoc.</p><pre><code class="language-julia hljs">using Weave, Metida
+weave(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;validation_report.jmd&quot;);
+doctype = &quot;pandoc2pdf&quot;,
+out_path = :pwd,
+pandoc_options=[&quot;--toc&quot;, &quot;-V colorlinks=true&quot; , &quot;-V linkcolor=blue&quot;, &quot;-V urlcolor=red&quot;, &quot;-V toccolor=gray&quot;])</code></pre><p>Report will be saved in Julia working directory. For your own purpose you can edit validation_report.jmd template.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../bench/">« Benchmark</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Friday 24 March 2023 17:15">Friday 24 March 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
