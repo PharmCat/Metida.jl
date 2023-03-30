@@ -692,7 +692,7 @@ end
     @test_nowarn Base.show(io, lmm.data)
     @test_nowarn Base.show(io, lmm.result)
     @test_nowarn Base.show(io, lmm.covstr)
-    @test_nowarn Base.show(io, lmm.covstr.repeated.covtype)
+    @test_nowarn Base.show(io, lmm.covstr.repeated[1].covtype)
     @test_nowarn Base.show(io, Metida.getlog(lmm))
 
     t3table = Metida.typeiii(lmm)
