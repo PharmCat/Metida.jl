@@ -187,7 +187,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     maxn::Int
     #--
     function CovStructure(random, repeated, data)
-        alleffl =  length(random) + 1
+        alleffl =  length(random) + length(repeated)
         rown    =  length(Tables.rows(data))
         #
         q       = Vector{Int}(undef, alleffl)
@@ -198,7 +198,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         #subjz   = Vector{BitMatrix}(undef, alleffl)
         dicts   = Vector{Dict}(undef, alleffl)
         # 
-        zrndur  = Vector{UnitRange{Int}}(undef, alleffl - 1)
+        zrndur  = Vector{UnitRange{Int}}(undef, length(random))
         # Z Matrix for repeated effect
         rz      = Matrix{Float64}(undef, rown, 0)
         # Number of random effects
@@ -246,31 +246,35 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             end
 
         # REPEATED EFFECTS
-        if length(repeated[1].coding) == 0
-            fill_coding_dict!(repeated[1].model, repeated[1].coding, data)
-        end
+        for i = 1:length(repeated)
 
-        schema[end] = apply_schema(repeated[1].model, StatsModels.schema(data, repeated[1].coding))
-        rz          = modelcols(MatrixTerm(schema[end]), data)
-        symbs       = StatsModels.termvars(repeated[1].subj)
-        if length(symbs) > 0
-            cdata       = tabcols(data, symbs) # Tuple(Tables.getcolumn(Tables.columns(data), x) for x in symbs)
-            dicts[end]  = Dict{Tuple{eltype.(cdata)...}, Vector{Int}}()
-            indsdict!(dicts[end], cdata)
-        else
-            dicts[end]  = Dict(1 => collect(1:rown)) #changed to range
-        end
+            if length(repeated[i].coding) == 0
+                fill_coding_dict!(repeated[i].model, repeated[i].coding, data)
+            end
 
-        sn[end]     = length(dicts[end])
-        q[end]      = size(rz, 2)
-        csp         = covstrparam(repeated[1].covtype.s, q[end])
-        t[end]      = sum(csp)
-        tr[end]     = UnitRange(sum(t[1:end-1]) + 1, sum(t[1:end-1]) + t[end])
-        updatenametype!(ct, rcnames, csp, schema[end], repeated[1].covtype.s)
+            schema[rn+i] = apply_schema(repeated[i].model, StatsModels.schema(data, repeated[i].coding))
+            rz          = modelcols(MatrixTerm(schema[rn+i]), data)
+            symbs       = StatsModels.termvars(repeated[i].subj)
+            if length(symbs) > 0
+                cdata       = tabcols(data, symbs) # Tuple(Tables.getcolumn(Tables.columns(data), x) for x in symbs)
+                dicts[rn+i]  = Dict{Tuple{eltype.(cdata)...}, Vector{Int}}()
+                indsdict!(dicts[rn+i], cdata)
+            else
+                dicts[rn+i]  = Dict(1 => collect(1:rown)) #changed to range
+            end
+
+            sn[rn+i]     = length(dicts[rn+i])
+            q[rn+i]      = size(rz, 2)
+            csp          = covstrparam(repeated[i].covtype.s, q[rn+i])
+            t[rn+i]      = sum(csp)
+            tr[rn+i]     = UnitRange(sum(t[1:rn+i-1]) + 1, sum(t[1:rn+i-1]) + t[rn+i])
+            updatenametype!(ct, rcnames, csp, schema[rn+i], repeated[i].covtype.s)
+ 
+            # emap
+            append!(emap, fill(rn+i, t[rn+i]))
+        end
         # Theta length
         tl  = sum(t)
-        # emap
-        append!(emap, fill(rn+1, t[end]))
         ########################################################################
         #if any(x-> 1 in keys(x), dicts[1:end-1])
         #    blocks = [first(dicts)[1]]
@@ -292,6 +296,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             end
             blocks  = collect(values(subjblockdict))
         #end
+
         sblock = Matrix{Vector{Tuple{Vector{Int}, Int}}}(undef, length(blocks), alleffl)
         nblock = []
         #######################################################################
