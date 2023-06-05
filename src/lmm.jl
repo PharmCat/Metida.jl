@@ -225,7 +225,7 @@ function Base.show(io::IO, lmm::LMM)
         println(io, "    Variance components:")
         println(io, "    θ vector: ", round.(lmm.result.theta, sigdigits = 6))
 
-        mx = hcat(Matrix{Any}(undef, lmm.covstr.tl, 1), lmm.covstr.rcnames, lmm.covstr.ct, round.(lmm.result.theta, sigdigits = 6))
+        mx = hcat(Matrix{Any}(missing, lmm.covstr.tl, 1), lmm.covstr.rcnames, lmm.covstr.ct, round.(lmm.result.theta, sigdigits = 6))
 
         for i = 1:length(lmm.covstr.random)
             if !isa(lmm.covstr.random[i].covtype.s, ZERO)
