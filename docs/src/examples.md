@@ -1,11 +1,11 @@
 ### Example 1 - Continuous and categorical predictors
 
 ```@example lmmexample
-using Metida, CSV, DataFrames, CategoricalArrays;
+using Metida, CSV, DataFrames, CategoricalArrays, Plots;
 
 import Pkg
 Pkg.activate("MixedModels")
-Pkg.add(name="Example", version="3.1.5")
+Pkg.add(name="MixedModels", version="3.1.5")
 using MixedModels
 
 
