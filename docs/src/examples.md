@@ -1,13 +1,7 @@
 ### Example 1 - Continuous and categorical predictors
 
 ```@example lmmexample
-using Metida, CSV, DataFrames, CategoricalArrays;
-
-import Pkg
-Pkg.activate("MixedModels")
-Pkg.add(name="MixedModels", version="3.1.5")
-using MixedModels
-
+using Metida, CSV, DataFrames, CategoricalArrays, MixedModels;
 
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 
