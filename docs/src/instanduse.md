@@ -60,7 +60,7 @@ nothing # hide
 
 Make model with `@formula` macro from `StatsModels`.
 Define `random` and `repreated` effects with [`Metida.VarEffect`](@ref) using [`Metida.@covstr`](@ref) macros. Left side of `@covstr` is model of effect and
-right side is a effect itself. [`Metida.HeterogeneousCompoundSymmetry`](@ref) and [`Metida.Diagonal`](@ref) in example bellow is a model of variance-covariance structure. See also [`Metida.@lmmformula`](@ref) macro.
+right side is a effect itself. [`Metida.HeterogeneousCompoundSymmetry`](@ref) and [`Metida.Diag`](@ref) (Diagonal) in example bellow is a model of variance-covariance structure. See also [`Metida.@lmmformula`](@ref) macro.
 
 !!! note
   In some cases levels of repeated effect should not be equal inside each level of subject or model will not have any sense. For example, it is assumed that usually CSH or UN (Unstructured) using with levels of repeated effect is different inside each level of subject.

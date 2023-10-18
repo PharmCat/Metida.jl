@@ -111,6 +111,11 @@ Metida.Unstructured
 Metida.caic
 ```
 
+### Metida.coefn
+```@docs
+Metida.coefn
+```
+
 ### Metida.dof_satter
 ```@docs
 Metida.dof_satter
@@ -159,6 +164,11 @@ Metida.rand!
 ### Metida.raneff
 ```@docs
 Metida.raneff
+```
+
+### Metida.raneffn
+```@docs
+Metida.raneffn
 ```
 
 ### Metida.rankx
@@ -248,6 +258,11 @@ Metida.fit
 Metida.fit!
 ```
 
+### islinear 
+```@docs
+Metida.islinear 
+```
+
 ### isfitted
 ```@docs
 Metida.isfitted
@@ -315,6 +330,12 @@ Metida.dof_contain
 Metida.typeiii
 ```
 
+### Metida.MILMM
+```@docs
+Metida.MILMM
+```
+
+
 ## Not API functions
 
 
@@ -341,4 +362,14 @@ Metida.mulθ₃
 ### Metida.mulαtβinc!
 ```@docs
 Metida.mulαtβinc!
+```
+
+### Metida.tname   
+```@docs
+Metida.tname   
+```
+
+### Metida.raneflenv  
+```@docs
+Metida.raneflenv  
 ```
