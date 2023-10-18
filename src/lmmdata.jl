@@ -1,6 +1,6 @@
 #lmmdata.jl
 
-struct LMMData{T}
+struct LMMData{T<:AbstractFloat}
     # Fixed effect matrix
     xv::Matrix{Float64}
     # Responce vector
@@ -10,7 +10,7 @@ struct LMMData{T}
     end
 end
 
-struct LMMDataViews{T} <: AbstractLMMDataBlocks
+struct LMMDataViews{T<:AbstractFloat} <: AbstractLMMDataBlocks
     # Fixed effect matrix views
     xv::Vector{Matrix{Float64}}
     # Responce vector views

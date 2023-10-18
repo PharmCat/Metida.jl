@@ -86,8 +86,10 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
                 lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Repeated effect not a constant, but covariance type is SI. "))
             end
         end
+        rmf = response(mf)
+        if !(eltype(rmf) <: AbstractFloat) @warn "Response variable not <: AbstractFloat" end 
+        lmmdata = LMMData(modelmatrix(mf), rmf)
 
-        lmmdata = LMMData(modelmatrix(mf), response(mf))
         covstr = CovStructure(random, repeated, data)
         rankx =  rank(lmmdata.xv)
         if rankx != size(lmmdata.xv, 2)
