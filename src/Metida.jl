@@ -14,7 +14,7 @@ import MetidaBase.PrettyTables: TextFormat, pretty_table, tf_borderless, ft_prin
 import Distributions: Normal, TDist, FDist, Chisq, MvNormal, FullNormal, ccdf, cdf, quantile
 import LinearAlgebra: checksquare, BlasFloat
 import StatsModels: @formula, termvars, ModelFrame, FunctionTerm, AbstractTerm, CategoricalTerm, AbstractContrasts, ConstantTerm, InterceptTerm, Term, InteractionTerm, FormulaTerm, ModelMatrix, schema, apply_schema, MatrixTerm, modelcols
-import StatsBase: fit, fit!, coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, mean, var, stderror, modelmatrix, response, responsename, CoefTable, coeftable, crossmodelmatrix
+import StatsBase: fit, fit!, coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, islinear, vcov, mean, var, stderror, modelmatrix, response, responsename, CoefTable, coeftable, crossmodelmatrix
 import Base: show, rand, ht_keyindex, getproperty
 import Random: default_rng, AbstractRNG, rand!
 
@@ -40,7 +40,7 @@ AbstractCovarianceType, AbstractCovmatMethod, MetidaModel,
 getlog, rand, rand!,
 bootstrap
 
-export coef, coefnames, coeftable, crossmodelmatrix, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, vcov, stderror, modelmatrix, response
+export coef, coefnames, coeftable, crossmodelmatrix, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, islinear, vcov, stderror, modelmatrix, response
 
 num_cores() = Int(MetidaBase.num_cores())
 
