@@ -1,5 +1,6 @@
 """
-    islinear(model::LMM) = true
+    StatsBase.islinear(model::LMM)
+
 """
 StatsBase.islinear(model::LMM) = true
 
