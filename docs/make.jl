@@ -24,6 +24,7 @@ makedocs(
         "API" => "api.md",
         "Citation & Reference" => "ref.md",
     ],
+    checkdocs = :exports
 )
 #=
 makedocs(format = DocumenterLaTeX.LaTeX(),
