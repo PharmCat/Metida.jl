@@ -51,7 +51,7 @@ L-contrast matrix for `i` fixed effect.
 """
 function lcontrast(lmm::LMM, i::Int)
     n = length(lmm.mf.f.rhs.terms)
-    p = size(lmm.mm.m, 2)
+    p = size(lmm.data.xv, 2)
     if i > n || n < 1 error("Factor number out of range 1-$(n)") end
     inds = findall(x -> x==i, lmm.mm.assign)
     if typeof(lmm.mf.f.rhs.terms[i]) <: CategoricalTerm

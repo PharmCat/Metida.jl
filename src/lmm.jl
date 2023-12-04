@@ -26,7 +26,7 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
     model::FormulaTerm
     mf::ModelFrame
     mm::ModelMatrix
-    covstr::CovStructure{T}
+    covstr::CovStructure
     data::LMMData{T}
     dv::LMMDataViews{T}
     nfixed::Int
@@ -38,7 +38,7 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
     function LMM(model::FormulaTerm,
         mf::ModelFrame,
         mm::ModelMatrix,
-        covstr::CovStructure{T},
+        covstr::CovStructure,
         data::LMMData{T},
         dv::LMMDataViews{T},
         nfixed::Int,
@@ -46,7 +46,7 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         result::ModelResult,
         maxvcbl::Int,
         log::Vector{LMMLogMsg}) where T
-        new{eltype(mm.m)}(model, mf, mm, covstr, data, dv, nfixed, rankx, result, maxvcbl, log)
+        new{T}(model, mf, mm, covstr, data, dv, nfixed, rankx, result, maxvcbl, log)
     end
     function LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
         #need check responce - Float
@@ -86,11 +86,13 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         end
         lmmdata = LMMData(modelmatrix(mf), response(mf))
         covstr = CovStructure(random, repeated, data)
+        coefn = size(lmmdata.xv, 2)
         rankx =  rank(lmmdata.xv)
-        if rankx != size(lmmdata.xv, 2)
+        if rankx != coefn
+            @warn "Fixed-effect matrix not full-rank!"
             lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Fixed-effect matrix not full-rank!"))
         end
-        mres = ModelResult(false, nothing, fill(NaN, covstr.tl), NaN, fill(NaN, rankx), nothing, fill(NaN, rankx, rankx), fill(NaN, rankx), nothing, false)
+        mres = ModelResult(false, nothing, fill(NaN, covstr.tl), NaN, fill(NaN, coefn), nothing, fill(NaN, coefn, coefn), fill(NaN, coefn), nothing, false)
         LMM(model, mf, mm, covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, mres, findmax(length, covstr.vcovblock)[1], lmmlog)
     end
     function LMM(f::LMMformula, data; contrasts=Dict{Symbol,Any}(), kwargs...)

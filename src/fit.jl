@@ -132,7 +132,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
             error("init length $(length(init)) != θ length $(length(θ))")
         end
     else
-        initθ = sqrt(initvar(lmm.data.yv, lmm.mm.m)[1])/(length(lmm.covstr.random)+1)
+        initθ = sqrt(initvar(lmm.data.yv, lmm.data.xv)[1])/(length(lmm.covstr.random)+1)
         for i = 1:length(θ)
             if lmm.covstr.ct[i] == :var
                 θ[i] = initθ
