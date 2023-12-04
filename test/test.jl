@@ -169,6 +169,13 @@ include("testdata.jl")
     @test tt.ndf[2] ≈ 3.0 atol=1E-5
     @test tt.df[2] ≈ 3.39086 atol=1E-5
     @test tt.pval[2] ≈ 0.900636 atol=1E-5
+
+    # Int dependent variable, function Term in random part
+    df0.varint = Int.(ceil.(df0.var2))
+    lmmint = Metida.fit(Metida.LMM, Metida.@lmmformula(varint~formulation,
+    random = 1+var^2|subject:Metida.SI), df0)
+    Metida.fit!(lmmint)
+    @test Metida.m2logreml(lmmint) ≈ 84.23373276096902 atol=1E-6
 end
 ################################################################################
 #                                  df0

@@ -5,8 +5,11 @@ struct LMMData{T}
     xv::Matrix{Float64}
     # Responce vector
     yv::Vector{T}
-    function LMMData(xa::Matrix{Float64}, ya::Vector{T}) where T
+    function LMMData(xa::AbstractMatrix{Float64}, ya::AbstractVector{T}) where T
         new{T}(xa, ya)
+    end
+    function LMMData(xa::AbstractMatrix{Float64}, ya::AbstractVector{Int})
+        LMMData(xa, float.(ya))
     end
 end
 
