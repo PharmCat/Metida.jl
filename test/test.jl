@@ -108,6 +108,8 @@ include("testdata.jl")
     est = Metida.estimate(lmm, [0,0,0,0,0,1]; level = 0.9)
     est = Metida.estimate(lmm; level = 0.9)
 
+    @test_nowarn formula(lmm)
+
 
     ############################################################################
     # AI like algo
