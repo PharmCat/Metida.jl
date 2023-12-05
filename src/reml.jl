@@ -64,7 +64,7 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; maxthreads::Int = 16) where T #
             @inbounds for j ∈ 1:d + (t ≤ r)
                 i    =  offset + j
                 q    = length(lmm.covstr.vcovblock[i])
-                qswm = q + lmm.rankx
+                qswm = q + p
                 Vp   = zeros(T, qswm, qswm)
                 V    = view(Vp, 1:q, 1:q)
                 Vx   = view(Vp, 1:q, q+1:qswm)
@@ -103,9 +103,32 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; maxthreads::Int = 16) where T #
                 θ₃ += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹[i])
             end
         else
+            #=
+            qrd  = qr(θs₂)
+            vec  = collect(1:length(βm))
+            dr   = diag(qrd.R)
+            tval = mean(dr)*sqrt(eps())
+            inds = Int[]
+            for i = 1:length(βm)
+                if dr[i] > tval 
+                    push!(inds, i) 
+                else
+                    θ₂[:, i] .= zero(T)
+                    θ₂[i, :] .= zero(T)
+                    βm[i]     = zero(T)
+                end
+            end
+            rθs₂ = θs₂[inds, inds]
+            mul!(view(β, inds), inv(rθs₂), view(βm, inds))
+            logdetθ₂ = logdet(rθs₂)
+            =#
             β       .= NaN
             return   Inf, β, Inf, Inf, false
         end
+        # θ₃
+        #@inbounds @simd for i = 1:n
+        #    θ₃ += mulθ₃(data.yv[i], data.xv[i], β, V⁻¹[i])
+        #end
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θs₂, θ₃, noerror #REML, β, iC, θ₃, errors
 end
 # Using BLAS, LAPACK - non ForwardDiff, used by MetidaNLopt
@@ -113,9 +136,10 @@ function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) whe
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)
+    p             = size(lmm.data.xv, 2)
     #---------------------------------------------------------------------------
     θ₁            = zero(T)
-    θ₂            = zeros(T, lmm.rankx, lmm.rankx)
+    θ₂            = zeros(T, p, p)
     θ₃            = zero(T)
     A             = Vector{Matrix{T}}(undef, n)
     logdetθ₂      = zero(T)
@@ -130,8 +154,8 @@ function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) whe
         d, r = divrem(n, ncore)
         Base.Threads.@threads for t = 1:ncore
             offset   = min(t-1, r) + (t-1)*d
-            accθ₂[t] = zeros(T, lmm.rankx, lmm.rankx)
-            accβm[t] = zeros(T, lmm.rankx)
+            accθ₂[t] = zeros(T, p, p)
+            accβm[t] = zeros(T, p)
             @inbounds for j ∈ 1:d+(t ≤ r)
                 i =  offset + j
                 q    = length(lmm.covstr.vcovblock[i])
@@ -188,6 +212,7 @@ end
 ################################################################################
 function core_sweep_β(lmm, data, θ::Vector{T}, β, n; maxthreads::Int = 16) where T
     ncore     = min(num_cores(), n, maxthreads)
+    p         = size(lmm.data.xv, 2)
     accθ₁     = zeros(T, ncore)
     accθ₂     = Vector{Matrix{T}}(undef, ncore)
     accθ₃     = zeros(T, ncore)
@@ -197,11 +222,11 @@ function core_sweep_β(lmm, data, θ::Vector{T}, β, n; maxthreads::Int = 16) wh
     d, r = divrem(n, ncore)
     Base.Threads.@threads for t = 1:ncore
         offset = min(t-1, r) + (t-1)*d
-        accθ₂[t] = zeros(T, lmm.rankx, lmm.rankx)
+        accθ₂[t] = zeros(T, p, p)
         @inbounds for j ∈ 1:d+(t ≤ r)
             i =  offset + j
             q    = length(lmm.covstr.vcovblock[i])
-            qswm = q + lmm.rankx
+            qswm = q + p
             Vp   = zeros(T, qswm, qswm)
             V    = view(Vp, 1:q, 1:q)
             Vx   = view(Vp, 1:q, q+1:qswm)
