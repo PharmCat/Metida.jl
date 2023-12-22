@@ -5,7 +5,6 @@ desc = "Mixed-effects models with flexible covariance structure."
 authors = ["Vladimir Arnautov <mail@pharmcat.net>"]
 version = "0.15.0"
 
-
 [deps]
 DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
