@@ -268,14 +268,15 @@ Update variance-covariance matrix V for i bolock. Upper triangular updated.
 """
 function vmatrix!(V, θ, lmm::LMM, i::Int) # pub API
     gvec = gmatvec(θ, lmm.covstr)
-    zgz_base_inc!(V, gvec, lmm.covstr, i)
     rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, i)
+    zgz_base_inc!(V, gvec, lmm.covstr, i)
+    
 end
 
 # !!! Main function REML used
 function vmatrix!(V, G, rθ, lmm::LMM, i::Int)
-    zgz_base_inc!(V, G, lmm.covstr, i)
     rmat_base_inc!(V, rθ, lmm.covstr, i)
+    zgz_base_inc!(V, G, lmm.covstr, i)
 end
 
 """
@@ -297,8 +298,8 @@ end
 function vmatrix(θ::Vector, covstr::CovStructure, i::Int)
     V    = zeros(length(covstr.vcovblock[i]), length(covstr.vcovblock[i]))
     gvec = gmatvec(θ, covstr)
-    zgz_base_inc!(V, gvec, covstr, i)
     rmat_base_inc!(V, θ[covstr.tr[end]], covstr, i)
+    zgz_base_inc!(V, gvec, covstr, i)
     Symmetric(V)
 end
 
