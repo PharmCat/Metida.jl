@@ -30,9 +30,9 @@ factor: 1.0 &amp; time   0.404971   0.0373406  10.85    &lt;1e-26
   Random 1   ρ                rho   -0.0427208
   Residual   σ²               var   0.970345
 </code></pre><p>MixedModels result:</p><pre><code class="language-julia hljs">fm = @formula(response ~ 1 + factor*time + (1 + time|subject&amp;factor))
-mm = fit(MixedModel, fm, rds, REML=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Minimizing 2    Time: 0:00:00 ( 0.18  s/it)
+mm = fit(MixedModel, fm, rds, REML=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Minimizing 2    Time: 0:00:00 ( 0.19  s/it)
   objective:  1426.9231858044589
-Minimizing 68    Time: 0:00:00 ( 5.84 ms/it)
+Minimizing 68    Time: 0:00:00 ( 6.23 ms/it)
 Linear mixed model fit by REML
  response ~ 1 + factor + time + factor &amp; time + (1 + time | subject &amp; factor)
  REML criterion at convergence: 1300.180759818896
@@ -83,9 +83,9 @@ Status: <span class="sgr32">converged</span> (No Errors)
   Random 2   σ²    var   3.73092
   Residual   σ²    var   0.302415
 </code></pre><p>MixedModels:</p><pre><code class="language-julia hljs">fm2 = @formula(diameter ~ 1 + (1|plate) + (1|sample))
-mm = fit(MixedModel, fm2, df, REML=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Minimizing 2    Time: 0:00:00 ( 0.27  s/it)
+mm = fit(MixedModel, fm2, df, REML=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Minimizing 2    Time: 0:00:00 ( 0.28  s/it)
   objective:  366.5302937135882
-Minimizing 46    Time: 0:00:00 (11.74 ms/it)
+Minimizing 46    Time: 0:00:00 (12.26 ms/it)
 Linear mixed model fit by REML
  diameter ~ 1 + (1 | plate) + (1 | sample)
  REML criterion at convergence: 330.86058899096145
@@ -232,4 +232,4 @@ table_model = StatsModels.TableRegressionModel(lmm, lmm.mf, lmm.mm)
 
 emmeans(tm)
 
-effects(Dict(:period =&gt; [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;]), tm)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../custom/">Custom structures »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Monday 4 December 2023 19:04">Monday 4 December 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+effects(Dict(:period =&gt; [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;]), tm)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../custom/">Custom structures »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Friday 22 December 2023 12:23">Friday 22 December 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
