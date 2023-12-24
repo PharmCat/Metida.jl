@@ -10,12 +10,16 @@ function initvar(y::Vector, X::Matrix{T}) where T
     dot(r, r)/(length(r) - size(X, 2)), β
 end
 ################################################################################
-function nterms(lmm::LMM)
-    nterms(lmm.mf)
+function fixedeffn(f::FormulaTerm)
+    length(f.rhs.terms) - !StatsModels.hasintercept(f)
 end
+function fixedeffn(lmm::LMM)
+    fixedeffn(lmm.f) 
+end
+#=
 function nterms(mf::ModelFrame)
     mf.schema.schema.count
-end
+=#
 function nterms(rhs::Union{Tuple{Vararg{AbstractTerm}}, Nothing, AbstractTerm})
     if isa(rhs, Term)
         p = 1
@@ -26,7 +30,6 @@ function nterms(rhs::Union{Tuple{Vararg{AbstractTerm}}, Nothing, AbstractTerm})
     end
     p
 end
-
 """
     Rerm name.
 """
@@ -50,16 +53,16 @@ end
 L-contrast matrix for `i` fixed effect.
 """
 function lcontrast(lmm::LMM, i::Int)
-    n = length(lmm.mf.f.rhs.terms)
+    n = length(lmm.f.rhs.terms)
     p = size(lmm.data.xv, 2)
     if i > n || n < 1 error("Factor number out of range 1-$(n)") end
-    inds = findall(x -> x==i, lmm.mm.assign)
-    if typeof(lmm.mf.f.rhs.terms[i]) <: CategoricalTerm
-        mxc   = zeros(size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1), p)
+    inds = findall(x -> x==i, assign(lmm))
+    if typeof(lmm.f.rhs.terms[i]) <: CategoricalTerm
+        mxc   = zeros(size(lmm.f.rhs.terms[i].contrasts.matrix, 1), p)
         mxcv  = view(mxc, :, inds)
-        mxcv .= lmm.mf.f.rhs.terms[i].contrasts.matrix
-        mx    = zeros(size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1) - 1, p)
-        for i = 2:size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1)
+        mxcv .= lmm.f.rhs.terms[i].contrasts.matrix
+        mx    = zeros(size(lmm.f.rhs.terms[i].contrasts.matrix, 1) - 1, p)
+        for i = 2:size(lmm.f.rhs.terms[i].contrasts.matrix, 1)
             mx[i-1, :] .= mxc[i, :] - mxc[1, :]
         end
     else
@@ -429,3 +432,10 @@ function StatsModels.termvars(ve::Vector{VarEffect})
 end
 
 ################################################################################
+#=
+asgn(f::FormulaTerm) = asgn(f.rhs)
+asgn(t) = mapreduce(((i,t), ) -> i*ones(StatsModels.width(t)),
+                    append!,
+                    enumerate(StatsModels.vectorize(t)),
+                    init=Int[])
+=#

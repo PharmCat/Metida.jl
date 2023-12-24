@@ -82,7 +82,7 @@ end
 
 Coefficients names.
 """
-StatsBase.coefnames(lmm::LMM) = StatsBase.coefnames(lmm.mf)
+StatsBase.coefnames(lmm::LMM) = StatsBase.coefnames(lmm.f)[2]
 
 """
     StatsBase.nobs(lmm::MetiaModel)
@@ -238,8 +238,7 @@ end
 Responce varible name.
 """
 function StatsBase.responsename(lmm::LMM)
-    cnm = coefnames(lmm.mf.f.lhs)
-    return isa(cnm, Vector{String}) ? first(cnm) : cnm
+    StatsBase.coefnames(lmm.f)[1]
 end
 
 

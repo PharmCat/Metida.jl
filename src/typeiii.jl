@@ -16,7 +16,7 @@ Type III table.
 """
 function typeiii(lmm::LMM; ddf::Symbol = :satter)
     if !isfitted(lmm) error("Model not fitted!") end
-    c           = length(lmm.mf.f.rhs.terms)
+    c           = length(lmm.f.rhs.terms)
     d           = Vector{Int}(undef, 0)
     fac         = Vector{String}(undef, c)
     F           = Vector{Float64}(undef,c)
@@ -24,7 +24,7 @@ function typeiii(lmm::LMM; ddf::Symbol = :satter)
     ndf         = Vector{Float64}(undef, c)
     pval        = Vector{Float64}(undef, c)
     for i = 1:c
-        iterm = lmm.mf.f.rhs.terms[i]
+        iterm = lmm.f.rhs.terms[i]
         
         if typeof(iterm) <: InterceptTerm{false}
             push!(d, i)

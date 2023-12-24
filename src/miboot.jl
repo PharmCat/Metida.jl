@@ -19,13 +19,14 @@ Multiple imputation model.
 """
 struct MILMM{T} <: MetidaModel
     lmm::LMM{T}
-    mf::ModelFrame
-    mm::ModelMatrix
+    f::FormulaTerm
+    modstr::ModelStructure
     covstr::CovStructure
     data::LMMData{T}
     dv::LMMDataViews{T}
     maxvcbl::Int
     mrs::MRS
+    wts::Union{Nothing, LMMWts}
     log::Vector{LMMLogMsg}
     function MILMM(lmm::LMM{T}, data) where T
         if !Tables.istable(data) error("Data not a table!") end
@@ -42,15 +43,18 @@ struct MILMM{T} <: MetidaModel
         replace!(rcol, missing => NaN)
         data         = merge(NamedTuple{(rv,)}((convert(Vector{Float64}, rcol),)), datam)
         lmmlog       = Vector{LMMLogMsg}(undef, 0)
-        mf           = ModelFrame(lmm.mf.f, lmm.mf.schema, data, MetidaModel)
-        mm           = ModelMatrix(mf)
-        mmf          = mm.m
-        lmmdata      = LMMData(mmf, data[rv])
+        rmf, lmf     = modelcols(lmm.f, data)
+
+        #mf           = ModelFrame(lmm.f, lmm.mf.schema, data, MetidaModel)
+        #mm           = ModelMatrix(mf)
+        #mmf          = mm.m
+
+        lmmdata      = LMMData(lmf, data[rv])
         covstr       = CovStructure(lmm.covstr.random, lmm.covstr.repeated, data)
-        dv           = LMMDataViews(mmf, lmmdata.yv, covstr.vcovblock)
+        dv           = LMMDataViews(lmf, lmmdata.yv, covstr.vcovblock)
         mb           = missblocks(dv.yv)
         dist         = mrsdist(lmm, mb, covstr, dv.xv, dv.yv)
-        new{T}(lmm, mf, mm, covstr, lmmdata, dv, findmax(length, covstr.vcovblock)[1], MRS(mb, dist), lmmlog)
+        new{T}(lmm, lmm.f, lmm.modstr, covstr, lmmdata, dv, findmax(length, covstr.vcovblock)[1], MRS(mb, dist), lmm.wts, lmmlog)
     end
 end
 struct MILMMResult{T}
@@ -225,7 +229,7 @@ function bootstrap_(lmm::LMM{T}; n, verbose, init, rng, del) where T
 
    
     mres = ModelResult(false, nothing, fill(NaN, thetalength(lmm)), NaN, fill(NaN, coefn(lmm)), nothing, fill(NaN, coefn(lmm), coefn(lmm)), fill(NaN, coefn(lmm)), nothing, false)
-    lmmb = LMM(lmm.model, lmm.mf, lmm.mm, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, mres, lmm.maxvcbl, Vector{LMMLogMsg}(undef, 0))
+    lmmb = LMM(lmm.model, lmm.f, lmm.modstr, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, mres, lmm.maxvcbl, lmm.wts, Vector{LMMLogMsg}(undef, 0))
 
     vi   = findall(x-> x == :var, lmm.covstr.ct)
     tlmm = theta_(lmm) .^ 2
@@ -289,7 +293,7 @@ function dbootstrap_(lmm::LMM{T}; n, verbose, init, rng, del) where T
     log  = Vector{LMMLogMsg}(undef, 0)
 
     mres = ModelResult(false, nothing, fill(NaN, thetalength(lmm)), NaN, fill(NaN, coefn(lmm)), nothing, fill(NaN, coefn(lmm), coefn(lmm)), fill(NaN, coefn(lmm)), nothing, false)
-    lmmb = LMM(lmm.model, lmm.mf, lmm.mm, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, mres, lmm.maxvcbl, Vector{LMMLogMsg}(undef, 0))
+    lmmb = LMM(lmm.model, lmm.f, lmm.modstr, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, mres, lmm.maxvcbl, lmm.wts, Vector{LMMLogMsg}(undef, 0))
 
     vi   = findall(x-> x == :var, lmm.covstr.ct)
     tlmm = theta_(lmm) .^ 2
@@ -432,7 +436,7 @@ function milmm(mi::MILMM; n = 100, verbose = true, rng = default_rng())
     ty  = Vector{Float64}(undef, max)
     for i = 1:n
         data, dv = generate_mi(rng, mi.data, mi.dv, mi.covstr.vcovblock, mi.mrs, rb, ty)
-        lmmi = LMM(mi.lmm.model, mi.mf, mi.mm, mi.covstr, data, dv, mi.lmm.nfixed, mi.lmm.rankx, deepcopy(mi.lmm.result), mi.maxvcbl, mi.log)
+        lmmi = LMM(mi.lmm.model, mi.f, mi.modstr, mi.covstr, data, dv, mi.lmm.nfixed, mi.lmm.rankx, deepcopy(mi.lmm.result), mi.maxvcbl, mi.wts, mi.log)
         lmm[i] = lmmi
     end
     p = Progress(n, dt = 0.5,

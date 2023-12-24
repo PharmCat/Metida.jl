@@ -34,3 +34,17 @@ struct LMMDataViews{T<:AbstractFloat} <: AbstractLMMDataBlocks
         return LMMDataViews(lmm.data.xv, lmm.data.yv, lmm.covstr.vcovblock)
     end
 end
+
+struct LMMWts{T<:AbstractFloat} 
+    sqrtwts::Vector{Vector{T}}
+    function LMMWts(sqrtwts::Vector{Vector{T}}) where T
+        new{T}(sqrtwts)
+    end
+    function LMMWts(wts::Vector{T}, vcovblock) where T
+        sqrtwts = Vector{Vector{T}}(undef, length(vcovblock))
+        for i in eachindex(vcovblock)
+            y[i] = sqrt.(view(wts, vcovblock[i]))
+        end
+        LMMWts(sqrtwts)
+    end
+end

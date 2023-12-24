@@ -49,14 +49,21 @@ include("testdata.jl")
     )
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
 
+    lmm = Metida.fit(Metida.LMM, Metida.@lmmformula(var~0+sequence+period+formulation,
+    random = formulation|subject:Metida.DIAG), df0)
+    @test Metida.fixedeffn(lmm) == 3
+    t3table = Metida.typeiii(lmm)
+    @test length(t3table.name) == 3
+
     lmm = Metida.fit(Metida.LMM, Metida.@lmmformula(var~sequence+period+formulation,
     random = formulation|subject:Metida.DIAG), df0)
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
+    @test Metida.fixedeffn(lmm) == 4
 
     t3table = Metida.typeiii(lmm;  ddf = :contain) # NOT VALIDATED
     t3table = Metida.typeiii(lmm;  ddf = :residual)
     t3table = Metida.typeiii(lmm)
-
+    @test length(t3table.name) == 4
     ############################################################################
     ############################################################################
     # API test
@@ -93,7 +100,7 @@ include("testdata.jl")
     @test isa(response(lmm), Vector)
     @test sum(Metida.hessian(lmm))    ≈ 1118.160713481362 atol=1E-2
     @test Metida.nblocks(lmm) == 5
-    @test length(coefnames(lmm)) == 6
+    @test coefnames(lmm) == ["(Intercept)", "sequence: 2", "period: 2", "period: 3", "period: 4", "formulation: 2"]
     @test Metida.gmatrixipd(lmm)
     @test Metida.confint(lmm)[end][1] ≈ -0.7630380758015894 atol=1E-4
     @test Metida.confint(lmm, 6)[1] ≈ -0.7630380758015894 atol=1E-4

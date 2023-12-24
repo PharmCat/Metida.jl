@@ -5,6 +5,11 @@ struct LMMLogMsg
     msg::String
 end
 
+
+struct ModelStructure
+    assign::Vector{Int64}
+end
+
 """
     LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
 
@@ -24,8 +29,8 @@ See also: [`@lmmformula`](@ref)
 """
 struct LMM{T<:AbstractFloat} <: MetidaModel
     model::FormulaTerm
-    mf::ModelFrame
-    mm::ModelMatrix
+    f::FormulaTerm
+    modstr::ModelStructure
     covstr::CovStructure
     data::LMMData{T}
     dv::LMMDataViews{T}
@@ -33,11 +38,12 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
     rankx::Int
     result::ModelResult
     maxvcbl::Int
+    wts::Union{Nothing, LMMWts}
     log::Vector{LMMLogMsg}
 
     function LMM(model::FormulaTerm,
-        mf::ModelFrame,
-        mm::ModelMatrix,
+        f::FormulaTerm,
+        modstr::ModelStructure,
         covstr::CovStructure,
         data::LMMData{T},
         dv::LMMDataViews{T},
@@ -45,10 +51,11 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         rankx::Int,
         result::ModelResult,
         maxvcbl::Int,
+        wts::Union{Nothing, LMMWts},
         log::Vector{LMMLogMsg}) where T
-        new{T}(model, mf, mm, covstr, data, dv, nfixed, rankx, result, maxvcbl, log)
+        new{T}(model, f, modstr, covstr, data, dv, nfixed, rankx, result, maxvcbl, wts, log)
     end
-    function LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
+    function LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing, wts = nothing)
         #need check responce - Float
         if !Tables.istable(data) error("Data not a table!") end
         if repeated === nothing && random === nothing
@@ -68,10 +75,15 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         lmmlog = Vector{LMMLogMsg}(undef, 0)
         sch    = schema(model, data, contrasts)
         f      = apply_schema(model, sch, MetidaModel)
-        mf     = ModelFrame(f, sch, data, MetidaModel)
+
+        rmf, lmf = modelcols(f, data)
+
+        assign = StatsModels.asgn(f) 
+
+        #mf     = ModelFrame(f, sch, data, MetidaModel)
         #mf     = ModelFrame(model, data; contrasts = contrasts)
-        mm     = ModelMatrix(mf)
-        nfixed = nterms(mf)
+        #mm     = ModelMatrix(mf)
+        nfixed = fixedeffn(f)
         if repeated === nothing
             repeated = NOREPEAT
         end
@@ -86,9 +98,9 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
                 lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Repeated effect not a constant, but covariance type is SI. "))
             end
         end
-        rmf = response(mf)
+        #rmf = response(mf)
         if !(eltype(rmf) <: AbstractFloat) @warn "Response variable not <: AbstractFloat" end 
-        lmmdata = LMMData(modelmatrix(mf), rmf)
+        lmmdata = LMMData(lmf, rmf)
 
         covstr = CovStructure(random, repeated, data)
         coefn = size(lmmdata.xv, 2)
@@ -97,11 +109,24 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
             @warn "Fixed-effect matrix not full-rank!"
             lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Fixed-effect matrix not full-rank!"))
         end
+
+        if isnothing(wts)
+            lmmwts = nothing
+        else
+            if length(lmmdata.yv) == length(wts)
+                lmmwts = LMMWts(wts, covstr.vcovblock)
+            else
+                @warn "wts count not equal observations count! wts not used."
+                lmmwts = nothing
+            end
+        end
+
         mres = ModelResult(false, nothing, fill(NaN, covstr.tl), NaN, fill(NaN, coefn), nothing, fill(NaN, coefn, coefn), fill(NaN, coefn), nothing, false)
-        LMM(model, mf, mm, covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, mres, findmax(length, covstr.vcovblock)[1], lmmlog)
+
+        LMM(model, f, ModelStructure(assign), covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, mres, findmax(length, covstr.vcovblock)[1], lmmwts, lmmlog)
     end
-    function LMM(f::LMMformula, data; contrasts=Dict{Symbol,Any}(), kwargs...)
-        LMM(f.formula, data; contrasts=contrasts,  random = f.random, repeated = f.repeated)
+    function LMM(f::LMMformula, data; kwargs...)
+        LMM(f.formula, data; random = f.random, repeated = f.repeated, kwargs...)
     end
 end
 
@@ -150,6 +175,10 @@ end
 function maxblocksize(mm::MetidaModel)
     mm.maxvcbl
 end
+function assign(lmm::LMM)
+    lmm.modstr.assign
+end
+
 ################################################################################
 function lmmlog!(io, lmmlog::Vector{LMMLogMsg}, verbose, vmsg)
     if verbose == 1
