@@ -6,6 +6,7 @@ path    = dirname(@__FILE__)
 include("testdata.jl")
 
 @testset "  Publick API basic tests                                  " begin
+    io = IOBuffer();
     transform!(df0, :formulation => categorical, renamecols=false)
     # Basic, no block
     df0.nosubj = ones(size(df0, 1))
@@ -116,8 +117,13 @@ include("testdata.jl")
     est = Metida.estimate(lmm; level = 0.9)
 
     @test_nowarn formula(lmm)
-
-
+    
+    #  
+    onefelmm = Metida.LMM(@formula(var~1), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
+    )
+    @test coefnames(onefelmm) == "(Intercept)"
+    @test_nowarn show(io, onefelmm)
     ############################################################################
     # AI like algo
     Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm))

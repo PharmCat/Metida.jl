@@ -223,6 +223,7 @@ function StatsBase.coeftable(lmm::LMM)
     z  = co ./ se
     pvalue = ccdf.(Chisq(1), abs2.(z))
     names = coefnames(lmm)
+    if !isa(names, AbstractVector) names = [names] end
     return CoefTable(
         hcat(co, se, z, pvalue),
         ["Coef.", "Std. Error", "z", "Pr(>|z|)"],
