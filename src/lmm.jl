@@ -11,7 +11,7 @@ struct ModelStructure
 end
 
 """
-    LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
+    LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing, wts::Union{Nothing, AbstractVector, AbstractString, Symbol} = nothing)
 
 Make Linear-Mixed Model object.
 
@@ -25,9 +25,11 @@ Make Linear-Mixed Model object.
 
 `repeated`: is a repeated effect (only one)
 
+`wts`: regression weights (residuals).
+
 See also: [`@lmmformula`](@ref)
 """
-struct LMM{T<:AbstractFloat} <: MetidaModel
+struct LMM{T <: AbstractFloat, W <: Union{LMMWts, Nothing}} <: MetidaModel
     model::FormulaTerm
     f::FormulaTerm
     modstr::ModelStructure
@@ -51,11 +53,11 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         rankx::Int,
         result::ModelResult,
         maxvcbl::Int,
-        wts::Union{Nothing, LMMWts},
-        log::Vector{LMMLogMsg}) where T
-        new{T}(model, f, modstr, covstr, data, dv, nfixed, rankx, result, maxvcbl, wts, log)
+        wts::W,
+        log::Vector{LMMLogMsg}) where T where W <: Union{LMMWts, Nothing}
+        new{T, W}(model, f, modstr, covstr, data, dv, nfixed, rankx, result, maxvcbl, wts, log)
     end
-    function LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing, wts = nothing)
+    function LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing, wts::Union{Nothing, AbstractVector, AbstractString, Symbol} = nothing)
         #need check responce - Float
         if !Tables.istable(data) error("Data not a table!") end
         if repeated === nothing && random === nothing
@@ -68,6 +70,10 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         end
         if !isnothing(repeated)
             union!(tv, termvars(repeated))
+        end
+        if !isnothing(wts) && wts isa Union{AbstractString, Symbol}
+            if wts isa String wts = Symbol(wts) end
+            union!(tv, (wts,))
         end
         ct = Tables.columntable(data)
         if !(tv ⊆ keys(ct)) error("Some column(s) not found!") end
@@ -113,7 +119,11 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         if isnothing(wts)
             lmmwts = nothing
         else
+            if wts isa Symbol
+                wts = Tables.getcolumn(data, wts)
+            end
             if length(lmmdata.yv) == length(wts)
+                if any(x -> x <= zero(x), wts) error("Only cases with positive weights allowed!") end
                 lmmwts = LMMWts(wts, covstr.vcovblock)
             else
                 @warn "wts count not equal observations count! wts not used."

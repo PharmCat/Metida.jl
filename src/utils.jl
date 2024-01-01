@@ -264,6 +264,21 @@ function rmatrix(lmm::LMM{T}, i::Int) where T
     rmat_base_inc!(R, lmm.result.theta[lmm.covstr.tr[end]], lmm.covstr, i)
     Symmetric(R)
 end
+
+#####################################################################
+
+function applywts!(::Any, ::Int, ::Nothing)
+    nothing
+end
+
+function applywts!(V::AbstractMatrix, i::Int, wts::LMMWts)
+    mulβdαβd!(V, wts.sqrtwts[i])
+end
+
+
+#####################################################################
+
+#####################################################################
 """
     vmatrix!(V, θ, lmm, i)
 
@@ -272,13 +287,15 @@ Update variance-covariance matrix V for i bolock. Upper triangular updated.
 function vmatrix!(V, θ, lmm::LMM, i::Int) # pub API
     gvec = gmatvec(θ, lmm.covstr)
     rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, i)
+    applywts!(V, i, lmm.wts) 
     zgz_base_inc!(V, gvec, lmm.covstr, i)
     
 end
 
 # !!! Main function REML used
-function vmatrix!(V, G, rθ, lmm::LMM, i::Int)
+@noinline function vmatrix!(V, G, rθ, lmm::LMM, i::Int)
     rmat_base_inc!(V, rθ, lmm.covstr, i)
+    applywts!(V, i, lmm.wts) 
     zgz_base_inc!(V, G, lmm.covstr, i)
 end
 
@@ -298,10 +315,11 @@ function vmatrix(θ::AbstractVector{T}, lmm::LMM, i::Int) where T
     Symmetric(V)
 end
 # For Multiple Imputation
-function vmatrix(θ::Vector, covstr::CovStructure, i::Int)
+function vmatrix(θ::Vector, covstr::CovStructure, lmmwts, i::Int)
     V    = zeros(length(covstr.vcovblock[i]), length(covstr.vcovblock[i]))
     gvec = gmatvec(θ, covstr)
     rmat_base_inc!(V, θ[covstr.tr[end]], covstr, i)
+    applywts!(V, i, lmmwts) #type unstable
     zgz_base_inc!(V, gvec, covstr, i)
     Symmetric(V)
 end

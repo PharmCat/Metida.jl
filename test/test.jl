@@ -191,6 +191,23 @@ include("testdata.jl")
     random = 1+var^2|subject:Metida.SI), df0)
     Metida.fit!(lmmint)
     @test Metida.m2logreml(lmmint) ≈ 84.23373276096902 atol=1E-6
+
+    # Wts
+
+    df0.wtsc = fill(0.5, size(df0, 1))
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
+    wts = df0.wtsc)
+    fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
+    
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
+    wts = "wts")
+    fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 17.823729 atol=1E-6 # TEST WITH SPSS 28
+
+
 end
 ################################################################################
 #                                  df0

@@ -33,7 +33,7 @@ logREML(\theta,\beta) = -\frac{N-p}{2} - \frac{1}{2}\sum_{i=1}^nlog|V_{\theta, i
 -\frac{1}{2}log|\sum_{i=1}^nX_i'V_{\theta, i}^{-1}X_i|-\frac{1}{2}\sum_{i=1}^n(y_i - X_{i}\beta)'V_{\theta, i}^{-1}(y_i - X_{i}\beta)
 ```
 
-Actually ```L(\theta) = -2logREML = L_1(\theta) + L_2(\theta) + L_3(\theta) + c`` used for optimization, where:
+Actually ```L(\theta) = -2logREML = L_1(\theta) + L_2(\theta) + L_3(\theta) + c``` used for optimization, where:
 
 ```math
 L_1(\theta) = \frac{1}{2}\sum_{i=1}^nlog|V_{i}| \\
@@ -50,6 +50,18 @@ L_3(\theta) = \frac{1}{2}\sum_{i=1}^n(y_i - X_{i}\beta)'V_i^{-1}(y_i - X_{i}\bet
 ```math
 \mathcal{H}\mathcal{L}(\theta) =  \mathcal{H}L_1(\theta)  + \mathcal{H}L_2(\theta) +  \mathcal{H} L_3(\theta)
 ```
+
+#### Weights
+
+If weights defined:
+
+```math
+V_{i} = Z_{i} G Z_i'+ W^{- \frac{1}{2}}_i R_{i} W^{- \frac{1}{2}}_i
+```
+
+
+where ```W``` - diagonal matrix of weights.
+
 
 ##### Initial step
 

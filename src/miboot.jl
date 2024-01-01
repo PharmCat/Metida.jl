@@ -28,12 +28,17 @@ struct MILMM{T} <: MetidaModel
     mrs::MRS
     wts::Union{Nothing, LMMWts}
     log::Vector{LMMLogMsg}
-    function MILMM(lmm::LMM{T}, data) where T
+    function MILMM(lmm::LMM{T}, data; wts::Union{Nothing, AbstractVector, AbstractString, Symbol} = nothing) where T
         if !Tables.istable(data) error("Data not a table!") end
         if !isfitted(lmm) error("LMM should be fitted!") end
         tv = termvars(lmm.model.rhs)
         union!(tv, termvars(lmm.covstr.random))
         union!(tv, termvars(lmm.covstr.repeated))
+        if !isnothing(wts) && wts isa Union{AbstractString, Symbol}
+            if wts isa String wts = Symbol(wts) end
+            union!(tv, (wts,))
+        end
+
         datam, data_ = StatsModels.missing_omit(NamedTuple{tuple(tv...)}(Tables.columntable(data)))
         rv           = termvars(lmm.model.lhs)[1]
         rcol         = Tables.getcolumn(data, rv)[data_]
@@ -53,8 +58,25 @@ struct MILMM{T} <: MetidaModel
         covstr       = CovStructure(lmm.covstr.random, lmm.covstr.repeated, data)
         dv           = LMMDataViews(lmf, lmmdata.yv, covstr.vcovblock)
         mb           = missblocks(dv.yv)
-        dist         = mrsdist(lmm, mb, covstr, dv.xv, dv.yv)
-        new{T}(lmm, lmm.f, lmm.modstr, covstr, lmmdata, dv, findmax(length, covstr.vcovblock)[1], MRS(mb, dist), lmm.wts, lmmlog)
+
+        if isnothing(wts)
+            lmmwts = nothing
+        else
+            if wts isa Symbol
+                wts = Tables.getcolumn(data, wts)
+            end
+            if length(lmmdata.yv) == length(wts)
+                lmmwts = LMMWts(wts, covstr.vcovblock)
+            else
+                @warn "wts count not equal observations count! wts not used."
+                lmmwts = nothing
+            end
+        end
+
+
+        dist         = mrsdist(lmm, mb, covstr, lmmwts, dv.xv, dv.yv)
+
+        new{T}(lmm, lmm.f, lmm.modstr, covstr, lmmdata, dv, findmax(length, covstr.vcovblock)[1], MRS(mb, dist), lmmwts, lmmlog)
     end
 end
 struct MILMMResult{T}
@@ -511,11 +533,11 @@ function missblocks(yv)
     vec
 end
 # return distribution vector for
-function mrsdist(lmm, mb, covstr, xv, yv)
+function mrsdist(lmm, mb, covstr, lmmwts, xv, yv)
     dist = Vector{FullNormal}(undef, length(mb))
     #Base.Threads.@threads
     for i in 1:length(mb)
-        v       = vmatrix(lmm.result.theta, covstr, mb[i][1])
+        v       = vmatrix(lmm.result.theta, covstr, lmmwts, mb[i][1])
         rv      = covmatreorder(v, mb[i][2])
         dist[i] = mvconddist(rv[1], rv[2], mb[i][2], lmm.result.beta, xv[mb[i][1]], yv[mb[i][1]])
     end

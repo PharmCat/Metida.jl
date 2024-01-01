@@ -139,6 +139,20 @@ Change θ.
     end
     θ
 end
+# Diagonal(b) * A * Diagonal(b) - chnage only A upper triangle 
+@noinline function mulβdαβd!(A::AbstractMatrix, b::AbstractVector)
+    q = size(A, 1)
+    p = size(A, 2)
+    if !(q == p == length(b)) throw(DimensionMismatch("size(A, 1) and size(A, 2) should be equal length(b)")) end
+    for n in 1:p
+        @simd for m in 1:n
+            @inbounds A[m, n] *= b[m] * b[n]
+        end
+    end
+    A
+end
+
+
 ################################################################################
 @inline function tmul_unsafe(rz, θ::AbstractVector{T}) where T
     vec = zeros(T, size(rz, 1))

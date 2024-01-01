@@ -43,7 +43,7 @@ struct LMMWts{T<:AbstractFloat}
     function LMMWts(wts::Vector{T}, vcovblock) where T
         sqrtwts = Vector{Vector{T}}(undef, length(vcovblock))
         for i in eachindex(vcovblock)
-            y[i] = sqrt.(view(wts, vcovblock[i]))
+            sqrtwts[i] = @. inv(sqrt($(view(wts, vcovblock[i]))))
         end
         LMMWts(sqrtwts)
     end
