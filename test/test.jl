@@ -666,6 +666,8 @@ end
     repeated = Metida.VarEffect(Metida.@covstr(period|subject), CustomCovarianceStructure()),
     )
     Metida.fit!(lmm)
+    io = IOBuffer();
+    @test_nowarn show(io, lmm)
     @test Metida.m2logreml(lmm) ≈ 8.740095378772942 atol=1E-8
 end
 
