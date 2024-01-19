@@ -57,7 +57,7 @@ struct LMM{T <: AbstractFloat, W <: Union{LMMWts, Nothing}} <: MetidaModel
         log::Vector{LMMLogMsg}) where T where W <: Union{LMMWts, Nothing}
         new{T, W}(model, f, modstr, covstr, data, dv, nfixed, rankx, result, maxvcbl, wts, log)
     end
-    function LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing, wts::Union{Nothing, AbstractVector, AbstractString, Symbol} = nothing)
+    function LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, wts::Union{Nothing, AbstractVector, AbstractString, Symbol} = nothing)
         #need check responce - Float
         if !Tables.istable(data) error("Data not a table!") end
         if repeated === nothing && random === nothing
@@ -231,6 +231,7 @@ end
 
 function Base.show(io::IO, lmm::LMM)
     println(io, "Linear Mixed Model: ", lmm.model)
+    rn = lmm.covstr.rn
     for i = 1:length(lmm.covstr.random)
         println(io, "Random $i: ")
         if !lmm.covstr.random[i].covtype.z
@@ -245,8 +246,10 @@ function Base.show(io::IO, lmm::LMM)
     if lmm.covstr.repeated[1].formula == NOREPEAT.formula
         println(io,"    Residual only")
     else
-        println(io, "    Model: $(lmm.covstr.repeated[1].model === nothing ? "nothing" : string(lmm.covstr.repeated[1].model, "|", lmm.covstr.repeated[1].subj))")
-        println(io, "    Type: $(lmm.covstr.repeated[1].covtype.s) ($(lmm.covstr.t[end]))")
+        for i = 1:length(lmm.covstr.repeated)
+            println(io, "    Model: $(lmm.covstr.repeated[i].model === nothing ? "nothing" : string(lmm.covstr.repeated[i].model, "|", lmm.covstr.repeated[i].subj))")
+            println(io, "    Type: $(lmm.covstr.repeated[i].covtype.s) ($(lmm.covstr.t[rn+i]))")
+        end
     end
     println(io, "Blocks: $(nblocks(lmm)), Maximum block size: $(maxblocksize(lmm))")
 
@@ -278,7 +281,14 @@ function Base.show(io::IO, lmm::LMM)
                 view(mx, lmm.covstr.tr[i], 1) .= "Random $i"
             end
         end
-        view(mx, lmm.covstr.tr[end], 1) .= "Residual"
+        if length(lmm.covstr.repeated) == 1
+            view(mx, lmm.covstr.tr[end], 1) .= "Residual"
+        else
+            for i = 1:length(lmm.covstr.repeated)
+                view(mx, lmm.covstr.tr[lmm.covstr.rn + i], 1) .= "Residual $i"
+            end
+
+        end
         for i = 1:lmm.covstr.tl
             if mx[i, 3] == :var mx[i, 4] = round.(mx[i, 4]^2, sigdigits = 6) end
         end

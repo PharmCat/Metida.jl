@@ -85,8 +85,14 @@ end
 #                            COVARIANCE STRUCTURE
 ################################################################################
 function sabjcrossdicts(d1, d2)
-    if length(d1) == 1 return d1 end
-    if length(d2) == 1 return d2 end
+    
+    if length(d1) == 1 
+        return d1 
+    elseif length(d2) == 1 
+        return d2 
+    elseif length(d1) == 0 
+        return d2 
+    end
     d2 = copy(d2)
     d1 = copy(d1)
     i = 0
@@ -153,12 +159,18 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     random::Vector{VarEffect}
     # Repearted effects
     repeated::Vector{VarEffect}
+    # schema
     schema::Vector{Union{Tuple, AbstractTerm}}
+    # names
     rcnames::Vector{String}
     # blocks for vcov matrix / variance blocking factor (subject)
     vcovblock::Vector{Vector{Int}}
-    # number of random effect
+    # number of random effect 
     rn::Int
+    # number coef. of random effect in θ vector
+    rtn::Int
+    # number of repeated effect
+    rpn::Int
     # Z matrix
     z::Matrix{T}
     #subjz::Vector{BitArray{2}}
@@ -168,7 +180,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     # unit range z column range for each random effect
     zrndur::Vector{UnitRange{Int}}
     # repeated effect parametrization matrix
-    rz::Matrix{T}
+    rz::Vector{Matrix{T}}
     # size 2 of z/rz matrix
     q::Vector{Int}
     # total number of parameters in each effect
@@ -199,10 +211,14 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         dicts   = Vector{Dict}(undef, alleffl)
         # 
         zrndur  = Vector{UnitRange{Int}}(undef, length(random))
-        # Z Matrix for repeated effect
-        rz      = Matrix{Float64}(undef, rown, 0)
         # Number of random effects
         rn      = length(random)
+        #
+        rtn     = 0 
+        # Number of repeated effects
+        rpn     = length(repeated)
+        # Z Matrix for repeated effect
+        rz      = Vector{Matrix{Float64}}(undef, rpn)
         # 
         #Theta parameter type
         ct      = Vector{Symbol}(undef, 0)
@@ -243,6 +259,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                 sn[i]     = length(dicts[i])
                 updatenametype!(ct, rcnames, csp, schema[i], random[i].covtype.s)
                 append!(emap, fill(i, t[i]))
+                rtn += t[i]
             end
 
         # REPEATED EFFECTS
@@ -253,8 +270,8 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             end
 
             schema[rn+i] = apply_schema(repeated[i].model, StatsModels.schema(data, repeated[i].coding))
-            rz          = modelcols(MatrixTerm(schema[rn+i]), data)
-            symbs       = StatsModels.termvars(repeated[i].subj)
+            rz[i]        = modelcols(MatrixTerm(schema[rn+i]), data)
+            symbs        = StatsModels.termvars(repeated[i].subj)
             if length(symbs) > 0
                 cdata       = tabcols(data, symbs) # Tuple(Tables.getcolumn(Tables.columns(data), x) for x in symbs)
                 dicts[rn+i]  = Dict{Tuple{eltype.(cdata)...}, Vector{Int}}()
@@ -264,7 +281,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             end
 
             sn[rn+i]     = length(dicts[rn+i])
-            q[rn+i]      = size(rz, 2)
+            q[rn+i]      = size(rz[i], 2)
             csp          = covstrparam(repeated[i].covtype.s, q[rn+i])
             t[rn+i]      = sum(csp)
             tr[rn+i]     = UnitRange(sum(t[1:rn+i-1]) + 1, sum(t[1:rn+i-1]) + t[rn+i])
@@ -286,14 +303,24 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                         subjblockdict = sabjcrossdicts(subjblockdict, dicts[i])
                     end
                 end
-                if !(isa(repeated[1].covtype.s, SI_) || isa(repeated[1].covtype.s, DIAG_)) # if repeated effect have non-diagonal structure
-                    subjblockdict = sabjcrossdicts(subjblockdict, dicts[end])
-                else
-                    dicts[end] = subjblockdict
-                end
             else
-                subjblockdict = dicts[end]
+                subjblockdict = nothing
             end
+            repn = Int[]
+            for i = 1:length(repeated)
+                if isnothing(subjblockdict)
+                    subjblockdict = dicts[rn+i]
+                elseif !(isa(repeated[i].covtype.s, SI_) || isa(repeated[i].covtype.s, DIAG_)) # if repeated effect have non-diagonal structure
+                    subjblockdict = sabjcrossdicts(subjblockdict, dicts[rn+i]) # make dict for non SI DIAG repeated effects 
+                else
+                    push!(repn, i) # just collect ind of SI DIAG repeated effects 
+                end
+            end
+            for i in repn # make SI DIAG repeated effects dict - subjblockdict
+                dicts[rn+i] = subjblockdict
+            end
+
+
             blocks  = collect(values(subjblockdict))
         #end
 
@@ -324,7 +351,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         end
         esb = EffectSubjectBlock(sblock, nblock)
         #######################################################################
-        new{eltype(z)}(random, repeated, schema, rcnames, blocks, rn, z, esb, zrndur, rz, q, t, tr, tl, ct, emap, sn, maxn)
+        new{eltype(z)}(random, repeated, schema, rcnames, blocks, rn, rtn, rpn, z, esb, zrndur, rz, q, t, tr, tl, ct, emap, sn, maxn)
     end
 end
 ###############################################################################
@@ -439,8 +466,12 @@ function Base.show(io::IO, cs::CovStructure)
     for i = 1:length(cs.random)
         println(io, "Random $(i):", cs.random[i])
     end
-    println(io, "Repeated: ", cs.repeated[1])
+    for i = 1:length(cs.repeated)
+        println(io, "Repeated $(i): ", cs.repeated[i])
+    end
     println(io, "Random effect range in complex Z: ", cs.zrndur)
+    println(io, "Random coef. in θ: ", cs.rtn)
+    println(io, "Range of each parameters in θ vector: ", cs.tr)
     println(io, "Size of Z: ", cs.q)
     println(io, "Parameter number for each effect: ", cs.t)
     println(io, "Theta length:", cs.tl)

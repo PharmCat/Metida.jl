@@ -207,6 +207,12 @@ include("testdata.jl")
     fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 17.823729 atol=1E-6 # TEST WITH SPSS 28
 
+    # Repeated vector
+    
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    repeated = [Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG), Metida.VarEffect(Metida.@covstr(1|subject), Metida.SI)])
+    fit!(lmm)
+    @test_nowarn show(io, lmm)
 
 end
 ################################################################################

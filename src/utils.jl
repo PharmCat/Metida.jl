@@ -261,7 +261,8 @@ function rmatrix(lmm::LMM{T}, i::Int) where T
     if i > length(lmm.covstr.vcovblock) error("Invalid block number: $(i)!") end
     q    = length(lmm.covstr.vcovblock[i])
     R    = zeros(T, q, q)
-    rmat_base_inc!(R, lmm.result.theta[lmm.covstr.tr[end]], lmm.covstr, i)
+    rθ   = lmm.covstr.tr[lmm.covstr.rn + 1:end]
+    rmat_base_inc!(R, lmm.result.theta, rθ, lmm.covstr, i)
     Symmetric(R)
 end
 
@@ -286,15 +287,16 @@ Update variance-covariance matrix V for i bolock. Upper triangular updated.
 """
 function vmatrix!(V, θ, lmm::LMM, i::Int) # pub API
     gvec = gmatvec(θ, lmm.covstr)
-    rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, i)
+    rθ   = lmm.covstr.tr[lmm.covstr.rn + 1:end]
+    rmat_base_inc!(V, θ, rθ, lmm.covstr, i) # Repeated vector
     applywts!(V, i, lmm.wts) 
     zgz_base_inc!(V, gvec, lmm.covstr, i)
     
 end
 
 # !!! Main function REML used
-@noinline function vmatrix!(V, G, rθ, lmm::LMM, i::Int)
-    rmat_base_inc!(V, rθ, lmm.covstr, i)
+@noinline function vmatrix!(V, G, θ, rθ, lmm::LMM, i::Int)
+    rmat_base_inc!(V, θ, rθ, lmm.covstr, i)  # Repeated vector
     applywts!(V, i, lmm.wts) 
     zgz_base_inc!(V, G, lmm.covstr, i)
 end
@@ -311,15 +313,17 @@ end
 function vmatrix(θ::AbstractVector{T}, lmm::LMM, i::Int) where T
     V    = zeros(T, length(lmm.covstr.vcovblock[i]), length(lmm.covstr.vcovblock[i]))
     gvec = gmatvec(θ, lmm.covstr)
-    vmatrix!(V, gvec, θ[lmm.covstr.tr[end]], lmm, i)
+    rθ   = lmm.covstr.tr[lmm.covstr.rn + 1:end]
+    vmatrix!(V, gvec, θ, rθ, lmm, i) # Repeated vector
     Symmetric(V)
 end
 # For Multiple Imputation
 function vmatrix(θ::Vector, covstr::CovStructure, lmmwts, i::Int)
     V    = zeros(length(covstr.vcovblock[i]), length(covstr.vcovblock[i]))
     gvec = gmatvec(θ, covstr)
-    rmat_base_inc!(V, θ[covstr.tr[end]], covstr, i)
-    applywts!(V, i, lmmwts) #type unstable
+    rθ   = covstr.tr[covstr.rn + 1:end]
+    rmat_base_inc!(V, θ, rθ, covstr, i)  # Repeated vector
+    applywts!(V, i, lmmwts) 
     zgz_base_inc!(V, gvec, covstr, i)
     Symmetric(V)
 end

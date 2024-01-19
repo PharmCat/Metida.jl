@@ -3,13 +3,15 @@
 ################################################################################
 
 ################################################################################
-@noinline function rmat_base_inc!(mx, θ, covstr, bi)
-    en        = covstr.rn + 1
+@noinline function rmat_base_inc!(mx, θ, rθ, covstr, bi)
     block     = covstr.vcovblock[bi]
-    zblock    = view(covstr.rz, block, :)
-    @simd for i = 1:subjn(covstr, en, bi)
-        sb = getsubj(covstr, en, bi, i)
-        rmat!(view(mx, sb, sb), θ, view(zblock, sb, :), covstr.repeated[1].covtype.s)
+    for j = 1:covstr.rpn
+        en        = covstr.rn + j
+        zblock    = view(covstr.rz[j], block, :)
+        @simd for i = 1:subjn(covstr, en, bi)
+            sb = getsubj(covstr, en, bi, i)
+            rmat!(view(mx, sb, sb), view(θ, rθ[j]), view(zblock, sb, :), covstr.repeated[j].covtype.s)
+        end
     end
     mx
 end
