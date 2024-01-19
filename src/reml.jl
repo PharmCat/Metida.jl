@@ -124,7 +124,8 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; maxthreads::Int = 16) where T #
             logdetθ₂ = logdet(rθs₂)
             =#
             β       .= NaN
-            return   Inf, β, Inf, Inf, false
+            θ₂      .= NaN
+            return   Inf, β, θs₂, Inf, false
         end
         # θ₃
         #@inbounds @simd for i = 1:n
@@ -184,7 +185,8 @@ function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) whe
         noerror = all(erroracc)
         if !noerror
             β = fill(NaN, lmm.rankx)
-            return   Inf, β, Inf, Inf, false
+            θ₂ .= NaN
+            return   Inf, β, θ₂, Inf, false
         end
         θ₁   = sum(accθ₁)
         θ₂tc = sum(accθ₂)
@@ -194,7 +196,8 @@ function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) whe
         ldθ₂, info = LinearAlgebra.LAPACK.potrf!('U', θ₂tc)
         if info != 0
             β = fill(NaN, lmm.rankx)
-            return   Inf, β, Inf, Inf, false
+            θ₂ .= NaN
+            return   Inf, β, θ₂, Inf, false
         end
         LinearAlgebra.LAPACK.potrs!('U', θ₂tc, βtc)
         β = βtc

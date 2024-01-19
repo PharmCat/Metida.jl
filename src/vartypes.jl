@@ -37,11 +37,11 @@ struct ZERO <: AbstractCovarianceType end
 Make covariance type with AbstractCovmatMethod.
 
 """
-struct CovarianceType
-    s::AbstractCovarianceType
+struct CovarianceType{T <: AbstractCovarianceType}
+    s::T
     z::Bool
-    function CovarianceType(s::AbstractCovarianceType, z::Bool)
-        new(s, z)
+    function CovarianceType(s::T, z::Bool) where T <: AbstractCovarianceType
+        new{T}(s, z)
     end
     function CovarianceType(s::AbstractCovarianceType)
         CovarianceType(s,  true)

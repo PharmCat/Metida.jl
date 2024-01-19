@@ -14,7 +14,9 @@ include("testdata.jl")
     random = Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.DIAG),
     )
     Metida.fit!(lmm)
-    @test Metida.m2logreml(lmm) ≈ 25.129480634331067 atol=1E-6
+    @test Metida.m2logreml(lmm, ) ≈ 25.129480634331067 atol=1E-6
+    # Test -2 reml for provided theta
+    @test Metida.m2logreml(lmm, Metida.theta(lmm)) ≈ 25.129480634331067 atol=1E-6
 
     # Casuistic case - random
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
