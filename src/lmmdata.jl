@@ -1,6 +1,6 @@
 #lmmdata.jl
 
-struct LMMData{T}
+struct LMMData{T<:AbstractFloat}
     # Fixed effect matrix
     xv::Matrix{Float64}
     # Responce vector
@@ -13,7 +13,7 @@ struct LMMData{T}
     end
 end
 
-struct LMMDataViews{T} <: AbstractLMMDataBlocks
+struct LMMDataViews{T<:AbstractFloat} <: AbstractLMMDataBlocks
     # Fixed effect matrix views
     xv::Vector{Matrix{Float64}}
     # Responce vector views
@@ -32,5 +32,19 @@ struct LMMDataViews{T} <: AbstractLMMDataBlocks
     end
     function LMMDataViews(lmm::MetidaModel)
         return LMMDataViews(lmm.data.xv, lmm.data.yv, lmm.covstr.vcovblock)
+    end
+end
+
+struct LMMWts{T<:AbstractFloat} 
+    sqrtwts::Vector{Vector{T}}
+    function LMMWts(sqrtwts::Vector{Vector{T}}) where T
+        new{T}(sqrtwts)
+    end
+    function LMMWts(wts::Vector{T}, vcovblock) where T
+        sqrtwts = Vector{Vector{T}}(undef, length(vcovblock))
+        for i in eachindex(vcovblock)
+            sqrtwts[i] = @. inv(sqrt($(view(wts, vcovblock[i]))))
+        end
+        LMMWts(sqrtwts)
     end
 end

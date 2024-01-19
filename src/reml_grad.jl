@@ -2,6 +2,7 @@
 
 ################################################################################
 # Grads
+#=
 """
     trmulαβ(A::AbstractMatrix{T}, B::AbstractMatrix) where T
 
@@ -230,3 +231,4 @@ function rmat_g!(mx, θ, rz, g::Int, ::DIAG_)
     end
     mx
 end
+=#

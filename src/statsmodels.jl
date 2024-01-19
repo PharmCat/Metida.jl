@@ -1,2 +1,2 @@
 
-StatsModels.formula(lmm::LMM) = lmm.mf.f
+StatsModels.formula(lmm::LMM) = lmm.f

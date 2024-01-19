@@ -5,8 +5,13 @@ struct LMMLogMsg
     msg::String
 end
 
+
+struct ModelStructure
+    assign::Vector{Int64}
+end
+
 """
-    LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
+    LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing, wts::Union{Nothing, AbstractVector, AbstractString, Symbol} = nothing)
 
 Make Linear-Mixed Model object.
 
@@ -18,14 +23,16 @@ Make Linear-Mixed Model object.
 
 `random`: vector of random effects or single random effect
 
-`repeated`: is a repeated effect (only one)
+`repeated`: is a repeated effect or vector
+
+`wts`: regression weights (residuals).
 
 See also: [`@lmmformula`](@ref)
 """
-struct LMM{T<:AbstractFloat} <: MetidaModel
+struct LMM{T <: AbstractFloat, W <: Union{LMMWts, Nothing}} <: MetidaModel
     model::FormulaTerm
-    mf::ModelFrame
-    mm::ModelMatrix
+    f::FormulaTerm
+    modstr::ModelStructure
     covstr::CovStructure
     data::LMMData{T}
     dv::LMMDataViews{T}
@@ -33,11 +40,12 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
     rankx::Int
     result::ModelResult
     maxvcbl::Int
+    wts::Union{Nothing, LMMWts}
     log::Vector{LMMLogMsg}
 
     function LMM(model::FormulaTerm,
-        mf::ModelFrame,
-        mm::ModelMatrix,
+        f::FormulaTerm,
+        modstr::ModelStructure,
         covstr::CovStructure,
         data::LMMData{T},
         dv::LMMDataViews{T},
@@ -45,10 +53,11 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         rankx::Int,
         result::ModelResult,
         maxvcbl::Int,
-        log::Vector{LMMLogMsg}) where T
-        new{T}(model, mf, mm, covstr, data, dv, nfixed, rankx, result, maxvcbl, log)
+        wts::W,
+        log::Vector{LMMLogMsg}) where T where W <: Union{LMMWts, Nothing}
+        new{T, W}(model, f, modstr, covstr, data, dv, nfixed, rankx, result, maxvcbl, wts, log)
     end
-    function LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing)
+    function LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, wts::Union{Nothing, AbstractVector, AbstractString, Symbol} = nothing)
         #need check responce - Float
         if !Tables.istable(data) error("Data not a table!") end
         if repeated === nothing && random === nothing
@@ -62,16 +71,25 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
         if !isnothing(repeated)
             union!(tv, termvars(repeated))
         end
+        if !isnothing(wts) && wts isa Union{AbstractString, Symbol}
+            if wts isa String wts = Symbol(wts) end
+            union!(tv, (wts,))
+        end
         ct = Tables.columntable(data)
         if !(tv ⊆ keys(ct)) error("Some column(s) not found!") end
         data, data_ = StatsModels.missing_omit(NamedTuple{tuple(tv...)}(ct))
         lmmlog = Vector{LMMLogMsg}(undef, 0)
         sch    = schema(model, data, contrasts)
         f      = apply_schema(model, sch, MetidaModel)
-        mf     = ModelFrame(f, sch, data, MetidaModel)
+
+        rmf, lmf = modelcols(f, data)
+
+        assign = StatsModels.asgn(f) 
+
+        #mf     = ModelFrame(f, sch, data, MetidaModel)
         #mf     = ModelFrame(model, data; contrasts = contrasts)
-        mm     = ModelMatrix(mf)
-        nfixed = nterms(mf)
+        #mm     = ModelMatrix(mf)
+        nfixed = fixedeffn(f)
         if repeated === nothing
             repeated = NOREPEAT
         end
@@ -80,11 +98,16 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
             random = VarEffect(Metida.@covstr(0|1), Metida.RZero())
         end
         if !isa(random, Vector) random = [random] end
-
-        if repeated.covtype.s == :SI && !isa(repeated.model, ConstantTerm)
-            lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Repeated effect not a constant, but covariance type is SI. "))
+        if !isa(repeated, Vector) repeated = [repeated] end
+        for r in repeated
+            if r.covtype.s == :SI && !isa(r.model, ConstantTerm)
+                lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Repeated effect not a constant, but covariance type is SI. "))
+            end
         end
-        lmmdata = LMMData(modelmatrix(mf), response(mf))
+        #rmf = response(mf)
+        if !(eltype(rmf) <: AbstractFloat) @warn "Response variable not <: AbstractFloat" end 
+        lmmdata = LMMData(lmf, rmf)
+
         covstr = CovStructure(random, repeated, data)
         coefn = size(lmmdata.xv, 2)
         rankx =  rank(lmmdata.xv)
@@ -92,11 +115,28 @@ struct LMM{T<:AbstractFloat} <: MetidaModel
             @warn "Fixed-effect matrix not full-rank!"
             lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Fixed-effect matrix not full-rank!"))
         end
+
+        if isnothing(wts)
+            lmmwts = nothing
+        else
+            if wts isa Symbol
+                wts = Tables.getcolumn(data, wts)
+            end
+            if length(lmmdata.yv) == length(wts)
+                if any(x -> x <= zero(x), wts) error("Only cases with positive weights allowed!") end
+                lmmwts = LMMWts(wts, covstr.vcovblock)
+            else
+                @warn "wts count not equal observations count! wts not used."
+                lmmwts = nothing
+            end
+        end
+
         mres = ModelResult(false, nothing, fill(NaN, covstr.tl), NaN, fill(NaN, coefn), nothing, fill(NaN, coefn, coefn), fill(NaN, coefn), nothing, false)
-        LMM(model, mf, mm, covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, mres, findmax(length, covstr.vcovblock)[1], lmmlog)
+
+        LMM(model, f, ModelStructure(assign), covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, mres, findmax(length, covstr.vcovblock)[1], lmmwts, lmmlog)
     end
-    function LMM(f::LMMformula, data; contrasts=Dict{Symbol,Any}(), kwargs...)
-        LMM(f.formula, data; contrasts=contrasts,  random = f.random, repeated = f.repeated)
+    function LMM(f::LMMformula, data; kwargs...)
+        LMM(f.formula, data; random = f.random, repeated = f.repeated, kwargs...)
     end
 end
 
@@ -145,6 +185,10 @@ end
 function maxblocksize(mm::MetidaModel)
     mm.maxvcbl
 end
+function assign(lmm::LMM)
+    lmm.modstr.assign
+end
+
 ################################################################################
 function lmmlog!(io, lmmlog::Vector{LMMLogMsg}, verbose, vmsg)
     if verbose == 1
@@ -187,6 +231,7 @@ end
 
 function Base.show(io::IO, lmm::LMM)
     println(io, "Linear Mixed Model: ", lmm.model)
+    rn = lmm.covstr.rn
     for i = 1:length(lmm.covstr.random)
         println(io, "Random $i: ")
         if !lmm.covstr.random[i].covtype.z
@@ -198,11 +243,13 @@ function Base.show(io::IO, lmm::LMM)
         
     end
     println(io, "Repeated: ")
-    if lmm.covstr.repeated.formula == NOREPEAT.formula
+    if lmm.covstr.repeated[1].formula == NOREPEAT.formula
         println(io,"    Residual only")
     else
-        println(io, "    Model: $(lmm.covstr.repeated.model === nothing ? "nothing" : string(lmm.covstr.repeated.model, "|", lmm.covstr.repeated.subj))")
-        println(io, "    Type: $(lmm.covstr.repeated.covtype.s) ($(lmm.covstr.t[end]))")
+        for i = 1:length(lmm.covstr.repeated)
+            println(io, "    Model: $(lmm.covstr.repeated[i].model === nothing ? "nothing" : string(lmm.covstr.repeated[i].model, "|", lmm.covstr.repeated[i].subj))")
+            println(io, "    Type: $(lmm.covstr.repeated[i].covtype.s) ($(lmm.covstr.t[rn+i]))")
+        end
     end
     println(io, "Blocks: $(nblocks(lmm)), Maximum block size: $(maxblocksize(lmm))")
 
@@ -234,7 +281,14 @@ function Base.show(io::IO, lmm::LMM)
                 view(mx, lmm.covstr.tr[i], 1) .= "Random $i"
             end
         end
-        view(mx, lmm.covstr.tr[end], 1) .= "Residual"
+        if length(lmm.covstr.repeated) == 1
+            view(mx, lmm.covstr.tr[end], 1) .= "Residual"
+        else
+            for i = 1:length(lmm.covstr.repeated)
+                view(mx, lmm.covstr.tr[lmm.covstr.rn + i], 1) .= "Residual $i"
+            end
+
+        end
         for i = 1:lmm.covstr.tl
             if mx[i, 3] == :var mx[i, 4] = round.(mx[i, 4]^2, sigdigits = 6) end
         end

@@ -82,7 +82,7 @@ end
 
 Coefficients names.
 """
-StatsBase.coefnames(lmm::LMM) = StatsBase.coefnames(lmm.mf)
+StatsBase.coefnames(lmm::LMM) = StatsBase.coefnames(lmm.f)[2]
 
 """
     StatsBase.nobs(lmm::MetiaModel)
@@ -223,6 +223,7 @@ function StatsBase.coeftable(lmm::LMM)
     z  = co ./ se
     pvalue = ccdf.(Chisq(1), abs2.(z))
     names = coefnames(lmm)
+    if !isa(names, AbstractVector) names = [names] end
     return CoefTable(
         hcat(co, se, z, pvalue),
         ["Coef.", "Std. Error", "z", "Pr(>|z|)"],
@@ -238,8 +239,7 @@ end
 Responce varible name.
 """
 function StatsBase.responsename(lmm::LMM)
-    cnm = coefnames(lmm.mf.f.lhs)
-    return isa(cnm, Vector{String}) ? first(cnm) : cnm
+    StatsBase.coefnames(lmm.f)[1]
 end
 
 

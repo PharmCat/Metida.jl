@@ -91,7 +91,7 @@ Example:
 using Metida, DataFrames, CSV, CategoricalArrays
 
 ftdf = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
-df0 = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "df0.csv"); types = [String, String, String, String,Float64, Float64]) |> DataFrame
+df0 = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "df0.csv"); types = [String, String, String, String,Float64, Float64, Float64]) |> DataFrame
 
 struct CustomCovarianceStructure <: Metida.AbstractCovarianceType end
 function Metida.covstrparam(ct::CustomCovarianceStructure, t::Int)::Tuple{Int, Int}

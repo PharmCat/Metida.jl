@@ -41,8 +41,8 @@ end
     Minimum returned. If no random effect found  N - rank(XZ) returned.
 """
 function dof_contain(lmm, i)
-    ind  = lmm.mm.assign[i]
-    sym  = StatsModels.termvars(lmm.mf.f.rhs.terms[ind])
+    ind  = lmm.modstr.assign[i]
+    sym  = StatsModels.termvars(lmm.f.rhs.terms[ind])
     rr   = Vector{Int}(undef, 0)
     for r = 1:length(lmm.covstr.random)
         if length(intersect(sym, StatsModels.termvars(lmm.covstr.random[r].model))) > 0
@@ -57,12 +57,12 @@ function dof_contain(lmm, i)
 end
 
 function dof_contain(lmm)
-    dof   = zeros(Int, length(lmm.mm.assign))
+    dof   = zeros(Int, length(lmm.modstr.assign))
     rrt   = zeros(Int, length(lmm.covstr.random))
     rz   = 0
-    for i = 1:length(lmm.mm.assign)
-        ind  = lmm.mm.assign[i]
-        sym  = StatsModels.termvars(lmm.mf.f.rhs.terms[ind])
+    for i = 1:length(lmm.modstr.assign)
+        ind  = lmm.modstr.assign[i]
+        sym  = StatsModels.termvars(lmm.f.rhs.terms[ind])
         rr   = Vector{Int}(undef, 0)
         for r = 1:length(lmm.covstr.random)
             if length(intersect(sym, StatsModels.termvars(lmm.covstr.random[r].model))) > 0
@@ -87,7 +87,7 @@ end
 
 """
 function dof_contain_f(lmm, i)
-    sym  = StatsModels.termvars(lmm.mf.f.rhs.terms[i])
+    sym  = StatsModels.termvars(lmm.f.rhs.terms[i])
     rr   = Vector{Int}(undef, 0)
     for r = 1:length(lmm.covstr.random)
         if length(intersect(sym, StatsModels.termvars(lmm.covstr.random[r].model))) > 0

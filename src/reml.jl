@@ -44,7 +44,8 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; maxthreads::Int = 16) where T #
     β             = Vector{T}(undef, p)
     #---------------------------------------------------------------------------
     gvec          = gmatvec(θ, lmm.covstr)
-    rθ            = θ[lmm.covstr.tr[end]] # R part of θ
+    rθ            = lmm.covstr.tr[lmm.covstr.rn + 1:end] # ranges of R part of θ
+    #rθ            = (θ[t] for t in lmm.covstr.tr) # Repeated vector
     noerror       = true
         ncore     = min(num_cores(), n, maxthreads)
         accθ₁     = zeros(T, ncore)
@@ -72,7 +73,7 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; maxthreads::Int = 16) where T #
                 copyto!(Vx, data.xv[i])
             #-------------------------------------------------------------------
             # Make V matrix
-                vmatrix!(V, gvec, rθ, lmm, i)
+                vmatrix!(V, gvec, θ, rθ, lmm, i)  # Repeated vector
             #-----------------------------------------------------------------------
                 if length(swtw[t]) != qswm resize!(swtw[t], qswm) end
                 swm, swr, ne  = sweepb!(swtw[t], Vp, 1:q; logdet = true)
@@ -123,7 +124,8 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; maxthreads::Int = 16) where T #
             logdetθ₂ = logdet(rθs₂)
             =#
             β       .= NaN
-            return   Inf, β, Inf, Inf, false
+            θ₂      .= NaN
+            return   Inf, β, θs₂, Inf, false
         end
         # θ₃
         #@inbounds @simd for i = 1:n
@@ -144,7 +146,7 @@ function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) whe
     A             = Vector{Matrix{T}}(undef, n)
     logdetθ₂      = zero(T)
     gvec          = gmatvec(θ, lmm.covstr)
-    rθ            = θ[lmm.covstr.tr[end]] # R part of θ
+    rθ            = lmm.covstr.tr[lmm.covstr.rn + 1:end] # ranges of R part of θ
     noerror       = true
         ncore     = min(num_cores(), n, maxthreads)
         accθ₁     = zeros(T, ncore)
@@ -160,7 +162,7 @@ function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) whe
                 i =  offset + j
                 q    = length(lmm.covstr.vcovblock[i])
                 V    = zeros(T, q, q)
-                vmatrix!(V, gvec, rθ, lmm, i)
+                vmatrix!(V, gvec, θ, rθ, lmm, i)
         #-------------------------------------------------------------------
         # Cholesky
                 Ai, info = LinearAlgebra.LAPACK.potrf!('U', V)
@@ -183,7 +185,8 @@ function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) whe
         noerror = all(erroracc)
         if !noerror
             β = fill(NaN, lmm.rankx)
-            return   Inf, β, Inf, Inf, false
+            θ₂ .= NaN
+            return   Inf, β, θ₂, Inf, false
         end
         θ₁   = sum(accθ₁)
         θ₂tc = sum(accθ₂)
@@ -193,7 +196,8 @@ function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) whe
         ldθ₂, info = LinearAlgebra.LAPACK.potrf!('U', θ₂tc)
         if info != 0
             β = fill(NaN, lmm.rankx)
-            return   Inf, β, Inf, Inf, false
+            θ₂ .= NaN
+            return   Inf, β, θ₂, Inf, false
         end
         LinearAlgebra.LAPACK.potrs!('U', θ₂tc, βtc)
         β = βtc
@@ -218,7 +222,7 @@ function core_sweep_β(lmm, data, θ::Vector{T}, β, n; maxthreads::Int = 16) wh
     accθ₃     = zeros(T, ncore)
     erroracc  = trues(ncore)
     gvec      = gmatvec(θ, lmm.covstr)
-    rθ        = θ[lmm.covstr.tr[end]] # R part of θ
+    rθ            = lmm.covstr.tr[lmm.covstr.rn + 1:end] # ranges of R part of θ
     d, r = divrem(n, ncore)
     Base.Threads.@threads for t = 1:ncore
         offset = min(t-1, r) + (t-1)*d
@@ -232,7 +236,7 @@ function core_sweep_β(lmm, data, θ::Vector{T}, β, n; maxthreads::Int = 16) wh
             Vx   = view(Vp, 1:q, q+1:qswm)
             Vc   = view(Vp, q+1:qswm, q+1:qswm)
             copyto!(Vx, data.xv[i])
-            vmatrix!(V, gvec, rθ, lmm, i)
+            vmatrix!(V, gvec, θ, rθ, lmm, i)
             #-----------------------------------------------------------------------
             swm, swr, ne = sweepb!(Vector{T}(undef, qswm), Vp, 1:q; logdet = true)
             #-----------------------------------------------------------------------

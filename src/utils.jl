@@ -10,12 +10,16 @@ function initvar(y::Vector, X::Matrix{T}) where T
     dot(r, r)/(length(r) - size(X, 2)), β
 end
 ################################################################################
-function nterms(lmm::LMM)
-    nterms(lmm.mf)
+function fixedeffn(f::FormulaTerm)
+    length(f.rhs.terms) - !StatsModels.hasintercept(f)
 end
+function fixedeffn(lmm::LMM)
+    fixedeffn(lmm.f) 
+end
+#=
 function nterms(mf::ModelFrame)
     mf.schema.schema.count
-end
+=#
 function nterms(rhs::Union{Tuple{Vararg{AbstractTerm}}, Nothing, AbstractTerm})
     if isa(rhs, Term)
         p = 1
@@ -26,7 +30,6 @@ function nterms(rhs::Union{Tuple{Vararg{AbstractTerm}}, Nothing, AbstractTerm})
     end
     p
 end
-
 """
     Rerm name.
 """
@@ -50,16 +53,16 @@ end
 L-contrast matrix for `i` fixed effect.
 """
 function lcontrast(lmm::LMM, i::Int)
-    n = length(lmm.mf.f.rhs.terms)
+    n = length(lmm.f.rhs.terms)
     p = size(lmm.data.xv, 2)
     if i > n || n < 1 error("Factor number out of range 1-$(n)") end
-    inds = findall(x -> x==i, lmm.mm.assign)
-    if typeof(lmm.mf.f.rhs.terms[i]) <: CategoricalTerm
-        mxc   = zeros(size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1), p)
+    inds = findall(x -> x==i, assign(lmm))
+    if typeof(lmm.f.rhs.terms[i]) <: CategoricalTerm
+        mxc   = zeros(size(lmm.f.rhs.terms[i].contrasts.matrix, 1), p)
         mxcv  = view(mxc, :, inds)
-        mxcv .= lmm.mf.f.rhs.terms[i].contrasts.matrix
-        mx    = zeros(size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1) - 1, p)
-        for i = 2:size(lmm.mf.f.rhs.terms[i].contrasts.matrix, 1)
+        mxcv .= lmm.f.rhs.terms[i].contrasts.matrix
+        mx    = zeros(size(lmm.f.rhs.terms[i].contrasts.matrix, 1) - 1, p)
+        for i = 2:size(lmm.f.rhs.terms[i].contrasts.matrix, 1)
             mx[i-1, :] .= mxc[i, :] - mxc[1, :]
         end
     else
@@ -258,9 +261,25 @@ function rmatrix(lmm::LMM{T}, i::Int) where T
     if i > length(lmm.covstr.vcovblock) error("Invalid block number: $(i)!") end
     q    = length(lmm.covstr.vcovblock[i])
     R    = zeros(T, q, q)
-    rmat_base_inc!(R, lmm.result.theta[lmm.covstr.tr[end]], lmm.covstr, i)
+    rθ   = lmm.covstr.tr[lmm.covstr.rn + 1:end]
+    rmat_base_inc!(R, lmm.result.theta, rθ, lmm.covstr, i)
     Symmetric(R)
 end
+
+#####################################################################
+
+function applywts!(::Any, ::Int, ::Nothing)
+    nothing
+end
+
+function applywts!(V::AbstractMatrix, i::Int, wts::LMMWts)
+    mulβdαβd!(V, wts.sqrtwts[i])
+end
+
+
+#####################################################################
+
+#####################################################################
 """
     vmatrix!(V, θ, lmm, i)
 
@@ -268,14 +287,18 @@ Update variance-covariance matrix V for i bolock. Upper triangular updated.
 """
 function vmatrix!(V, θ, lmm::LMM, i::Int) # pub API
     gvec = gmatvec(θ, lmm.covstr)
+    rθ   = lmm.covstr.tr[lmm.covstr.rn + 1:end]
+    rmat_base_inc!(V, θ, rθ, lmm.covstr, i) # Repeated vector
+    applywts!(V, i, lmm.wts) 
     zgz_base_inc!(V, gvec, lmm.covstr, i)
-    rmat_base_inc!(V, θ[lmm.covstr.tr[end]], lmm.covstr, i)
+    
 end
 
 # !!! Main function REML used
-function vmatrix!(V, G, rθ, lmm::LMM, i::Int)
+@noinline function vmatrix!(V, G, θ, rθ, lmm::LMM, i::Int)
+    rmat_base_inc!(V, θ, rθ, lmm.covstr, i)  # Repeated vector
+    applywts!(V, i, lmm.wts) 
     zgz_base_inc!(V, G, lmm.covstr, i)
-    rmat_base_inc!(V, rθ, lmm.covstr, i)
 end
 
 """
@@ -290,15 +313,18 @@ end
 function vmatrix(θ::AbstractVector{T}, lmm::LMM, i::Int) where T
     V    = zeros(T, length(lmm.covstr.vcovblock[i]), length(lmm.covstr.vcovblock[i]))
     gvec = gmatvec(θ, lmm.covstr)
-    vmatrix!(V, gvec, θ[lmm.covstr.tr[end]], lmm, i)
+    rθ   = lmm.covstr.tr[lmm.covstr.rn + 1:end]
+    vmatrix!(V, gvec, θ, rθ, lmm, i) # Repeated vector
     Symmetric(V)
 end
 # For Multiple Imputation
-function vmatrix(θ::Vector, covstr::CovStructure, i::Int)
+function vmatrix(θ::Vector, covstr::CovStructure, lmmwts, i::Int)
     V    = zeros(length(covstr.vcovblock[i]), length(covstr.vcovblock[i]))
     gvec = gmatvec(θ, covstr)
+    rθ   = covstr.tr[covstr.rn + 1:end]
+    rmat_base_inc!(V, θ, rθ, covstr, i)  # Repeated vector
+    applywts!(V, i, lmmwts) 
     zgz_base_inc!(V, gvec, covstr, i)
-    rmat_base_inc!(V, θ[covstr.tr[end]], covstr, i)
     Symmetric(V)
 end
 
@@ -428,3 +454,10 @@ function StatsModels.termvars(ve::Vector{VarEffect})
 end
 
 ################################################################################
+#=
+asgn(f::FormulaTerm) = asgn(f.rhs)
+asgn(t) = mapreduce(((i,t), ) -> i*ones(StatsModels.width(t)),
+                    append!,
+                    enumerate(StatsModels.vectorize(t)),
+                    init=Int[])
+=#

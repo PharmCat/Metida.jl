@@ -1,7 +1,7 @@
 # Metida
 
 #Simple dataset
-df0         = CSV.File(path*"/csv/df0.csv"; types = [String, String, String, String, Float64, Float64]) |> DataFrame
+df0         = CSV.File(path*"/csv/df0.csv"; types = [String, String, String, String, Float64, Float64, Float64]) |> DataFrame
 
 df0m         = CSV.File(path*"/csv/df0miss.csv"; types = [String, String, String, String, Float64, Float64]) |> DataFrame
 
