@@ -23,7 +23,7 @@ Make Linear-Mixed Model object.
 
 `random`: vector of random effects or single random effect
 
-`repeated`: is a repeated effect (only one)
+`repeated`: is a repeated effect or vector
 
 `wts`: regression weights (residuals).
 

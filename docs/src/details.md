@@ -63,6 +63,15 @@ V_{i} = Z_{i} G Z_i'+ W^{- \frac{1}{2}}_i R_{i} W^{- \frac{1}{2}}_i
 where ```W``` - diagonal matrix of weights.
 
 
+#### Multiple random and repeated effects
+
+If model include multiple effects ( with n random and m repeated effects) final V will be:
+
+```math
+V_{i} = Z_{i, 1} G_{1} Z_{i, 1}' + ... + Z_{i, n} G_{1} Z_{i, n}'+ W^{- \frac{1}{2}}_i ( R_{i, 1} + ... + R_{i, m}) W^{- \frac{1}{2}}_i
+```
+
+
 ##### Initial step
 
 Initial (first) step before optimization may be done:

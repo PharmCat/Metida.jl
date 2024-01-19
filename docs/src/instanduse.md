@@ -63,14 +63,23 @@ Define `random` and `repreated` effects with [`Metida.VarEffect`](@ref) using [`
 right side is a effect itself. [`Metida.HeterogeneousCompoundSymmetry`](@ref) and [`Metida.Diag`](@ref) (Diagonal) in example bellow is a model of variance-covariance structure. See also [`Metida.@lmmformula`](@ref) macro.
 
 !!! note
-  In some cases levels of repeated effect should not be equal inside each level of subject or model will not have any sense. For example, it is assumed that usually CSH or UN (Unstructured) using with levels of repeated effect is different inside each level of subject.
-  Metida does not check this!
+
+    In some cases levels of repeated effect should not be equal inside each level of subject or model will not have any sense. For example, it is assumed that usually CSH or UN (Unstructured) using with levels of repeated effect is different inside each level of subject. Metida does not check this!
 
 
 ```@example lmmexample
 lmm = LMM(@formula(var~sequence+period+formulation), df;
 random = VarEffect(@covstr(formulation|subject), CSH),
 repeated = VarEffect(@covstr(formulation|subject), DIAG));
+```
+
+Also [`Metida.@lmmformula`](@ref) macro can be used:
+
+```julia
+lmm = LMM(@lmmformula(var~sequence+period+formulation,
+    random = formulation|subject:CSH,
+    repeated = formulation|subject:DIAG),
+    df)
 ```
 
 #### Step 3: Fit
@@ -86,6 +95,23 @@ fit!(lmm)
 ```@example lmmexample
 lmm.log
 ```
+
+#### Confidence intervals for coefficients
+
+
+```@example lmmexample
+confint(lmm)
+```
+
+!!! note
+
+    Satterthwaite approximation for the denominator degrees of freedom used by default.
+
+#### StatsBsae API
+
+StatsBsae API implemented: [`Metida.islinear`](@ref), [`Metida.confint`](@ref), [`Metida.coef`](@ref), [`Metida.coefnames`](@ref), [`Metida.dof_residual`](@ref), [`Metida.dof`](@ref), [`Metida.loglikelihood`](@ref), [`Metida.aic`](@ref), [`Metida.bic`](@ref), [`Metida.aicc`](@ref),  [`Metida.isfitted`](@ref), [`Metida.vcov`](@ref), [`Metida.stderror`](@ref), [`Metida.modelmatrix`](@ref), [`Metida.response`](@ref), [`Metida.crossmodelmatrix`](@ref), [`Metida.coeftable`](@ref), [`Metida.responsename`](@ref)
+
+
 
 ##### Type III Tests of Fixed Effects
 
