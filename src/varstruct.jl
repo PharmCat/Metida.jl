@@ -1,5 +1,21 @@
 const CType = Union{FunctionTerm{typeof(+), Vector{Term}}, FunctionTerm{typeof(*), Vector{Term}}, FunctionTerm{typeof(&), Vector{Term}}}
 
+import StatsModels: ContrastsMatrix, AbstractContrasts, modelcols
+
+mutable struct RawCoding <: AbstractContrasts
+end
+function StatsModels.ContrastsMatrix(contrasts::RawCoding, levels::AbstractVector{T}) where T
+    ContrastsMatrix(ones(1,1),
+                             ["levels"],
+                             levels,
+                             contrasts)
+end
+function StatsModels.modelcols(t::CategoricalTerm{RawCoding, T, N}, d::NamedTuple) where T where N
+    #v = d[t.sym]
+    #reshape(v, length(v), 1)  
+    d[t.sym]
+end
+
 ################################################################################
 #                     @covstr macro
 ################################################################################
@@ -154,7 +170,7 @@ end
 """
     Covarince structure.
 """
-struct CovStructure{T} <: AbstractCovarianceStructure
+struct CovStructure{T, T2} <: AbstractCovarianceStructure
     # Random effects
     random::Vector{VarEffect}
     # Repearted effects
@@ -180,7 +196,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
     # unit range z column range for each random effect
     zrndur::Vector{UnitRange{Int}}
     # repeated effect parametrization matrix
-    rz::Vector{Matrix{T}}
+    rz::Vector{Matrix{T2}}
     # size 2 of z/rz matrix
     q::Vector{Int}
     # total number of parameters in each effect
@@ -209,7 +225,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         z       = Matrix{Float64}(undef, rown, 0)
         #subjz   = Vector{BitMatrix}(undef, alleffl)
         dicts   = Vector{Dict}(undef, alleffl)
-        # 
+        # unit range z column range for each random effect
         zrndur  = Vector{UnitRange{Int}}(undef, length(random))
         # Number of random effects
         rn      = length(random)
@@ -218,7 +234,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         # Number of repeated effects
         rpn     = length(repeated)
         # Z Matrix for repeated effect
-        rz      = Vector{Matrix{Float64}}(undef, rpn)
+        # rz      = Vector{Matrix{Float64}}(undef, rpn)
         # 
         #Theta parameter type
         ct      = Vector{Symbol}(undef, 0)
@@ -239,7 +255,12 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                 if length(random[i].coding) == 0
                     fill_coding_dict!(random[i].model, random[i].coding, data)
                 end
-                schema[i] = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
+                #data_     = data[] 
+                if isa(random[i].covtype.s, ZERO)
+                    schema[i] = InterceptTerm{false}()
+                else
+                    schema[i] = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
+                end
                 ztemp     = modelcols(MatrixTerm(schema[i]), data)
                 q[i]      = size(ztemp, 2)
                 csp       = covstrparam(random[i].covtype.s, q[i])
@@ -261,16 +282,18 @@ struct CovStructure{T} <: AbstractCovarianceStructure
                 append!(emap, fill(i, t[i]))
                 rtn += t[i]
             end
-
+        
+        rz_      = Vector{Matrix}(undef, rpn)
         # REPEATED EFFECTS
         for i = 1:length(repeated)
 
             if length(repeated[i].coding) == 0
                 fill_coding_dict!(repeated[i].model, repeated[i].coding, data)
             end
-
+            
             schema[rn+i] = apply_schema(repeated[i].model, StatsModels.schema(data, repeated[i].coding))
-            rz[i]        = modelcols(MatrixTerm(schema[rn+i]), data)
+            #rz_[i]       = reduce(hcat, modelcols(schema[rn+i], data))
+            rz_[i]       = modelcols(MatrixTerm(schema[rn+i]), data)
             symbs        = StatsModels.termvars(repeated[i].subj)
             if length(symbs) > 0
                 cdata       = tabcols(data, symbs) # Tuple(Tables.getcolumn(Tables.columns(data), x) for x in symbs)
@@ -281,7 +304,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             end
 
             sn[rn+i]     = length(dicts[rn+i])
-            q[rn+i]      = size(rz[i], 2)
+            q[rn+i]      = size(rz_[i], 2)
             csp          = covstrparam(repeated[i].covtype.s, q[rn+i])
             t[rn+i]      = sum(csp)
             tr[rn+i]     = UnitRange(sum(t[1:rn+i-1]) + 1, sum(t[1:rn+i-1]) + t[rn+i])
@@ -290,6 +313,9 @@ struct CovStructure{T} <: AbstractCovarianceStructure
             # emap
             append!(emap, fill(rn+i, t[rn+i]))
         end
+        T2  = typejoin(eltype.(rz_)...)
+        rz  = Vector{Matrix{T2}}(undef, rpn)
+        rz .= rz_
         # Theta length
         tl  = sum(t)
         ########################################################################
@@ -351,7 +377,7 @@ struct CovStructure{T} <: AbstractCovarianceStructure
         end
         esb = EffectSubjectBlock(sblock, nblock)
         #######################################################################
-        new{eltype(z)}(random, repeated, schema, rcnames, blocks, rn, rtn, rpn, z, esb, zrndur, rz, q, t, tr, tl, ct, emap, sn, maxn)
+        new{eltype(z), T2}(random, repeated, schema, rcnames, blocks, rn, rtn, rpn, z, esb, zrndur, rz, q, t, tr, tl, ct, emap, sn, maxn)
     end
 end
 ###############################################################################
