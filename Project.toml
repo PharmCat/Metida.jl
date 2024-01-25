@@ -6,6 +6,7 @@ authors = ["Vladimir Arnautov <mail@pharmcat.net>"]
 version = "0.15.1"
 
 [deps]
+Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -19,6 +20,7 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 StatsModels = "3eaba693-59b7-5ba5-a881-562e759f1c8d"
 
 [compat]
+Compat = "3.46, 4"
 DiffResults = "1"
 Distributions = "0.21, 0.22, 0.23, 0.24, 0.25"
 ForwardDiff = "0.10"

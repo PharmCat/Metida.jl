@@ -3,7 +3,7 @@
 
 __precompile__()
 module Metida
-
+using Compat
 using ProgressMeter, LinearAlgebra, ForwardDiff, DiffResults, Random, Optim, LineSearches, MetidaBase#, SparseArrays#, Polyester#, LoopVectorization
 import StatsBase, StatsModels, Distributions
 
