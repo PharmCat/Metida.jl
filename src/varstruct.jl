@@ -5,7 +5,7 @@ import StatsModels: ContrastsMatrix, AbstractContrasts, modelcols
 """
     mutable struct RawCoding <: AbstractContrasts
 
-Contrast for CategoricalTerm to get collumn "as it is" for model matrix.
+Contrast for CategoricalTerm to get column "as it is" for model matrix.
 """
 mutable struct RawCoding <: AbstractContrasts
 end

@@ -163,7 +163,7 @@ Make vector of `CartesianIndex`:
 spatdf.ci = map(x -> CartesianIndex(x[:x], x[:y]), eachrow(spatdf))
 ```
 
-Then use new collumn as "raw" variable with  [`Metida.RawCoding`](@ref) contrast and fit the model:
+Then use new column as "raw" variable with  [`Metida.RawCoding`](@ref) contrast and fit the model:
 
 ```@example lmmexample
 lmm = Metida.LMM(@formula(r2 ~ f), spatdf;
