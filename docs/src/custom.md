@@ -90,6 +90,7 @@ Example:
 ```@example lmmexample
 using Metida, DataFrames, CSV, CategoricalArrays
 
+spatdf       = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "spatialdata.csv"); types = [Int, Int, String, Float64, Float64, Float64, Float64, Float64]) |> DataFrame
 ftdf = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
 df0 = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "df0.csv"); types = [String, String, String, String,Float64, Float64, Float64]) |> DataFrame
 
@@ -141,5 +142,32 @@ end
 lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
 repeated = Metida.VarEffect(Metida.@covstr(period|subject), CustomCovarianceStructure()),
 )
+Metida.fit!(lmm)
+```
+
+### Custom distance estimation for spatial structures
+
+If you want to use coordinates or some other structures for distance estimation you can define method [`Metida.edistance`](@ref) to calculate distance:
+
+```@example lmmexample
+function Metida.edistance(mx::AbstractMatrix{<:CartesianIndex}, i::Int, j::Int)
+    return sqrt((mx[i, 1][1] - mx[j, 1][1])^2 + (mx[i, 1][2] - mx[j, 1][2])^2)
+end
+```
+
+For example this method returns distance between two vectors represented as `CartesianIndex`.
+
+Make vector of `CartesianIndex`:
+
+```@example lmmexample
+spatdf.ci = map(x -> CartesianIndex(x[:x], x[:y]), eachrow(spatdf))
+```
+
+Then use new collumn as "raw" variable with  [`Metida.RawCoding`](@ref) contrast and fit the model:
+
+```@example lmmexample
+lmm = Metida.LMM(@formula(r2 ~ f), spatdf;
+    repeated = Metida.VarEffect(Metida.@covstr(ci|1), Metida.SPEXP; coding = Dict(:ci => Metida.RawCoding())),
+    )
 Metida.fit!(lmm)
 ```

@@ -167,6 +167,11 @@ end
     return sqrt(sum)
 end
 =#
+"""
+    edistance(mx::AbstractMatrix{T}, i::Int, j::Int) where T
+
+Distance between vector mx[i, :] and mx[j, :].
+"""
 function edistance(mx::AbstractMatrix{T}, i::Int, j::Int) where T
     sum = zero(T)
     @inbounds for c = 1:size(mx, 2)

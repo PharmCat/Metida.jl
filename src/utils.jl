@@ -31,7 +31,7 @@ function nterms(rhs::Union{Tuple{Vararg{AbstractTerm}}, Nothing, AbstractTerm})
     p
 end
 """
-    Rerm name.
+    Term name.
 """
 tname(t::AbstractTerm) = "$(t.sym)"
 tname(t::InteractionTerm) = join(tname.(t.terms), " & ")

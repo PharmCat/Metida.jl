@@ -7,7 +7,7 @@ using DataFrames, CSV, StatsModels, LinearAlgebra, ForwardDiff, ForwardDiff, Opt
 using BenchmarkTools
 path    = dirname(@__FILE__)
 cd(path)
-df0         = CSV.File(path*"/csv/df0.csv"; types = [String, String, String, String, Float64, Float64]) |> DataFrame
+df0         = CSV.File(path*"/csv/df0.csv"; types = [String, String, String, String, Float64, Float64, Float64]) |> DataFrame
 df1         = CSV.File(path*"/csv/df1.csv"; types = [String, String, String, String, Float64, Float64]) |> DataFrame
 ftdf         = CSV.File(path*"/csv/1fptime.csv"; types = [String, String, Float64, Float64]) |> DataFrame
 ftdf2        = CSV.File(path*"/csv/1freparma.csv"; types = [String, String, Float64, Float64]) |> DataFrame
@@ -341,4 +341,21 @@ BenchmarkTools.Trial: 2 samples with 1 evaluation.
 
  Memory estimate: 8.31 GiB, allocs estimate: 365031.
 
+=#
+
+#=
+lmm = Metida.LMM(@formula(r2 ~ f), spatdf;
+repeated = Metida.VarEffect(Metida.@covstr(x+y|1), Metida.SPEXP),
+)
+@benchmark Metida.fit!($lmm, hes = false; maxthreads = 16) seconds = 15
+
+
+spatdf.ci = map(x -> CartesianIndex(x[:x], x[:y]), eachrow(spatdf))
+function Metida.edistance(mx::AbstractMatrix{<:CartesianIndex}, i::Int, j::Int)
+    return sqrt((mx[i, 1][1] - mx[j, 1][1])^2 + (mx[i, 1][2] - mx[j, 1][2])^2)
+end
+lmm = Metida.LMM(@formula(r2 ~ f), spatdf;
+repeated = Metida.VarEffect(Metida.@covstr(ci|1), Metida.SPEXP; coding = Dict(:ci => Metida.RawCoding())),
+)
+@benchmark Metida.fit!($lmm, hes = false; maxthreads = 16) seconds = 15
 =#

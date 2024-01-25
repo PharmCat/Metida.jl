@@ -2,6 +2,11 @@ const CType = Union{FunctionTerm{typeof(+), Vector{Term}}, FunctionTerm{typeof(*
 
 import StatsModels: ContrastsMatrix, AbstractContrasts, modelcols
 
+"""
+    mutable struct RawCoding <: AbstractContrasts
+
+Contrast for CategoricalTerm to get collumn "as it is" for model matrix.
+"""
 mutable struct RawCoding <: AbstractContrasts
 end
 function StatsModels.ContrastsMatrix(contrasts::RawCoding, levels::AbstractVector{T}) where T
@@ -255,22 +260,30 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
                 if length(random[i].coding) == 0
                     fill_coding_dict!(random[i].model, random[i].coding, data)
                 end
-                #data_     = data[] 
+                if isa(random[i].model, ConstantTerm) # if only ConstantTerm in the model - data_ - first is collumn (responce)
+                    data_     = data[[first(keys(data))]] 
+                else
+                    data_     = data[StatsModels.termvars(random[i].model)] # only collumns for model
+                end
                 if isa(random[i].covtype.s, ZERO)
                     schema[i] = InterceptTerm{false}()
+                    zsize     = 0
                 else
-                    schema[i] = apply_schema(random[i].model, StatsModels.schema(data, random[i].coding))
+                    schema[i] = apply_schema(random[i].model, StatsModels.schema(data_, random[i].coding))
+                    ztemp     = modelcols(MatrixTerm(schema[i]), data_)
+                    z         = hcat(z, ztemp)
+                    zsize     = size(ztemp, 2)
                 end
-                ztemp     = modelcols(MatrixTerm(schema[i]), data)
-                q[i]      = size(ztemp, 2)
+                
+                q[i]      = zsize
                 csp       = covstrparam(random[i].covtype.s, q[i])
                 t[i]      = sum(csp)
-                z         = hcat(z, ztemp)
+                
                 fillur!(zrndur, i, q)
                 fillur!(tr, i, t)
                 symbs       = StatsModels.termvars(random[i].subj)
                 if length(symbs) > 0
-                    cdata     = tabcols(data, symbs) # Tuple(Tables.getcolumn(Tables.columns(data), x) for x in symbs)
+                    cdata     = tabcols(data, symbs) # Tuple(Tables.getcolumn(Tables.columns(data_), x) for x in symbs)
                     dicts[i]  = Dict{Tuple{eltype.(cdata)...}, Vector{Int}}()
                     indsdict!(dicts[i], cdata)
                 else
@@ -290,26 +303,30 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
             if length(repeated[i].coding) == 0
                 fill_coding_dict!(repeated[i].model, repeated[i].coding, data)
             end
+            if isa(repeated[i].model, ConstantTerm) # if only ConstantTerm in the model - data_ - first is collumn (responce)
+                data_     = data[[first(keys(data))]] 
+            else
+                data_     = data[StatsModels.termvars(repeated[i].model)] # only collumns for model
+            end
             
-            schema[rn+i] = apply_schema(repeated[i].model, StatsModels.schema(data, repeated[i].coding))
+            schema[rn + i] = apply_schema(repeated[i].model, StatsModels.schema(data_, repeated[i].coding))
             #rz_[i]       = reduce(hcat, modelcols(schema[rn+i], data))
-            rz_[i]       = modelcols(MatrixTerm(schema[rn+i]), data)
+            rz_[i]       = modelcols(MatrixTerm(schema[rn+i]), data_)
             symbs        = StatsModels.termvars(repeated[i].subj)
             if length(symbs) > 0
-                cdata       = tabcols(data, symbs) # Tuple(Tables.getcolumn(Tables.columns(data), x) for x in symbs)
-                dicts[rn+i]  = Dict{Tuple{eltype.(cdata)...}, Vector{Int}}()
-                indsdict!(dicts[rn+i], cdata)
+                cdata    = tabcols(data, symbs) # Tuple(Tables.getcolumn(Tables.columns(data), x) for x in symbs)
+                dicts[rn + i]  = Dict{Tuple{eltype.(cdata)...}, Vector{Int}}()
+                indsdict!(dicts[rn + i], cdata)
             else
                 dicts[rn+i]  = Dict(1 => collect(1:rown)) #changed to range
             end
 
-            sn[rn+i]     = length(dicts[rn+i])
-            q[rn+i]      = size(rz_[i], 2)
+            sn[rn + i]   = length(dicts[rn+i])
+            q[rn + i]    = size(rz_[i], 2)
             csp          = covstrparam(repeated[i].covtype.s, q[rn+i])
-            t[rn+i]      = sum(csp)
-            tr[rn+i]     = UnitRange(sum(t[1:rn+i-1]) + 1, sum(t[1:rn+i-1]) + t[rn+i])
+            t[rn + i]    = sum(csp)
+            tr[rn + i]   = UnitRange(sum(t[1:rn+i-1]) + 1, sum(t[1:rn+i-1]) + t[rn+i])
             updatenametype!(ct, rcnames, csp, schema[rn+i], repeated[i].covtype.s)
- 
             # emap
             append!(emap, fill(rn+i, t[rn+i]))
         end

@@ -818,7 +818,6 @@ end
 
 @testset "  Experimental                                             " begin
 
-    
     io = IOBuffer();
     lmm = Metida.LMM(@formula(r2 ~ f), spatdf;
     repeated = Metida.VarEffect(Metida.@covstr(x+y|1), Metida.SPEXP),
@@ -826,6 +825,19 @@ end
     Metida.fit!(lmm, maxthreads = 1)
     @test Metida.m2logreml(lmm) ≈ 1985.3417397854946 atol=1E-6
     @test Metida.dof_satter(lmm)[1] ≈ 10.261390893063432 atol=1E-2
+
+
+    spatdf.ci = map(x -> CartesianIndex(x[:x], x[:y]), eachrow(spatdf))
+    function Metida.edistance(mx::AbstractMatrix{<:CartesianIndex}, i::Int, j::Int)
+        return sqrt((mx[i, 1][1] - mx[j, 1][1])^2 + (mx[i, 1][2] - mx[j, 1][2])^2)
+    end
+    lmm = Metida.LMM(@formula(r2 ~ f), spatdf;
+    repeated = Metida.VarEffect(Metida.@covstr(ci|1), Metida.SPEXP; coding = Dict(:ci => Metida.RawCoding())),
+    )
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ 1985.3417397854946 atol=1E-6
+    @test Metida.dof_satter(lmm)[1] ≈ 10.261390893063432 atol=1E-2
+
 
     lmm = Metida.LMM(@formula(r2 ~ f), spatdf;
     repeated = Metida.VarEffect(Metida.@covstr(x+y|1), Metida.SPPOW),
