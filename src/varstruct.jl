@@ -263,7 +263,7 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
                 if isa(random[i].model, ConstantTerm) # if only ConstantTerm in the model - data_ - first is collumn (responce)
                     data_     = data[[first(keys(data))]] 
                 else
-                    data_     = data[StatsModels.termvars(random[i].model)] # only collumns for model
+                    data_     = data[Tuple(StatsModels.termvars(random[i].model))] # only collumns for model
                 end
                 if isa(random[i].covtype.s, ZERO)
                     schema[i] = InterceptTerm{false}()
@@ -306,7 +306,7 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
             if isa(repeated[i].model, ConstantTerm) # if only ConstantTerm in the model - data_ - first is collumn (responce)
                 data_     = data[[first(keys(data))]] 
             else
-                data_     = data[StatsModels.termvars(repeated[i].model)] # only collumns for model
+                data_     = data[Tuple(StatsModels.termvars(repeated[i].model))] # only collumns for model
             end
             
             schema[rn + i] = apply_schema(repeated[i].model, StatsModels.schema(data_, repeated[i].coding))
