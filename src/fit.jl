@@ -63,7 +63,7 @@ Fit LMM model.
 * `refitinit` - true/false - if `true` - use last values for initial condition  (`false` by default)
 * `optmethod` - Optimization method. Look at Optim.jl documentation. (Newton by default)
 * `singtol` - singular tolerance = 1e-8
-* `maxthreads` - maximum threads = num_cores()
+* `maxthreads` - maximum threads = min(num_cores(), Threads.nthreads())
 
 """
 function fit!(lmm::LMM{T}; kwargs...) where T
@@ -87,7 +87,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     :refitinit ∈ kwkeys ? refitinit = kwargs[:refitinit] : refitinit = false
     :optmethod ∈ kwkeys ? optmethod = kwargs[:optmethod] : optmethod = :default
     :singtol ∈ kwkeys ? singtol = kwargs[:singtol] : singtol = 1e-8
-    :maxthreads ∈ kwkeys ? maxthreads = kwargs[:maxthreads] : maxthreads = num_cores()
+    :maxthreads ∈ kwkeys ? maxthreads = kwargs[:maxthreads] : maxthreads = min(num_cores(), Threads.nthreads())
 
     # If model was fitted, previous results can be used if `refitinit` == true
     # Before fitting clear log

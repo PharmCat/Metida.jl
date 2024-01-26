@@ -204,8 +204,8 @@ end
 function logreml(lmm)
     -m2logreml(lmm)/2
 end
-function m2logreml(lmm, theta)
-    reml_sweep_β(lmm, LMMDataViews(lmm), theta)[1]
+function m2logreml(lmm, theta; maxthreads::Int = num_cores())
+    reml_sweep_β(lmm, LMMDataViews(lmm), theta; maxthreads = maxthreads)[1]
 end
 ################################################################################
 

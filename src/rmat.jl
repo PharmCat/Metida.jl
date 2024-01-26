@@ -309,8 +309,9 @@ function unrmat(θ::AbstractVector{T}, rz) where T
     end
     if rm > 1
         for m = 1:rm - 1
+            @inbounds mxmm = mx[m, m] 
             @inbounds @simd for n = m + 1:rm
-                mx[m, n] += mx[m, m] * mx[n, n] * θ[rm+tpnum(m, n, rm)]
+                mx[m, n] += mxmm * mx[n, n] * θ[rm + tpnum(m, n, rm)]
             end
         end
     end
