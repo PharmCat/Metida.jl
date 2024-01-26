@@ -31,7 +31,7 @@ function nterms(rhs::Union{Tuple{Vararg{AbstractTerm}}, Nothing, AbstractTerm})
     p
 end
 """
-    Rerm name.
+    Term name.
 """
 tname(t::AbstractTerm) = "$(t.sym)"
 tname(t::InteractionTerm) = join(tname.(t.terms), " & ")
@@ -204,8 +204,8 @@ end
 function logreml(lmm)
     -m2logreml(lmm)/2
 end
-function m2logreml(lmm, theta)
-    reml_sweep_β(lmm, LMMDataViews(lmm), theta)[1]
+function m2logreml(lmm, theta; maxthreads::Int = num_cores())
+    reml_sweep_β(lmm, LMMDataViews(lmm), theta; maxthreads = maxthreads)[1]
 end
 ################################################################################
 
