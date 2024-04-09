@@ -148,7 +148,7 @@ function gmat!(mx, θ, ::TOEP_)
     if s > 1
         for n = 2:s
             @inbounds @simd for m = 1:n-1
-                mx[m, n] = de * θ[n-m+1]
+                mx[m, n] = de * θ[n - m + 1]
             end
         end
     end
@@ -177,8 +177,9 @@ function gmat!(mx, θ, ::TOEPH_)
     end
     if s > 1
         for n = 2:s
+            @inbounds mxnn = mx[n, n]
             @inbounds @simd for m = 1:n-1
-                mx[m, n] = mx[m, m] * mx[n, n] * θ[n-m+s]
+                mx[m, n] = mx[m, m] * mxnn * θ[n - m + s]
             end
         end
     end
@@ -195,8 +196,9 @@ function gmat!(mx, θ, ct::TOEPHP_)
     end
     if s > 1 && ct.p > 1
         for m = 1:s - 1
+            @inbounds mxmm = mx[m, m]
             for n = m + 1:(m + ct.p - 1 > s ? s : m + ct.p - 1)
-                @inbounds mx[m, n] = mx[m, m] * mx[n, n] * θ[n - m + s]
+                @inbounds mx[m, n] = mxmm * mx[n, n] * θ[n - m + s]
             end
         end
     end
@@ -213,8 +215,9 @@ function gmat!(mx, θ, ::UN_)
     end
     if s > 1
         for n = 2:s
+            @inbounds mxnn = mx[n, n]
             @inbounds @simd for m = 1:n - 1
-                mx[m, n] = mx[m, m] * mx[n, n] * θ[s + tpnum(m, n, s)]
+                mx[m, n] = mx[m, m] * mxnn * θ[s + tpnum(m, n, s)]
             end
         end
     end

@@ -400,6 +400,13 @@ Metida.typeiii
 Metida.MILMM
 ```
 
+### Metida.RawCoding
+
+```@docs
+Metida.RawCoding
+```
+
+
 ## Not API functions
 
 ### Metida.contrast
@@ -443,3 +450,10 @@ Metida.tname
 ```@docs
 Metida.raneflenv  
 ```
+
+### Metida.edistance  
+
+```@docs
+Metida.edistance  
+```
+
