@@ -31,6 +31,7 @@ end</code></pre><p>Then just make model and fit it:</p><pre><code class="nohighl
   )
   Metida.fit!(lmm)</code></pre><p>Example:</p><pre><code class="language-julia hljs">using Metida, DataFrames, CSV, CategoricalArrays
 
+spatdf       = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;spatialdata.csv&quot;); types = [Int, Int, String, Float64, Float64, Float64, Float64, Float64]) |&gt; DataFrame
 ftdf = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1fptime.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame
 df0 = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;df0.csv&quot;); types = [String, String, String, String,Float64, Float64, Float64]) |&gt; DataFrame
 
@@ -110,4 +111,50 @@ formulation: 2  -0.0379392   0.0717112  -0.53    0.5968
   Residual   Val    var   0.397381
   Residual   Val    var   0.247835
   Residual   Val    rho   0.899017
-</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../examples/">« Examples</a><a class="docs-footer-nextpage" href="../bioequivalence/">Bioequivalence »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Friday 19 January 2024 21:53">Friday 19 January 2024</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre><h3 id="Custom-distance-estimation-for-spatial-structures"><a class="docs-heading-anchor" href="#Custom-distance-estimation-for-spatial-structures">Custom distance estimation for spatial structures</a><a id="Custom-distance-estimation-for-spatial-structures-1"></a><a class="docs-heading-anchor-permalink" href="#Custom-distance-estimation-for-spatial-structures" title="Permalink"></a></h3><p>If you want to use coordinates or some other structures for distance estimation you can define method <a href="../api/#Metida.edistance"><code>Metida.edistance</code></a> to calculate distance:</p><pre><code class="language-julia hljs">function Metida.edistance(mx::AbstractMatrix{&lt;:CartesianIndex}, i::Int, j::Int)
+    return sqrt((mx[i, 1][1] - mx[j, 1][1])^2 + (mx[i, 1][2] - mx[j, 1][2])^2)
+end</code></pre><p>For example this method returns distance between two vectors represented as <code>CartesianIndex</code>.</p><p>Make vector of <code>CartesianIndex</code>:</p><pre><code class="language-julia hljs">spatdf.ci = map(x -&gt; CartesianIndex(x[:x], x[:y]), eachrow(spatdf))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">200-element Vector{CartesianIndex{2}}:
+ CartesianIndex(8, 94)
+ CartesianIndex(9, 40)
+ CartesianIndex(40, 62)
+ CartesianIndex(49, 24)
+ CartesianIndex(20, 89)
+ CartesianIndex(57, 14)
+ CartesianIndex(44, 68)
+ CartesianIndex(64, 90)
+ CartesianIndex(30, 81)
+ CartesianIndex(79, 32)
+ ⋮
+ CartesianIndex(100, 45)
+ CartesianIndex(55, 59)
+ CartesianIndex(11, 22)
+ CartesianIndex(37, 25)
+ CartesianIndex(57, 8)
+ CartesianIndex(81, 99)
+ CartesianIndex(68, 83)
+ CartesianIndex(89, 17)
+ CartesianIndex(62, 79)</code></pre><p>Then use new column as &quot;raw&quot; variable with  <a href="../api/#Metida.RawCoding"><code>Metida.RawCoding</code></a> contrast and fit the model:</p><pre><code class="language-julia hljs">lmm = Metida.LMM(@formula(r2 ~ f), spatdf;
+    repeated = Metida.VarEffect(Metida.@covstr(ci|1), Metida.SPEXP; coding = Dict(:ci =&gt; Metida.RawCoding())),
+    )
+Metida.fit!(lmm)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear Mixed Model: r2 ~ f
+Random 1: 
+   No
+Repeated: 
+    Model: ci|1
+    Type: SPEXP (2)
+Blocks: 1, Maximum block size: 200
+Status: <span class="sgr32">converged</span> (No Errors)
+    -2 logREML: 1985.34    BIC: 1995.92
+
+    Fixed-effects parameters:
+────────────────────────────────────────────────
+               Coef.  Std. Error     z  Pr(&gt;|z|)
+────────────────────────────────────────────────
+(Intercept)  6.26619     8.841    0.71    0.4785
+f: 1         3.85137     4.12172  0.93    0.3501
+────────────────────────────────────────────────
+    Variance components:
+    θ vector: [46.8999, 8.28173]
+  Residual   σ²    var     2199.6
+  Residual   θ     theta   8.28173
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../examples/">« Examples</a><a class="docs-footer-nextpage" href="../bioequivalence/">Bioequivalence »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.3.0 on <span class="colophon-date" title="Tuesday 9 April 2024 22:37">Tuesday 9 April 2024</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
