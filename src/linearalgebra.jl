@@ -108,8 +108,8 @@ use only upper triangle of V
         end
     end
     for m = 2:q
-        @inbounds ycm2 = (y[m] - c[m])*2
-        @simd for n = 1:m-1
+        @inbounds ycm2 = (y[m] - c[m]) * 2
+        @simd for n = 1:m - 1
             @inbounds θ -= V[n, m] * (y[n] - c[n]) * ycm2
         end
     end

@@ -26,7 +26,7 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, i
     @simd for j in 1:k
         @inbounds akk[j] = A[j, k]
     end
-    @simd for j in (k+1):p
+    @simd for j in (k + 1):p
         @inbounds akk[j] = A[k, j]
     end
     # syrk!(uplo, trans, alpha, A, beta, C)
@@ -57,7 +57,7 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, ks::AbstractV
     if logdet
         ld = 0
         for k in ks
-            @inbounds Akk = A[k,k]
+            @inbounds Akk = A[k, k]
             if Akk > 0
                 ld += log(Akk)
             else

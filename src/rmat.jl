@@ -71,8 +71,8 @@ end
 #CS
 function rmat!(mx, θ, ::AbstractMatrix,  ::CS_)
     s    = size(mx, 1)
-    θsq   =  θ[1]*θ[1]
-    θsqp  =  θsq*θ[2]
+    θsq   =  θ[1] * θ[1]
+    θsqp  =  θsq  * θ[2]
     @inbounds @simd for i = 1:size(mx, 1)
         mx[i, i] += θsq
     end
@@ -93,7 +93,7 @@ function rmat!(mx, θ, rz, ::CSH_)
         θend = last(θ)
         for n = 2:s
             @inbounds vecnθend = vec[n] * θend
-            @inbounds @simd for m = 1:n-1
+            @inbounds @simd for m = 1:n - 1
                 mx[m, n] += vec[m] * vecnθend
             end
         end
