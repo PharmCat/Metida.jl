@@ -189,7 +189,7 @@ include("testdata.jl")
 
     # Int dependent variable, function Term in random part
     df0.varint = Int.(ceil.(df0.var2))
-    lmmint = Metida.fit(Metida.LMM, Metida.@lmmformula(varint~formulation,
+    @test_warn "Response variable not <: AbstractFloat" lmmint = Metida.fit(Metida.LMM, Metida.@lmmformula(varint~formulation,
     random = 1+var^2|subject:Metida.SI), df0)
     Metida.fit!(lmmint)
     @test Metida.m2logreml(lmmint) ≈ 84.23373276096902 atol=1E-6
@@ -209,8 +209,13 @@ include("testdata.jl")
     fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 17.823729 atol=1E-6 # TEST WITH SPSS 28
 
+
+    @test_warn "wts count not equal observations count! wts not used." lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
+    wts = ones(10))
+
     # Matrix wts
-    matwts = Symmetric(rand(size(df0, 1), size(df0, 1)))
+    matwts = Symmetric(rand(size(df0,1), size(df0,1)))
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
     wts = matwts)
@@ -220,7 +225,7 @@ include("testdata.jl")
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     repeated = Metida.VarEffect(Metida.@covstr(1|subject), Metida.SWC(matwts)))
     @test_nowarn fit!(lmm)
-    
+
     # Repeated vector
     
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
