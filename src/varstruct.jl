@@ -16,8 +16,6 @@ function StatsModels.ContrastsMatrix(contrasts::RawCoding, levels::AbstractVecto
                              contrasts)
 end
 function StatsModels.modelcols(t::CategoricalTerm{RawCoding, T, N}, d::NamedTuple) where T where N
-    #v = d[t.sym]
-    #reshape(v, length(v), 1)  
     d[t.sym]
 end
 
@@ -255,7 +253,6 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
             end
         end
         # RANDOM EFFECTS
-        #if random[1].covtype.z #IF NOT ZERO
             @inbounds for i = 1:rn
                 if length(random[i].coding) == 0
                     fill_coding_dict!(random[i].model, random[i].coding, data)
@@ -283,7 +280,7 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
                 fillur!(tr, i, t)
                 symbs       = StatsModels.termvars(random[i].subj)
                 if length(symbs) > 0
-                    cdata     = tabcols(data, symbs) # Tuple(Tables.getcolumn(Tables.columns(data_), x) for x in symbs)
+                    cdata     = tabcols(data, symbs) 
                     dicts[i]  = Dict{Tuple{eltype.(cdata)...}, Vector{Int}}()
                     indsdict!(dicts[i], cdata)
                 else
@@ -310,11 +307,10 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
             end
             
             schema[rn + i] = apply_schema(repeated[i].model, StatsModels.schema(data_, repeated[i].coding))
-            #rz_[i]       = reduce(hcat, modelcols(schema[rn+i], data))
             rz_[i]       = modelcols(MatrixTerm(schema[rn+i]), data_)
             symbs        = StatsModels.termvars(repeated[i].subj)
             if length(symbs) > 0
-                cdata    = tabcols(data, symbs) # Tuple(Tables.getcolumn(Tables.columns(data), x) for x in symbs)
+                cdata    = tabcols(data, symbs) 
                 dicts[rn + i]  = Dict{Tuple{eltype.(cdata)...}, Vector{Int}}()
                 indsdict!(dicts[rn + i], cdata)
             else
@@ -336,9 +332,6 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
         # Theta length
         tl  = sum(t)
         ########################################################################
-        #if any(x-> 1 in keys(x), dicts[1:end-1])
-        #    blocks = [first(dicts)[1]]
-        #else
             if random[1].covtype.z  # if first random effect not null
                 subjblockdict = dicts[1]
                 if length(dicts) > 2 # if more than 2 random effects
@@ -363,9 +356,7 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
                 dicts[rn+i] = subjblockdict
             end
 
-
             blocks  = collect(values(subjblockdict))
-        #end
 
         sblock = Matrix{Vector{Tuple{Vector{Int}, Int}}}(undef, length(blocks), alleffl)
         nblock = []
@@ -394,7 +385,9 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
         end
         esb = EffectSubjectBlock(sblock, nblock)
         #######################################################################
-        # Modify repeated effect covariance type for some types 
+        # Postprocessing
+        # Modify repeated effect covariance type for some types
+        # Maybe it will be removed
         for r in repeated 
             applycovschema!(r.covtype.s, blocks)
         end
