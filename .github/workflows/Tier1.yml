@@ -30,7 +30,6 @@ jobs:
     strategy:
       matrix:
         version:
-          - 'lts'
           - '1.8'
           - '1'
         os:
