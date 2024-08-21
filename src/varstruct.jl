@@ -394,6 +394,11 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
         end
         esb = EffectSubjectBlock(sblock, nblock)
         #######################################################################
+        # Modify repeated effect covariance type for some types 
+        for r in repeated 
+            applycovschema!(r.covtype.s, blocks)
+        end
+        #######################################################################
         new{eltype(z), T2}(random, repeated, schema, rcnames, blocks, rn, rtn, rpn, z, esb, zrndur, rz, q, t, tr, tl, ct, emap, sn, maxn)
     end
 end

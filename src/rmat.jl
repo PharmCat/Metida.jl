@@ -10,25 +10,40 @@
         zblock    = view(covstr.rz[j], block, :)
         @simd for i = 1:subjn(covstr, en, bi)
             sb = getsubj(covstr, en, bi, i)
-            rmat!(view(mx, sb, sb), view(θ, rθ[j]), view(zblock, sb, :), covstr.repeated[j].covtype.s)
+            rmat!(view(mx, sb, sb), view(θ, rθ[j]), view(zblock, sb, :), covstr.repeated[j].covtype.s, bi)
         end
     end
     mx
 end
 ################################################################################
-function rmat!(::Any, ::Any, ::Any,  ::AbstractCovarianceType)
+function rmat!(::Any, ::Any, ::Any,  ::AbstractCovarianceType, ::Int)
     error("No rmat! method defined for thit structure!")
 end
 #SI
-Base.@propagate_inbounds function rmat!(mx, θ, ::AbstractMatrix, ::SI_)
+Base.@propagate_inbounds function rmat!(mx, θ, ::AbstractMatrix, ::SI_, ::Int)
     val = θ[1]^2
     @inbounds @simd for i ∈ axes(mx, 1)
             mx[i, i] += val
     end
     mx
 end
+#SWC
+function rmat!(mx, θ, ::AbstractMatrix, ct::SWC_, sbj::Int)
+    s  = size(mx, 1)
+    de  = θ[1] ^ 2
+    if s > 1
+        for n = 1:s
+            @inbounds @simd for m = 1:n
+                mx[m, n] += de * ct.wtsb[sbj][m, n]
+            end
+        end
+    else
+        @inbounds mx[1, 1] += de * ct.wtsb[sbj][1, 1]
+    end
+    mx
+end
 #DIAG
-function rmat!(mx, θ, rz, ::DIAG_)
+function rmat!(mx, θ, rz, ::DIAG_, ::Int)
     for i ∈ axes(mx, 1)
         @inbounds @simd for c ∈ axes(θ, 1)
             mx[i, i] += rz[i, c] * θ[c] ^ 2
@@ -37,7 +52,7 @@ function rmat!(mx, θ, rz, ::DIAG_)
     mx
 end
 #AR
-function rmat!(mx, θ, ::AbstractMatrix, ::AR_)
+function rmat!(mx, θ, ::AbstractMatrix, ::AR_, ::Int)
     s  = size(mx, 1)
     de  = θ[1] ^ 2
     @inbounds @simd for m = 1:s
@@ -53,7 +68,7 @@ function rmat!(mx, θ, ::AbstractMatrix, ::AR_)
     mx
 end
 #ARH
-function rmat!(mx, θ, rz, ::ARH_)
+function rmat!(mx, θ, rz, ::ARH_, ::Int)
     vec = tmul_unsafe(rz, θ)
     s    = size(mx, 1)
     if s > 1
@@ -69,7 +84,7 @@ function rmat!(mx, θ, rz, ::ARH_)
     mx
 end
 #CS
-function rmat!(mx, θ, ::AbstractMatrix,  ::CS_)
+function rmat!(mx, θ, ::AbstractMatrix,  ::CS_, ::Int)
     s    = size(mx, 1)
     θsq   =  θ[1] * θ[1]
     θsqp  =  θsq  * θ[2]
@@ -86,7 +101,7 @@ function rmat!(mx, θ, ::AbstractMatrix,  ::CS_)
     mx
 end
 #CSH
-function rmat!(mx, θ, rz, ::CSH_)
+function rmat!(mx, θ, rz, ::CSH_, ::Int)
     vec = tmul_unsafe(rz, θ)
     s    = size(mx, 1)
     if s > 1
@@ -105,7 +120,7 @@ function rmat!(mx, θ, rz, ::CSH_)
 end
 ################################################################################
 #ARMA
-function rmat!(mx, θ, ::AbstractMatrix,  ::ARMA_)
+function rmat!(mx, θ, ::AbstractMatrix,  ::ARMA_, ::Int)
     s  = size(mx, 1)
     de  = θ[1] ^ 2
     @inbounds @simd for m = 1:s
@@ -123,7 +138,7 @@ function rmat!(mx, θ, ::AbstractMatrix,  ::ARMA_)
 end
 ################################################################################
 #TOEPP
-function rmat!(mx, θ, ::AbstractMatrix, ct::TOEPP_)
+function rmat!(mx, θ, ::AbstractMatrix, ct::TOEPP_, ::Int)
     de  = θ[1] ^ 2    #diagonal element
     s   = size(mx, 1) #size
     @inbounds @simd for i = 1:s
@@ -140,7 +155,7 @@ function rmat!(mx, θ, ::AbstractMatrix, ct::TOEPP_)
 end
 ################################################################################
 #TOEPHP
-function rmat!(mx, θ, rz, ct::TOEPHP_)
+function rmat!(mx, θ, rz, ct::TOEPHP_, ::Int)
     l     = size(rz, 2)
     vec   = rz * (θ[1:l])
     s   = size(mx, 1) #size
@@ -181,7 +196,7 @@ function edistance(mx::AbstractMatrix{T}, i::Int, j::Int) where T
 end
 ################################################################################
 #SPEXP
-function rmat!(mx, θ, rz,  ::SPEXP_)
+function rmat!(mx, θ, rz,  ::SPEXP_, ::Int)
     σ²    = θ[1]^2
     #θe    = exp(θ[2])
     θe    = θ[2]
@@ -202,7 +217,7 @@ function rmat!(mx, θ, rz,  ::SPEXP_)
 end
 ################################################################################
 #SPPOW
-function rmat!(mx, θ, rz,  ::SPPOW_)
+function rmat!(mx, θ, rz,  ::SPPOW_, ::Int)
     σ²    = θ[1]^2
     ρ     = θ[2]
     s    = size(mx, 1)
@@ -222,7 +237,7 @@ function rmat!(mx, θ, rz,  ::SPPOW_)
 end
 
 #SPGAU
-function rmat!(mx, θ, rz,  ::SPGAU_)
+function rmat!(mx, θ, rz,  ::SPGAU_, ::Int)
     σ²    = θ[1]^2
     #θe    = exp(θ[2])
     θe    = θ[2]
@@ -244,7 +259,7 @@ function rmat!(mx, θ, rz,  ::SPGAU_)
 end
 ################################################################################
 #SPEXPD cos(pidij)
-function rmat!(mx, θ, rz,  ::SPEXPD_)
+function rmat!(mx, θ, rz,  ::SPEXPD_, ::Int)
     σ²    = θ[2]^2
     σ²d   = θ[1]^2 + σ²
     θe    = θ[3]
@@ -263,7 +278,7 @@ function rmat!(mx, θ, rz,  ::SPEXPD_)
     mx
 end
 #SPPOWD
-function rmat!(mx, θ, rz,  ::SPPOWD_)
+function rmat!(mx, θ, rz,  ::SPPOWD_, ::Int)
     σ²    = θ[2]^2
     σ²d   = θ[1]^2 + σ²
     ρ     = θ[3]
@@ -281,7 +296,7 @@ function rmat!(mx, θ, rz,  ::SPPOWD_)
     mx
 end
 #SPGAUD
-function rmat!(mx, θ, rz,  ::SPGAUD_)
+function rmat!(mx, θ, rz,  ::SPGAUD_, ::Int)
     σ²    = θ[2]^2
     σ²d   = θ[1]^2 + σ²
     θe    = θ[3]
@@ -320,7 +335,7 @@ function unrmat(θ::AbstractVector{T}, rz) where T
     end
     Symmetric(mx)
 end
-function rmat!(mx, θ, rz::AbstractMatrix, ::UN_)
+function rmat!(mx, θ, rz::AbstractMatrix, ::UN_, ::Int)
     vec    = tmul_unsafe(rz, θ)
     rm     = size(mx, 1)
     rcov  = unrmat(θ, rz)

@@ -11,7 +11,7 @@ struct ModelStructure
 end
 
 """
-    LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing, wts::Union{Nothing, AbstractVector, AbstractString, Symbol} = nothing)
+    LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect} = nothing, wts::Union{Nothing, AbstractVector, AbstractMatrix, AbstractString, Symbol} = nothing)
 
 Make Linear-Mixed Model object.
 
@@ -26,6 +26,10 @@ Make Linear-Mixed Model object.
 `repeated`: is a repeated effect or vector
 
 `wts`: regression weights (residuals).
+
+Weigts can be set as `Symbol` or `String`, in this case weights taken from tabular data.
+If weights is vector then this vector applyed to R-side part of covariance matrix (see [Weights details](@ref weights_header)).
+If weights is matrix then R-side part of covariance matrix multiplied by corresponding part of weight-matrix.
 
 See also: [`@lmmformula`](@ref)
 """
@@ -57,7 +61,11 @@ struct LMM{T <: AbstractFloat, W <: Union{LMMWts, Nothing}} <: MetidaModel
         log::Vector{LMMLogMsg}) where T where W <: Union{LMMWts, Nothing}
         new{T, W}(model, f, modstr, covstr, data, dv, nfixed, rankx, result, maxvcbl, wts, log)
     end
-    function LMM(model, data; contrasts=Dict{Symbol,Any}(),  random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, repeated::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, wts::Union{Nothing, AbstractVector, AbstractString, Symbol} = nothing)
+    function LMM(model, data; 
+        contrasts=Dict{Symbol,Any}(),  
+        random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, 
+        repeated::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, 
+        wts::Union{Nothing, AbstractVector, AbstractMatrix, AbstractString, Symbol} = nothing)
         #need check responce - Float
         if !Tables.istable(data) error("Data not a table!") end
         if repeated === nothing && random === nothing
@@ -122,12 +130,22 @@ struct LMM{T <: AbstractFloat, W <: Union{LMMWts, Nothing}} <: MetidaModel
             if wts isa Symbol
                 wts = Tables.getcolumn(data, wts)
             end
-            if length(lmmdata.yv) == length(wts)
-                if any(x -> x <= zero(x), wts) error("Only cases with positive weights allowed!") end
-                lmmwts = LMMWts(wts, covstr.vcovblock)
-            else
-                @warn "wts count not equal observations count! wts not used."
-                lmmwts = nothing
+            if wts isa AbstractVector
+                if length(lmmdata.yv) == length(wts)
+                    if any(x -> x <= zero(x), wts) error("Only cases with positive weights allowed!") end
+                    lmmwts = LMMWts(wts, covstr.vcovblock)
+                else
+                    @warn "wts count not equal observations count! wts not used."
+                    lmmwts = nothing
+                end
+            elseif wts isa AbstractMatrix
+                if length(lmmdata.yv) == LinearAlgebra.checksquare(wts)
+                    if any(x -> x <= zero(x), wts) error("Only positive values allowed!") end
+                    lmmwts = LMMWts(wts, covstr.vcovblock)
+                else
+                    @warn "wts count not equal observations count! wts not used."
+                    lmmwts = nothing
+                end
             end
         end
 

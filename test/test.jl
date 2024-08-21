@@ -209,6 +209,18 @@ include("testdata.jl")
     fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 17.823729 atol=1E-6 # TEST WITH SPSS 28
 
+    # Matrix wts
+    matwts = Symmetric(rand(size(df0, 1), size(df0, 1)))
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
+    wts = matwts)
+    @test_nowarn fit!(lmm)
+
+    # experimental weighted covariance 
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+    repeated = Metida.VarEffect(Metida.@covstr(1|subject), Metida.SWC(matwts)))
+    @test_nowarn fit!(lmm)
+    
     # Repeated vector
     
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
@@ -654,7 +666,7 @@ end
     reml = Metida.m2logreml(lmm)
     @test reml_c ≈ reml
 
-    function Metida.rmat!(mx, θ, rz, ::CustomCovarianceStructure)
+    function Metida.rmat!(mx, θ, rz, ::CustomCovarianceStructure, ::Int)
         vec = Metida.tmul_unsafe(rz, θ)
         rn    = size(mx, 1)
         if rn > 1

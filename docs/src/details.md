@@ -13,6 +13,33 @@ In matrix notation a mixed effect model can be represented as:
 y = X\beta + Zu + \epsilon
 ```
 
+where:
+
+
+```math
+\epsilon \sim N(0, R)
+
+\\
+
+u \sim N(0, G)
+
+\\
+
+y \sim N(X\beta, V)
+
+```
+
+where V depends on covariance sructure and parameters ``\theta``:
+
+```math
+V = CovStruct(\theta)
+
+```
+
+The unknown parameters include the regression parameters in ``\beta`` and covariance parameters in ``\theta``.
+
+Estimation of these model parameters relies on the use of a Newton-Ralphson (by default) algorithm. When we use either algorithm for finding REML solutions, we need to compute ``V^{-1}`` and its derivatives with respect to ``\theta``, which are computationally difficult for large ``n``, therefor SWEEP (see https://github.com/joshday/SweepOperator.jl) algorithm used to meke oprtimization less computationaly expensive.
+
 #### V
 
 ```math
@@ -33,7 +60,7 @@ logREML(\theta,\beta) = -\frac{N-p}{2} - \frac{1}{2}\sum_{i=1}^nlog|V_{\theta, i
 -\frac{1}{2}log|\sum_{i=1}^nX_i'V_{\theta, i}^{-1}X_i|-\frac{1}{2}\sum_{i=1}^n(y_i - X_{i}\beta)'V_{\theta, i}^{-1}(y_i - X_{i}\beta)
 ```
 
-Actually ```L(\theta) = -2logREML = L_1(\theta) + L_2(\theta) + L_3(\theta) + c``` used for optimization, where:
+Actually `` L(\theta) = -2logREML = L_1(\theta) + L_2(\theta) + L_3(\theta) + c`` used for optimization, where:
 
 ```math
 L_1(\theta) = \frac{1}{2}\sum_{i=1}^nlog|V_{i}| \\
@@ -51,16 +78,36 @@ L_3(\theta) = \frac{1}{2}\sum_{i=1}^n(y_i - X_{i}\beta)'V_i^{-1}(y_i - X_{i}\bet
 \mathcal{H}\mathcal{L}(\theta) =  \mathcal{H}L_1(\theta)  + \mathcal{H}L_2(\theta) +  \mathcal{H} L_3(\theta)
 ```
 
-#### Weights
+#### [Weights](@id weights_header)
 
 If weights defined:
 
 ```math
+
+W_{i} = diag(wts_{i})
+
+\\
+
 V_{i} = Z_{i} G Z_i'+ W^{- \frac{1}{2}}_i R_{i} W^{- \frac{1}{2}}_i
 ```
 
+where ``W`` - diagonal matrix of weights.
 
-where ```W``` - diagonal matrix of weights.
+
+If wts is matrix then:
+
+
+```math
+
+W_{i} = wts_{i}
+
+\\
+
+V_{i} = Z_{i} G Z_i'+  R_{i} \circ W_{i}
+```
+
+where ``\circ`` - element-wise multiplication.
+
 
 
 #### Multiple random and repeated effects

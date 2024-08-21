@@ -272,10 +272,13 @@ function applywts!(::Any, ::Int, ::Nothing)
     nothing
 end
 
-function applywts!(V::AbstractMatrix, i::Int, wts::LMMWts)
+function applywts!(V::AbstractMatrix, i::Int, wts::LMMWts{<:Vector})
     mulβdαβd!(V, wts.sqrtwts[i])
 end
 
+function applywts!(V::AbstractMatrix, i::Int, wts::LMMWts{<:Matrix})
+    V .*= wts.sqrtwts[i]
+end
 
 #####################################################################
 
