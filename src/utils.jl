@@ -16,10 +16,7 @@ end
 function fixedeffn(lmm::LMM)
     fixedeffn(lmm.f) 
 end
-#=
-function nterms(mf::ModelFrame)
-    mf.schema.schema.count
-=#
+
 function nterms(rhs::Union{Tuple{Vararg{AbstractTerm}}, Nothing, AbstractTerm})
     if isa(rhs, Term)
         p = 1

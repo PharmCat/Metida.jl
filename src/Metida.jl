@@ -20,6 +20,7 @@ import Random: default_rng, AbstractRNG, rand!
 
 export @formula, @covstr, @lmmformula,
 SI, ScaledIdentity,
+SWC, ScaledWeightedCov,
 DIAG, Diag,
 AR, Autoregressive,
 ARH, HeterogeneousAutoregressive,

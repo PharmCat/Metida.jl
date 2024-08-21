@@ -32,15 +32,15 @@ include("testdata.jl")
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 25.00077786912235 atol=1E-6
 
-    #Missing
+    # Missing
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0m;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 16.636012616466203 atol=1E-6
 
-    #milmm = Metida.MILMM(lmm, df0m)
-    #Basic, Subject block
+    # milmm = Metida.MILMM(lmm, df0m)
+    # Basic, Subject block
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
     )
@@ -130,21 +130,26 @@ include("testdata.jl")
     # AI like algo
     Metida.fit!(lmm; aifirst = true, init = Metida.theta(lmm))
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
+
     # Score
     Metida.fit!(lmm; aifirst = :score)
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
+
     # AI
     Metida.fit!(lmm; aifirst = :ai)
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
-    #Set user coding
+
+    # Set user coding
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(1 + formulation|subject), Metida.CSH; coding = Dict(:formulation => StatsModels.DummyCoding())),
     )
+
     # Test varlink/rholinkf
     Metida.fit!(lmm; rholinkf = :sqsigm)
     @test Metida.dof_satter(lmm, [0, 0, 0, 0, 0, 1]) ≈ 6.043195705464293 atol=1E-2
     @test Metida.m2logreml(lmm) ≈ 10.314822559210157 atol=1E-6
     @test_nowarn Metida.fit!(lmm; varlinkf = :sq)
+
     # Repeated effect only
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     repeated = Metida.VarEffect(Metida.@covstr(formulation|nosubj)),
@@ -157,14 +162,19 @@ include("testdata.jl")
     random = formulation|subject:Metida.DIAG), df0);
     @test  Metida.responsename(lmm) == "log(var)"
 
-    #BE like
+    # BE like
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.CSH),
     repeated = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
     )
     Metida.fit!(lmm; aifirst = :score)
     @test Metida.m2logreml(lmm) ≈ 10.065238626765524 atol=1E-6
-    #incomplete
+
+    # One thread
+    Metida.fit!(lmm; maxthreads = 1)
+    @test Metida.m2logreml(lmm) ≈ 10.065238626765524 atol=1E-6
+
+    # incomplete
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df1;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.CSH),
     repeated = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
@@ -178,6 +188,7 @@ include("testdata.jl")
     )
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm, [0.222283, 0.444566]) ≈ Metida.m2logreml(lmm) atol=1E-6
+
     # EXPERIMENTAL
     @test Metida.dof_contain(lmm, 1) == 12
     @test Metida.dof_contain(lmm, 5) == 8
@@ -189,13 +200,12 @@ include("testdata.jl")
 
     # Int dependent variable, function Term in random part
     df0.varint = Int.(ceil.(df0.var2))
-    @test_warn "Response variable not <: AbstractFloat" lmmint = Metida.fit(Metida.LMM, Metida.@lmmformula(varint~formulation,
+    lmmint =  @test_warn "Response variable not <: AbstractFloat" Metida.fit(Metida.LMM, Metida.@lmmformula(varint~formulation,
     random = 1+var^2|subject:Metida.SI), df0)
     Metida.fit!(lmmint)
     @test Metida.m2logreml(lmmint) ≈ 84.23373276096902 atol=1E-6
 
     # Wts
-
     df0.wtsc = fill(0.5, size(df0, 1))
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
@@ -208,7 +218,6 @@ include("testdata.jl")
     wts = "wts")
     fit!(lmm)
     @test Metida.m2logreml(lmm) ≈ 17.823729 atol=1E-6 # TEST WITH SPSS 28
-
 
     @test_warn "wts count not equal observations count! wts not used." lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
@@ -227,7 +236,6 @@ include("testdata.jl")
     @test_nowarn fit!(lmm)
 
     # Repeated vector
-    
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     repeated = [Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG), Metida.VarEffect(Metida.@covstr(1|subject), Metida.SI)])
     fit!(lmm)

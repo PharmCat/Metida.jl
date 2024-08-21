@@ -88,7 +88,12 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; maxthreads::Int = 4) where T # 
         end
         θ₁      = sum(accθ₁)
         θ₂      = sum(accθ₂)
-        βm      = sum(accβm)
+        if length(accβm) > 1
+            for i = 2:length(accβm)
+                accβm[1] += accβm[i]
+            end
+        end
+        βm = accβm[1]
         noerror = all(erroracc)
         noerror = noerror * checkmatrix!(θ₂)
         θs₂     = Symmetric(θ₂)
