@@ -109,6 +109,8 @@ include("testdata.jl")
     @test Metida.confint(lmm, 6)[1] ≈ -0.7630380758015894 atol=1E-4
     @test Metida.confint(lmm; ddf = :residual)[end][1] ≈ -0.6740837049617738 atol=1E-4
     @test Metida.responsename(lmm) == "var"
+    @test Metida.nblocks(lmm) == 5
+    @test Metida.msgnum(lmm.log) == 3
 
     Metida.confint(lmm; ddf = :contain)[end][1] #NOT VALIDATED
     @test size(crossmodelmatrix(lmm), 1) == 6
@@ -148,7 +150,15 @@ include("testdata.jl")
     Metida.fit!(lmm; rholinkf = :sqsigm)
     @test Metida.dof_satter(lmm, [0, 0, 0, 0, 0, 1]) ≈ 6.043195705464293 atol=1E-2
     @test Metida.m2logreml(lmm) ≈ 10.314822559210157 atol=1E-6
-    @test_nowarn Metida.fit!(lmm; varlinkf = :sq)
+
+    Metida.fit!(lmm; rholinkf = :atan)
+    @test Metida.m2logreml(lmm) ≈ 10.314837309793571 atol=1E-6
+
+    Metida.fit!(lmm; rholinkf = :psigm)
+    @test Metida.m2logreml(lmm) ≈ 10.86212458333098 atol=1E-6
+
+    Metida.fit!(lmm; varlinkf = :sq)
+    @test Metida.m2logreml(lmm) ≈ 10.314822479530243 atol=1E-6
 
     # Repeated effect only
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
@@ -234,6 +244,7 @@ include("testdata.jl")
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
     repeated = Metida.VarEffect(Metida.@covstr(1|subject), Metida.SWC(matwts)))
     @test_nowarn fit!(lmm)
+    @test_nowarn show(io, lmm)
 
     # Repeated vector
     lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
@@ -808,6 +819,24 @@ end
     random = Metida.VarEffect(Metida.@covstr(factor|subject), Metida.DIAG),
     repeated = Metida.VarEffect(Metida.@covstr(1|subject+factor), Metida.ARMA),
     )
+
+    @test_throws ErrorException  Metida.LMM(@formula(var~sequence+period+formulation), df0;)
+    
+
+    @test_throws ErrorException  begin
+        # make cov type
+        struct NewCCS <: Metida.AbstractCovarianceType end
+        function Metida.covstrparam(ct::NewCCS, t::Int)::Tuple{Int, Int}
+            return (t, 1)
+        end
+        # try to apply to repeated effect
+        lmm = Metida.LMM(@formula(response ~1 + factor*time), ftdf;
+        repeated = Metida.VarEffect(Metida.@covstr(1 + time|subject&factor), Metida.CovarianceType(NewCCS())),
+        )
+        # try to get V 
+        Metida.vmatrix([1.0, 1.0, 1.0], lmm, 1) 
+    end
+
     # Error messages
     io = IOBuffer();
     lmm = Metida.LMM(@formula(response ~ 1 + factor*time), ftdf2;

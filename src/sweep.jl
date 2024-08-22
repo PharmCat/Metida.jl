@@ -10,7 +10,7 @@ function nsyrk!(α, x, A)
             @inbounds A[i, j] += x[i] * xjα
         end
     end
-    A
+    return A
 end
 function nsyrk!(α, x, A::AbstractArray{T}) where T <: AbstractFloat
     BLAS.syrk!('U', 'N', α, x, one(T), A)
@@ -44,7 +44,7 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, i
         @inbounds A[k, j] = akk[j]
     end
     @inbounds A[k, k] = -d
-    A
+    return A
 end
 function sweep!(A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; logdet::Bool = false) where {T <: Number, I <: Integer}
     akk = Vector{T}(undef, size(A,2))

@@ -25,7 +25,7 @@ Base.@propagate_inbounds function rmat!(mx, θ, ::AbstractMatrix, ::SI_, ::Int)
     @inbounds @simd for i ∈ axes(mx, 1)
             mx[i, i] += val
     end
-    mx
+    return mx
 end
 #SWC
 function rmat!(mx, θ, ::AbstractMatrix, ct::SWC_, sbj::Int)

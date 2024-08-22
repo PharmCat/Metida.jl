@@ -87,7 +87,14 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; maxthreads::Int = 4) where T # 
             #-----------------------------------------------------------------------
         end
         θ₁      = sum(accθ₁)
-        θ₂      = sum(accθ₂)
+        #θ₂      = sum(accθ₂)
+        if length(accθ₂) > 1
+            for i = 2:length(accθ₂)
+                accθ₂[1] += accθ₂[i]
+            end
+        end
+        θ₂ = accθ₂[1]
+
         if length(accβm) > 1
             for i = 2:length(accβm)
                 accβm[1] += accβm[i]
@@ -194,8 +201,20 @@ function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) whe
             return   Inf, β, θ₂, Inf, false
         end
         θ₁   = sum(accθ₁)
-        θ₂tc = sum(accθ₂)
-        βtc  = sum(accβm)
+        #θ₂tc = sum(accθ₂)
+        if length(accθ₂) > 1
+            for i = 2:length(accθ₂)
+                accθ₂[1] += accθ₂[i]
+            end
+        end
+        θ₂tc = accθ₂[1]
+        #βtc  = sum(accβm)
+        if length(accβm) > 1
+            for i = 2:length(accβm)
+                accβm[1] += accβm[i]
+            end
+        end
+        βtc = accβm[1]
     # Beta calculation
         copyto!(θ₂, θ₂tc)
         ldθ₂, info = LinearAlgebra.LAPACK.potrf!('U', θ₂tc)
