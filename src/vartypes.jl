@@ -532,7 +532,7 @@ function indfromtn(ind, s)
             break
         end
     end
-    m, s + ind - b
+    return m, s + ind - b
 end
 
 function rcoefnames(s, t, ct::UN_)
@@ -572,7 +572,7 @@ function applycovschema!(ct::SWC_{<:AbstractMatrix{T}}, vcovblock) where T
             push!(ct.wtsb, ct.wtsm[vcovblock[i], vcovblock[i]])
         end
     end
-    ct
+    return ct
 end
 
 ################################################################################

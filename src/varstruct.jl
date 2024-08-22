@@ -16,7 +16,7 @@ function StatsModels.ContrastsMatrix(contrasts::RawCoding, levels::AbstractVecto
                              contrasts)
 end
 function StatsModels.modelcols(t::CategoricalTerm{RawCoding, T, N}, d::NamedTuple) where T where N
-    d[t.sym]
+    return d[t.sym]
 end
 
 ################################################################################
@@ -40,7 +40,7 @@ end
 function modelparse(term::FunctionTerm{typeof(|)})
     eff, subj = term.args
     if !isa(subj, AbstractTerm) || isa(subj, FunctionTerm{typeof(*), Vector{Term}}) throw(FormulaException("Subject term type not <: AbstractTerm. Use `term` or `interaction term` only. Maybe you are using something like this: `@covstr(factor|term1*term2)` or `@covstr(factor|(term1+term2))`. Use only `@covstr(factor|term)` or `@covstr(factor|term1&term2)`.")) end
-    eff, subj
+    return eff, subj
 end
 function modelparse(term)
     throw(FormulaException("Model term type not <: FunctionTerm{typeof(|)}. Use model like this: `@covstr(factor|subject)`. Maybe you are using something like this: `@covstr(factor|term1+term2)`. Use only `@covstr(factor|term)` or `@covstr(factor|term1&term2)`."))
@@ -138,7 +138,7 @@ function sabjcrossdicts(d1, d2)
             end
         end
     end
-    v
+    return v
 end
 
 tabcols(data, symbs) = Tuple(Tables.getcolumn(Tables.columns(data), x) for x in symbs)
@@ -168,7 +168,7 @@ function raneflenv(covstr, block)
     for i = 1:l
         v[i] = length(covstr.esb.sblock[block, i])
     end
-    v
+    return v
 end
 """
     Covarince structure.
@@ -420,13 +420,13 @@ end
 ################################################################################
 
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Union{ConstantTerm, InterceptTerm, FunctionTerm}
-    d
+    return d
 end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Term
     if typeof(Tables.getcolumn(data, t.sym)) <: AbstractCategoricalVector || !(typeof(Tables.getcolumn(data, t.sym)) <: AbstractVector{V} where V <: Real)
         d[t.sym] = StatsModels.FullDummyCoding()
     end
-    d
+    return d
 end
 #=
 function fill_coding_dict!(t::T, d::Dict, data) where T <: InteractionTerm
@@ -448,7 +448,7 @@ function fill_coding_dict_ct!(t, d, data)
             fill_coding_dict!(i, d, data)
         end
     end
-    d
+    return d
 end
 #=
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple{Vararg{AbstractTerm}}

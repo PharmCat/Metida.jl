@@ -7,7 +7,7 @@ function subutri!(a, b)
             @inbounds a[m,n] -= b[m,n]
         end
     end
-    a
+    return a
 end
 
 function fillzeroutri!(a::AbstractArray{T})  where T
@@ -28,7 +28,7 @@ function checkmatrix!(mx::AbstractMatrix{T}) where T
             e = false
         end
     end
-    e
+    return e
 end
 ################################################################################
 #                     REML without provided β
@@ -270,7 +270,7 @@ function core_sweep_β(lmm, data, θ::Vector{T}, β, n; maxthreads::Int = 16) wh
             accθ₃[t]  += mulθ₃(data.yv[i], data.xv[i], β, V)
         end
     end
-    sum(accθ₁), sum(accθ₂), sum(accθ₃), all(erroracc)
+    return sum(accθ₁), sum(accθ₂), sum(accθ₃), all(erroracc)
 end
 ###
 function reml_sweep_β(lmm, data, θ::Vector{T}, β; kwargs...) where T

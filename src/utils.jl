@@ -7,7 +7,7 @@ function initvar(y::Vector, X::Matrix{T}) where T
     r    = copy(y)
     LinearAlgebra.BLAS.gemv!('N', one(T), X, β, -one(T), r)
     #r    = y .- X * β
-    dot(r, r)/(length(r) - size(X, 2)), β
+    return dot(r, r)/(length(r) - size(X, 2)), β
 end
 ################################################################################
 function fixedeffn(f::FormulaTerm)
@@ -25,7 +25,7 @@ function nterms(rhs::Union{Tuple{Vararg{AbstractTerm}}, Nothing, AbstractTerm})
     else
         p = 0
     end
-    p
+    return p
 end
 """
     Term name.
@@ -68,7 +68,7 @@ function lcontrast(lmm::LMM, i::Int)
             mx[j, inds[j]] = 1
         end
     end
-    mx
+    return mx
 end
 ################################################################################
 #                        VAR LINK
@@ -76,17 +76,17 @@ end
 
 function vlink(σ::T) where T <: Real
     if σ < -21.0 return one(T)*7.582560427911907e-10 end #Experimental
-    exp(σ)
+    return exp(σ)
 end
 function vlinkr(σ::T) where T <: Real
-    log(σ)
+    return log(σ)
 end
 
 function vlinksq(σ::T) where T <: Real
-    σ*σ
+    return σ*σ
 end
 function vlinksqr(σ::T) where T <: Real
-    sqrt(σ)
+    return sqrt(σ)
 end
 
 function rholinkpsigmoid(ρ::T) where T <: Real
@@ -141,7 +141,7 @@ function varlinkvecapply!(v, p; varlinkf = :exp, rholinkf = :sigm)
             end
         end
     end
-    v
+    return v
 end
 function varlinkrvecapply!(v, p; varlinkf = :exp, rholinkf = :sigm)
     @inbounds for i = 1:length(v)
@@ -165,7 +165,7 @@ function varlinkrvecapply!(v, p; varlinkf = :exp, rholinkf = :sigm)
             end
         end
     end
-    v
+    return v
 end
 function varlinkvecapply(v, p; varlinkf = :exp, rholinkf = :sigm)
     s = similar(v)
@@ -192,22 +192,22 @@ function varlinkvecapply(v, p; varlinkf = :exp, rholinkf = :sigm)
             s[i] = v[i]
         end
     end
-    s
+    return s
 end
 ################################################################################
 function m2logreml(lmm)
-    lmm.result.reml
+    return lmm.result.reml
 end
 function logreml(lmm)
-    -m2logreml(lmm)/2
+    return -m2logreml(lmm)/2
 end
 function m2logreml(lmm, theta; maxthreads::Int = num_cores())
-    reml_sweep_β(lmm, LMMDataViews(lmm), theta; maxthreads = maxthreads)[1]
+    return reml_sweep_β(lmm, LMMDataViews(lmm), theta; maxthreads = maxthreads)[1]
 end
 ################################################################################
 
 function optim_callback(os)
-    false
+    return false
 end
 ################################################################################
 """
@@ -216,7 +216,7 @@ end
 Return true if CovarianceType is ZERO.
 """
 function zeroeff(eff)
-    isa(eff.covtype.s, ZERO)
+    return isa(eff.covtype.s, ZERO)
 end
 """
     raneffn(lmm)
@@ -226,7 +226,7 @@ function raneffn(lmm)
     if zeroeff(lmm.covstr.random[1]) 
         return 0
     end
-    length(lmm.covstr.random)
+    return length(lmm.covstr.random)
 end
 
 """
@@ -237,7 +237,7 @@ function gmatrix(lmm::LMM{T}, r::Int) where T
     if r > length(lmm.covstr.random) error("Invalid random effect number: $(r)!") end
     G = zeros(T, lmm.covstr.q[r], lmm.covstr.q[r])
     gmat!(G, view(lmm.result.theta, lmm.covstr.tr[r]), lmm.covstr.random[r].covtype.s)
-    Symmetric(G)
+    return Symmetric(G)
 end
 
 
@@ -247,7 +247,7 @@ end
 Return true if all variance-covariance matrix (G) of random effect is positive definite.
 """
 function gmatrixipd(lmm::LMM)
-    lmm.result.ipd
+    return lmm.result.ipd
 end
 
 """
@@ -260,7 +260,7 @@ function rmatrix(lmm::LMM{T}, i::Int) where T
     R    = zeros(T, q, q)
     rθ   = lmm.covstr.tr[lmm.covstr.rn + 1:end]
     rmat_base_inc!(R, lmm.result.theta, rθ, lmm.covstr, i)
-    Symmetric(R)
+    return Symmetric(R)
 end
 
 #####################################################################
@@ -270,11 +270,12 @@ function applywts!(::Any, ::Int, ::Nothing)
 end
 
 function applywts!(V::AbstractMatrix, i::Int, wts::LMMWts{<:Vector})
-    mulβdαβd!(V, wts.sqrtwts[i])
+    return mulβdαβd!(V, wts.sqrtwts[i])
 end
 
 function applywts!(V::AbstractMatrix, i::Int, wts::LMMWts{<:Matrix})
     V .*= wts.sqrtwts[i]
+    return V
 end
 
 #####################################################################
@@ -290,15 +291,14 @@ function vmatrix!(V, θ, lmm::LMM, i::Int) # pub API
     rθ   = lmm.covstr.tr[lmm.covstr.rn + 1:end]
     rmat_base_inc!(V, θ, rθ, lmm.covstr, i) # Repeated vector
     applywts!(V, i, lmm.wts) 
-    zgz_base_inc!(V, gvec, lmm.covstr, i)
-    
+    return zgz_base_inc!(V, gvec, lmm.covstr, i) 
 end
 
 # !!! Main function REML used
 @noinline function vmatrix!(V, G, θ, rθ, lmm::LMM, i::Int)
     rmat_base_inc!(V, θ, rθ, lmm.covstr, i)  # Repeated vector
     applywts!(V, i, lmm.wts) 
-    zgz_base_inc!(V, G, lmm.covstr, i)
+    return zgz_base_inc!(V, G, lmm.covstr, i)
 end
 
 """
@@ -307,7 +307,7 @@ end
 Return variance-covariance matrix V for i bolock.
 """
 function vmatrix(lmm::LMM, i::Int)
-    vmatrix(lmm.result.theta, lmm, i)
+    return vmatrix(lmm.result.theta, lmm, i)
 end
 
 function vmatrix(θ::AbstractVector{T}, lmm::LMM, i::Int) where T
@@ -315,7 +315,7 @@ function vmatrix(θ::AbstractVector{T}, lmm::LMM, i::Int) where T
     gvec = gmatvec(θ, lmm.covstr)
     rθ   = lmm.covstr.tr[lmm.covstr.rn + 1:end]
     vmatrix!(V, gvec, θ, rθ, lmm, i) # Repeated vector
-    Symmetric(V)
+    return Symmetric(V)
 end
 # For Multiple Imputation
 function vmatrix(θ::Vector, covstr::CovStructure, lmmwts, i::Int)
@@ -325,11 +325,11 @@ function vmatrix(θ::Vector, covstr::CovStructure, lmmwts, i::Int)
     rmat_base_inc!(V, θ, rθ, covstr, i)  # Repeated vector
     applywts!(V, i, lmmwts) 
     zgz_base_inc!(V, gvec, covstr, i)
-    Symmetric(V)
+    return Symmetric(V)
 end
 
 function blockgmatrix(lmm::LMM{T}) where T
-    blockgmatrix(lmm, (1, 1))
+    return blockgmatrix(lmm, (1, 1))
 end
 
 function blockgmatrix(lmm::LMM{T}, v) where T
@@ -348,7 +348,7 @@ function blockgmatrix(lmm::LMM{T}, v) where T
             s = e + 1
         end
     end
-    G
+    return G
 end
 
 function blockzmatrix(lmm::LMM{T}, i) where T
@@ -368,7 +368,7 @@ function blockzmatrix(lmm::LMM{T}, i) where T
         s  = e + 1
         mx[j] = smx
     end
-   hcat(mx...)
+    return hcat(mx...)
 end
 """
     raneff(lmm::LMM{T}, i)
@@ -399,8 +399,7 @@ function raneff(lmm::LMM{T}, block) where T
             rvsbj[i][j] =  subjname => rv[s:e]
         end
     end
-    rvsbj
-    
+    return rvsbj  
 end
 """
     raneff(lmm::LMM{T})
@@ -418,7 +417,7 @@ function raneff(lmm::LMM)
             end
         end
     end
-    fb
+    return fb
 end
 
 """
@@ -438,19 +437,19 @@ function hessian(lmm, theta)
     vloptf(x) = reml_sweep_β(lmm, lmm.dv, x, lmm.result.beta)[1]
     chunk  = ForwardDiff.Chunk{min(8, length(theta))}()
     hcfg   = ForwardDiff.HessianConfig(vloptf, theta, chunk)
-    ForwardDiff.hessian(vloptf, theta, hcfg)
+    return ForwardDiff.hessian(vloptf, theta, hcfg)
 end
 function hessian(lmm)
     if !lmm.result.fit error("Model not fitted!") end
-    hessian(lmm, lmm.result.theta)
+    return hessian(lmm, lmm.result.theta)
 end
 ################################################################################
 ################################################################################
 function StatsModels.termvars(ve::VarEffect)
-    termvars(ve.formula)
+    return termvars(ve.formula)
 end
 function StatsModels.termvars(ve::Vector{VarEffect})
-    union(termvars.(ve)...)
+    return union(termvars.(ve)...)
 end
 
 ################################################################################

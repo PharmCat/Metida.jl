@@ -23,7 +23,7 @@ Change θ (only upper triangle). B is symmetric.
             end
         end
     end
-    θ
+    return θ
 end
 #=
 function mulαβαtinc!(θ::AbstractMatrix{T}, A::AbstractMatrix{T}, B::AbstractMatrix{T}) where T <: AbstractFloat
@@ -55,7 +55,7 @@ Change θ (only upper triangle). B is symmetric.
             end
         end
     end
-    θ
+    return θ
 end
 """
     mulαβαtinc!(θ::AbstractVector{T}, A::AbstractMatrix, B::AbstractMatrix, a::AbstractVector, b::AbstractVector, alpha) where T
@@ -78,7 +78,7 @@ Change θ (only upper triangle). B is symmetric.
             end
         end
     end
-    θ
+    return θ
 end
 
 """
@@ -137,7 +137,7 @@ Change θ.
         end
         @inbounds θ[n] += θn
     end
-    θ
+    return θ
 end
 # Diagonal(b) * A * Diagonal(b) - chnage only A upper triangle 
 @noinline function mulβdαβd!(A::AbstractMatrix, b::AbstractVector)
@@ -149,7 +149,7 @@ end
             @inbounds A[m, n] *= b[m] * b[n]
         end
     end
-    A
+    return A
 end
 
 
@@ -162,7 +162,7 @@ end
             @inbounds vec[r] += rz[r, i] * θi
         end
     end
-    vec
+    return vec
 end
 
 @inline function diag!(f, v, m)
@@ -171,5 +171,5 @@ end
     @simd for i = 1:l
         @inbounds v[i] = f(m[i, i])
     end
-    v
+    return v
 end

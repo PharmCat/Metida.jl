@@ -13,7 +13,7 @@
             rmat!(view(mx, sb, sb), view(θ, rθ[j]), view(zblock, sb, :), covstr.repeated[j].covtype.s, bi)
         end
     end
-    mx
+    return mx
 end
 ################################################################################
 function rmat!(::Any, ::Any, ::Any,  ::AbstractCovarianceType, ::Int)
@@ -40,7 +40,7 @@ function rmat!(mx, θ, ::AbstractMatrix, ct::SWC_, sbj::Int)
     else
         @inbounds mx[1, 1] += de * ct.wtsb[sbj][1, 1]
     end
-    mx
+    return mx
 end
 #DIAG
 function rmat!(mx, θ, rz, ::DIAG_, ::Int)
@@ -49,7 +49,7 @@ function rmat!(mx, θ, rz, ::DIAG_, ::Int)
             mx[i, i] += rz[i, c] * θ[c] ^ 2
         end
     end
-    mx
+    return mx
 end
 #AR
 function rmat!(mx, θ, ::AbstractMatrix, ::AR_, ::Int)
@@ -65,7 +65,7 @@ function rmat!(mx, θ, ::AbstractMatrix, ::AR_, ::Int)
             end
         end
     end
-    mx
+    return mx
 end
 #ARH
 function rmat!(mx, θ, rz, ::ARH_, ::Int)
@@ -81,7 +81,7 @@ function rmat!(mx, θ, rz, ::ARH_, ::Int)
     @inbounds  for m ∈ axes(mx, 1)
         mx[m, m] += vec[m] * vec[m]
     end
-    mx
+    return mx
 end
 #CS
 function rmat!(mx, θ, ::AbstractMatrix,  ::CS_, ::Int)
@@ -98,7 +98,7 @@ function rmat!(mx, θ, ::AbstractMatrix,  ::CS_, ::Int)
             end
         end
     end
-    mx
+    return mx
 end
 #CSH
 function rmat!(mx, θ, rz, ::CSH_, ::Int)
@@ -116,7 +116,7 @@ function rmat!(mx, θ, rz, ::CSH_, ::Int)
     @inbounds  for m ∈ axes(mx, 1)
         mx[m, m] += vec[m] * vec[m]
     end
-    mx
+    return mx
 end
 ################################################################################
 #ARMA
@@ -134,7 +134,7 @@ function rmat!(mx, θ, ::AbstractMatrix,  ::ARMA_, ::Int)
             end
         end
     end
-    mx
+    return mx
 end
 ################################################################################
 #TOEPP
@@ -151,7 +151,7 @@ function rmat!(mx, θ, ::AbstractMatrix, ct::TOEPP_, ::Int)
             end
         end
     end
-    mx
+    return mx
 end
 ################################################################################
 #TOEPHP
@@ -169,7 +169,7 @@ function rmat!(mx, θ, rz, ct::TOEPHP_, ::Int)
     @inbounds @simd for m = 1:s
         mx[m, m] += vec[m] * vec[m]
     end
-    mx
+    return mx
 end
 ################################################################################
 #=
@@ -213,7 +213,7 @@ function rmat!(mx, θ, rz,  ::SPEXP_, ::Int)
             end
         end
     end
-    mx
+    return mx
 end
 ################################################################################
 #SPPOW
@@ -233,7 +233,7 @@ function rmat!(mx, θ, rz,  ::SPPOW_, ::Int)
             end
         end
     end
-    mx
+    return mx
 end
 
 #SPGAU
@@ -255,7 +255,7 @@ function rmat!(mx, θ, rz,  ::SPGAU_, ::Int)
             end
         end
     end
-    mx
+    return mx
 end
 ################################################################################
 #SPEXPD cos(pidij)
@@ -275,7 +275,7 @@ function rmat!(mx, θ, rz,  ::SPEXPD_, ::Int)
             end
         end
     end
-    mx
+    return mx
 end
 #SPPOWD
 function rmat!(mx, θ, rz,  ::SPPOWD_, ::Int)
@@ -293,7 +293,7 @@ function rmat!(mx, θ, rz,  ::SPPOWD_, ::Int)
             end
         end
     end
-    mx
+    return mx
 end
 #SPGAUD
 function rmat!(mx, θ, rz,  ::SPGAUD_, ::Int)
@@ -312,7 +312,7 @@ function rmat!(mx, θ, rz,  ::SPGAUD_, ::Int)
             end
         end
     end
-    mx
+    return mx
 end
 
 #UN
@@ -333,14 +333,14 @@ function unrmat(θ::AbstractVector{T}, rz) where T
     @inbounds @simd for m = 1:rm
         mx[m, m] *= mx[m, m]
     end
-    Symmetric(mx)
+    return Symmetric(mx)
 end
 function rmat!(mx, θ, rz::AbstractMatrix, ::UN_, ::Int)
     vec    = tmul_unsafe(rz, θ)
     rm     = size(mx, 1)
     rcov  = unrmat(θ, rz)
     mulαβαtinc!(mx, rz, rcov)
-    mx
+    return mx
 end
 ###############################################################################
 ###############################################################################

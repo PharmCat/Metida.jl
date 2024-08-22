@@ -13,11 +13,11 @@ function nsyrk!(α, x, A)
     return A
 end
 function nsyrk!(α, x, A::AbstractArray{T}) where T <: AbstractFloat
-    BLAS.syrk!('U', 'N', α, x, one(T), A)
+    return BLAS.syrk!('U', 'N', α, x, one(T), A)
 end
 
 function sweep!(A::AbstractArray{T}, k::Integer, inv::Bool = false) where T
-    sweepb!(Vector{T}(undef, size(A, 2)), A, k, inv)
+    return sweepb!(Vector{T}(undef, size(A, 2)), A, k, inv)
 end
 function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, inv::Bool = false) where T <: Number
     p = checksquare(A)
@@ -48,7 +48,7 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, i
 end
 function sweep!(A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; logdet::Bool = false) where {T <: Number, I <: Integer}
     akk = Vector{T}(undef, size(A,2))
-    sweepb!(akk, A, ks, inv; logdet = logdet)
+    return sweepb!(akk, A, ks, inv; logdet = logdet)
 end
 function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; logdet::Bool = false) where
         {T <: Number, I<:Integer}
@@ -75,5 +75,5 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, ks::AbstractV
             sweepb!(akk, A, k, inv)
         end
     end
-    A, ld, noerror
+    return A, ld, noerror
 end
