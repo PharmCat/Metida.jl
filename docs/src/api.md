@@ -124,6 +124,12 @@ Metida.ToeplitzParameterized
 Metida.Unstructured
 ```
 
+### Metida.ScaledWeightedCov
+
+```@docs
+Metida.ScaledWeightedCov
+```
+
 ### Methods
 
 ### Metida.caic

@@ -84,7 +84,7 @@ function contrast(lmm, l::AbstractMatrix; name::String = "Contrast", ddf = :satt
     else
         pval = NaN
     end
-    ContrastTable([name], [F], [ndf], [df], [pval])
+    return ContrastTable([name], [F], [ndf], [df], [pval])
 end
 
 function Base.show(io::IO, at::ContrastTable)

@@ -35,15 +35,22 @@ struct LMMDataViews{T<:AbstractFloat} <: AbstractLMMDataBlocks
     end
 end
 
-struct LMMWts{T<:AbstractFloat} 
-    sqrtwts::Vector{Vector{T}}
-    function LMMWts(sqrtwts::Vector{Vector{T}}) where T
+struct LMMWts{T} 
+    sqrtwts::Vector{T}
+    function LMMWts(sqrtwts::Vector{T}) where T
         new{T}(sqrtwts)
     end
-    function LMMWts(wts::Vector{T}, vcovblock) where T
+    function LMMWts(wts::AbstractVector{T}, vcovblock) where T
         sqrtwts = Vector{Vector{T}}(undef, length(vcovblock))
         for i in eachindex(vcovblock)
             sqrtwts[i] = @. inv(sqrt($(view(wts, vcovblock[i]))))
+        end
+        LMMWts(sqrtwts)
+    end
+    function LMMWts(wts::AbstractMatrix{T}, vcovblock) where T
+        sqrtwts = Vector{Matrix{T}}(undef, length(vcovblock))
+        for i in eachindex(vcovblock)
+            sqrtwts[i] = wts[vcovblock[i], vcovblock[i]]
         end
         LMMWts(sqrtwts)
     end

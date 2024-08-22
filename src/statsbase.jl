@@ -75,7 +75,7 @@ Model coefficients (β).
 StatsBase.coef(lmm::LMM) = copy(coef_(lmm))
 
 function coef_(lmm::LMM)
-    lmm.result.beta
+    return lmm.result.beta
 end
 """
     StatsBase.coefnames(lmm::LMM) = StatsBase.coefnames(lmm.mf)
@@ -99,7 +99,7 @@ end
 DOF residuals: N - rank(X), where N - total number of observations.
 """
 function StatsBase.dof_residual(lmm::LMM)
-    nobs(lmm) - lmm.rankx
+    return nobs(lmm) - lmm.rankx
 end
 
 """
@@ -108,7 +108,7 @@ end
 DOF.
 """
 function StatsBase.dof(lmm::LMM)
-    lmm.nfixed + lmm.covstr.tl
+    return lmm.nfixed + lmm.covstr.tl
 end
 
 """
@@ -117,7 +117,7 @@ end
 Return loglikelihood value.
 """
 function StatsBase.loglikelihood(lmm::LMM)
-    -lmm.result.reml/2
+    return -lmm.result.reml/2
 end
 
 """
@@ -128,7 +128,7 @@ Akaike Information Criterion.
 function StatsBase.aic(lmm::LMM)
     l = loglikelihood(lmm)
     d = lmm.covstr.tl
-    -2l + 2d
+    return -2l + 2d
 end
 
 """
@@ -140,7 +140,7 @@ function StatsBase.bic(lmm::LMM)
     l = loglikelihood(lmm)
     d = lmm.covstr.tl
     n = nobs(lmm) - lmm.nfixed
-    -2l + d * log(n)
+    return -2l + d * log(n)
 end
 
 """
@@ -152,7 +152,7 @@ function StatsBase.aicc(lmm::LMM)
     l = loglikelihood(lmm)
     d = lmm.covstr.tl
     n = nobs(lmm) - lmm.nfixed
-    -2l + (2d * n) / (n - d - 1.0)
+    return -2l + (2d * n) / (n - d - 1.0)
 end
 
 """
@@ -164,14 +164,14 @@ function caic(lmm::LMM)
     l = loglikelihood(lmm)
     d = lmm.covstr.tl
     n = nobs(lmm) - lmm.nfixed
-    -2l + d * (log(n) + 1.0)
+    return -2l + d * (log(n) + 1.0)
 end
 
 """
     StatsBase.isfitted(lmm::LMM)
 """
 function StatsBase.isfitted(lmm::LMM)
-    lmm.result.fit
+    return lmm.result.fit
 end
 """
     StatsBase.vcov(lmm::LMM)
@@ -187,7 +187,7 @@ Standard error
 StatsBase.stderror(lmm::LMM) = copy(stderror_(lmm))
 
 function stderror_(lmm::LMM)
-    lmm.result.se
+    return lmm.result.se
 end
 
 stderror!(v, lmm::LMM) = copyto!(v, lmm.result.se)
@@ -239,7 +239,7 @@ end
 Responce varible name.
 """
 function StatsBase.responsename(lmm::LMM)
-    StatsBase.coefnames(lmm.f)[1]
+    return StatsBase.coefnames(lmm.f)[1]
 end
 
 

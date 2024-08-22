@@ -9,7 +9,7 @@
             gmat!(gt[r].data, view(θ, covstr.tr[r]), covstr.random[r].covtype.s)
         end
     end
-    gt
+    return gt
 end
 # Main
 @noinline function zgz_base_inc!(mx::AbstractArray, G, covstr, bi)
@@ -23,7 +23,7 @@ end
             end
         end
     end
-    mx
+    return mx
 end
 ################################################################################
 ################################################################################
@@ -32,7 +32,7 @@ function gmat!(::Any, ::Any, ::AbstractCovarianceType)
     error("No gmat! method defined for thit structure!")
 end
 function gmat!(mx, ::Any, ::ZERO)
-    mx
+    return mx
 end
 #SI
 Base.@propagate_inbounds function gmat!(mx, θ, ::SI_)
@@ -40,14 +40,14 @@ Base.@propagate_inbounds function gmat!(mx, θ, ::SI_)
     @inbounds @simd for i = 1:size(mx, 1)
         mx[i, i] = val
     end
-    mx
+    return mx
 end
 #DIAG
 function gmat!(mx, θ, ::DIAG_)
     @inbounds @simd for i = 1:size(mx, 1)
         mx[i, i] = θ[i] ^ 2
     end
-    mx
+    return mx
 end
 #AR
 function gmat!(mx, θ, ::AR_)
@@ -64,7 +64,7 @@ function gmat!(mx, θ, ::AR_)
             end
         end
     end
-    mx
+    return mx
 end
 #ARH
 function gmat!(mx, θ, ::ARH_)
@@ -84,7 +84,7 @@ function gmat!(mx, θ, ::ARH_)
     @inbounds @simd for m = 1:s
         mx[m, m] *= mx[m, m] 
     end
-    mx
+    return mx
 end
 #CS
 function gmat!(mx, θ, ::CS_)
@@ -99,7 +99,7 @@ function gmat!(mx, θ, ::CS_)
             end
         end
     end
-    mx
+    return mx
 end
 #CSH
 function gmat!(mx, θ, ::CSH_)
@@ -118,7 +118,7 @@ function gmat!(mx, θ, ::CSH_)
     @inbounds @simd for m = 1:s
         mx[m, m] *= mx[m, m]
     end
-    mx
+    return mx
 end
 ################################################################################
 #ARMA
@@ -136,7 +136,7 @@ function gmat!(mx, θ, ::ARMA_)
             end
         end
     end
-    mx
+    return mx
 end
 #TOEP
 function gmat!(mx, θ, ::TOEP_)
@@ -152,7 +152,7 @@ function gmat!(mx, θ, ::TOEP_)
             end
         end
     end
-    mx
+    return mx
 end
 function gmat!(mx, θ, ct::TOEPP_)
     de  = θ[1] ^ 2    #diagonal element
@@ -167,7 +167,7 @@ function gmat!(mx, θ, ct::TOEPP_)
             end
         end
     end
-    mx
+    return mx
 end
 #TOEPH
 function gmat!(mx, θ, ::TOEPH_)
@@ -186,7 +186,7 @@ function gmat!(mx, θ, ::TOEPH_)
     @inbounds @simd for m = 1:s
         mx[m, m] *= mx[m, m]
     end
-    mx
+    return mx
 end
 #TOEPHP
 function gmat!(mx, θ, ct::TOEPHP_)
@@ -205,7 +205,7 @@ function gmat!(mx, θ, ct::TOEPHP_)
     @inbounds @simd for m = 1:s
         mx[m, m] *= mx[m, m]
     end
-    mx
+    return mx
 end
 #UN
 function gmat!(mx, θ, ::UN_)
@@ -224,7 +224,7 @@ function gmat!(mx, θ, ::UN_)
     @inbounds @simd for m = 1:s
         mx[m, m] *= mx[m, m]
     end
-    mx
+    return mx
 end
 
 function tpnum(m, n, s)
@@ -233,4 +233,5 @@ function tpnum(m, n, s)
         b += s - i
     end
     b -= s - n
+    return b
 end

@@ -5,6 +5,10 @@
 ################################################################################
 
 struct SI_ <: AbstractCovarianceType end
+mutable struct SWC_{W<:AbstractMatrix, B<:Vector{<:AbstractMatrix}} <: AbstractCovarianceType 
+    wtsm::W
+    wtsb::B
+end
 struct DIAG_ <: AbstractCovarianceType end
 struct AR_ <: AbstractCovarianceType end
 struct ARH_ <: AbstractCovarianceType end
@@ -64,6 +68,45 @@ function ScaledIdentity()
     CovarianceType(SI_())
 end
 const SI = ScaledIdentity()
+
+# Experimental
+"""
+    ScaledWeightedCov(wtsm::AbstractMatrix{T})
+
+!!! warning
+    Experimental
+
+Scaled weighted covariance matrix, where `wtsm` - `NxN` within block correlation matrix (N - total number of observations). 
+Used only for repeated effect. 
+
+SWC = ScaledWeightedCov
+
+```math
+R = Corr(W) * \\sigma_c^2
+```
+
+where ``Corr(W)`` - diagonal correlation matrix. 
+
+example:
+
+```julia
+matwts = Symmetric(UnitUpperTriangular(rand(size(df0,1), size(df0,1))))
+lmm = LMM(@formula(var~sequence+period+formulation), df0;
+    repeated = VarEffect(@covstr(1|subject), SWC(matwts)))
+fit!(lmm)
+
+```
+!!! note
+
+There is no `wtsm` checks for symmetricity or values.
+
+"""
+function ScaledWeightedCov(wtsm::AbstractMatrix{T}) where T
+    wtsb = Matrix{T}[]
+    CovarianceType(SWC_(wtsm, wtsb))
+end
+const SWC = ScaledWeightedCov
+
 """
     Diag()
 
@@ -362,6 +405,9 @@ end
 function covstrparam(ct::SI_, ::Int)::Tuple{Int, Int}
     return (1, 0)
 end
+function covstrparam(ct::SWC_, ::Int)::Tuple{Int, Int}
+    return (1, 0)
+end
 function covstrparam(ct::DIAG_, t::Int, )::Tuple{Int, Int}
     return (t, 0)
 end
@@ -410,6 +456,9 @@ end
 # RCOEFNAMES
 ################################################################################
 function rcoefnames(s, t, ct::SI_)
+    return ["σ² "]
+end
+function rcoefnames(s, t, ct::SWC_)
     return ["σ² "]
 end
 function rcoefnames(s, t, ct::DIAG_)
@@ -483,7 +532,7 @@ function indfromtn(ind, s)
             break
         end
     end
-    m, s + ind - b
+    return m, s + ind - b
 end
 
 function rcoefnames(s, t, ct::UN_)
@@ -510,6 +559,21 @@ function rcoefnames(s, t, ct::AbstractCovarianceType)
     v .= "Val "
     return v
 end
+################################################################################
+# APPLY COV SCHEMA
+################################################################################
+function applycovschema!(::AbstractCovarianceType, ::Any)
+    nothing
+end
+
+function applycovschema!(ct::SWC_{<:AbstractMatrix{T}}, vcovblock) where T
+    if length(ct.wtsb) == 0
+        for i in eachindex(vcovblock)
+            push!(ct.wtsb, ct.wtsm[vcovblock[i], vcovblock[i]])
+        end
+    end
+    return ct
+end
 
 ################################################################################
 # SHOW
@@ -523,6 +587,9 @@ function Base.show(io::IO, ct::AbstractCovarianceType)
 end
 function Base.show(io::IO, ct::SI_)
     print(io, "SI")
+end
+function Base.show(io::IO, ct::SWC_)
+    print(io, "SWC")
 end
 function Base.show(io::IO, ct::DIAG_)
     print(io, "DIAG")

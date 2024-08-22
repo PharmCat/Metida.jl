@@ -10,14 +10,14 @@ function nsyrk!(α, x, A)
             @inbounds A[i, j] += x[i] * xjα
         end
     end
-    A
+    return A
 end
 function nsyrk!(α, x, A::AbstractArray{T}) where T <: AbstractFloat
-    BLAS.syrk!('U', 'N', α, x, one(T), A)
+    return BLAS.syrk!('U', 'N', α, x, one(T), A)
 end
 
 function sweep!(A::AbstractArray{T}, k::Integer, inv::Bool = false) where T
-    sweepb!(Vector{T}(undef, size(A, 2)), A, k, inv)
+    return sweepb!(Vector{T}(undef, size(A, 2)), A, k, inv)
 end
 function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, inv::Bool = false) where T <: Number
     p = checksquare(A)
@@ -26,7 +26,7 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, i
     @simd for j in 1:k
         @inbounds akk[j] = A[j, k]
     end
-    @simd for j in (k+1):p
+    @simd for j in (k + 1):p
         @inbounds akk[j] = A[k, j]
     end
     # syrk!(uplo, trans, alpha, A, beta, C)
@@ -44,11 +44,11 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, k::Integer, i
         @inbounds A[k, j] = akk[j]
     end
     @inbounds A[k, k] = -d
-    A
+    return A
 end
 function sweep!(A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; logdet::Bool = false) where {T <: Number, I <: Integer}
     akk = Vector{T}(undef, size(A,2))
-    sweepb!(akk, A, ks, inv; logdet = logdet)
+    return sweepb!(akk, A, ks, inv; logdet = logdet)
 end
 function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, ks::AbstractVector{I}, inv::Bool = false; logdet::Bool = false) where
         {T <: Number, I<:Integer}
@@ -57,7 +57,7 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, ks::AbstractV
     if logdet
         ld = 0
         for k in ks
-            @inbounds Akk = A[k,k]
+            @inbounds Akk = A[k, k]
             if Akk > 0
                 ld += log(Akk)
             else
@@ -75,5 +75,5 @@ function sweepb!(akk::AbstractArray{T, 1}, A::AbstractArray{T, 2}, ks::AbstractV
             sweepb!(akk, A, k, inv)
         end
     end
-    A, ld, noerror
+    return A, ld, noerror
 end

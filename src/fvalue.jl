@@ -1,8 +1,5 @@
 # fvalue.jl
 
-#=
-Metida.fvalue(lmm, [0 0 1 0 0 0; 0 0 0 1 0 0; 0 0 0 0 1 0])
-=#
 """
     fvalue(lmm::LMM, l::Matrix)
 

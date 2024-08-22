@@ -16,9 +16,7 @@ function StatsModels.ContrastsMatrix(contrasts::RawCoding, levels::AbstractVecto
                              contrasts)
 end
 function StatsModels.modelcols(t::CategoricalTerm{RawCoding, T, N}, d::NamedTuple) where T where N
-    #v = d[t.sym]
-    #reshape(v, length(v), 1)  
-    d[t.sym]
+    return d[t.sym]
 end
 
 ################################################################################
@@ -42,7 +40,7 @@ end
 function modelparse(term::FunctionTerm{typeof(|)})
     eff, subj = term.args
     if !isa(subj, AbstractTerm) || isa(subj, FunctionTerm{typeof(*), Vector{Term}}) throw(FormulaException("Subject term type not <: AbstractTerm. Use `term` or `interaction term` only. Maybe you are using something like this: `@covstr(factor|term1*term2)` or `@covstr(factor|(term1+term2))`. Use only `@covstr(factor|term)` or `@covstr(factor|term1&term2)`.")) end
-    eff, subj
+    return eff, subj
 end
 function modelparse(term)
     throw(FormulaException("Model term type not <: FunctionTerm{typeof(|)}. Use model like this: `@covstr(factor|subject)`. Maybe you are using something like this: `@covstr(factor|term1+term2)`. Use only `@covstr(factor|term)` or `@covstr(factor|term1&term2)`."))
@@ -140,7 +138,7 @@ function sabjcrossdicts(d1, d2)
             end
         end
     end
-    v
+    return v
 end
 
 tabcols(data, symbs) = Tuple(Tables.getcolumn(Tables.columns(data), x) for x in symbs)
@@ -170,7 +168,7 @@ function raneflenv(covstr, block)
     for i = 1:l
         v[i] = length(covstr.esb.sblock[block, i])
     end
-    v
+    return v
 end
 """
     Covarince structure.
@@ -255,7 +253,6 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
             end
         end
         # RANDOM EFFECTS
-        #if random[1].covtype.z #IF NOT ZERO
             @inbounds for i = 1:rn
                 if length(random[i].coding) == 0
                     fill_coding_dict!(random[i].model, random[i].coding, data)
@@ -283,7 +280,7 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
                 fillur!(tr, i, t)
                 symbs       = StatsModels.termvars(random[i].subj)
                 if length(symbs) > 0
-                    cdata     = tabcols(data, symbs) # Tuple(Tables.getcolumn(Tables.columns(data_), x) for x in symbs)
+                    cdata     = tabcols(data, symbs) 
                     dicts[i]  = Dict{Tuple{eltype.(cdata)...}, Vector{Int}}()
                     indsdict!(dicts[i], cdata)
                 else
@@ -310,11 +307,10 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
             end
             
             schema[rn + i] = apply_schema(repeated[i].model, StatsModels.schema(data_, repeated[i].coding))
-            #rz_[i]       = reduce(hcat, modelcols(schema[rn+i], data))
             rz_[i]       = modelcols(MatrixTerm(schema[rn+i]), data_)
             symbs        = StatsModels.termvars(repeated[i].subj)
             if length(symbs) > 0
-                cdata    = tabcols(data, symbs) # Tuple(Tables.getcolumn(Tables.columns(data), x) for x in symbs)
+                cdata    = tabcols(data, symbs) 
                 dicts[rn + i]  = Dict{Tuple{eltype.(cdata)...}, Vector{Int}}()
                 indsdict!(dicts[rn + i], cdata)
             else
@@ -336,9 +332,6 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
         # Theta length
         tl  = sum(t)
         ########################################################################
-        #if any(x-> 1 in keys(x), dicts[1:end-1])
-        #    blocks = [first(dicts)[1]]
-        #else
             if random[1].covtype.z  # if first random effect not null
                 subjblockdict = dicts[1]
                 if length(dicts) > 2 # if more than 2 random effects
@@ -363,9 +356,7 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
                 dicts[rn+i] = subjblockdict
             end
 
-
             blocks  = collect(values(subjblockdict))
-        #end
 
         sblock = Matrix{Vector{Tuple{Vector{Int}, Int}}}(undef, length(blocks), alleffl)
         nblock = []
@@ -393,6 +384,13 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
             if lvcb > maxn maxn = lvcb end
         end
         esb = EffectSubjectBlock(sblock, nblock)
+        #######################################################################
+        # Postprocessing
+        # Modify repeated effect covariance type for some types
+        # Maybe it will be removed
+        for r in repeated 
+            applycovschema!(r.covtype.s, blocks)
+        end
         #######################################################################
         new{eltype(z), T2}(random, repeated, schema, rcnames, blocks, rn, rtn, rpn, z, esb, zrndur, rz, q, t, tr, tl, ct, emap, sn, maxn)
     end
@@ -422,13 +420,13 @@ end
 ################################################################################
 
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Union{ConstantTerm, InterceptTerm, FunctionTerm}
-    d
+    return d
 end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Term
     if typeof(Tables.getcolumn(data, t.sym)) <: AbstractCategoricalVector || !(typeof(Tables.getcolumn(data, t.sym)) <: AbstractVector{V} where V <: Real)
         d[t.sym] = StatsModels.FullDummyCoding()
     end
-    d
+    return d
 end
 #=
 function fill_coding_dict!(t::T, d::Dict, data) where T <: InteractionTerm
@@ -450,7 +448,7 @@ function fill_coding_dict_ct!(t, d, data)
             fill_coding_dict!(i, d, data)
         end
     end
-    d
+    return d
 end
 #=
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Tuple{Vararg{AbstractTerm}}

@@ -26,10 +26,10 @@ function Metida.gmat!(mx, θ, ::YourCovarianceStruct)
 end
 ```
 
-Function `rmat!` have 4 arguments and add repeated effect to V': V = V' + R (so V = Z * G * Z' + R), `mx` - V' matrix, `θ` - theta vector for this effect, `rz` - subject effect matrix, `ct` - your covariance type object. For example, `rmat!` for Heterogeneous Toeplitz Parameterized structure is specified bellow (`TOEPHP_  <: AbstractCovarianceType`).
+Function `rmat!` have 5 arguments and add repeated effect to V': V = V' + R (so V = Z * G * Z' + R), `mx` - V' matrix, `θ` - theta vector for this effect, `rz` - subject effect matrix, `ct` - your covariance type object, `sb` = block number. For example, `rmat!` for Heterogeneous Toeplitz Parameterized structure is specified bellow (`TOEPHP_  <: AbstractCovarianceType`).
 
 ```
-function Metida.rmat!(mx, θ, rz, ct::TOEPHP_)
+function Metida.rmat!(mx, θ, rz, ct::TOEPHP_, ::Int)
     l     = size(rz, 2)
     vec   = rz * (θ[1:l])
     s   = size(mx, 1)
@@ -123,7 +123,7 @@ Metida.fit!(lmm)
 
 # for R matrix
 
-function Metida.rmat!(mx, θ, rz, ::CustomCovarianceStructure)
+function Metida.rmat!(mx, θ, rz, ::CustomCovarianceStructure, ::Int)
     vec = Metida.tmul_unsafe(rz, θ)
     rn    = size(mx, 1)
     if rn > 1
