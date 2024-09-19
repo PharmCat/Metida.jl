@@ -609,10 +609,8 @@ end
     @test Metida.m2logreml(lmm)  ≈ 713.5850978377632 atol=1E-8
 end
 @testset "  Model: BE RDS 1, FDA model                               "  begin
-    dfrds        = CSV.File(joinpath(path, "csv", "berds", "rds1.csv"), types = Dict(:PK => Float64, :subject => String, :period => String, :sequence => String, :treatment => String )) |> DataFrame
-    dropmissing!(dfrds)
-    dfrds.lnpk = log.(dfrds.PK)
-    lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), dfrds;
+    
+    lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), dfrdsfda;
     random = Metida.VarEffect(Metida.@covstr(treatment|subject), Metida.CSH),
     repeated = Metida.VarEffect(Metida.@covstr(treatment|subject), Metida.DIAG),
     )
@@ -627,7 +625,7 @@ end
     @test est.cil[1] ≈ 0.06863 atol=1E-4
     @test est.ciu[1] ≈ 0.2223 atol=1E-4
 
-    lmm = Metida.LMM(@formula(lnpk~0+sequence+period+treatment), dfrds;
+    lmm = Metida.LMM(@formula(lnpk~0+sequence+period+treatment), dfrdsfda;
     random = Metida.VarEffect(Metida.@covstr(treatment|subject), Metida.CSH),
     repeated = Metida.VarEffect(Metida.@covstr(treatment|subject), Metida.DIAG),
     )
@@ -651,6 +649,15 @@ end
     repeated = Metida.VarEffect(Metida.@covstr(Formulation|Subject), Metida.UN),
     )
     Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm)  ≈ -3.895979534278979 atol=1E-8
+
+
+    lmm2 = Metida.LMM(@formula(log(Var)~Sequence+Period+Formulation), dfrds;
+    repeated = Metida.VarEffect(Metida.@covstr(Formulation|Subject), Metida.CSH),
+    )
+    Metida.fit!(lmm2)
+
+    @test Metida.m2logreml(lmm)  ≈ Metida.m2logreml(lmm2) atol=1E-8
 end
 
 
@@ -845,6 +852,10 @@ end
     )
     Metida.fit!(lmm)
     println(io, lmm.log)
+
+    # Warn for non-unique levels for repeated effect within subject
+    @test_warn "If UN structure used for repeated effect all levels should be unique within one subject, otherwise results can be meaningless!" Metida.LMM(@formula(log(lnpk)~sequence+period+treatment), dfrdsfda; repeated = Metida.VarEffect(Metida.@covstr(treatment|subject), Metida.UN))
+
 end
 ################################################################################
 #                                  Sweep test

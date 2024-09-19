@@ -316,6 +316,19 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
             else
                 dicts[rn+i]  = Dict(1 => collect(1:rown)) #changed to range
             end
+            # If UN structure used all repeated levels should be unique within one subject, otherwise results can be meaningless!
+            wflag = true
+            if isa(repeated[i].covtype.s, UN_)
+                for (k,v) in dicts[rn+i]
+                    sv = view(rz_[i], v, :)
+                    for j = 1:size(sv, 2)
+                        if sum(view(sv, :, j)) > 1 && wflag
+                            wflag = false
+                            @warn "If UN structure used for repeated effect all levels should be unique within one subject, otherwise results can be meaningless!"
+                        end
+                    end
+                end
+            end
 
             sn[rn + i]   = length(dicts[rn+i])
             q[rn + i]    = size(rz_[i], 2)

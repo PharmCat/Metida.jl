@@ -84,7 +84,9 @@ struct LMM{T <: AbstractFloat, W <: Union{LMMWts, Nothing}} <: MetidaModel
             union!(tv, (wts,))
         end
         ct = Tables.columntable(data)
-        if !(tv ⊆ keys(ct)) error("Some column(s) not found!") end
+        if !(tv ⊆ keys(ct)) 
+            error("Column(s) ($(setdiff(tv, keys(ct))) not found in table!") 
+        end
         data, data_ = StatsModels.missing_omit(NamedTuple{tuple(tv...)}(ct))
         lmmlog = Vector{LMMLogMsg}(undef, 0)
         sch    = schema(model, data, contrasts)
@@ -151,10 +153,10 @@ struct LMM{T <: AbstractFloat, W <: Union{LMMWts, Nothing}} <: MetidaModel
 
         mres = ModelResult(false, nothing, fill(NaN, covstr.tl), NaN, fill(NaN, coefn), nothing, fill(NaN, coefn, coefn), fill(NaN, coefn), nothing, false)
 
-        LMM(model, f, ModelStructure(assign), covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, mres, findmax(length, covstr.vcovblock)[1], lmmwts, lmmlog)
+        return LMM(model, f, ModelStructure(assign), covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, mres, findmax(length, covstr.vcovblock)[1], lmmwts, lmmlog)
     end
     function LMM(f::LMMformula, data; kwargs...)
-        LMM(f.formula, data; random = f.random, repeated = f.repeated, kwargs...)
+        return LMM(f.formula, data; random = f.random, repeated = f.repeated, kwargs...)
     end
 end
 
@@ -165,7 +167,7 @@ end
 Length of theta vector.
 """
 function thetalength(lmm)
-    lmm.covstr.tl
+    return lmm.covstr.tl
 end
 
 """
@@ -174,7 +176,7 @@ end
 Coef number.
 """
 function coefn(lmm)
-    length(lmm.result.beta)
+    return length(lmm.result.beta)
 end
 
 """
@@ -183,10 +185,10 @@ end
 Return theta vector.
 """
 function theta(lmm::LMM)
-    copy(theta_(lmm))
+    return copy(theta_(lmm))
 end
 function theta_(lmm::LMM)
-    lmm.result.theta
+    return lmm.result.theta
 end
 """
     rankx(lmm::LMM)
@@ -194,17 +196,17 @@ end
 Return rank of `X` matrix.
 """
 function rankx(lmm::LMM)
-    Int(lmm.rankx)
+    return Int(lmm.rankx)
 end
 
 function nblocks(mm::MetidaModel)
     return length(mm.covstr.vcovblock)
 end
 function maxblocksize(mm::MetidaModel)
-    mm.maxvcbl
+    return mm.maxvcbl
 end
 function assign(lmm::LMM)
-    lmm.modstr.assign
+    return lmm.modstr.assign
 end
 
 ################################################################################
@@ -220,17 +222,17 @@ function lmmlog!(io, lmmlog::Vector{LMMLogMsg}, verbose, vmsg)
     end
 end
 function lmmlog!(lmmlog::Vector{LMMLogMsg}, verbose, vmsg)
-    lmmlog!(stdout, lmmlog, verbose, vmsg)
+    return lmmlog!(stdout, lmmlog, verbose, vmsg)
 end
 function lmmlog!(io, lmm::LMM, verbose, vmsg)
-    lmmlog!(io, lmm.log, verbose, vmsg)
+    return lmmlog!(io, lmm.log, verbose, vmsg)
 end
 #MetidaNLopt use this
 function lmmlog!(lmm::LMM, verbose, vmsg)
-    lmmlog!(stdout, lmm, verbose, vmsg)
+    return lmmlog!(stdout, lmm, verbose, vmsg)
 end
 function lmmlog!(lmm::LMM, vmsg)
-    lmmlog!(stdout, lmm, 1, vmsg)
+    return lmmlog!(stdout, lmm, 1, vmsg)
 end
 
 function msgnum(log::Vector{LMMLogMsg}, type::Symbol)
@@ -240,10 +242,10 @@ function msgnum(log::Vector{LMMLogMsg}, type::Symbol)
             n += 1
         end
     end
-    n
+    return n
 end
 function msgnum(log::Vector{LMMLogMsg})
-    length(log)
+    return length(log)
 end
 ################################################################################
 
@@ -321,7 +323,7 @@ function Base.show(io::IO, lmm::LMM)
 end
 
 function printresult(io, res::T) where T <: Optim.MultivariateOptimizationResults
-    Optim.converged(res) ? printstyled(io, "converged"; color = :green) : printstyled(io, "not converged"; color = :red)
+    return Optim.converged(res) ? printstyled(io, "converged"; color = :green) : printstyled(io, "not converged"; color = :red)
 end
 function printresult(io, res)
     if res[3] == :FTOL_REACHED || res[3] == :XTOL_REACHED || res[3] == :SUCCESS
@@ -349,7 +351,7 @@ end
 Return fitting log.
 """
 function getlog(lmm::LMM)
-    lmm.log
+    return lmm.log
 end
 
 ################################################################################
@@ -360,7 +362,7 @@ function Base.getproperty(x::LMM, s::Symbol)
     elseif s == :β
         return x.result.beta
     end
-    getfield(x, s)
+    return getfield(x, s)
 end
 
 #=

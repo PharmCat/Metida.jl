@@ -388,6 +388,12 @@ Metida.SpatialGaussianD
 Metida.SpatialPowerD
 ```
 
+### Metida.ScaledWeightedCov
+
+```@docs
+Metida.ScaledWeightedCov
+```
+
 ### Metida.dof_contain
 
 ```@docs
