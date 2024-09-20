@@ -124,12 +124,6 @@ Metida.ToeplitzParameterized
 Metida.Unstructured
 ```
 
-### Metida.ScaledWeightedCov
-
-```@docs
-Metida.ScaledWeightedCov
-```
-
 ### Methods
 
 ### Metida.caic
@@ -386,6 +380,12 @@ Metida.SpatialGaussianD
 
 ```@docs
 Metida.SpatialPowerD
+```
+
+### Metida.ScaledWeightedCov
+
+```@docs
+Metida.ScaledWeightedCov
 ```
 
 ### Metida.dof_contain
