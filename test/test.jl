@@ -51,7 +51,44 @@ include("testdata.jl")
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
     )
     @test Metida.m2logreml(lmm) ≈ 16.241112644506067 atol=1E-6
+    @test Metida.logreml(lmm) ≈ -0.5*16.241112644506067 atol=1E-6
 
+    @test Metida.m2logreml(lmm, [0.447322, 0.367367, 0.185068]) ≈ 16.241112644506067 atol=1E-6
+    @test Metida.m2logreml(lmm, [0.5, 0.3, 0.2]) ≈ 16.5746217198294 atol=1E-6
+    
+    # core_sweep_β REML, ML estimate test; 
+    reml, θs₂, remlθ₃, noerror = Metida.reml_sweep_β(lmm, Metida.LMMDataViews(lmm), Metida.theta(lmm), Metida.coef(lmm))
+    @test reml ≈ 16.241112644506067 atol=1E-6
+    @test θs₂ ≈ [55.8946  33.5368    13.4807   14.4666    13.4807   32.8767
+    33.5368  33.5368     6.90537   9.86301    6.90537  19.726
+    13.4807   6.90537   79.7331    0.0      -66.2523    6.57534
+    14.4666   9.86301    0.0      80.226      0.0       9.86301
+    13.4807   6.90537  -66.2523    0.0       79.7331    6.57534
+    32.8767  19.726      6.57534   9.86301    6.57534  32.8767] atol=1E-3
+    @test remlθ₃ ≈ 13.999999919958947 atol=1E-6
+
+    θ₁, θ₂, θ₃, noerror = Metida.core_sweep_β(lmm, Metida.LMMDataViews(lmm), Metida.theta(lmm), Metida.coef(lmm), length(lmm.covstr.vcovblock))
+    @test noerror == true
+    c             = (length(lmm.data.yv) - lmm.rankx)*log(2π)
+    @test θ₁ ≈  -43.860020472151916 atol=1E-6
+    @test θ₂ ≈ [55.8946  33.5368  13.4807   14.4666    13.4807   32.8767
+    0.0     33.5368   6.90537   9.86301    6.90537  19.726
+    0.0      0.0     79.7331    0.0      -66.2523    6.57534
+    0.0      0.0      0.0      80.226      0.0       9.86301
+    0.0      0.0      0.0       0.0       79.7331    6.57534
+    0.0      0.0      0.0       0.0        0.0      32.8767] atol=1E-3
+    @test θ₃ ≈ 13.999999919958947 atol=1E-6
+    logdetθ₂ = logdet(Symmetric(θ₂))
+    @test logdetθ₂  ≈ 20.370854266968205 atol=1E-6
+    @test θ₁ + logdetθ₂ + θ₃ + c ≈ 16.241112644506067 atol=1E-6
+    # ML test
+    c = length(lmm.data.yv)*log(2π)
+    @test θ₁ + θ₃ + c ≈ 6.897520775993932 atol=1E-6
+    @test  Metida.m2logml(lmm, coef(lmm), Metida.theta(lmm); maxthreads = 8) ≈ 6.897520775993932
+    @test  Metida.m2logml(lmm, coef(lmm)) ≈ 6.897520775993932
+    @test  Metida.m2logml(lmm) ≈ 6.897520775993932
+    @test  Metida.logml(lmm) ≈ -0.5*6.897520775993932
+    #
     lmm = Metida.fit(Metida.LMM, Metida.@lmmformula(var~0+sequence+period+formulation,
     random = formulation|subject:Metida.DIAG), df0)
     @test Metida.fixedeffn(lmm) == 3

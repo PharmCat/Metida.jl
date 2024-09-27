@@ -195,15 +195,50 @@ function varlinkvecapply(v, p; varlinkf = :exp, rholinkf = :sigm)
     return s
 end
 ################################################################################
-function m2logreml(lmm)
-    return lmm.result.reml
+
+"""
+    m2logreml(lmm::LMM, θ = theta(lmm); maxthreads::Int = num_cores())
+
+-2 logREML
+"""
+function m2logreml(lmm::LMM, θ = theta(lmm); maxthreads::Int = num_cores())
+    if θ == theta(lmm)
+        return lmm.result.reml
+    else
+        return reml_sweep_β(lmm, LMMDataViews(lmm), θ; maxthreads = maxthreads)[1]
+    end
 end
-function logreml(lmm)
-    return -m2logreml(lmm)/2
+"""
+    logreml(lmm::LMM, θ = theta(lmm); maxthreads::Int = num_cores())
+
+logREML
+"""
+function logreml(lmm::LMM, θ = theta(lmm); maxthreads::Int = num_cores())
+    return -m2logreml(lmm, θ; maxthreads = maxthreads)/2
 end
-function m2logreml(lmm, theta; maxthreads::Int = num_cores())
-    return reml_sweep_β(lmm, LMMDataViews(lmm), theta; maxthreads = maxthreads)[1]
+
+
+"""
+    m2logml(lmm::LMM, β = coef(lmm), θ = theta(lmm); maxthreads::Int = num_cores())
+
+-2 logML
+"""
+function m2logml(lmm::LMM, β = coef(lmm), θ = theta(lmm); maxthreads::Int = num_cores())
+    c             = length(lmm.data.yv)*log(2π)
+    θ₁, θ₂, θ₃, noerror = core_sweep_β(lmm, LMMDataViews(lmm), θ, β, length(lmm.covstr.vcovblock); maxthreads = maxthreads)
+    if !noerror @warn "There was probably an error during the calculations. The result may be incorrect." end
+    return   θ₁ + θ₃ + c
 end
+"""
+    logml(lmm::LMM, beta = coef(lmm), θ = theta(lmm); maxthreads::Int = num_cores())
+
+logML
+"""
+function logml(lmm::LMM, beta = coef(lmm), θ = theta(lmm); maxthreads::Int = num_cores())
+    return -m2logml(lmm, beta, θ; maxthreads = maxthreads)/2
+end
+
+
 ################################################################################
 
 function optim_callback(os)

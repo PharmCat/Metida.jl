@@ -231,7 +231,25 @@ Metida.thetalength
 ### Metida.vmatrix
 
 ```@docs
+Metida.vmatrix
+```
+
+### Metida.vmatrix!
+
+```@docs
 Metida.vmatrix!
+```
+
+### Metida.m2logreml
+
+```@docs
+Metida.m2logreml
+```
+
+### Metida.logreml
+
+```@docs
+Metida.logreml
 ```
 
 ## StatsAPI
@@ -463,3 +481,8 @@ Metida.raneflenv
 Metida.edistance  
 ```
 
+### Metida.edistance  
+
+```@docs
+Metida.edistance  
+```
