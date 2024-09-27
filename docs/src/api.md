@@ -481,8 +481,14 @@ Metida.raneflenv
 Metida.edistance  
 ```
 
-### Metida.edistance  
+### Metida.m2logml  
 
 ```@docs
-Metida.edistance  
+Metida.m2logml  
+```
+
+### Metida.logml  
+
+```@docs
+Metida.logml  
 ```
