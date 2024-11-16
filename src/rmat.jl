@@ -342,6 +342,38 @@ function rmat!(mx, θ, rz::AbstractMatrix, ::UN_, ::Int)
     mulαβαtinc!(mx, rz, rcov)
     return mx
 end
+
+# ACOV (AR)
+function rmat!(mx, θ, ::AbstractMatrix, ::ACOV_{AR_}, ::Int)
+    s  = size(mx, 1)
+    ρ  = θ[1]
+    if s > 1
+        for n = 2:s
+            mxnn = mx[n, n]
+            @inbounds @simd for m = 1:n-1
+                mxmm = mx[m, m]
+                mx[m, n] += mxnn * mxmm * ρ ^ (n - m)
+            end
+        end
+    end
+    return mx
+end
+
+# ACOV (CS)
+function rmat!(mx, θ, ::AbstractMatrix, ::ACOV_{CS_}, ::Int)
+    s  = size(mx, 1)
+    ρ  = θ[1]
+    if s > 1
+        for n = 2:s
+            mxnn = mx[n, n]
+            @inbounds @simd for m = 1:n-1
+                mxmm = mx[m, m]
+                mx[m, n] += mxnn * mxmm * ρ 
+            end
+        end
+    end
+    return mx
+end
 ###############################################################################
 ###############################################################################
 ###############################################################################

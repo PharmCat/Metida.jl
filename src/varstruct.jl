@@ -352,6 +352,9 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
                         subjblockdict = sabjcrossdicts(subjblockdict, dicts[i])
                     end
                 end
+                if isa(repeated[1].covtype.s, ACOV_)
+                    @warn "Using ACOV covariance additional effect at first position is meaningless."
+                end
             else
                 subjblockdict = nothing
             end
