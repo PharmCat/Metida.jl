@@ -1,9 +1,11 @@
-### Example 1 - Continuous and categorical predictors
+## Example 1 - Continuous and categorical predictors
 
 ```@example lmmexample
 using Metida, CSV, DataFrames, CategoricalArrays, MixedModels;
 
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1fptime.csv"); types = [String, String, Float64, Float64]) |> DataFrame
+
+rds2 = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "ftdf3.csv"); types = [String,  Float64, Float64, String, String, String, String, String, Float64]) |> DataFrame
 
 nothing; # hide
 ```
@@ -27,7 +29,7 @@ mm = fit(MixedModel, fm, rds, REML=true)
 println(mm) #hide
 ```
 
-### Example 2 - Two random factors (Penicillin data)
+## Example 2 - Two random factors (Penicillin data)
 
 Metida:
 
@@ -51,7 +53,7 @@ mm = fit(MixedModel, fm2, df, REML=true)
 println(mm) #hide
 ```
 
-### Example 3 - Repeated ARMA/AR/ARH
+## Example 3 - Repeated ARMA/AR/ARH
 
 ```@example lmmexample
 rds = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv",  "1freparma.csv"); types = [String, String, Float64, Float64]) |> DataFrame
@@ -91,9 +93,9 @@ repeated = VarEffect(@covstr(1|subject&factor), ARH),
 fit!(lmm)
 ```
 
-### Example 4 - SAS relation
+## Example 4 - SAS relation
 
-#### Model 1
+### Model 1
 
 ```
 df0 = CSV.File(joinpath(dirname(pathof(Metida)), "..", "test", "csv", "df0.csv")) |> DataFrame
@@ -116,7 +118,7 @@ REPEATED/GRP=formulation SUB=subject R;
 RUN;
 ```
 
-#### Model 2
+### Model 2
 
 ```
 lmm = LMM(
@@ -138,7 +140,7 @@ REPEATED/GRP=formulation SUB=subject R;
 RUN;
 ```
 
-#### Model 3
+### Model 3
 
 ```
 lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
@@ -157,7 +159,7 @@ RANDOM  subject/TYPE=VC G V;
 RUN;
 ```
 
-### Example 5 - Working with Effects.jl
+## Example 5 - Working with Effects.jl
 
 ```
 using Effects, StatsModels
@@ -172,4 +174,26 @@ table_model = StatsModels.TableRegressionModel(lmm, lmm.mf, lmm.mm)
 emmeans(tm)
 
 effects(Dict(:period => ["1", "2", "3", "4"]), tm)
+```
+
+
+## Unstructured covariance 
+
+Unstructured covariance example.
+
+
+Metida result:
+
+```@example lmmexample
+lmm = Metida.LMM(@formula(response~factor), ftdf3;
+    random = Metida.VarEffect(Metida.@covstr(r1|subject), UN),
+    )
+Metida.fit!(lmm)
+```
+
+MixedModels result:
+
+```@example lmmexample
+mm = fit(MixedModel, @formula(response ~ factor+ (0+r1|subject)), ftdf3, REML = true)
+println(mm) #hide
 ```

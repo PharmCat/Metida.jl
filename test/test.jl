@@ -289,6 +289,18 @@ include("testdata.jl")
     fit!(lmm)
     @test_nowarn show(io, lmm)
 
+    # Intercept term in random part
+    lmm = Metida.LMM(@formula(var~1), df0;
+    random = Metida.VarEffect(Metida.@covstr(1+formulation|subject)))
+    @test typeof( lmm.covstr.random[1].coding[:formulation]) <: StatsModels.FullDummyCoding
+    # Zero term in random part
+    lmm = Metida.LMM(@formula(var~1), df0;
+    random = Metida.VarEffect(Metida.@covstr(0+formulation|subject)))
+    @test typeof( lmm.covstr.random[1].coding[:formulation]) <: StatsModels.FullDummyCoding
+    # Intercept term in random part and coding
+    lmm = Metida.LMM(@formula(var~1), df0;
+    random = Metida.VarEffect(Metida.@covstr(1+formulation|subject), coding = Dict(:formulation => StatsModels.DummyCoding())))
+    @test typeof( lmm.covstr.random[1].coding[:formulation]) <: StatsModels.DummyCoding
 end
 ################################################################################
 #                                  df0

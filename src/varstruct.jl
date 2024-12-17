@@ -31,7 +31,7 @@ Macros for random/repeated effect model.
 # Example
 
 ```julia
-@covstr(factor|subject)
+@covstr(model|subject)
 ```
 """
 macro covstr(ex)
@@ -64,7 +64,7 @@ Random/repeated effect.
 
 !!! note
 
-    Categorical factors are coded with `FullDummyCoding()` by default, use `coding` for other contrast codeing.
+    Categorical factors are coded with `FullDummyCoding()` by default, use `coding` for other contrast coding.
 
 # Example
 
@@ -435,7 +435,15 @@ end
 #                            CONTRAST CODING
 ################################################################################
 
-function fill_coding_dict!(t::T, d::Dict, data) where T <: Union{ConstantTerm, InterceptTerm, FunctionTerm}
+function fill_coding_dict!(t::T, d::Dict, data) where T <: Union{ConstantTerm, InterceptTerm}
+    return d
+end
+function fill_coding_dict!(t::T, d::Dict, data) where T <: FunctionTerm
+    if t.f === +
+        for i in t.args
+            fill_coding_dict!(i, d, data)
+        end
+    end
     return d
 end
 function fill_coding_dict!(t::T, d::Dict, data) where T <: Term
