@@ -185,7 +185,7 @@ Unstructured covariance example.
 Metida result:
 
 ```@example lmmexample
-lmm = Metida.LMM(@formula(response~factor), ftdf3;
+lmm = Metida.LMM(@formula(response~factor), rds2;
     random = Metida.VarEffect(Metida.@covstr(r1|subject), UN),
     )
 Metida.fit!(lmm)
@@ -194,6 +194,6 @@ Metida.fit!(lmm)
 MixedModels result:
 
 ```@example lmmexample
-mm = fit(MixedModel, @formula(response ~ factor+ (0+r1|subject)), ftdf3, REML = true)
+mm = fit(MixedModel, @formula(response ~ factor+ (0+r1|subject)), rds2, REML = true)
 println(mm) #hide
 ```
