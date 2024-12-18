@@ -826,6 +826,9 @@ end
     Metida.fit!(lmm2)
     @test Metida.m2logreml(lmm1)  ≈ Metida.m2logreml(lmm2) 
 
+    io = IOBuffer();
+
+    @test_nowarn show(io, lmm2)
 end
 
 

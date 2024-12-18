@@ -344,15 +344,34 @@ function rmat!(mx, θ, rz::AbstractMatrix, ::UN_, ::Int)
 end
 
 # ACOV (AR)
-function rmat!(mx, θ, ::AbstractMatrix, ::ACOV_{AR_}, ::Int)
+function rmat!(mx::AbstractMatrix{T}, θ, ::AbstractMatrix, ct::ACOV_{AR_}, ::Int) where T
     s  = size(mx, 1)
     ρ  = θ[1]
     if s > 1
         for n = 2:s
-            mxnn = sqrt(mx[n, n])
+            mxnn = mx[n, n]
             @inbounds @simd for m = 1:n-1
-                mxmm = sqrt(mx[m, m])
-                mx[m, n] += mxnn * mxmm * ρ ^ (n - m)
+                mxmm = mx[m, m]
+                mxmn = mx[m, n]
+                cov  = sqrt(mxnn * mxmm) * ρ ^ (n - m)
+                if ct.a != 0
+                    if ct.a == 1
+                        mxmn = zero(T)
+                    elseif ct.a == 2
+                        cov = zero(T)
+                    elseif ct.a == 3
+                        @warn "covariance have existed value!"
+                    elseif ct.a == 4
+                        @warn "covariance have existed value! replaced..."
+                        mxmn = zero(T)
+                    elseif ct.a == 5
+                        @warn "covariance have existed value! Save existed..."
+                        cov = zero(T)
+                    else
+                        error("covariance have existed value!")
+                    end
+                end
+                mx[m, n] = mxmn + cov
             end
         end
     end
@@ -360,15 +379,34 @@ function rmat!(mx, θ, ::AbstractMatrix, ::ACOV_{AR_}, ::Int)
 end
 
 # ACOV (CS)
-function rmat!(mx, θ, ::AbstractMatrix, ::ACOV_{CS_}, ::Int)
+function rmat!(mx::AbstractMatrix{T}, θ, ::AbstractMatrix, ct::ACOV_{CS_}, ::Int) where T
     s  = size(mx, 1)
     ρ  = θ[1]
     if s > 1
         for n = 2:s
-            mxnn = sqrt(mx[n, n])
+            mxnn = mx[n, n]
             @inbounds @simd for m = 1:n-1
-                mxmm = sqrt(mx[m, m])
-                mx[m, n] += mxnn * mxmm * ρ 
+                mxmm = mx[m, m]
+                mxmn = mx[m, n]
+                cov  = sqrt(mxnn * mxmm) * ρ 
+                if ct.a != 0
+                    if ct.a == 1
+                        mxmn = zero(T)
+                    elseif ct.a == 2
+                        cov = zero(T)
+                    elseif ct.a == 3
+                        @warn "covariance have existed value!"
+                    elseif ct.a == 4
+                        @warn "covariance have existed value! replaced..."
+                        mxmn = zero(T)
+                    elseif ct.a == 5
+                        @warn "covariance have existed value! Save existed..."
+                        cov = zero(T)
+                    else
+                        error("covariance have existed value!")
+                    end
+                end
+                mx[m, n] = mxmn + cov
             end
         end
     end

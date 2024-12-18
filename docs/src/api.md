@@ -406,6 +406,13 @@ Metida.SpatialPowerD
 Metida.ScaledWeightedCov
 ```
 
+### Metida.ACOV
+
+```@docs
+Metida.ACOV
+```
+
+
 ### Metida.dof_contain
 
 ```@docs
