@@ -1,7 +1,12 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Examples · Metida.jl</title><meta name="title" content="Examples · Metida.jl"/><meta property="og:title" content="Examples · Metida.jl"/><meta property="twitter:title" content="Examples · Metida.jl"/><meta name="description" content="Documentation for Metida.jl."/><meta property="og:description" content="Documentation for Metida.jl."/><meta property="twitter:description" content="Documentation for Metida.jl."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">Metida.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="../instanduse/">First step</a></li><li class="is-active"><a class="tocitem" href>Examples</a></li><li><a class="tocitem" href="../custom/">Custom structures</a></li><li><a class="tocitem" href="../bioequivalence/">Bioequivalence</a></li><li><a class="tocitem" href="../nlopt/">NLopt</a></li><li><a class="tocitem" href="../cuda/">CUDA</a></li><li><a class="tocitem" href="../faq/">F.A.Q.</a></li></ul></li><li><a class="tocitem" href="../details/">Details</a></li><li><a class="tocitem" href="../boot/">Bootstrap</a></li><li><a class="tocitem" href="../mi/">Multiple imputation</a></li><li><a class="tocitem" href="../bench/">Benchmark</a></li><li><a class="tocitem" href="../validation/">Validation</a></li><li><a class="tocitem" href="../api/">API</a></li><li><a class="tocitem" href="../ref/">Citation &amp; Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User guide</a></li><li class="is-active"><a href>Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Examples</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/PharmCat/Metida.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/PharmCat/Metida.jl/blob/master/docs/src/examples.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h3 id="Example-1-Continuous-and-categorical-predictors"><a class="docs-heading-anchor" href="#Example-1-Continuous-and-categorical-predictors">Example 1 - Continuous and categorical predictors</a><a id="Example-1-Continuous-and-categorical-predictors-1"></a><a class="docs-heading-anchor-permalink" href="#Example-1-Continuous-and-categorical-predictors" title="Permalink"></a></h3><pre><code class="language-julia hljs">using Metida, CSV, DataFrames, CategoricalArrays, MixedModels;
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Examples · Metida.jl</title><meta name="title" content="Examples · Metida.jl"/><meta property="og:title" content="Examples · Metida.jl"/><meta property="twitter:title" content="Examples · Metida.jl"/><meta name="description" content="Documentation for Metida.jl."/><meta property="og:description" content="Documentation for Metida.jl."/><meta property="twitter:description" content="Documentation for Metida.jl."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">Metida.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="../instanduse/">First step</a></li><li class="is-active"><a class="tocitem" href>Examples</a><ul class="internal"><li><a class="tocitem" href="#Example-1-Continuous-and-categorical-predictors"><span>Example 1 - Continuous and categorical predictors</span></a></li><li><a class="tocitem" href="#Example-2-Two-random-factors-(Penicillin-data)"><span>Example 2 - Two random factors (Penicillin data)</span></a></li><li><a class="tocitem" href="#Example-3-Repeated-ARMA/AR/ARH"><span>Example 3 - Repeated ARMA/AR/ARH</span></a></li><li><a class="tocitem" href="#Example-4-SAS-relation"><span>Example 4 - SAS relation</span></a></li><li><a class="tocitem" href="#Example-5-Working-with-Effects.jl"><span>Example 5 - Working with Effects.jl</span></a></li><li><a class="tocitem" href="#Unstructured-covariance"><span>Unstructured covariance</span></a></li><li><a class="tocitem" href="#Aumented-covariance-(Experimental)"><span>Aumented covariance (Experimental)</span></a></li></ul></li><li><a class="tocitem" href="../custom/">Custom structures</a></li><li><a class="tocitem" href="../bioequivalence/">Bioequivalence</a></li><li><a class="tocitem" href="../nlopt/">NLopt</a></li><li><a class="tocitem" href="../cuda/">CUDA</a></li><li><a class="tocitem" href="../faq/">F.A.Q.</a></li></ul></li><li><a class="tocitem" href="../details/">Details</a></li><li><a class="tocitem" href="../boot/">Bootstrap</a></li><li><a class="tocitem" href="../mi/">Multiple imputation</a></li><li><a class="tocitem" href="../bench/">Benchmark</a></li><li><a class="tocitem" href="../validation/">Validation</a></li><li><a class="tocitem" href="../api/">API</a></li><li><a class="tocitem" href="../ref/">Citation &amp; Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User guide</a></li><li class="is-active"><a href>Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Examples</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/PharmCat/Metida.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/PharmCat/Metida.jl/blob/master/docs/src/examples.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h2 id="Example-1-Continuous-and-categorical-predictors"><a class="docs-heading-anchor" href="#Example-1-Continuous-and-categorical-predictors">Example 1 - Continuous and categorical predictors</a><a id="Example-1-Continuous-and-categorical-predictors-1"></a><a class="docs-heading-anchor-permalink" href="#Example-1-Continuous-and-categorical-predictors" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Metida, CSV, DataFrames, CategoricalArrays, MixedModels;
 
-rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1fptime.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame</code></pre><p><img src="../plot1.png" alt/></p><p>Metida result:</p><pre><code class="language-julia hljs">lmm = LMM(@formula(response ~1 + factor*time), rds;
+rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1fptime.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame
+
+rds2 = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;ftdf3.csv&quot;); types = [String,  Float64, Float64, String, String, String, String, String, Float64]) |&gt; DataFrame
+
+
+devday = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;devday.csv&quot;); types = [Float64, String, String, String ]) |&gt; DataFrame</code></pre><p><img src="../plot1.png" alt/></p><p>Metida result:</p><pre><code class="language-julia hljs">lmm = LMM(@formula(response ~1 + factor*time), rds;
 random = VarEffect(@covstr(1 + time|subject&amp;factor), CSH),
 )
 fit!(lmm)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear Mixed Model: response ~ 1 + factor + time + factor &amp; time
@@ -32,7 +37,7 @@ factor: 1.0 &amp; time   0.404971   0.0373406  10.85    &lt;1e-26
 </code></pre><p>MixedModels result:</p><pre><code class="language-julia hljs">fm = @formula(response ~ 1 + factor*time + (1 + time|subject&amp;factor))
 mm = fit(MixedModel, fm, rds, REML=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Minimizing 2    Time: 0:00:00 ( 0.14  s/it)
   objective:  1426.9231858044589
-Minimizing 66    Time: 0:00:00 ( 5.13 ms/it)
+Minimizing 66    Time: 0:00:00 ( 5.29 ms/it)
 Linear mixed model fit by REML
  response ~ 1 + factor + time + factor &amp; time + (1 + time | subject &amp; factor)
  REML criterion at convergence: 1300.18075981887
@@ -52,7 +57,7 @@ Residual                      0.970345 0.985061
 factor: 1.0          2.00049    0.430402    4.65    &lt;1e-05
 time                 1.11853    0.0264037  42.36    &lt;1e-99
 factor: 1.0 &amp; time   0.404971   0.0373405  10.85    &lt;1e-26
-──────────────────────────────────────────────────────────</code></pre><h3 id="Example-2-Two-random-factors-(Penicillin-data)"><a class="docs-heading-anchor" href="#Example-2-Two-random-factors-(Penicillin-data)">Example 2 - Two random factors (Penicillin data)</a><a id="Example-2-Two-random-factors-(Penicillin-data)-1"></a><a class="docs-heading-anchor-permalink" href="#Example-2-Two-random-factors-(Penicillin-data)" title="Permalink"></a></h3><p>Metida:</p><pre><code class="language-julia hljs">df          = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;Penicillin.csv&quot;); types = [String, Float64, String, String]) |&gt; DataFrame
+──────────────────────────────────────────────────────────</code></pre><h2 id="Example-2-Two-random-factors-(Penicillin-data)"><a class="docs-heading-anchor" href="#Example-2-Two-random-factors-(Penicillin-data)">Example 2 - Two random factors (Penicillin data)</a><a id="Example-2-Two-random-factors-(Penicillin-data)-1"></a><a class="docs-heading-anchor-permalink" href="#Example-2-Two-random-factors-(Penicillin-data)" title="Permalink"></a></h2><p>Metida:</p><pre><code class="language-julia hljs">df          = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;Penicillin.csv&quot;); types = [String, Float64, String, String]) |&gt; DataFrame
 df.diameter = float.(df.diameter)
 
 lmm = LMM(@formula(diameter ~ 1), df;
@@ -83,9 +88,9 @@ Status: <span class="sgr32">converged</span> (No Errors)
   Random 2   σ²    var   3.73092
   Residual   σ²    var   0.302415
 </code></pre><p>MixedModels:</p><pre><code class="language-julia hljs">fm2 = @formula(diameter ~ 1 + (1|plate) + (1|sample))
-mm = fit(MixedModel, fm2, df, REML=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Minimizing 2    Time: 0:00:00 ( 0.26  s/it)
+mm = fit(MixedModel, fm2, df, REML=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Minimizing 2    Time: 0:00:00 ( 0.27  s/it)
   objective:  366.5302937135882
-Minimizing 46    Time: 0:00:00 (11.49 ms/it)
+Minimizing 46    Time: 0:00:00 (11.87 ms/it)
 Linear mixed model fit by REML
  diameter ~ 1 + (1 | plate) + (1 | sample)
  REML criterion at convergence: 330.86058899096145
@@ -102,7 +107,7 @@ Residual              0.302415 0.549923
                Coef.  Std. Error      z  Pr(&gt;|z|)
 ─────────────────────────────────────────────────
 (Intercept)  22.9722    0.808572  28.41    &lt;1e-99
-─────────────────────────────────────────────────</code></pre><h3 id="Example-3-Repeated-ARMA/AR/ARH"><a class="docs-heading-anchor" href="#Example-3-Repeated-ARMA/AR/ARH">Example 3 - Repeated ARMA/AR/ARH</a><a id="Example-3-Repeated-ARMA/AR/ARH-1"></a><a class="docs-heading-anchor-permalink" href="#Example-3-Repeated-ARMA/AR/ARH" title="Permalink"></a></h3><pre><code class="language-julia hljs">rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1freparma.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame</code></pre><p><img src="../plot2.png" alt/></p><p>ARMA:</p><pre><code class="language-julia hljs">lmm = LMM(@formula(response ~ 1 + factor*time), rds;
+─────────────────────────────────────────────────</code></pre><h2 id="Example-3-Repeated-ARMA/AR/ARH"><a class="docs-heading-anchor" href="#Example-3-Repeated-ARMA/AR/ARH">Example 3 - Repeated ARMA/AR/ARH</a><a id="Example-3-Repeated-ARMA/AR/ARH-1"></a><a class="docs-heading-anchor-permalink" href="#Example-3-Repeated-ARMA/AR/ARH" title="Permalink"></a></h2><pre><code class="language-julia hljs">rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1freparma.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame</code></pre><p><img src="../plot2.png" alt/></p><p>ARMA:</p><pre><code class="language-julia hljs">lmm = LMM(@formula(response ~ 1 + factor*time), rds;
 random = VarEffect(@covstr(factor|subject&amp;factor), DIAG),
 repeated = VarEffect(@covstr(1|subject&amp;factor), ARMA),
 )
@@ -193,7 +198,7 @@ factor: 1.0 &amp; time   0.290317   0.0645622   4.50    &lt;1e-05
   Random 1   σ² factor: 1.0   var   7.9717
   Residual   σ² (Intercept)   var   1.11875
   Residual   ρ                rho   0.576979
-</code></pre><h3 id="Example-4-SAS-relation"><a class="docs-heading-anchor" href="#Example-4-SAS-relation">Example 4 - SAS relation</a><a id="Example-4-SAS-relation-1"></a><a class="docs-heading-anchor-permalink" href="#Example-4-SAS-relation" title="Permalink"></a></h3><h4 id="Model-1"><a class="docs-heading-anchor" href="#Model-1">Model 1</a><a id="Model-1-1"></a><a class="docs-heading-anchor-permalink" href="#Model-1" title="Permalink"></a></h4><pre><code class="nohighlight hljs">df0 = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;df0.csv&quot;)) |&gt; DataFrame
+</code></pre><h2 id="Example-4-SAS-relation"><a class="docs-heading-anchor" href="#Example-4-SAS-relation">Example 4 - SAS relation</a><a id="Example-4-SAS-relation-1"></a><a class="docs-heading-anchor-permalink" href="#Example-4-SAS-relation" title="Permalink"></a></h2><h3 id="Model-1"><a class="docs-heading-anchor" href="#Model-1">Model 1</a><a id="Model-1-1"></a><a class="docs-heading-anchor-permalink" href="#Model-1" title="Permalink"></a></h3><pre><code class="nohighlight hljs">df0 = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;df0.csv&quot;)) |&gt; DataFrame
 
 lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
 random   = VarEffect(@covstr(formulation|subject), CSH),
@@ -204,7 +209,7 @@ CLASSES subject sequence period formulation;
 MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
 RANDOM  formulation/TYPE=CSH SUB=subject G V;
 REPEATED/GRP=formulation SUB=subject R;
-RUN;</code></pre><h4 id="Model-2"><a class="docs-heading-anchor" href="#Model-2">Model 2</a><a id="Model-2-1"></a><a class="docs-heading-anchor-permalink" href="#Model-2" title="Permalink"></a></h4><pre><code class="nohighlight hljs">lmm = LMM(
+RUN;</code></pre><h3 id="Model-2"><a class="docs-heading-anchor" href="#Model-2">Model 2</a><a id="Model-2-1"></a><a class="docs-heading-anchor-permalink" href="#Model-2" title="Permalink"></a></h3><pre><code class="nohighlight hljs">lmm = LMM(
     @formula(var ~ sequence + period + formulation), df0;
     random   = VarEffect(@covstr(formulation|subject), SI),
     repeated = VarEffect(@covstr(formulation|subject), DIAG),
@@ -214,14 +219,14 @@ CLASSES subject sequence period formulation;
 MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
 RANDOM  formulation/TYPE=VC SUB=subject G V;
 REPEATED/GRP=formulation SUB=subject R;
-RUN;</code></pre><h4 id="Model-3"><a class="docs-heading-anchor" href="#Model-3">Model 3</a><a id="Model-3-1"></a><a class="docs-heading-anchor-permalink" href="#Model-3" title="Permalink"></a></h4><pre><code class="nohighlight hljs">lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
+RUN;</code></pre><h3 id="Model-3"><a class="docs-heading-anchor" href="#Model-3">Model 3</a><a id="Model-3-1"></a><a class="docs-heading-anchor-permalink" href="#Model-3" title="Permalink"></a></h3><pre><code class="nohighlight hljs">lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
     random = VarEffect(@covstr(subject|1), SI)
     )
 fit!(lmm)</code></pre><p>SAS code:</p><pre><code class="nohighlight hljs">PROC MIXED data=df0;
 CLASSES subject sequence period formulation;
 MODEL  var = sequence period formulation/ DDFM=SATTERTH s;
 RANDOM  subject/TYPE=VC G V;
-RUN;</code></pre><h3 id="Example-5-Working-with-Effects.jl"><a class="docs-heading-anchor" href="#Example-5-Working-with-Effects.jl">Example 5 - Working with Effects.jl</a><a id="Example-5-Working-with-Effects.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Example-5-Working-with-Effects.jl" title="Permalink"></a></h3><pre><code class="nohighlight hljs">using Effects, StatsModels
+RUN;</code></pre><h2 id="Example-5-Working-with-Effects.jl"><a class="docs-heading-anchor" href="#Example-5-Working-with-Effects.jl">Example 5 - Working with Effects.jl</a><a id="Example-5-Working-with-Effects.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Example-5-Working-with-Effects.jl" title="Permalink"></a></h2><pre><code class="nohighlight hljs">using Effects, StatsModels
 
 lmm = LMM(@formula(var ~ sequence + period + formulation), df0;
     random = VarEffect(@covstr(subject|1), SI)
@@ -232,4 +237,159 @@ table_model = StatsModels.TableRegressionModel(lmm, lmm.mf, lmm.mm)
 
 emmeans(tm)
 
-effects(Dict(:period =&gt; [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;]), tm)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../custom/">Custom structures »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Friday 27 September 2024 13:26">Friday 27 September 2024</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+effects(Dict(:period =&gt; [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;]), tm)</code></pre><h2 id="Unstructured-covariance"><a class="docs-heading-anchor" href="#Unstructured-covariance">Unstructured covariance</a><a id="Unstructured-covariance-1"></a><a class="docs-heading-anchor-permalink" href="#Unstructured-covariance" title="Permalink"></a></h2><p>Unstructured covariance example.</p><p>Metida result:</p><pre><code class="language-julia hljs">lmm = Metida.LMM(@formula(response~factor), rds2;
+    random = Metida.VarEffect(Metida.@covstr(r1|subject), UN),
+    )
+Metida.fit!(lmm)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear Mixed Model: response ~ factor
+Random 1: 
+    Model: r1|subject
+    Type: UN (6), Subjects: 24
+Repeated: 
+    Residual only
+Blocks: 24, Maximum block size: 7
+Status: <span class="sgr32">converged</span> (No Errors)
+    -2 logREML: 705.382    BIC: 741.166
+
+    Fixed-effects parameters:
+──────────────────────────────────────────────────
+                Coef.  Std. Error      z  Pr(&gt;|z|)
+──────────────────────────────────────────────────
+(Intercept)   40.1983    0.791652  50.78    &lt;1e-99
+factor       -11.0271    1.11956   -9.85    &lt;1e-22
+──────────────────────────────────────────────────
+    Variance components:
+    θ vector: [2.91848, 3.56669, 4.59709, 0.458287, 0.463127, 0.575315, 1.00823]
+  Random 1   σ² r1: A           var   8.51753
+  Random 1   σ² r1: B           var   12.7213
+  Random 1   σ² r1: C           var   21.1332
+  Random 1   ρ: r1: A × r1: B   rho   0.458287
+  Random 1   ρ: r1: A × r1: C   rho   0.463127
+  Random 1   ρ: r1: B × r1: C   rho   0.575315
+  Residual   σ²                 var   1.01653
+</code></pre><p>MixedModels result:</p><pre><code class="language-julia hljs">mm = fit(MixedModel, @formula(response ~ factor+ (0+r1|subject)), rds2, REML = true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear mixed model fit by REML
+ response ~ 1 + factor + (0 + r1 | subject)
+ REML criterion at convergence: 705.3822332332761
+
+Variance components:
+         ColumnVariance Std.Dev.  Corr.
+subject  r1: A   8.51744 2.91847
+         r1: B  12.72007 3.56652 +0.46
+         r1: C  21.13152 4.59690 +0.46 +0.58
+Residual         1.01654 1.00824
+ Number of obs: 168; levels of grouping factors: 24
+
+  Fixed-effects parameters:
+──────────────────────────────────────────────────
+                Coef.  Std. Error      z  Pr(&gt;|z|)
+──────────────────────────────────────────────────
+(Intercept)   40.1982    0.791621  50.78    &lt;1e-99
+factor       -11.0268    1.11952   -9.85    &lt;1e-22
+──────────────────────────────────────────────────</code></pre><h2 id="Aumented-covariance-(Experimental)"><a class="docs-heading-anchor" href="#Aumented-covariance-(Experimental)">Aumented covariance (Experimental)</a><a id="Aumented-covariance-(Experimental)-1"></a><a class="docs-heading-anchor-permalink" href="#Aumented-covariance-(Experimental)" title="Permalink"></a></h2><p>Covariance modificator <code>ACOV()</code> can be used as second repeated effect. In this case covariance calculated with existed matrix,  that was build at previous step. For example addition <code>ACOV(AR)</code> to <code>DIAG</code> structure is the same as <code>ARH</code> if same blocking factor used.</p><pre><code class="language-julia hljs">   lmm1 = Metida.LMM(@formula(response ~ 1), rds2;
+    repeated = [Metida.VarEffect(Metida.@covstr(r1|subject), Metida.DIAG), Metida.VarEffect(Metida.@covstr(1|subject), Metida.ACOV(Metida.AR))]
+    )
+    Metida.fit!(lmm1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear Mixed Model: response ~ 1
+Random 1: 
+   No
+Repeated: 
+    Model: r1|subject
+    Type: DIAG (3)
+    Model: 1|subject
+    Type: ACOV(AR) (1)
+Blocks: 24, Maximum block size: 7
+Status: <span class="sgr32">converged</span> (No Errors)
+    -2 logREML: 821.402    BIC: 841.874
+
+    Fixed-effects parameters:
+─────────────────────────────────────────────────
+               Coef.  Std. Error      z  Pr(&gt;|z|)
+─────────────────────────────────────────────────
+(Intercept)  34.5061    0.961804  35.88    &lt;1e-99
+─────────────────────────────────────────────────
+    Variance components:
+    θ vector: [6.44278, 5.40009, 7.00676, 0.919938]
+  Residual 1   σ² r1: A   var   41.5094
+  Residual 1   σ² r1: B   var   29.161
+  Residual 1   σ² r1: C   var   49.0947
+  Residual 2   ρ          rho   0.919938
+</code></pre><pre><code class="language-julia hljs">    lmm2 = Metida.LMM(@formula(response ~ 1), rds2;
+    repeated = [Metida.VarEffect(Metida.@covstr(r1|subject), Metida.ARH)]
+    )
+    Metida.fit!(lmm2)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear Mixed Model: response ~ 1
+Random 1: 
+   No
+Repeated: 
+    Model: r1|subject
+    Type: ARH (4)
+Blocks: 24, Maximum block size: 7
+Status: <span class="sgr32">converged</span> (No Errors)
+    -2 logREML: 821.402    BIC: 841.874
+
+    Fixed-effects parameters:
+─────────────────────────────────────────────────
+               Coef.  Std. Error      z  Pr(&gt;|z|)
+─────────────────────────────────────────────────
+(Intercept)  34.5061    0.961804  35.88    &lt;1e-99
+─────────────────────────────────────────────────
+    Variance components:
+    θ vector: [6.44278, 5.40009, 7.00676, 0.919938]
+  Residual   σ² r1: A   var   41.5094
+  Residual   σ² r1: B   var   29.161
+  Residual   σ² r1: C   var   49.0947
+  Residual   ρ          rho   0.919938
+</code></pre><p>R-part of variance-covariance matrix:</p><pre><code class="language-julia hljs">Metida.rmatrix(lmm1, 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">7×7 LinearAlgebra.Symmetric{Float64, Matrix{Float64}}:
+ 41.5094  38.1861  35.1289  27.0863  24.9178  29.7429  27.3616
+ 38.1861  41.5094  38.1861  29.4437  27.0863  32.3314  29.7429
+ 35.1289  38.1861  41.5094  32.0061  29.4437  35.1452  32.3314
+ 27.0863  29.4437  32.0061  29.161   26.8263  32.021   29.4574
+ 24.9178  27.0863  29.4437  26.8263  29.161   34.8078  32.021
+ 29.7429  32.3314  35.1452  32.021   34.8078  49.0946  45.164
+ 27.3616  29.7429  32.3314  29.4574  32.021   45.164   49.0946</code></pre><p>If nested blocking factor used - covariance modification applyed only within that blocks:</p><pre><code class="language-julia hljs">   lmm = Metida.LMM(@formula(response ~ 1), rds2;
+    repeated = [Metida.VarEffect(Metida.@covstr(r1|subject), Metida.DIAG), Metida.VarEffect(Metida.@covstr(1|subject), Metida.ACOV(Metida.AR))]
+    )
+Metida.fit!(lmm)
+Metida.rmatrix(lmm, 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">7×7 LinearAlgebra.Symmetric{Float64, Matrix{Float64}}:
+ 41.5094  38.1861  35.1289  27.0863  24.9178  29.7429  27.3616
+ 38.1861  41.5094  38.1861  29.4437  27.0863  32.3314  29.7429
+ 35.1289  38.1861  41.5094  32.0061  29.4437  35.1452  32.3314
+ 27.0863  29.4437  32.0061  29.161   26.8263  32.021   29.4574
+ 24.9178  27.0863  29.4437  26.8263  29.161   34.8078  32.021
+ 29.7429  32.3314  35.1452  32.021   34.8078  49.0946  45.164
+ 27.3616  29.7429  32.3314  29.4574  32.021   45.164   49.0946</code></pre><p>For nested models covariance structure can be expanded as follows:</p><ul><li>the first layer describes unstructured the device-device covariance;</li><li>the second layer adds the time covariance for each device</li></ul><pre><code class="language-julia hljs">lmm = Metida.LMM(@formula(resp ~ 0 + device), devday;
+    repeated = [Metida.VarEffect(Metida.@covstr(device|subj&amp;day), Metida.UN),
+    Metida.VarEffect(Metida.@covstr(1|subj&amp;device), Metida.ACOV(Metida.AR))]
+    )
+    Metida.fit!(lmm)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear Mixed Model: resp ~ 0 + device
+Random 1: 
+   No
+Repeated: 
+    Model: device|:(subj &amp; day)
+    Type: UN (10)
+    Model: 1|:(subj &amp; device)
+    Type: ACOV(AR) (1)
+Blocks: 25, Maximum block size: 8
+Status: <span class="sgr32">converged</span> (No Errors)
+    -2 logREML: 903.058    BIC: 961.284
+
+    Fixed-effects parameters:
+───────────────────────────────────────────────
+              Coef.  Std. Error     z  Pr(&gt;|z|)
+───────────────────────────────────────────────
+device: A  6.66689     0.856988  7.78    &lt;1e-14
+device: B  2.04241     0.322     6.34    &lt;1e-09
+device: C  1.26148     0.48472   2.60    0.0093
+device: D  0.940181    0.634722  1.48    0.1385
+───────────────────────────────────────────────
+    Variance components:
+    θ vector: [4.81355, 1.80862, 2.72258, 3.56512, 0.0857122, 0.137169, 0.347301, 0.296275, -0.0354115, 0.0300272, 0.584853]
+  Residual 1   σ² device: A               var   23.1703
+  Residual 1   σ² device: B               var   3.27111
+  Residual 1   σ² device: C               var   7.41244
+  Residual 1   σ² device: D               var   12.7101
+  Residual 1   ρ: device: A × device: B   rho   0.0857122
+  Residual 1   ρ: device: A × device: C   rho   0.137169
+  Residual 1   ρ: device: A × device: D   rho   0.347301
+  Residual 1   ρ: device: B × device: C   rho   0.296275
+  Residual 1   ρ: device: B × device: D   rho   -0.0354115
+  Residual 1   ρ: device: C × device: D   rho   0.0300272
+  Residual 2   ρ                          rho   0.584853
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../custom/">Custom structures »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Wednesday 18 December 2024 20:53">Wednesday 18 December 2024</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
