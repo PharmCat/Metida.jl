@@ -349,9 +349,9 @@ function rmat!(mx, θ, ::AbstractMatrix, ::ACOV_{AR_}, ::Int)
     ρ  = θ[1]
     if s > 1
         for n = 2:s
-            mxnn = mx[n, n]
+            mxnn = sqrt(mx[n, n])
             @inbounds @simd for m = 1:n-1
-                mxmm = mx[m, m]
+                mxmm = sqrt(mx[m, m])
                 mx[m, n] += mxnn * mxmm * ρ ^ (n - m)
             end
         end
@@ -365,9 +365,9 @@ function rmat!(mx, θ, ::AbstractMatrix, ::ACOV_{CS_}, ::Int)
     ρ  = θ[1]
     if s > 1
         for n = 2:s
-            mxnn = mx[n, n]
+            mxnn = sqrt(mx[n, n])
             @inbounds @simd for m = 1:n-1
-                mxmm = mx[m, m]
+                mxmm = sqrt(mx[m, m])
                 mx[m, n] += mxnn * mxmm * ρ 
             end
         end
