@@ -289,6 +289,18 @@ include("testdata.jl")
     fit!(lmm)
     @test_nowarn show(io, lmm)
 
+    # Intercept term in random part
+    lmm = Metida.LMM(@formula(var~1), df0;
+    random = Metida.VarEffect(Metida.@covstr(1+formulation|subject)))
+    @test typeof( lmm.covstr.random[1].coding[:formulation]) <: StatsModels.FullDummyCoding
+    # Zero term in random part
+    lmm = Metida.LMM(@formula(var~1), df0;
+    random = Metida.VarEffect(Metida.@covstr(0+formulation|subject)))
+    @test typeof( lmm.covstr.random[1].coding[:formulation]) <: StatsModels.FullDummyCoding
+    # Intercept term in random part and coding
+    lmm = Metida.LMM(@formula(var~1), df0;
+    random = Metida.VarEffect(Metida.@covstr(1+formulation|subject), coding = Dict(:formulation => StatsModels.DummyCoding())))
+    @test typeof( lmm.covstr.random[1].coding[:formulation]) <: StatsModels.DummyCoding
 end
 ################################################################################
 #                                  df0
@@ -769,6 +781,57 @@ end
     @test Metida.dof_satter(lmm)[1] ≈ 17.719638497284286 atol=1E-2
     @test_nowarn Metida.fit!(lmm; varlinkf = :identity)
 end
+
+@testset "  Model: Augmented covariance                              " begin
+    lmm1 = Metida.LMM(@formula(response ~ 1), ftdf3;
+    repeated = [Metida.VarEffect(Metida.@covstr(r1|subject), Metida.DIAG), Metida.VarEffect(Metida.@covstr(1|subject), Metida.ACOV(Metida.AR))]
+    )
+    Metida.fit!(lmm1)
+
+    lmm2 = Metida.LMM(@formula(response ~ 1), ftdf3;
+    repeated = [Metida.VarEffect(Metida.@covstr(r1|subject), Metida.ARH)]
+    )
+    Metida.fit!(lmm2)
+    @test Metida.m2logreml(lmm1)  ≈ Metida.m2logreml(lmm2) 
+
+
+    lmm1 = Metida.LMM(@formula(response ~ 1), ftdf3;
+    repeated = [Metida.VarEffect(Metida.@covstr(r1|subject), Metida.DIAG), Metida.VarEffect(Metida.@covstr(1|subject), Metida.ACOV(Metida.CS))]
+    )
+    Metida.fit!(lmm1)
+
+    lmm2 = Metida.LMM(@formula(response ~ 1), ftdf3;
+    repeated = [Metida.VarEffect(Metida.@covstr(r1|subject), Metida.CSH)]
+    )
+    Metida.fit!(lmm2)
+    @test Metida.m2logreml(lmm1)  ≈ Metida.m2logreml(lmm2) 
+
+    lmm = Metida.LMM(@formula(response ~ 1), ftdf3;
+    repeated = [Metida.VarEffect(Metida.@covstr(r1|subject), Metida.DIAG), Metida.VarEffect(Metida.@covstr(1|subject&r2), Metida.ACOV(Metida.AR))]
+    )
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm)  ≈ 800.7606945922405 atol=1E-6
+
+
+    lmm1 = Metida.LMM(@formula(resp ~ 0 + device), devday;
+    repeated = [Metida.VarEffect(Metida.@covstr(device|subj&day), Metida.UN), 
+    Metida.VarEffect(Metida.@covstr(1|subj&device), Metida.ACOV(Metida.CS))]
+    )
+    Metida.fit!(lmm1)
+
+    lmm2 = Metida.LMM(@formula(resp ~ 0 + device), devday;
+    repeated = [Metida.VarEffect(Metida.@covstr(device|subj&day), Metida.UN), 
+    Metida.VarEffect(Metida.@covstr(1|subj&device), Metida.ACOV(Metida.AR))]
+    )
+    Metida.fit!(lmm2)
+    @test Metida.m2logreml(lmm1)  ≈ Metida.m2logreml(lmm2) 
+
+    io = IOBuffer();
+
+    @test_nowarn show(io, lmm2)
+end
+
+
 
 @testset "  Random                                                   " begin
     lmm = Metida.LMM(@formula(response ~ 1 + factor*time), ftdf2;

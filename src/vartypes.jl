@@ -32,6 +32,11 @@ struct SPGAUD_ <: AbstractCovarianceType end
 struct UN_ <: AbstractCovarianceType end
 struct ZERO <: AbstractCovarianceType end
 
+struct ACOV_{C <: AbstractCovarianceType} <: AbstractCovarianceType
+    c::C
+    a::Int
+end
+
 ################################################################################
 #                          COVARIANCE TYPE
 ################################################################################
@@ -399,9 +404,36 @@ function Unstructured()
 end
 const UN = Unstructured()
 
+
+"""
+    ACOV(c, action = 0)
+
+!!! warning
+    Experimental
+    
+Augmented (adjusted) covariance. Add additional correlations to existed R-part of variance covariance matrix.
+Can be used with `AR` or `CS` types. 
+
+`action` if existed covariance not equal sero:
+
+* 0 - add
+* 1 - replace
+* 2 - do nothing (use existed value)
+* 3 - warning and add
+* 4 - warning and replace
+* 5 - warning and use existed value
+* other - error
+
+"""
+function ACOV(c; action = 0)
+    CovarianceType(ACOV_(c.s, action))
+end
+
 function RZero()
     CovarianceType(ZERO(), false)
 end
+
+#######################################################################################
 
 function covstrparam(ct::SI_, ::Int)::Tuple{Int, Int}
     return (1, 0)
@@ -444,6 +476,10 @@ function covstrparam(ct::Union{SPEXPD_, SPGAUD_}, ::Int)::Tuple{Int, Int, Int}
 end
 function covstrparam(ct::SPPOWD_, ::Int)::Tuple{Int, Int}
     return (2, 1)
+end
+
+function covstrparam(ct::ACOV_{<:Union{CS_, AR_, SPPOW_}}, ::Int)::Tuple{Int, Int}
+    return (0, 1)
 end
 
 function covstrparam(ct::ZERO, ::Int)::Tuple{Int, Int}
@@ -555,6 +591,10 @@ function rcoefnames(s, t, ct::UN_)
     return v
 end
 
+function rcoefnames(s, t, ct::ACOV_{<: Union{CS_, AR_}})
+    return ["ρ "]
+end
+
 function rcoefnames(s, t, ct::AbstractCovarianceType)
     v = Vector{String}(undef, t)
     v .= "Val "
@@ -642,6 +682,9 @@ function Base.show(io::IO, ct::SPGAUD_)
 end
 function Base.show(io::IO, ct::UN_)
     print(io, "UN")
+end
+function Base.show(io::IO, ct::ACOV_)
+    print(io, "ACOV(", ct.c, ")")
 end
 function Base.show(io::IO, ct::ZERO)
     print(io, "No effect")

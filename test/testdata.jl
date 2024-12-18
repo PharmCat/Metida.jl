@@ -17,6 +17,7 @@ ftdf3        = CSV.File(path*"/csv/ftdf3.csv"; types =
 
 spatdf       = CSV.File(path*"/csv/spatialdata.csv"; types = [Int, Int, String, Float64, Float64, Float64, Float64, Float64]) |> DataFrame
 
+devday       = CSV.File(path*"/csv/devday.csv"; types = [ Float64, String, String, String]) |> DataFrame
 
 dfrdsfda        = CSV.File(joinpath(path, "csv", "berds", "rds1.csv"), types = Dict(:PK => Float64, :subject => String, :period => String, :sequence => String, :treatment => String )) |> DataFrame
 dropmissing!(dfrdsfda)
