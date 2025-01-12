@@ -657,6 +657,31 @@ end
     Base.show(io, lmm)
     @test Metida.m2logreml(lmm)  ≈ 713.5850978377632 atol=1E-8
 end
+
+@testset "  Model: UN (repeated) missing                             " begin
+    io = IOBuffer();
+    lmm = Metida.LMM(@formula(val~1), rep_missing, repeated = Metida.VarEffect(Metida.@covstr(group|id), Metida.UN))
+    fit!(lmm)
+    #SPSS check +
+    @test Metida.m2logreml(lmm) ≈ 138.674280 atol=1E-6
+    @test  Metida.theta(lmm)[1]^2 ≈ 0.930862 atol=1E-6
+    @test  Metida.theta(lmm)[4]^2 ≈ 13.833087 atol=1E-6
+    @test  Metida.theta(lmm)[5] ≈ 0.222058 atol=1E-6
+    @test  Metida.theta(lmm)[9] ≈ -0.516841 atol=1E-6
+    Base.show(io, lmm)
+
+    mlmm = Metida.LMM(@formula(mval~1), rep_missing, repeated = Metida.VarEffect(Metida.@covstr(group|id), Metida.UN))
+    fit!(mlmm)
+    #SPSS check +
+    @test Metida.m2logreml(mlmm) ≈ 103.523394 atol=1E-6
+    @test  Metida.theta(mlmm)[1]^2 ≈ 0.815214 atol=1E-6
+    @test  Metida.theta(mlmm)[4]^2 ≈ 13.881296 atol=1E-6
+    @test  Metida.theta(mlmm)[5] ≈ 0.295511 atol=1E-6
+    @test  Metida.theta(mlmm)[9] ≈ -0.127460 atol=1E-6
+    Base.show(io, mlmm)
+    Base.show(io, mlmm.log)
+end
+
 @testset "  Model: BE RDS 1, FDA model                               "  begin
     
     lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment), dfrdsfda;
