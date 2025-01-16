@@ -3,7 +3,7 @@ uuid = "a1dec852-9fe5-11e9-361f-8d9fde67cfa2"
 keywords = ["lenearmodel", "mixedmodel"]
 desc = "Mixed-effects models with flexible covariance structure."
 authors = ["Vladimir Arnautov <mail@pharmcat.net>"]
-version = "0.16.3"
+version = "0.16.4"
 
 [deps]
 DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
@@ -23,7 +23,7 @@ DiffResults = "1"
 Distributions = "0.21, 0.22, 0.23, 0.24, 0.25"
 ForwardDiff = "0.10"
 LineSearches = "7"
-MetidaBase = "0.11, 0.12"
+MetidaBase = "0.11, 0.12, 0.13, 0.14"
 Optim = "1"
 ProgressMeter = "1"
 StatsBase = "0.30, 0.31, 0.32, 0.33, 0.34"

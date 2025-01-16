@@ -22,3 +22,5 @@ devday       = CSV.File(path*"/csv/devday.csv"; types = [ Float64, String, Strin
 dfrdsfda        = CSV.File(joinpath(path, "csv", "berds", "rds1.csv"), types = Dict(:PK => Float64, :subject => String, :period => String, :sequence => String, :treatment => String )) |> DataFrame
 dropmissing!(dfrdsfda)
 dfrdsfda.lnpk = log.(dfrdsfda.PK)
+
+rep_missing     = CSV.File(path*"/csv/repeated_missing.csv"; types = [ String, String, Float64, Float64]) |> DataFrame

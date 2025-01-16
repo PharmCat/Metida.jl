@@ -201,10 +201,10 @@ mm = fit(MixedModel, @formula(response ~ factor+ (0+r1|subject)), rds2, REML = t
 println(mm) #hide
 ```
 
-## Aumented covariance (Experimental)
+## Augmented covariance (Experimental)
 
 Covariance modificator `ACOV()` can be used as second repeated effect. In this case covariance calculated with existed matrix, 
-that was build at previous step. For example addition `ACOV(AR)` to `DIAG` structure is the same as `ARH` if same blocking factor used.
+that was build at previous step. For example, addition `ACOV(AR)` to `DIAG` structure is the same as `ARH` if same blocking factor used.
 
 ```@example lmmexample
    lmm1 = Metida.LMM(@formula(response ~ 1), rds2;
@@ -226,7 +226,7 @@ R-part of variance-covariance matrix:
 Metida.rmatrix(lmm1, 1)
 ```
 
-If nested blocking factor used - covariance modification applyed only within that blocks:
+If nested blocking factor used - covariance modification applyed only within that blocks (R-part of variance-covariance matrix is the same):
 
 ```@example lmmexample
    lmm = Metida.LMM(@formula(response ~ 1), rds2;
@@ -247,3 +247,9 @@ lmm = Metida.LMM(@formula(resp ~ 0 + device), devday;
     )
     Metida.fit!(lmm)
 ```
+R-matrix:
+
+```@example lmmexample
+Metida.rmatrix(lmm, 1)
+```
+
