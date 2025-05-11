@@ -478,8 +478,8 @@ function hessian(lmm)
     if !lmm.result.fit error("Model not fitted!") end
     return hessian(lmm, lmm.result.theta)
 end
-################################################################################
-################################################################################
+###############################################################################
+###############################################################################
 function StatsModels.termvars(ve::VarEffect)
     return termvars(ve.formula)
 end
@@ -487,7 +487,7 @@ function StatsModels.termvars(ve::Vector{VarEffect})
     return union(termvars.(ve)...)
 end
 
-################################################################################
+###############################################################################
 #=
 asgn(f::FormulaTerm) = asgn(f.rhs)
 asgn(t) = mapreduce(((i,t), ) -> i*ones(StatsModels.width(t)),
@@ -495,3 +495,41 @@ asgn(t) = mapreduce(((i,t), ) -> i*ones(StatsModels.width(t)),
                     enumerate(StatsModels.vectorize(t)),
                     init=Int[])
 =#
+
+###############################################################################
+# CHECK RANK
+###############################################################################
+
+
+function checkrank(mat::AbstractMatrix{T}; rtol=sqrt(eps())) where T
+    m, n  = size(mat)
+    pivot = collect(axes(mat, 2))
+    iszero(n) && return (n, pivot)
+
+    qrdec     = qr(mat, ColumnNorm())
+    rabsdiag  = abs.(diag(qrdec.R))
+    fval      = first(rabsdiag)
+    comp      = fval * rtol
+    (last(rabsdiag) > comp) && return (n, pivot)
+
+    rank = searchsortedlast(rabsdiag, comp; rev=true)
+    
+    pivot = qrdec.p
+
+    if m > 1
+        fcol = view(mat, 1, :)
+        if all(isone, fcol) && first(pivot) ≠ 1
+            fcol .*= (fval + one(T)) / sqrt(m)
+            qrdec = qr(mat, ColumnNorm())
+            pivot = qrdec.p
+            fill!(fcol, one(T))
+        end
+    end
+
+    sort!(view(pivot, 1:rank))
+    return (rank, pivot)
+end
+
+###############################################################################
+###############################################################################
+###############################################################################

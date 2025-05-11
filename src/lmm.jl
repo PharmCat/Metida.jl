@@ -42,6 +42,7 @@ struct LMM{T <: AbstractFloat, W <: Union{LMMWts, Nothing}} <: MetidaModel
     dv::LMMDataViews{T}
     nfixed::Int
     rankx::Int
+    pivotvec::Vector{Int}
     result::ModelResult
     maxvcbl::Int
     wts::Union{Nothing, LMMWts}
@@ -55,11 +56,12 @@ struct LMM{T <: AbstractFloat, W <: Union{LMMWts, Nothing}} <: MetidaModel
         dv::LMMDataViews{T},
         nfixed::Int,
         rankx::Int,
+        pivotvec::Vector{Int},
         result::ModelResult,
         maxvcbl::Int,
         wts::W,
         log::Vector{LMMLogMsg}) where T where W <: Union{LMMWts, Nothing}
-        new{T, W}(model, f, modstr, covstr, data, dv, nfixed, rankx, result, maxvcbl, wts, log)
+        new{T, W}(model, f, modstr, covstr, data, dv, nfixed, rankx, pivotvec, result, maxvcbl, wts, log)
     end
     function LMM(model, data; 
         contrasts=Dict{Symbol,Any}(),  
@@ -116,15 +118,19 @@ struct LMM{T <: AbstractFloat, W <: Union{LMMWts, Nothing}} <: MetidaModel
         end
         #rmf = response(mf)
         if !(eltype(rmf) <: AbstractFloat) @warn "Response variable not <: AbstractFloat" end 
-        lmmdata = LMMData(lmf, rmf)
 
-        covstr = CovStructure(random, repeated, data)
-        coefn = size(lmmdata.xv, 2)
-        rankx =  rank(lmmdata.xv)
+        coefn = size(lmf, 2)
+        
+        rankx, pivotvec = checkrank(lmf) # add rtol to keyword
+
         if rankx != coefn
             @warn "Fixed-effect matrix not full-rank!"
             lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Fixed-effect matrix not full-rank!"))
         end
+
+        lmmdata = LMMData(lmf, rmf)
+
+        covstr = CovStructure(random, repeated, data)
 
         if isnothing(wts)
             lmmwts = nothing
@@ -153,7 +159,7 @@ struct LMM{T <: AbstractFloat, W <: Union{LMMWts, Nothing}} <: MetidaModel
 
         mres = ModelResult(false, nothing, fill(NaN, covstr.tl), NaN, fill(NaN, coefn), nothing, fill(NaN, coefn, coefn), fill(NaN, coefn), nothing, false)
 
-        return LMM(model, f, ModelStructure(assign), covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, mres, findmax(length, covstr.vcovblock)[1], lmmwts, lmmlog)
+        return LMM(model, f, ModelStructure(assign), covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, pivotvec, mres, findmax(length, covstr.vcovblock)[1], lmmwts, lmmlog)
     end
     function LMM(f::LMMformula, data; kwargs...)
         return LMM(f.formula, data; random = f.random, repeated = f.repeated, kwargs...)
