@@ -114,7 +114,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     # Make data views
     #data = LMMDataViews(lmm)
     #Optim options
-    optoptions = Optim.Options(g_tol = g_tol, x_tol = x_tol, f_abstol = f_tol,
+    optoptions = Optim.Options(g_abstol = g_tol, x_abstol = x_tol, f_abstol = f_tol,
         iterations = iterations,
         time_limit = time_limit,
         store_trace = true,
