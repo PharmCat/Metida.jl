@@ -526,8 +526,7 @@ function checkrank(mat::AbstractMatrix{T}; rtol=sqrt(eps())) where T
         end
     end
 
-    sort!(view(pivot, 1:rank))
-    return (rank, pivot)
+    return (rank, sort!(pivot[1:rank]))
 end
 
 ###############################################################################

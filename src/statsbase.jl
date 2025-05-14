@@ -28,11 +28,11 @@ function StatsBase.confint(lmm::LMM{T}; level::Real=0.95, ddf::Symbol = :satter)
     elseif ddf == :residual
         ddfv = fill!(Vector{Float64}(undef, coefn(lmm)), dof_residual(lmm))
     end
-    cis = Vector{Tuple{T, T}}(undef, coefn(lmm))
-    for i = 1:coefn(lmm)
+    cis = fill((NaN, NaN), coefn(lmm))
+    for i = 1:lmm.rankx
         #ERROR: ArgumentError: TDist: the condition ν > zero(ν) is not satisfied
-        d = lmm.result.se[i] * quantile(TDist(ddfv[i]), 1.0 - alpha / 2)
-        cis[i] = (lmm.result.beta[i] - d, lmm.result.beta[i] + d)
+        d = lmm.result.se[i] * quantile(TDist(ddfv[lmm.pivotvec[i]]), 1.0 - alpha / 2)
+        cis[lmm.pivotvec[i]] = (lmm.result.beta[i] - d, lmm.result.beta[i] + d)
     end
     cis
 end
@@ -47,6 +47,13 @@ function StatsBase.confint(lmm::LMM{T}, i::Int; level::Real=0.95, ddf::Symbol = 
     if i < 1 || i > coefn(lmm)
         error("Wrong coef number")
     end
+    if coefn(lmm) == lmm.rankx
+        ind = i
+    else
+        ind = findfirst(x-> x == i, lmm.pivotvec)
+        if isnothing(ind) return NaN end
+    end
+
     alpha = 1.0 - level
     if ddf == :satter
         ddfv = dof_satter(lmm, i)
@@ -57,8 +64,8 @@ function StatsBase.confint(lmm::LMM{T}, i::Int; level::Real=0.95, ddf::Symbol = 
     end
 
     #ERROR: ArgumentError: TDist: the condition ν > zero(ν) is not satisfied
-    d = lmm.result.se[i] * quantile(TDist(ddfv), 1.0 - alpha / 2)
-    (lmm.result.beta[i] - d, lmm.result.beta[i] + d)
+    d = lmm.result.se[ind] * quantile(TDist(ddfv), 1.0 - alpha / 2)
+    (lmm.result.beta[ind] - d, lmm.result.beta[ind] + d)
 
 end
 
@@ -72,7 +79,16 @@ ML:, n = total number of observation; d = number of fixed effect parameters + nu
 
 Model coefficients (β).
 """
-StatsBase.coef(lmm::LMM) = copy(coef_(lmm))
+function StatsBase.coef(lmm::LMM{T}) where T
+    cn = coefn(lmm)
+    if cn == lmm.rankx
+        return copy(coef_(lmm))
+    else
+        v = zeros(T, cn)
+        v[lmm.pivotvec] .= coef_(lmm)
+        return v
+    end
+end
 
 function coef_(lmm::LMM)
     return lmm.result.beta
@@ -178,19 +194,49 @@ end
 
 Variance-covariance matrix of β.
 """
-StatsBase.vcov(lmm::LMM) = copy(lmm.result.c)
+function StatsBase.vcov(lmm::LMM{T}) where T 
+    cn = coefn(lmm) 
+    if cn == lmm.rankx
+        return copy(lmm.result.c)
+    else
+        m = Matrix{T}(undef, cn, cn)
+        fill!(m, NaN)
+        m[lmm.pivotvec, lmm.pivotvec] .= lmm.result.c
+        return m
+    end
+end
 """
     StatsBase.stderror(lmm::LMM)
 
 Standard error
 """
-StatsBase.stderror(lmm::LMM) = copy(stderror_(lmm))
+function StatsBase.stderror(lmm::LMM{T}) where T
+    cn = coefn(lmm) 
+    if cn == lmm.rankx
+        return copy(stderror_(lmm))
+    else
+        v = Vector{T}(undef, cn)
+        fill!(v, NaN)
+        v[lmm.pivotvec] .= stderror_(lmm)
+        return v
+    end
+end    
 
 function stderror_(lmm::LMM)
     return lmm.result.se
 end
 
-stderror!(v, lmm::LMM) = copyto!(v, lmm.result.se)
+function stderror!(v, lmm::LMM) 
+    cn = coefn(lmm) 
+    if cn == lmm.rankx
+        copyto!(v, lmm.result.se)
+        return v 
+    else
+        fill!(v, NaN)
+        v[lmm.pivotvec] .= stderror_(lmm)
+        return v
+    end
+end
 
 """
     StatsBase.modelmatrix(lmm::LMM)

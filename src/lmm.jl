@@ -124,11 +124,12 @@ struct LMM{T <: AbstractFloat, W <: Union{LMMWts, Nothing}} <: MetidaModel
         rankx, pivotvec = checkrank(lmf) # add rtol to keyword
 
         if rankx != coefn
-            @warn "Fixed-effect matrix not full-rank!"
-            lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Fixed-effect matrix not full-rank!"))
+            @warn "Fixed-effect matrix not full-rank! Number of fixet effects reduced from $(coefn) to $(length(pivotvec))."
+            lmmlog!(lmmlog, 1, LMMLogMsg(:WARN, "Fixed-effect matrix not full-rank! Number of fixet effects reduced from $(coefn) to $(length(pivotvec))."))
         end
-
+        
         lmmdata = LMMData(lmf, rmf)
+        
 
         covstr = CovStructure(random, repeated, data)
 
@@ -157,15 +158,19 @@ struct LMM{T <: AbstractFloat, W <: Union{LMMWts, Nothing}} <: MetidaModel
             end
         end
 
-        mres = ModelResult(false, nothing, fill(NaN, covstr.tl), NaN, fill(NaN, coefn), nothing, fill(NaN, coefn, coefn), fill(NaN, coefn), nothing, false)
+        mres = ModelResult(false, nothing, fill(NaN, covstr.tl), NaN, fill(zero(eltype(lmmdata.yv)), rankx), nothing, fill(NaN, rankx, rankx), fill(NaN, rankx), nothing, false)
 
-        return LMM(model, f, ModelStructure(assign), covstr, lmmdata, LMMDataViews(lmmdata.xv, lmmdata.yv, covstr.vcovblock), nfixed, rankx, pivotvec, mres, findmax(length, covstr.vcovblock)[1], lmmwts, lmmlog)
+        return LMM(model, f, ModelStructure(assign), covstr, lmmdata, LMMDataViews(ifelse(coefn == rankx, lmmdata.xv, view(lmmdata.xv, :, pivotvec)) , lmmdata.yv, covstr.vcovblock), nfixed, rankx, pivotvec, mres, findmax(length, covstr.vcovblock)[1], lmmwts, lmmlog)
     end
     function LMM(f::LMMformula, data; kwargs...)
         return LMM(f.formula, data; random = f.random, repeated = f.repeated, kwargs...)
     end
 end
 
+#=
+function realcoefn()
+end
+=#
 ################################################################################
 """
     thetalength(lmm::LMM)
@@ -182,7 +187,7 @@ end
 Coef number.
 """
 function coefn(lmm)
-    return length(lmm.result.beta)
+    return size(lmm.data.xv, 2)
 end
 
 """
