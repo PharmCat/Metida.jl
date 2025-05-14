@@ -37,7 +37,7 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; maxthreads::Int = 4) where T # 
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)
-    p             = size(lmm.data.xv, 2)
+    p             = lmm.rankx
     #---------------------------------------------------------------------------
     V⁻¹           = Vector{SubArray{T, 2, Matrix{T}, Tuple{UnitRange{Int64}, UnitRange{Int64}}, false}}(undef, n)
     θ₃            = zero(T)
@@ -150,7 +150,7 @@ function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) whe
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
     c             = (N - lmm.rankx)*log(2π)
-    p             = size(lmm.data.xv, 2)
+    p             = lmm.rankx
     #---------------------------------------------------------------------------
     θ₁            = zero(T)
     θ₂            = zeros(T, p, p)
@@ -240,7 +240,7 @@ end
 ################################################################################
 function core_sweep_β(lmm, data, θ::Vector{T}, β, n; maxthreads::Int = 16) where T
     ncore     = min(num_cores(), n, maxthreads)
-    p         = size(lmm.data.xv, 2)
+    p         = lmm.rankx
     accθ₁     = zeros(T, ncore)
     accθ₂     = Vector{Matrix{T}}(undef, ncore)
     accθ₃     = zeros(T, ncore)

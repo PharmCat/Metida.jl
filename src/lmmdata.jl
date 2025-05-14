@@ -21,7 +21,7 @@ struct LMMDataViews{T<:AbstractFloat} <: AbstractLMMDataBlocks
     function LMMDataViews(xv::Vector{Matrix{Float64}}, yv::Vector{Vector{T}}) where T
         new{T}(xv, yv)
     end
-    function LMMDataViews(xv::Matrix{Float64}, yv::Vector{T}, vcovblock) where T
+    function LMMDataViews(xv::AbstractMatrix{Float64}, yv::Vector{T}, vcovblock) where T
         x = Vector{Matrix{Float64}}(undef, length(vcovblock))
         y = Vector{Vector{T}}(undef, length(vcovblock))
         for i = 1:length(vcovblock)

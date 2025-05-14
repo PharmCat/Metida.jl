@@ -251,7 +251,7 @@ function bootstrap_(lmm::LMM{T}; n, verbose, init, rng, del) where T
 
    
     mres = ModelResult(false, nothing, fill(NaN, thetalength(lmm)), NaN, fill(NaN, coefn(lmm)), nothing, fill(NaN, coefn(lmm), coefn(lmm)), fill(NaN, coefn(lmm)), nothing, false)
-    lmmb = LMM(lmm.model, lmm.f, lmm.modstr, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, mres, lmm.maxvcbl, lmm.wts, Vector{LMMLogMsg}(undef, 0))
+    lmmb = LMM(lmm.model, lmm.f, lmm.modstr, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, lmm.pivotvec, mres, lmm.maxvcbl, lmm.wts, Vector{LMMLogMsg}(undef, 0))
 
     vi   = findall(x-> x == :var, lmm.covstr.ct)
     tlmm = theta_(lmm) .^ 2
@@ -315,7 +315,7 @@ function dbootstrap_(lmm::LMM{T}; n, verbose, init, rng, del) where T
     log  = Vector{LMMLogMsg}(undef, 0)
 
     mres = ModelResult(false, nothing, fill(NaN, thetalength(lmm)), NaN, fill(NaN, coefn(lmm)), nothing, fill(NaN, coefn(lmm), coefn(lmm)), fill(NaN, coefn(lmm)), nothing, false)
-    lmmb = LMM(lmm.model, lmm.f, lmm.modstr, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, mres, lmm.maxvcbl, lmm.wts, Vector{LMMLogMsg}(undef, 0))
+    lmmb = LMM(lmm.model, lmm.f, lmm.modstr, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, lmm.pivotvec, mres, lmm.maxvcbl, lmm.wts, Vector{LMMLogMsg}(undef, 0))
 
     vi   = findall(x-> x == :var, lmm.covstr.ct)
     tlmm = theta_(lmm) .^ 2
@@ -458,7 +458,7 @@ function milmm(mi::MILMM; n = 100, verbose = true, rng = default_rng())
     ty  = Vector{Float64}(undef, max)
     for i = 1:n
         data, dv = generate_mi(rng, mi.data, mi.dv, mi.covstr.vcovblock, mi.mrs, rb, ty)
-        lmmi = LMM(mi.lmm.model, mi.f, mi.modstr, mi.covstr, data, dv, mi.lmm.nfixed, mi.lmm.rankx, deepcopy(mi.lmm.result), mi.maxvcbl, mi.wts, mi.log)
+        lmmi = LMM(mi.lmm.model, mi.f, mi.modstr, mi.covstr, data, dv, mi.lmm.nfixed, mi.lmm.rankx, mi.lmm.pivotvec, deepcopy(mi.lmm.result), mi.maxvcbl, mi.wts, mi.log)
         lmm[i] = lmmi
     end
     p = Progress(n, dt = 0.5,

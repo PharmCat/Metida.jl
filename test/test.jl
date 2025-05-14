@@ -301,6 +301,20 @@ include("testdata.jl")
     lmm = Metida.LMM(@formula(var~1), df0;
     random = Metida.VarEffect(Metida.@covstr(1+formulation|subject), coding = Dict(:formulation => StatsModels.DummyCoding())))
     @test typeof( lmm.covstr.random[1].coding[:formulation]) <: StatsModels.DummyCoding
+
+    # Rank defficient
+
+    lmm = Metida.LMM(@formula(lnpk~sequence+period+treatment+subject), dfrdsfda;
+    random = Metida.VarEffect(Metida.@covstr(treatment|subject), Metida.DIAG))
+    @test_nowarn Metida.coef(lmm)
+    @test_nowarn Metida.vcov(lmm)
+    @test_nowarn Metida.stderror(lmm)
+    @test_nowarn Metida.fit!(lmm)
+    @test_nowarn Metida.confint(lmm; level=0.95, ddf = :satter)
+    @test_nowarn Metida.lcontrast(lmm, 5)
+    @test_nowarn Metida.typeiii(lmm)
+    @test_nowarn show(io, lmm)
+
 end
 ################################################################################
 #                                  df0

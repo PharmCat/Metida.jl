@@ -69,6 +69,11 @@ Where: ``A = 2H^{-1}``, ``g = \\triangledown_{\\theta}(LC^{-1}_{\\theta}L')``
 
 """
 function dof_satter(lmm::LMM{T}, l::AbstractVector) where T
+    isfitted(lmm) || error("Model not fitted")
+    dof_satter_(lmm, ifelse(lmm.rankx == coefn(lmm), l, view(l, lmm.pivotvec)))
+end
+
+function dof_satter_(lmm::LMM{T}, l::AbstractVector) where T
     A, theta = getinvhes(lmm)
     grad  = gradc(lmm, theta)
     g  = Vector{T}(undef, length(grad))
@@ -81,14 +86,21 @@ function dof_satter(lmm::LMM{T}, l::AbstractVector) where T
     if df < 1.0 return 1.0 elseif df > dof_residual(lmm) return dof_residual(lmm) else return df end
 end
 """
-    dof_satter(lmm::LMM{T}, n::Int) where T
+    dof_satter(lmm::LMM{T}, i::Int) where T
 
 Return Satterthwaite approximation for the denominator degrees of freedom, where `n` - coefficient number.
 """
-function dof_satter(lmm::LMM{T}, n::Int) where T
-    l = zeros(Int, length(lmm.result.beta))
-    l[n] = 1
-    dof_satter(lmm, l)
+function dof_satter(lmm::LMM{T}, i::Int) where T
+    isfitted(lmm) || error("Model not fitted")
+    if coefn(lmm) == lmm.rankx
+        ind = i
+    else
+        ind = findfirst(x-> x == i, lmm.pivotvec)
+        if isnothing(ind) return NaN end
+    end
+    l = zeros(T, lmm.rankx)
+    l[ind] = one(T)
+    return dof_satter(lmm, l)
 end
 """
     dof_satter(lmm::LMM{T}) where T
@@ -98,13 +110,15 @@ Return Satterthwaite approximation for the denominator degrees of freedom for al
 """
 function dof_satter(lmm::LMM{T}) where T
     isfitted(lmm) || error("Model not fitted")
-    lb       = length(lmm.result.beta)
+    lb       = lmm.rankx
     A, theta = getinvhes(lmm)
     grad     = gradc(lmm, theta)
-    dof      = Vector{Float64}(undef, lb)
+    dof      = Vector{T}(undef, coefn(lmm))
+    fill!(dof, NaN)
+    l        = Vector{T}(undef, lb)
     for gi = 1:lb
-        l     = zeros(Int, lb)
-        l[gi] = 1
+        fill!(l, zero(T))
+        l[gi] = one(T)
         g     = Vector{T}(undef, length(grad))
         for i = 1:length(grad)
             g[i] = dot(l, grad[i], l)
@@ -112,7 +126,8 @@ function dof_satter(lmm::LMM{T}) where T
         #d = g' * A * g
         d = dot(g, A, g)
         df = 2*(dot(l, lmm.result.c, l))^2 / d
-        if df < 1.0 dof[gi] = 1.0 elseif df > dof_residual(lmm) dof[gi] = dof_residual(lmm) else dof[gi] = df end
+        dofn = lmm.pivotvec[gi]
+        if df < 1.0 dof[dofn] = 1.0 elseif df > dof_residual(lmm) dof[dofn] = dof_residual(lmm) else dof[dofn] = df end
     end
     dof
 end
@@ -137,10 +152,16 @@ where:
 * ``E = \\sum_{i=1}^n {\\frac{v_i}(v_i - 2)}`` for ``v_i > 2``
 """
 function dof_satter(lmm::LMM{T}, l::AbstractMatrix) where T
-    if lmm.rankx != size(l, 2) error("size(l, 2) not equal rank X!") end
+    isfitted(lmm) || error("Model not fitted")
+    if coefn(lmm) != size(l, 2) error("size(l, 2) not equal rank X!") end
+    dof_satter_(lmm, ifelse(lmm.rankx == coefn(lmm), l, view(l, :, lmm.pivotvec)))
+end
+
+function dof_satter_(lmm::LMM{T}, l::AbstractMatrix) where T
     A, theta = getinvhes(lmm)
     grad  = gradc(lmm, theta)
     g     = Vector{T}(undef, length(grad))
+
     lcl   = l*lmm.result.c*l'
     lclr  = rank(lcl)
     #if lclr != size(l, 1) error() end
