@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Custom structures · Metida.jl</title><meta name="title" content="Custom structures · Metida.jl"/><meta property="og:title" content="Custom structures · Metida.jl"/><meta property="twitter:title" content="Custom structures · Metida.jl"/><meta name="description" content="Documentation for Metida.jl."/><meta property="og:description" content="Documentation for Metida.jl."/><meta property="twitter:description" content="Documentation for Metida.jl."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">Metida.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="../instanduse/">First step</a></li><li><a class="tocitem" href="../examples/">Examples</a></li><li class="is-active"><a class="tocitem" href>Custom structures</a></li><li><a class="tocitem" href="../bioequivalence/">Bioequivalence</a></li><li><a class="tocitem" href="../nlopt/">NLopt</a></li><li><a class="tocitem" href="../cuda/">CUDA</a></li><li><a class="tocitem" href="../faq/">F.A.Q.</a></li></ul></li><li><a class="tocitem" href="../details/">Details</a></li><li><a class="tocitem" href="../boot/">Bootstrap</a></li><li><a class="tocitem" href="../mi/">Multiple imputation</a></li><li><a class="tocitem" href="../bench/">Benchmark</a></li><li><a class="tocitem" href="../validation/">Validation</a></li><li><a class="tocitem" href="../api/">API</a></li><li><a class="tocitem" href="../ref/">Citation &amp; Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User guide</a></li><li class="is-active"><a href>Custom structures</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Custom structures</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/PharmCat/Metida.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/PharmCat/Metida.jl/blob/master/docs/src/custom.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h3 id="Custom-structures"><a class="docs-heading-anchor" href="#Custom-structures">Custom structures</a><a id="Custom-structures-1"></a><a class="docs-heading-anchor-permalink" href="#Custom-structures" title="Permalink"></a></h3><p>To make your own covariance structure first you should make struct that &lt;: AbstractCovarianceType:</p><p>Example:</p><pre><code class="nohighlight hljs">struct YourCovarianceStruct &lt;: AbstractCovarianceType end</code></pre><p>You also can specify additional field if you need to use them inside <code>gmat!</code>/<code>rmat!</code> functions.</p><p>Then you can make function for construction random effect matrix (<code>gmat!</code>) and repeated effect (<code>rmat!</code>). Only upper triangular can be updated.</p><p>Function <code>gmat!</code> have 3 arguments: <code>mx</code> - zero matrix, <code>θ</code> - theta vector for this effect, and your custom structure object.</p><p>Next this function used to make &quot;random&quot; part of variance-covariance matrix: V&#39; = Z * G * Z&#39;</p><pre><code class="nohighlight hljs">function Metida.gmat!(mx, θ, ::YourCovarianceStruct)
+    @inbounds @simd for i = 1:size(mx, 1)
+        mx[i, i] = θ[i] ^ 2
+    end
+    nothing
+end</code></pre><p>Function <code>rmat!</code> have 5 arguments and add repeated effect to V&#39;: V = V&#39; + R (so V = Z * G * Z&#39; + R), <code>mx</code> - V&#39; matrix, <code>θ</code> - theta vector for this effect, <code>rz</code> - subject effect matrix, <code>ct</code> - your covariance type object, <code>sb</code> = block number. For example, <code>rmat!</code> for Heterogeneous Toeplitz Parameterized structure is specified bellow (<code>TOEPHP_  &lt;: AbstractCovarianceType</code>).</p><pre><code class="nohighlight hljs">function Metida.rmat!(mx, θ, rz, ct::TOEPHP_, ::Int)
+    l     = size(rz, 2)
+    vec   = rz * (θ[1:l])
+    s   = size(mx, 1)
+    if s &gt; 1 &amp;&amp; ct.p &gt; 1
+        for m = 1:s - 1
+            for n = m + 1:(m + ct.p - 1 &gt; s ? s : m + ct.p - 1)
+                @inbounds  mx[m, n] += vec[m] * vec[n] * θ[n - m + l]
+            end
+        end
+    end
+    @inbounds @simd for m = 1:s
+        mx[m, m] += vec[m] * vec[m]
+    end
+    nothing
+end</code></pre><p>One more function you shoud make is <code>covstrparam</code>, this function need to know how many parameters included in theta vector for optimization. Function returns number of variance parameters and rho parameters for this structure. Where <code>t</code> - number of columns in individual <code>Z</code> matrix for random effect or number of columns in repeated effect matrix (<code>rZ</code>).</p><p>Example for Heterogeneous Autoregressive and Heterogeneous Compound Symmetry structures:</p><pre><code class="nohighlight hljs">function Metida.covstrparam(ct::Union{ARH_, CSH_}, t::Int)::Tuple{Int, Int}
+    return (t, 1)
+end</code></pre><p>For better printing you can add:</p><pre><code class="nohighlight hljs">function Metida.rcoefnames(s, t, ct::YourCovarianceStruct)
+    return [&quot;σ² &quot;, &quot;γ &quot;, &quot;ρ &quot;]
+end</code></pre><p>Where, <code>s</code> - effect schema, <code>t</code> - number of parameters, this function returns names for your covariance structure for printing in LMM output.</p><p>Add this method for better printing:</p><pre><code class="nohighlight hljs">function Base.show(io::IO, ct::YourCovarianceStruct)
+    print(io, &quot;YourCovarianceStruct&quot;)
+end</code></pre><p>Then just make model and fit it:</p><pre><code class="nohighlight hljs">lmm = Metida.LMM(@formula(response ~ 1 + factor*time), ftdf2;
+  random = Metida.VarEffect(Metida.@covstr(factor|subject&amp;factor), YourCovarianceStruct()),
+  repeated = Metida.VarEffect(Metida.@covstr(1|subject&amp;factor), YourCovarianceStruct()),
+  )
+  Metida.fit!(lmm)</code></pre><p>Example:</p><pre><code class="language-julia hljs">using Metida, DataFrames, CSV, CategoricalArrays
+
+spatdf       = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;, &quot;spatialdata.csv&quot;); types = [Int, Int, String, Float64, Float64, Float64, Float64, Float64]) |&gt; DataFrame
+ftdf = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;1fptime.csv&quot;); types = [String, String, Float64, Float64]) |&gt; DataFrame
+df0 = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;df0.csv&quot;); types = [String, String, String, String,Float64, Float64, Float64]) |&gt; DataFrame
+
+struct CustomCovarianceStructure &lt;: Metida.AbstractCovarianceType end
+function Metida.covstrparam(ct::CustomCovarianceStructure, t::Int)::Tuple{Int, Int}
+    return (t, 1)
+end
+function Metida.gmat!(mx, θ, ct::CustomCovarianceStructure)
+    s = size(mx, 1)
+    @inbounds @simd for m = 1:s
+        mx[m, m] = θ[m]
+    end
+    if s &gt; 1
+        for m = 1:s - 1
+            @inbounds @simd for n = m + 1:s
+                mx[m, n] = mx[m, m] * mx[n, n] * θ[end]
+            end
+        end
+    end
+    @inbounds @simd for m = 1:s
+        mx[m, m] = mx[m, m] * mx[m, m]
+    end
+    nothing
+end
+
+lmm = Metida.LMM(@formula(response ~1 + factor*time), ftdf;
+random = Metida.VarEffect(Metida.@covstr(1 + time|subject&amp;factor), CustomCovarianceStructure()),
+)
+Metida.fit!(lmm)
+
+# for R matrix
+
+function Metida.rmat!(mx, θ, rz, ::CustomCovarianceStructure, ::Int)
+    vec = Metida.tmul_unsafe(rz, θ)
+    rn    = size(mx, 1)
+    if rn &gt; 1
+        for m = 1:rn - 1
+            @inbounds @simd for n = m + 1:rn
+                mx[m, n] += vec[m] * vec[n] * θ[end]
+            end
+        end
+    end
+        @inbounds  for m ∈ axes(mx, 1)
+        mx[m, m] += vec[m] * vec[m]
+    end
+    nothing
+end
+
+lmm = Metida.LMM(@formula(var~sequence+period+formulation), df0;
+repeated = Metida.VarEffect(Metida.@covstr(period|subject), CustomCovarianceStructure()),
+)
+Metida.fit!(lmm)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear Mixed Model: var ~ sequence + period + formulation
+Random 1: 
+   No
+Repeated: 
+    Model: period|subject
+    Type: CustomCovarianceStructure (5)
+Blocks: 5, Maximum block size: 4
+Status: <span class="sgr32">converged</span> (No Errors)
+    -2 logREML: 8.7401    BIC: 22.603
+
+    Fixed-effects parameters:
+───────────────────────────────────────────────────────
+                     Coef.  Std. Error      z  Pr(&gt;|z|)
+───────────────────────────────────────────────────────
+(Intercept)      1.31285     0.28779     4.56    &lt;1e-05
+sequence: 2      0.283193    0.328706    0.86    0.3889
+period: 2        0.152412    0.0881943   1.73    0.0840
+period: 3        0.08        0.136257    0.59    0.5571
+period: 4        0.152412    0.0986418   1.55    0.1223
+formulation: 2  -0.0379392   0.0717112  -0.53    0.5968
+───────────────────────────────────────────────────────
+    Variance components:
+    θ vector: [0.43779, 0.426869, 0.630382, 0.49783, 0.899017]
+  Residual   Val    var   0.19166
+  Residual   Val    var   0.182217
+  Residual   Val    var   0.397381
+  Residual   Val    var   0.247835
+  Residual   Val    rho   0.899017
+</code></pre><h3 id="Custom-distance-estimation-for-spatial-structures"><a class="docs-heading-anchor" href="#Custom-distance-estimation-for-spatial-structures">Custom distance estimation for spatial structures</a><a id="Custom-distance-estimation-for-spatial-structures-1"></a><a class="docs-heading-anchor-permalink" href="#Custom-distance-estimation-for-spatial-structures" title="Permalink"></a></h3><p>If you want to use coordinates or some other structures for distance estimation you can define method <a href="../api/#Metida.edistance"><code>Metida.edistance</code></a> to calculate distance:</p><pre><code class="language-julia hljs">function Metida.edistance(mx::AbstractMatrix{&lt;:CartesianIndex}, i::Int, j::Int)
+    return sqrt((mx[i, 1][1] - mx[j, 1][1])^2 + (mx[i, 1][2] - mx[j, 1][2])^2)
+end</code></pre><p>For example this method returns distance between two vectors represented as <code>CartesianIndex</code>.</p><p>Make vector of <code>CartesianIndex</code>:</p><pre><code class="language-julia hljs">spatdf.ci = map(x -&gt; CartesianIndex(x[:x], x[:y]), eachrow(spatdf))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">200-element Vector{CartesianIndex{2}}:
+ CartesianIndex(8, 94)
+ CartesianIndex(9, 40)
+ CartesianIndex(40, 62)
+ CartesianIndex(49, 24)
+ CartesianIndex(20, 89)
+ CartesianIndex(57, 14)
+ CartesianIndex(44, 68)
+ CartesianIndex(64, 90)
+ CartesianIndex(30, 81)
+ CartesianIndex(79, 32)
+ ⋮
+ CartesianIndex(100, 45)
+ CartesianIndex(55, 59)
+ CartesianIndex(11, 22)
+ CartesianIndex(37, 25)
+ CartesianIndex(57, 8)
+ CartesianIndex(81, 99)
+ CartesianIndex(68, 83)
+ CartesianIndex(89, 17)
+ CartesianIndex(62, 79)</code></pre><p>Then use new column as &quot;raw&quot; variable with  <a href="../api/#Metida.RawCoding"><code>Metida.RawCoding</code></a> contrast and fit the model:</p><pre><code class="language-julia hljs">lmm = Metida.LMM(@formula(r2 ~ f), spatdf;
+    repeated = Metida.VarEffect(Metida.@covstr(ci|1), Metida.SPEXP; coding = Dict(:ci =&gt; Metida.RawCoding())),
+    )
+Metida.fit!(lmm)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear Mixed Model: r2 ~ f
+Random 1: 
+   No
+Repeated: 
+    Model: ci|1
+    Type: SPEXP (2)
+Blocks: 1, Maximum block size: 200
+Status: <span class="sgr32">converged</span> (No Errors)
+    -2 logREML: 1985.34    BIC: 1995.92
+
+    Fixed-effects parameters:
+────────────────────────────────────────────────
+               Coef.  Std. Error     z  Pr(&gt;|z|)
+────────────────────────────────────────────────
+(Intercept)  6.26619     8.841    0.71    0.4785
+f: 1         3.85137     4.12172  0.93    0.3501
+────────────────────────────────────────────────
+    Variance components:
+    θ vector: [46.8999, 8.28173]
+  Residual   σ²    var     2199.6
+  Residual   θ     theta   8.28173
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../examples/">« Examples</a><a class="docs-footer-nextpage" href="../bioequivalence/">Bioequivalence »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.13.0 on <span class="colophon-date" title="Tuesday 24 June 2025 15:15">Tuesday 24 June 2025</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
