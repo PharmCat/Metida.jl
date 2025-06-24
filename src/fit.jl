@@ -203,8 +203,16 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         if  !any(x -> x < 0.0, diag(lmm.result.c))
             diag!(sqrt, lmm.result.se, lmm.result.c)
             if any(x-> x < singtol, lmm.result.se) && minimum(lmm.result.se)/maximum(lmm.result.se) < singtol lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Some of the SE parameters is suspicious.")) end
-            lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model fitted."))
-            lmm.result.fit      = true
+            if minimum(lmm.result.optim) == Inf 
+                lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Minimum not estimated (Inf), model NOT fitted."))
+                lmm.result.fit      = false
+            elseif minimum(lmm.result.optim) === NaN
+                lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Minimum not estimated (NaN), model NOT fitted."))
+                lmm.result.fit      = false
+            else
+                lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Model fitted."))
+                lmm.result.fit      = true
+            end
         else
             lmmlog!(io, lmm, verbose,LMMLogMsg(:ERROR, "Some variance less zero: $(diag(lmm.result.c))."))
         end

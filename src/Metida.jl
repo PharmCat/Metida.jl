@@ -1,5 +1,6 @@
 # Metida
-# Copyright © 2019-2020 Vladimir Arnautov aka PharmCat <mail@pharmcat.net>
+# Copyright © 2019-2025 Vladimir Arnautov aka PharmCat <mail@pharmcat.net>
+# SPDX-License-Identifier: MIT
 
 __precompile__()
 module Metida
