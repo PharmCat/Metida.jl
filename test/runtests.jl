@@ -4,3 +4,9 @@
 using Metida
 
 include("test.jl")
+
+import Aqua
+
+@testset "Aqua                                                       " begin
+    Aqua.test_all(Metida)
+end
