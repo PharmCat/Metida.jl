@@ -105,7 +105,7 @@ StatsBase.coefnames(lmm::LMM) = StatsBase.coefnames(lmm.f)[2]
 
 Number of observations.
 """
-function StatsBase.nobs(lmm::LMM)
+function StatsBase.nobs(lmm::Union{LMM, MILMM})
     return length(lmm.data.yv)
 end
 
