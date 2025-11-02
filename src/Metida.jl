@@ -8,7 +8,9 @@ using ProgressMeter, LinearAlgebra, ForwardDiff, DiffResults, Random, Optim, Lin
 import StatsBase, StatsModels, Distributions
 
 import MetidaBase: CategoricalArrays, Tables, MetidaModel, AbstractCovarianceStructure, AbstractCovmatMethod, AbstractCovarianceType, AbstractLMMDataBlocks, MetidaTable, metida_table, PrettyTables, indsdict!
+
 import MetidaBase.CategoricalArrays: CategoricalArray, AbstractCategoricalVector
+
 import MetidaBase.PrettyTables: TextFormat, pretty_table, tf_borderless, ft_printf
 
 import Distributions: Normal, TDist, FDist, Chisq, MvNormal, FullNormal, ccdf, cdf, quantile

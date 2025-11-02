@@ -73,7 +73,10 @@ struct LMM{T <: AbstractFloat, W <: Union{LMMWts, Nothing}} <: MetidaModel
         if repeated === nothing && random === nothing
             error("No effects specified!")
         end
-
+        if !isa(model.lhs, FunctionTerm)
+            response_name = tname(Symbol, model.lhs)
+            if !(eltype(Tables.getcolumn(data, response_name)) <: AbstractFloat) @warn "Response variable not <: AbstractFloat, eltype: $(eltype(Tables.getcolumn(data, response_name)))" end
+        end        
         tv = termvars(model)
         if !isnothing(random)
             union!(tv, termvars(random))

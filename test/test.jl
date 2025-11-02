@@ -995,6 +995,20 @@ end
     # Warn for non-unique levels for repeated effect within subject
     @test_warn "If UN structure used for repeated effect all levels should be unique within one subject, otherwise results can be meaningless!" Metida.LMM(@formula(log(lnpk)~sequence+period+treatment), dfrdsfda; repeated = Metida.VarEffect(Metida.@covstr(treatment|subject), Metida.UN))
 
+    dfNaN = deepcopy(df0)
+    dfNaN.var[1] = NaN
+    lmm = Metida.LMM(@formula(var~sequence+period+formulation), dfNaN;
+    random = Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.DIAG),
+    )
+    @test_throws ErrorException Metida.fit!(lmm)
+
+    dfNaN.var = string.(dfNaN.var)
+    try 
+        @test_warn  "Response variable not <: AbstractFloat, eltype: String" lmm = Metida.LMM(@formula(var~sequence+period+formulation), dfNaN; random = Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.DIAG),)
+    catch e
+    end
+
+
 end
 ################################################################################
 #                                  Sweep test

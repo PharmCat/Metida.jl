@@ -31,8 +31,13 @@ end
     Term name.
 """
 tname(t::AbstractTerm) = "$(t.sym)"
+tname(::Type{Symbol}, t::AbstractTerm) = t.sym
 tname(t::InteractionTerm) = join(tname.(t.terms), " & ")
 tname(t::InterceptTerm) = "(Intercept)"
+function tname(t::FunctionTerm) 
+    string(t.exorig)
+end
+#=
 function tname(t::FunctionTerm) 
     args = string(t.args_parsed[1])
     if length(t.args_parsed) > 1
@@ -42,6 +47,7 @@ function tname(t::FunctionTerm)
     end
     string(t.forig)*"("*args*")"
 end
+=#
 
 
 """
