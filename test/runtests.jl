@@ -8,5 +8,5 @@ include("test.jl")
 import Aqua
 
 @testset "Aqua                                                       " begin
-    Aqua.test_all(Metida)
+    Aqua.test_all(Metida, piracies=false) # fix piracies with MetidaBase 
 end

@@ -623,7 +623,7 @@ function Base.show(io::IO, ct::CovarianceType)
     print(io, "Covariance Type: $(ct.s)")
 end
 
-function Base.show(io::IO, ct::AbstractCovarianceType)
+function Base.show(io::IO, ct::AbstractCovarianceType) # Move to MetidaBase
     print(io, "$(typeof(ct).name.name)")
 end
 function Base.show(io::IO, ct::SI_)
