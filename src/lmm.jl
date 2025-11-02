@@ -75,7 +75,7 @@ struct LMM{T <: AbstractFloat, W <: Union{LMMWts, Nothing}} <: MetidaModel
         end
         if !isa(model.lhs, FunctionTerm)
             response_name = tname(Symbol, model.lhs)
-            if !(eltype(Tables.getcolumn(data, response_name)) <: AbstractFloat) @warn "Response variable not <: AbstractFloat, eltype: $(eltype(Tables.getcolumn(data, response_name)))" end
+            if !(eltype(Tables.getcolumn(data, response_name)) <: Union{Missing, AbstractFloat}) @warn "Response variable not <: Union{Missing, AbstractFloat}, eltype: $(eltype(Tables.getcolumn(data, response_name)))" end
         end        
         tv = termvars(model)
         if !isnothing(random)

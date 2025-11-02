@@ -1004,9 +1004,10 @@ end
 
     dfNaN.var = string.(dfNaN.var)
     try 
-        @test_warn  "Response variable not <: AbstractFloat, eltype: String" lmm = Metida.LMM(@formula(var~sequence+period+formulation), dfNaN; random = Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.DIAG),)
+        @test_warn  "Response variable not <: Union{Missing, AbstractFloat}, eltype: String" lmm = Metida.LMM(@formula(var~sequence+period+formulation), dfNaN; random = Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.DIAG),)
     catch e
     end
+    @test_throws  MethodError  Metida.LMM(@formula(var~sequence+period+formulation), dfNaN; random = Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.DIAG),)
 
 
 end
