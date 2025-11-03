@@ -134,6 +134,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         end
     else
         initθ = sqrt(initvar(lmm.data.yv, lmm.data.xv)[1])/(length(lmm.covstr.random)+1)
+            if any(isnan, initθ) error("Some initial values is NaN, check your data not include NaN values.") end
         for i = 1:length(θ)
             if lmm.covstr.ct[i] == :var
                 θ[i] = initθ
@@ -143,6 +144,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
                 θ[i] = 1.0
             end
         end
+        #if any(isnan, initθ) error("initθ is NaN") end
         lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Initial θ: "*string(θ)))
     end
     # Initial step with modified Newton method

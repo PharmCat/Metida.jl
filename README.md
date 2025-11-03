@@ -2,9 +2,9 @@
 
 This program comes with absolutely no warranty. No liability is accepted for any loss and risk to public health resulting from use of this software.
 
-| Version | pkgeval | Cover | Build | Docs |
-|--------|-------|-------|-------|------|
-|[![version](https://juliahub.com/docs/Metida/version.svg)](https://juliahub.com/ui/Packages/Metida/asHVr)|[![pkgeval](https://juliahub.com/docs/Metida/pkgeval.svg)](https://juliahub.com/ui/Packages/Metida/asHVr)|[![codecov](https://codecov.io/gh/PharmCat/Metida.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/PharmCat/Metida.jl)|![Tier 1](https://github.com/PharmCat/Metida.jl/workflows/Tier%201/badge.svg) | [![Latest docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://pharmcat.github.io/Metida.jl/dev/) [![Stable docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://pharmcat.github.io/Metida.jl/stable/)|
+| Version | Citation | Code Coverage | Build ststus| Docs |
+|---------|----------|---------------|-------------|------|
+|[![version](https://juliahub.com/docs/Metida/version.svg)](https://juliahub.com/ui/Packages/Metida/asHVr)| |[![codecov](https://codecov.io/gh/PharmCat/Metida.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/PharmCat/Metida.jl) |![Tier 1](https://github.com/PharmCat/Metida.jl/workflows/Tier%201/badge.svg) [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl) [![pkgeval](https://juliahub.com/docs/Metida/pkgeval.svg)](https://juliahub.com/ui/Packages/Metida/asHVr)| [![Latest docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://pharmcat.github.io/Metida.jl/dev/) [![Stable docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://pharmcat.github.io/Metida.jl/stable/)|
 
 Metida.jl is Julia package for fitting mixed-effects models with flexible covariance structure.
 

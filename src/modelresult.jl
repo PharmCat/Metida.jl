@@ -14,9 +14,9 @@ mutable struct ModelResult
     function ModelResult(fit, optim, theta, reml, beta, h, c, se, grc, idp)
         new(fit, optim, theta, reml, beta, h, c, se, grc, idp)
     end
-    function ModelResult()
-        ModelResult(false, nothing, nothing, NaN, nothing, nothing, nothing, nothing, nothing, false)
-    end
+    #function ModelResult()
+    #    ModelResult(false, nothing, nothing, NaN, nothing, nothing, nothing, nothing, nothing, false)
+    #end
 end
 
 function Base.show(io::IO, lmmr::ModelResult)
