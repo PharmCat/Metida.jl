@@ -469,20 +469,20 @@ function nblocks(lmm::LMM)
 end
 
 """
-    hessian(lmm, theta)
+    reml_hessian(lmm, theta)
 
 Calculate Hessian matrix of REML for theta.
 """
-function hessian(lmm, theta)
+function reml_hessian(lmm, theta)
     #if !lmm.result.fit error("Model not fitted!") end
-    vloptf(x) = reml_sweep_β(lmm, lmm.dv, x, lmm.result.beta)[1]
+    vloptf(x) = reml_sweep_β(lmm, lmm.dv, x)[1]
     chunk  = ForwardDiff.Chunk{min(8, length(theta))}()
     hcfg   = ForwardDiff.HessianConfig(vloptf, theta, chunk)
     return ForwardDiff.hessian(vloptf, theta, hcfg)
 end
-function hessian(lmm)
+function reml_hessian(lmm)
     if !lmm.result.fit error("Model not fitted!") end
-    return hessian(lmm, lmm.result.theta)
+    return reml_hessian(lmm, lmm.result.theta)
 end
 ###############################################################################
 ###############################################################################

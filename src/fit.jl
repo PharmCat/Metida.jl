@@ -235,7 +235,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     # Check Hessian
     if hes && lmm.result.fit
             # Hessian
-        lmm.result.h      = hessian(lmm, lmm.result.theta)
+        lmm.result.h      = reml_hessian(lmm, lmm.result.theta)
             # H positive definite check
         if !isposdef(Symmetric(lmm.result.h))
             lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian is not positive definite."))
@@ -285,7 +285,7 @@ function optstep!(lmm, data, θ; method::Symbol = :ai, maxopt::Int=10)
         θr = θ - θt
         remlc, beta, θs₂, θ₃, rt = reml_sweep_β(lmm, data, θr)
         maxopti -= 1
-        if rt && remlc < reml return copyto!(θ, θr), remlc, maxopt-maxopti, true else θt ./= 2.0 end
+        if rt && remlc < reml return copyto!(θ, θr), remlc, maxopt - maxopti, true else θt ./= 2.0 end
     end
     return θ, remlc, maxopt-maxopti, false
 end

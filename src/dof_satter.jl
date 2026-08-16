@@ -19,7 +19,7 @@ end
 function getinvhes(lmm::LMM{T}) where T
     local A
     if isnothing(lmm.result.h)
-        lmm.result.h = hessian(lmm)
+        lmm.result.h = reml_hessian(lmm)
         H = copy(lmm.result.h)
     else
         H = copy(lmm.result.h)

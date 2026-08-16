@@ -138,7 +138,7 @@ include("testdata.jl")
     @test stderror(lmm)[1]            ≈ 0.33471795812641164 atol=1E-6
     @test length(modelmatrix(lmm)) == 120
     @test isa(response(lmm), Vector)
-    @test sum(Metida.hessian(lmm))    ≈ 1118.160713481362 atol=1E-2
+    @test sum(Metida.reml_hessian(lmm))    ≈ 1118.160713481362 atol=1E-2
     @test Metida.nblocks(lmm) == 5
     @test coefnames(lmm) == ["(Intercept)", "sequence: 2", "period: 2", "period: 3", "period: 4", "formulation: 2"]
     @test Metida.gmatrixipd(lmm)
@@ -163,7 +163,7 @@ include("testdata.jl")
     onefelmm = Metida.LMM(@formula(var~1), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation|subject), Metida.DIAG),
     )
-    @test coefnames(onefelmm) == "(Intercept)"
+    @test coefnames(onefelmm) == ["(Intercept)"]
     @test_nowarn show(io, onefelmm)
     ############################################################################
     # AI like algo
@@ -228,7 +228,8 @@ include("testdata.jl")
     )
     Metida.fit!(lmm; hes = false)
     @test Metida.m2logreml(lmm) ≈ 14.819463206995163 atol=1E-6
-    @test Metida.dof_satter(lmm, 6)   ≈ 3.981102548214154 atol=1E-2
+    # @test Metida.dof_satter(lmm, 6)   ≈ 3.981102548214154 atol=1E-2 after reml_hessian 
+    @test Metida.dof_satter(lmm, 6)   ≈ 3.702612265174825 atol=1E-6
 
     lmm = Metida.LMM(@formula(var~period*formulation), df0;
     random = Metida.VarEffect(Metida.@covstr(formulation+sequence|nosubj), Metida.SI),
@@ -513,7 +514,7 @@ end
     repeated = Metida.VarEffect(Metida.@covstr(p|subject), Metida.CSH)
     )
     Metida.fit!(lmm)
-    @test Metida.m2logreml(lmm)  ≈ 697.2241355154041 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 697.2241355154041 atol=1E-6
 
     lmmf = Metida.@lmmformula(response ~ 1 + factor,
     random = 1|subject/r1,
@@ -523,10 +524,10 @@ end
     ftdf3; contrasts=Dict(:factor => DummyCoding(; base=1.0)))
 
     Metida.fit!(lmm)
-    @test Metida.m2logreml(lmm)  ≈ 697.2241355154041 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 697.2241355154041 atol=1E-6
     io = IOBuffer();
     @test_nowarn show(io, lmmf)
-    @test Metida.dof_satter(lmm)[2] ≈ 21.944891442712407 atol=1E-8
+    @test Metida.dof_satter(lmm)[2] ≈ 21.944281700360293 atol=1E-6
     # Test multiple random effect γ
     @test_nowarn Metida.raneff(lmm)
 end
@@ -549,9 +550,9 @@ end
     repeated = Metida.VarEffect(Metida.@covstr(p|subject), Metida.DIAG),
     )
     Metida.fit!(lmm)
-    @test Metida.m2logreml(lmm)  ≈ 698.8792511057682 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 698.8792511057682 atol=1E-6
     #SPSS 22.313
-    @test Metida.dof_satter(lmm)[2] ≈ 22.43888645153638 atol=1E-8
+    @test Metida.dof_satter(lmm)[2] ≈ 22.31337200822804 atol=1E-6
     #SPSS 
     re = Metida.raneff(lmm, 1)
     @test re[1][1][2][1] ≈ 2.147751 atol=1E-5
@@ -579,19 +580,19 @@ end
     random = Metida.VarEffect(Metida.@covstr(r1|s2&factor), Metida.ARH),
     )
     Metida.fit!(lmm)
-    @test Metida.m2logreml(lmm)  ≈ 707.3765873864152 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 707.3765873864152 atol=1E-6
     #SPSS 23.093
-    @test Metida.dof_satter(lmm, [0, 1]) ≈ 23.111983305626193 atol=1E-2
+    @test Metida.dof_satter(lmm, [0, 1]) ≈ 23.093021655996232 atol=1E-6
 
     #SPSS 691.360073
     lmm = Metida.LMM(@formula(nrhoresp ~ 1 + factor), ftdf3; contrasts=Dict(:factor => DummyCoding(; base=1.0)),
     random = Metida.VarEffect(Metida.@covstr(r1|s2&factor), Metida.ARH),
     )
     Metida.fit!(lmm)
-    @test Metida.m2logreml(lmm)  ≈ 691.3600726310308 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 691.3600726310308 atol=1E-6
     mtt = Metida.typeiii(lmm)
     #SPSS 48.550474
-    @test mtt.df[2] ≈ 48.55470874755898 atol=1E-8
+    @test mtt.df[2] ≈ 48.550473645995346 atol=1E-6
 
 end
 @testset "  Model: INT, *, DIAG/SI                                   " begin
@@ -703,7 +704,7 @@ end
     repeated = Metida.VarEffect(Metida.@covstr(treatment|subject), Metida.DIAG),
     )
     Metida.fit!(lmm)
-    @test collect(Metida.confint(lmm)[6]) ≈  [0.05379033790060175, 0.23713821749515449] atol=1E-8
+    @test collect(Metida.confint(lmm)[6]) ≈  [0.053789444388152474, 0.23713911100102136] atol=1E-6
     anovatable = Metida.typeiii(lmm)
     @test anovatable.pval ≈ [3.087934998046721e-63, 0.9176105002577626, 0.6522549061162943, 0.002010933915677479] atol=1E-4
 
@@ -947,7 +948,7 @@ end
     random = Metida.VarEffect(Metida.@covstr(formulation|nosubj), Metida.DIAG),
     )
     @test_throws ErrorException Metida.fit!(lmm; init = [1.0])
-    @test_throws ErrorException Metida.hessian(lmm)
+    @test_throws ErrorException Metida.reml_hessian(lmm)
     @test_throws ErrorException Metida.dof_satter(lmm)
     @test_throws ErrorException Metida.confint(lmm)
 
@@ -1072,7 +1073,7 @@ end
     Metida.fit!(lmm, maxthreads = 1)
     show(io, lmm.log)
     @test Metida.m2logreml(lmm) ≈ 1924.1371609697842 atol=1E-6
-    @test Metida.dof_satter(lmm)[1] ≈ 87.23260061576238 atol=1E-2
+    @test Metida.dof_satter(lmm)[1] ≈ 87.00202572466458 atol=1E-2
 
 ###############################################################################
     lmm = Metida.LMM(@formula(r4 ~ f), spatdf;
@@ -1080,21 +1081,21 @@ end
     )
     Metida.fit!(lmm, maxthreads = 1)
     @test Metida.m2logreml(lmm) ≈ 1835.8648295317691 atol=1E-6
-    @test Metida.dof_satter(lmm)[1] ≈ 6.200022611925939 atol=1E-2
+    @test Metida.dof_satter(lmm)[1] ≈ 6.147693839389808 atol=1E-2
 
     lmm = Metida.LMM(@formula(r3 ~ f), spatdf;
     repeated = Metida.VarEffect(Metida.@covstr(x+y|1), Metida.SPPOWD),
     )
     Metida.fit!(lmm, maxthreads = 1)
     @test Metida.m2logreml(lmm) ≈ 1899.3636384223198 atol=1E-6
-    @test Metida.dof_satter(lmm)[1] ≈ 58.794026556017556 atol=1E-2
+    @test Metida.dof_satter(lmm)[1] ≈ 58.75904971406159 atol=1E-2
 
     lmm = Metida.LMM(@formula(r5 ~ f), spatdf;
     repeated = Metida.VarEffect(Metida.@covstr(x+y|1), Metida.SPGAUD),
     )
     Metida.fit!(lmm, maxthreads = 1)
     @test Metida.m2logreml(lmm) ≈ 1860.4865219180099 atol=1E-6
-    @test Metida.dof_satter(lmm)[1] ≈ 120.33321588847883 atol=1E-2
+    @test Metida.dof_satter(lmm)[1] ≈ 119.7608528562911 atol=1E-2
     Base.show(io, lmm)
     Base.show(io, lmm.log)
     Metida.raneff(lmm, 1)

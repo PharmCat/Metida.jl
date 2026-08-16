@@ -10,3 +10,5 @@ docs/build/
 docs/img/
 etc/
 validation/
+Manifest*.toml
+local_env.jl
