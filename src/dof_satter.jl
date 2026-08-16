@@ -15,7 +15,7 @@ function gradc(lmm::LMM{T}, theta) where T
     lmm.result.grc = grad
     grad
 end
-
+#=
 function getinvhes(lmm::LMM{T}) where T
     local A
     if isnothing(lmm.result.h)
@@ -54,6 +54,45 @@ function getinvhes(lmm::LMM{T}) where T
         A = pinv(H) * 2
     end
     A, theta
+end
+=#
+function getinvhes(lmm::LMM{T}) where T
+    if isnothing(lmm.result.h)
+        lmm.result.h = reml_hessian(lmm)
+    end
+    H     = copy(lmm.result.h)
+    theta = copy(lmm.result.theta)
+    n     = thetalength(lmm)
+    Hs    = Symmetric((H .+ H') ./ 2)
+    ev    = eigvals(Hs)
+    scale = maximum(abs, ev)
+    tol   = scale * sqrt(eps(T)) * n
+
+    vals = falses(n)
+    for i = 1:n
+        if lmm.covstr.ct[i] == :rho && 1.0 - abs(theta[i]) <= 1E-6
+            theta[i] = theta[i] > 0 ? one(T) : -one(T)   
+        elseif abs(H[i, i]) > tol                       
+            vals[i] = true
+        else
+            theta[i] = zero(T)
+        end
+    end
+    for i = 1:n
+        if !vals[i]
+            H[:, i] .= zero(T)
+            H[i, :] .= zero(T)
+        end
+    end
+
+    A = zeros(T, n, n)
+    if any(vals)
+        sub = Symmetric(H[vals, vals])
+        ch  = cholesky(sub; check = false)
+        Ai  = issuccess(ch) ? inv(ch) : pinv(Matrix(sub))
+        A[vals, vals] .= Ai .* 2
+    end
+    return A, theta
 end
 """
     dof_satter(lmm::LMM{T}, l) where T
