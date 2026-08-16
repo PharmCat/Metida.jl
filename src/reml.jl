@@ -30,9 +30,137 @@ function checkmatrix!(mx::AbstractMatrix{T}) where T
     end
     return e
 end
+
+
+function _reml_blocks(lmm, data, θ::Vector{T}, ncore::Int) where T
+    n     = length(lmm.covstr.vcovblock)
+    p     = lmm.rankx
+    pp1   = p + 1
+    maxq  = lmm.maxvcbl
+
+    gvec  = gmatvec(θ, lmm.covstr)
+    rθ    = lmm.covstr.tr[lmm.covstr.rn + 1:end]
+
+    accld = zeros(T, ncore)
+    accC  = [zeros(T, pp1, pp1) for _ in 1:ncore]
+    ok    = trues(ncore)
+
+    # Старое статическое разбиение: непрерывные куски по номерам блоков.
+    # Первые r потоков получают на один блок больше.
+    d, r = divrem(n, ncore)
+
+    Base.Threads.@threads for t in 1:ncore
+        offset = min(t - 1, r) + (t - 1) * d
+        cnt    = d + (t <= r ? 1 : 0)
+
+        # Скретч-буферы на поток: одна аллокация на вызов вместо одной на блок.
+        Vb  = Matrix{T}(undef, maxq, maxq)
+        XYb = Matrix{T}(undef, maxq, pp1)
+        Ct  = accC[t]
+        ld  = zero(T)
+
+        @inbounds for j in 1:cnt
+            i  = offset + j
+            q  = length(lmm.covstr.vcovblock[i])
+            V  = view(Vb, 1:q, 1:q)
+            fill!(V, zero(T))                     # vmatrix! инкрементирует
+            vmatrix!(V, gvec, θ, rθ, lmm, i)      # заполняет верхний треугольник
+
+            XY = view(XYb, 1:q, 1:pp1)
+            copyto!(view(XY, :, 1:p), data.xv[i])
+            copyto!(view(XY, :, pp1), data.yv[i])
+
+            # potrf на Float64 / generic _chol! на Dual; фактор пишется в V
+            ch = cholesky!(Symmetric(V, :U), check = false)
+            if !issuccess(ch)
+                ok[t] = false
+                break
+            end
+            @simd for k in 1:q
+                ld += log(V[k, k])                # log|V| = 2·Σ log R[k,k]
+            end
+
+            _ltsolve!(V, XY)                      # XY ← R⁻ᵀ[X y]
+            _syrk_upper!(Ct, XY)                  # C  += XYᵀ XY
+        end
+        accld[t] = ld + ld
+    end
+
+    noerror = all(ok)
+    θ₁ = zero(T)
+    @inbounds for t in 1:ncore
+        θ₁ += accld[t]
+    end
+    C = accC[1]
+    @inbounds for t in 2:ncore
+        Ct = accC[t]
+        for j in 1:pp1, i in 1:j
+            C[i, j] += Ct[i, j]
+        end
+    end
+    return θ₁, C, noerror
+end
+ 
+
 ################################################################################
 #                     REML without provided β
 ################################################################################
+function reml_sweep_β(lmm, data, θ::Vector{T};
+                      maxthreads::Int = min(Base.Threads.nthreads(), 16)) where T
+    n   = length(lmm.covstr.vcovblock)
+    N   = length(lmm.data.yv)
+    p   = lmm.rankx
+    pp1 = p + 1
+    c   = (N - p) * log(2π)
+ 
+    ncore = max(1, min(Base.Threads.nthreads(), n, maxthreads))
+    θ₁, C, noerror = _reml_blocks(lmm, data, θ, ncore)
+ 
+    # θ₂ = X'V⁻¹X (верхний треугольник), сохраняется для возврата как iC
+    θ₂ = zeros(T, p, p)
+    @inbounds for j in 1:p, i in 1:j
+        θ₂[i, j] = C[i, j]
+    end
+ 
+    if !noerror
+        return T(Inf), fill(T(NaN), p), Symmetric(θ₂), T(Inf), false
+    end
+ 
+    # Факторизация θ₂ разрушает матрицу — работаем на копии
+    R  = copy(θ₂)
+    c2 = cholesky!(Symmetric(R, :U), check = false)
+    if !issuccess(c2)
+        return T(Inf), fill(T(NaN), p), Symmetric(θ₂), T(Inf), false
+    end
+    logdetθ₂ = zero(T)
+    @inbounds @simd for k in 1:p
+        logdetθ₂ += log(R[k, k])
+    end
+    logdetθ₂ += logdetθ₂
+ 
+    # z = R⁻ᵀ βm  ⇒  βᵀβm = zᵀz,  β = R⁻¹z
+    z = Vector{T}(undef, p)
+    @inbounds @simd for i in 1:p
+        z[i] = C[i, pp1]
+    end
+    _ltsolve!(R, z)
+ 
+    # θ₃ = y'V⁻¹y − βᵀβm  (дополнение Шура; форма через z устойчивее прямой)
+    θ₃ = C[pp1, pp1] - dot(z, z)
+ 
+    β = copy(z)
+    _usolve!(R, β)
+ 
+    # θ₃ ≤ 0 — вырожденная подгонка (нулевая остаточная дисперсия либо
+    # накопленная ошибка). Раньше это маскировалось поправкой LDCORR.
+    if !(θ₃ > zero(T))
+        noerror = false
+    end
+ 
+    return θ₁ + logdetθ₂ + θ₃ + c, β, Symmetric(θ₂), θ₃, noerror
+end
+
+#=
 function reml_sweep_β(lmm, data, θ::Vector{T}; maxthreads::Int = 4) where T # Main optimization way - make gradient / hessian analytical / semi-analytical functions
     n             = length(lmm.covstr.vcovblock)
     N             = length(lmm.data.yv)
@@ -137,7 +265,7 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; maxthreads::Int = 4) where T # 
             =#
             β       .= NaN
             θ₂      .= NaN
-            return   Inf, β, θs₂, Inf, false
+            return   T(Inf), β, θs₂, T(Inf), false
         end
         # θ₃
         #@inbounds @simd for i = 1:n
@@ -145,6 +273,8 @@ function reml_sweep_β(lmm, data, θ::Vector{T}; maxthreads::Int = 4) where T # 
         #end
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θs₂, θ₃, noerror #REML, β, iC, θ₃, errors
 end
+
+
 # Using BLAS, LAPACK - non ForwardDiff, used by MetidaNLopt
 function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) where T
     n             = length(lmm.covstr.vcovblock)
@@ -235,6 +365,7 @@ function reml_sweep_β_nlopt(lmm, data, θ::Vector{T}; maxthreads::Int = 16) whe
         end
     return   θ₁ + logdetθ₂ + θ₃ + c, β, θ₂, θ₃, noerror
 end
+=#
 ################################################################################
 #                     REML with provided β
 ################################################################################

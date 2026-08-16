@@ -468,11 +468,35 @@ function nblocks(lmm::LMM)
     return length(lmm.covstr.vcovblock)
 end
 
+
+struct REMLObjective{L, D}
+    lmm::L
+    dv::D
+end
+(f::REMLObjective)(x) = reml_sweep_β(f.lmm, f.dv, x)[1]
 """
     reml_hessian(lmm, theta)
 
 Calculate Hessian matrix of REML for theta.
 """
+function reml_hessian(lmm, theta; chunk = ForwardDiff.Chunk{min(8, length(theta))}())
+    f    = REMLObjective(lmm, lmm.dv)
+    gcfg = ForwardDiff.GradientConfig(f, theta, chunk)
+    g(x) = ForwardDiff.gradient(f, x, gcfg, Val{false}())
+
+    n = length(theta)
+    H = Matrix{Float64}(undef, n, n)
+    x = copy(theta)
+    for i in 1:n
+        h     = max(abs(theta[i]), one(eltype(theta))) * cbrt(eps())
+        x[i]  = theta[i] + h;  gp = g(x)
+        x[i]  = theta[i] - h;  gm = g(x)
+        x[i]  = theta[i]
+        @views H[:, i] .= (gp .- gm) ./ (2h)
+    end
+    return Symmetric((H .+ H') ./ 2)
+end
+#=
 function reml_hessian(lmm, theta)
     #if !lmm.result.fit error("Model not fitted!") end
     vloptf(x) = reml_sweep_β(lmm, lmm.dv, x)[1]
@@ -480,6 +504,7 @@ function reml_hessian(lmm, theta)
     hcfg   = ForwardDiff.HessianConfig(vloptf, theta, chunk)
     return ForwardDiff.hessian(vloptf, theta, hcfg)
 end
+=#
 function reml_hessian(lmm)
     if !lmm.result.fit error("Model not fitted!") end
     return reml_hessian(lmm, lmm.result.theta)

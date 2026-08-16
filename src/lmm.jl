@@ -303,8 +303,8 @@ function Base.show(io::IO, lmm::LMM)
         println(io, "    Fixed-effects parameters:")
 
         ct = coeftable(lmm)
-        println(io, ct)
-
+        show(io, "text/plain", ct)
+        println(io, "")
         println(io, "    Variance components:")
         println(io, "    θ vector: ", round.(lmm.result.theta, sigdigits = 6))
 

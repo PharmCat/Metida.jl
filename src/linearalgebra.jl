@@ -173,3 +173,73 @@ end
     end
     return v
 end
+
+
+
+ 
+# =============================================================================
+#  1. Ядра: BLAS-путь и generic-путь (Dual)
+# =============================================================================
+ 
+# --- C += Aᵀ A, только верхний треугольник C ---------------------------------
+@inline function _syrk_upper!(C::AbstractMatrix{T}, A::AbstractMatrix{T}) where T <: BlasFloat
+    BLAS.syrk!('U', 'T', one(T), A, one(T), C)
+    return C
+end
+function _syrk_upper!(C::AbstractMatrix{T}, A::AbstractMatrix) where T
+    m, k = size(A, 1), size(A, 2)
+    @inbounds for j in 1:k
+        for i in 1:j
+            s = zero(T)
+            @simd for l in 1:m            # оба столбца читаются подряд
+                s += A[l, i] * A[l, j]
+            end
+            C[i, j] += s
+        end
+    end
+    return C
+end
+ 
+# --- решение Rᵀ Z = B (R — верхний фактор Холецкого) -------------------------
+@inline function _ltsolve!(R::AbstractMatrix{T}, B::AbstractMatrix{T}) where T <: BlasFloat
+    BLAS.trsm!('L', 'U', 'T', 'N', one(T), R, B)
+    return B
+end
+@inline function _ltsolve!(R::AbstractMatrix, B::AbstractMatrix)
+    ldiv!(UpperTriangular(R)', B)
+    return B
+end
+@inline function _ltsolve!(R::AbstractMatrix{T}, b::AbstractVector{T}) where T <: BlasFloat
+    BLAS.trsv!('U', 'T', 'N', R, b)
+    return b
+end
+@inline function _ltsolve!(R::AbstractMatrix, b::AbstractVector)
+    ldiv!(UpperTriangular(R)', b)
+    return b
+end
+ 
+# --- решение R x = b ---------------------------------------------------------
+@inline function _usolve!(R::AbstractMatrix{T}, b::AbstractVector{T}) where T <: BlasFloat
+    BLAS.trsv!('U', 'N', 'N', R, b)
+    return b
+end
+@inline function _usolve!(R::AbstractMatrix, b::AbstractVector)
+    ldiv!(UpperTriangular(R), b)
+    return b
+end
+ 
+# --- xᵀ A x по верхнему треугольнику A ---------------------------------------
+function _qform_upper(A::AbstractMatrix{T}, x::AbstractVector) where T
+    p = size(A, 1)
+    s = zero(promote_type(T, eltype(x)))
+    @inbounds for j in 1:p
+        xj = x[j]
+        s += A[j, j] * xj * xj
+        @simd for i in 1:j-1
+            s += 2 * A[i, j] * x[i] * xj
+        end
+    end
+    return s
+end
+ 
+
