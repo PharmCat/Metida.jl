@@ -162,10 +162,10 @@ Metida.getlog
 Metida.gmatrix
 ```
 
-### Metida.hessian
+### Metida.reml_hessian
 
 ```@docs
-Metida.hessian
+Metida.reml_hessian
 ```
 
 ### Metida.lcontrast
