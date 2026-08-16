@@ -103,6 +103,7 @@ end
 ################################################################################
 #                            COVARIANCE STRUCTURE
 ################################################################################
+#=
 function sabjcrossdicts(d1, d2)
     
     if length(d1) == 1 
@@ -140,12 +141,188 @@ function sabjcrossdicts(d1, d2)
     end
     return v
 end
+=#
+#= 
+"""
+
+    dsu_find!(p, i)
+ 
+Union-Find (disjoint set union)
+Корень компоненты, содержащей элемент `i`
+path halving
+"""
+=#
+@inline function dsu_find!(p::Vector{Int}, i::Int)
+    @inbounds while p[i] != i
+        p[i] = p[p[i]]        # path halving: подвешиваем к «деду»
+        i    = p[i]
+    end
+    return i
+end
+#=
+"""
+    dsu_union!(p, sz, a, b)
+ 
+Объединяет компоненты элементов `a` и `b`. Меньшая по размеру подвешивается
+к большей (union by size)
+"""
+=#
+@inline function dsu_union!(p::Vector{Int}, sz::Vector{Int}, a::Int, b::Int)
+    ra = dsu_find!(p, a)
+    rb = dsu_find!(p, b)
+    ra === rb && return ra                    # уже в одной компоненте
+    @inbounds begin
+        if sz[ra] < sz[rb]
+            ra, rb = rb, ra                   # подвешиваем меньшую к большей
+        end
+        p[rb]   = ra
+        sz[ra] += sz[rb]
+    end
+    return ra
+end
+#=
+"""
+    _maxobsindex(ds...)
+ 
+Максимальный номер наблюдения, встречающийся в переданных словарях.
+"""
+=#
+function _maxobsindex(ds...)
+    n = 0
+    for d in ds
+        for v in values(d)
+            @inbounds for i in v
+                i > n && (n = i)
+            end
+        end
+    end
+    return n
+end
+#=
+"""
+    _components(parent, sz, n)
+ 
+Выделяет компоненты связности из готовой DSU-структуры.
+ 
+Ключевые свойства результата:
+  * ключи — плотный диапазон `1:nb`;
+  * блоки нумеруются по возрастанию минимального номера наблюдения;
+  * внутри блока наблюдения идут в порядке возрастания номера строки.
+"""
+=#
+function _components(parent::Vector{Int}, sz::Vector{Int}, n::Int)
+    blkid = zeros(Int, n)                     # корень -> номер блока
+    vecs  = Vector{Vector{Int}}()             # сами блоки
+    fptr  = Int[]                             # указатели заполнения блоков
+    @inbounds for r in 1:n
+        rt = dsu_find!(parent, r)
+        b  = blkid[rt]
+        if b == 0                             # новая компонента
+            push!(vecs, Vector{Int}(undef, sz[rt]))   # точный размер
+            push!(fptr, 1)
+            b          = length(vecs)
+            blkid[rt]  = b
+            vecs[b][1] = r
+        else
+            fptr[b]         += 1
+            vecs[b][fptr[b]] = r
+        end
+    end
+    res = Dict{Int, Vector{Int}}()
+    sizehint!(res, length(vecs))
+    @inbounds for b in eachindex(vecs)
+        res[b] = vecs[b]
+    end
+    return res
+end
+#=
+"""
+    _canonical_blocks(d)
+ 
+Приводит произвольный словарь «субъект => номера наблюдений» к каноническому
+виду `Dict{Int, Vector{Int}}` с ключами `1:nb`, упорядоченными по минимальному
+номеру наблюдения, и отсортированными значениями.
+"""
+=#
+function _canonical_blocks(d)
+    ks   = collect(keys(d))
+    mins = Vector{Int}(undef, length(ks))
+    @inbounds for i in eachindex(ks)
+        mins[i] = minimum(d[ks[i]])
+    end
+    res = Dict{Int, Vector{Int}}()
+    sizehint!(res, length(ks))
+    @inbounds for (b, j) in enumerate(sortperm(mins))
+        v      = d[ks[j]]
+        res[b] = issorted(v) ? collect(v) : sort(v)
+    end
+    return res
+end
+#=
+"""
+    subjcrossdicts(d1, d2 [, n])
+ 
+Наименьшее общее огрубление двух разбиений множества наблюдений `1:n`:
+каждая группа из `d1` и каждая группа из `d2` целиком лежит внутри одного
+блока результата, и блоков при этом максимально много.
+ 
+Эквивалентно поиску компонент связности графа, в котором наблюдения соединены
+рёбрами внутри каждой группы `d1` и внутри каждой группы `d2`.
+ 
+Возвращает `Dict{Int, Vector{Int}}` с ключами `1:nb`.
+"""
+=#
+function subjcrossdicts(d1, d2, n::Int = _maxobsindex(d1, d2))
+    # --- вырожденные случаи -------------------------------------------------
+    isempty(d1) && return _canonical_blocks(d2)
+    isempty(d2) && return _canonical_blocks(d1)
+ 
+    if (length(d1) == 1 && length(first(values(d1))) == n) ||
+       (length(d2) == 1 && length(first(values(d2))) == n)
+        return Dict{Int, Vector{Int}}(1 => collect(1:n))
+    end
+    # --- union-find ---------------------------------------------------------
+    parent = collect(1:n)
+    sz     = ones(Int, n)
+    for d in (d1, d2)
+        for v in values(d)
+            isempty(v) && continue
+            r0 = first(v)                     # «якорь» группы
+            @inbounds for r in v
+                dsu_union!(parent, sz, r0, r) # первое объединение — no-op
+            end
+        end
+    end
+    return _components(parent, sz, n)
+end
+#=
+"""
+    crossdicts(dicts, inds, n)
+Многосторонний вариант: сразу объединяет все группировки `dicts[i], i ∈ inds`.
+"""
+=#
+function crossdicts(dicts, inds, n::Int)
+    parent = collect(1:n)
+    sz     = ones(Int, n)
+    for i in inds
+        for v in values(dicts[i])
+            isempty(v) && continue
+            r0 = first(v)
+            @inbounds for r in v
+                dsu_union!(parent, sz, r0, r)
+            end
+        end
+    end
+    return _components(parent, sz, n)
+end
+
+
 
 tabcols(data, symbs) = Tuple(Tables.getcolumn(Tables.columns(data), x) for x in symbs)
 
 struct EffectSubjectBlock
     sblock::Matrix{Vector{Tuple{Vector{Int}, Int}}}
-    snames::Vector
+    snames::Vector{Any}
 end
 function getsubj(covstr, effn, block, sbjn)
     covstr.esb.sblock[block, effn][sbjn][1]
@@ -170,6 +347,129 @@ function raneflenv(covstr, block)
     end
     return v
 end
+
+
+"""
+    make_effect_subject_block(dicts, blocks, alleffl, rown)
+ 
+Строит `EffectSubjectBlock`: для каждой пары (блок ковариационной матрицы,
+эффект) — список субъектов этого эффекта, попавших в блок, в виде
+`(позиции внутри блока, сквозной номер субъекта)`.
+ 
+Идея оптимизации: вместо того чтобы для каждой пары (блок, группа) искать
+пересечение линейным поиском (`findall(x -> x in v, blocks[i])`, O(|блок|·|v|)),
+один раз строятся обратные индексы `строка -> (блок, позиция в блоке)`, после
+чего позиции любой группы получаются за O(|v|) прямым обращением.
+ 
+Сложность: O(alleffl · rown + Σ G·log G) по времени (G — число субъектов
+эффекта; логарифм даёт только детерминированная сортировка групп),
+O(rown) дополнительной памяти. Было — O(alleffl · rown²).
+ 
+Дополнительно исправлено:
+  * порядок субъектов детерминирован (по минимальному номеру наблюдения),
+    а не задаётся хеш-порядком `Dict` — раньше имена в `esb.snames` и нумерация
+    в `raneff` могли меняться от запуска к запуску / версии Julia;
+  * позиции внутри субъекта гарантированно возрастают (как давал `findall`) —
+    от этого зависит порядок лагов в AR/TOEP и порядок точек в SP*-структурах;
+  * `snames` типизирован явно (`Vector{Any}`) вместо `nblock = []`.
+"""
+function make_effect_subject_block(dicts, blocks::Vector{Vector{Int}},
+                                   alleffl::Int, rown::Int)
+    nb = length(blocks)
+ 
+    # Обратные индексы: строка -> блок и строка -> позиция в блоке.
+    # Нули означают - строка не попала ни в один блок, в норме не бывает
+    blockof = zeros(Int, rown)
+    posof   = zeros(Int, rown)
+    @inbounds for b in 1:nb
+        bl = blocks[b]
+        for p in eachindex(bl)
+            r          = bl[p]
+            blockof[r] = b
+            posof[r]   = p
+        end
+    end
+ 
+    #  Преаллокация выходной матрицы: все ячейки должны быть заполнены 
+    sblock = Matrix{Vector{Tuple{Vector{Int}, Int}}}(undef, nb, alleffl)
+    @inbounds for s in 1:alleffl, b in 1:nb
+        sblock[b, s] = Vector{Tuple{Vector{Int}, Int}}(undef, 0)
+    end
+ 
+    snames = Vector{Any}(undef, 0)            # имена (ключи) субъектов
+    nli    = 0                                # сквозной номер субъекта
+ 
+    # По одному линейному проходу на эффект.
+    for s in 1:alleffl
+        d  = dicts[s]
+        ks = collect(keys(d))
+        sizehint!(snames, length(snames) + length(ks))
+ 
+        # детерминированный порядок групп
+        mins = Vector{Int}(undef, length(ks))
+        @inbounds for i in eachindex(ks)
+            mins[i] = minimum(d[ks[i]])
+        end
+ 
+        for j in sortperm(mins)
+            k = ks[j]
+            v = d[k]
+            isempty(v) && continue
+ 
+            # Быстрый путь: вся группа лежит в одном блоке. Это верно для всех
+            # эффектов, участвовавших в построении блокировки, т.е. практически всегда.
+            b1     = blockof[first(v)]
+            single = b1 != 0
+            if single
+                @inbounds for r in v
+                    if blockof[r] != b1
+                        single = false
+                        break
+                    end
+                end
+            end
+ 
+            if single
+                fa = Vector{Int}(undef, length(v))
+                @inbounds for (i, r) in enumerate(v)
+                    fa[i] = posof[r]
+                end
+                issorted(fa) || sort!(fa)     # обычно уже отсортировано
+                nli += 1
+                push!(sblock[b1, s], (fa, nli))
+                push!(snames, k)
+            else
+                # Медленный путь: группа пересекает несколько блоков. Возникает
+                # для эффектов, не участвовавших в блокировке,  прежде всего
+                # для эффекта-заглушки RZero (`1|1`) в моделях без случайных
+                # эффектов, где это ровно одна группа на весь набор данных.
+                # Сортируем строки по (блок, позиция) и режем на серии.
+                ord = sortperm(v; by = r -> (blockof[r], posof[r]))
+                i, m = 1, length(ord)
+                while i <= m
+                    b  = blockof[v[ord[i]]]
+                    j2 = i
+                    @inbounds while j2 < m && blockof[v[ord[j2 + 1]]] == b
+                        j2 += 1
+                    end
+                    if b != 0                 # b == 0 — строки вне блоков
+                        fa = Vector{Int}(undef, j2 - i + 1)
+                        @inbounds for t in i:j2
+                            fa[t - i + 1] = posof[v[ord[t]]]
+                        end
+                        nli += 1
+                        push!(sblock[b, s], (fa, nli))
+                        push!(snames, k)
+                    end
+                    i = j2 + 1
+                end
+            end
+        end
+    end
+ 
+    return EffectSubjectBlock(sblock, snames)
+end
+
 """
     Covarince structure.
 """
@@ -297,6 +597,10 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
         # REPEATED EFFECTS
         for i = 1:length(repeated)
 
+            if isa(repeated[i].covtype.s, ACOV_) && i == 1
+                @warn "ACOV at first position is meaningless: base covariance is not yet computed."
+            end
+
             if length(repeated[i].coding) == 0
                 fill_coding_dict!(repeated[i].model, repeated[i].coding, data)
             end
@@ -345,61 +649,59 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
         # Theta length
         tl  = sum(t)
         ########################################################################
-            if random[1].covtype.z  # if first random effect not null
-                subjblockdict = dicts[1]
-                if length(dicts) > 2 # if more than 2 random effects
-                    for i = 2:length(dicts)-1
-                        subjblockdict = sabjcrossdicts(subjblockdict, dicts[i])
-                    end
-                end
-                if isa(repeated[1].covtype.s, ACOV_)
-                    @warn "Using ACOV covariance additional effect at first position is meaningless."
-                end
+        cross = Int[]
+        if random[1].covtype.z
+            append!(cross, 1:rn)                       # все случайные эффекты
+        end
+        repn = Int[]
+        for i = 1:rpn
+            if isa(repeated[i].covtype.s, SI_) || isa(repeated[i].covtype.s, DIAG_)
+                push!(repn, i)                         # диагональные не связывают
             else
-                subjblockdict = nothing
-            end
-            repn = Int[]
-            for i = 1:length(repeated)
-                if isnothing(subjblockdict)
-                    subjblockdict = dicts[rn+i]
-                elseif !(isa(repeated[i].covtype.s, SI_) || isa(repeated[i].covtype.s, DIAG_)) # if repeated effect have non-diagonal structure
-                    subjblockdict = sabjcrossdicts(subjblockdict, dicts[rn+i]) # make dict for non SI DIAG repeated effects 
-                else
-                    push!(repn, i) # just collect ind of SI DIAG repeated effects 
-                end
-            end
-            for i in repn # make SI DIAG repeated effects dict - subjblockdict
-                dicts[rn+i] = subjblockdict
-            end
-
-            blocks  = collect(values(subjblockdict))
-
-        sblock = Matrix{Vector{Tuple{Vector{Int}, Int}}}(undef, length(blocks), alleffl)
-        nblock = []
-        #######################################################################
-        #######################################################################
-        nli = 1
-        @inbounds for i = 1:length(blocks) # i - block number
-            @inbounds for s = 1:alleffl # s - effect number
-                tempv = Vector{Tuple{Vector{Int}, Int}}(undef, 0)
-                for (k, v) in dicts[s]
-                    fa = findall(x-> x in v, blocks[i]) # Try to optimize it
-                    if length(fa) > 0 
-                        push!(tempv, (fa, nli))
-                        push!(nblock, k)
-                        nli += 1
-                    end
-                end
-                sblock[i, s] = tempv
+                push!(cross, rn + i)
             end
         end
-        #
-        maxn = 0
-        for i in blocks
-            lvcb = length(i)
-            if lvcb > maxn maxn = lvcb end
+        if isempty(cross)
+        # связывающих эффектов нет: блокируем по первому repeated-эффекту
+            subjblockdict = _canonical_blocks(dicts[rn + 1])
+        else
+            subjblockdict = crossdicts(dicts, cross, rown)   # один проход DSU
         end
-        esb = EffectSubjectBlock(sblock, nblock)
+
+        # диагональные repeated-эффекты наследуют блоки
+        for i in repn
+            dicts[rn + i] = subjblockdict
+        end
+
+        #=
+        if random[1].covtype.z  # if first random effect not null
+            subjblockdict = dicts[1]
+            if length(dicts) > 2 # if more than 2 random effects
+                for i = 2:length(dicts)-1
+                    subjblockdict = subjcrossdicts(subjblockdict, dicts[i])
+                end
+            end
+        else
+            subjblockdict = nothing
+        end
+        repn = Int[]
+        for i = 1:length(repeated)
+            if isnothing(subjblockdict)
+                subjblockdict = dicts[rn+i]
+            elseif !(isa(repeated[i].covtype.s, SI_) || isa(repeated[i].covtype.s, DIAG_)) # if repeated effect have non-diagonal structure
+                subjblockdict = subjcrossdicts(subjblockdict, dicts[rn+i]) # make dict for non SI DIAG repeated effects 
+            else
+                push!(repn, i) # just collect ind of SI DIAG repeated effects 
+            end
+        end
+        for i in repn # make SI DIAG repeated effects dict - subjblockdict
+            dicts[rn+i] = subjblockdict
+        end
+        =#
+        blocks = [subjblockdict[b] for b in 1:length(subjblockdict)]
+        maxn   = maximum(length, blocks)
+
+        esb    = make_effect_subject_block(dicts, blocks, alleffl, rown)
         #######################################################################
         # Postprocessing
         # Modify repeated effect covariance type for some types
