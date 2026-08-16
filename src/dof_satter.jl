@@ -29,10 +29,10 @@ function getinvhes(lmm::LMM{T}) where T
     vals  = falses(thetalength(lmm))
     for i = 1:thetalength(lmm)
         if lmm.covstr.ct[i] == :rho
-            if 1.0 - abs(lmm.result.theta[i])  > 1E-6
+            if 1.0 - abs(theta[i])  > 1E-6
                 vals[i] = true
             else
-                if lmm.result.theta[i] > 0 lmm.result.theta[i] = 1.0 else lmm.result.theta[i] = -1.0 end
+                if theta[i] > 0 theta[i] = 1.0 else theta[i] = -1.0 end
                 H[:,i] .= zero(T)
                 H[i,:] .= zero(T)
             end
