@@ -15,84 +15,44 @@ function gradc(lmm::LMM{T}, theta) where T
     lmm.result.grc = grad
     grad
 end
-#=
-function getinvhes(lmm::LMM{T}) where T
-    local A
-    if isnothing(lmm.result.h)
-        lmm.result.h = reml_hessian(lmm)
-        H = copy(lmm.result.h)
-    else
-        H = copy(lmm.result.h)
-    end
-    theta = copy(lmm.result.theta)
-    qrd   = qr(H)
-    vals  = falses(thetalength(lmm))
-    for i = 1:thetalength(lmm)
-        if lmm.covstr.ct[i] == :rho
-            if 1.0 - abs(theta[i])  > 1E-6
-                vals[i] = true
-            else
-                if theta[i] > 0 theta[i] = 1.0 else theta[i] = -1.0 end
-                H[:,i] .= zero(T)
-                H[i,:] .= zero(T)
-            end
-        else
-            if abs(qrd.R[i, i]) > 1E-8
-                vals[i] = true
-            else
-                theta[i] = zero(T)
-                H[:,i]  .= zero(T)
-                H[i,:]  .= zero(T)
-            end
-        end
-    end
-    try
-        vh  = view(H, vals, vals)
-        vh .= inv(Matrix(vh))
-        A = H * 2
-    catch
-        A = pinv(H) * 2
-    end
-    A, theta
-end
-=#
-function getinvhes(lmm::LMM{T}) where T
-    if isnothing(lmm.result.h)
-        lmm.result.h = reml_hessian(lmm)
-    end
-    H     = copy(lmm.result.h)
-    theta = copy(lmm.result.theta)
-    n     = thetalength(lmm)
-    Hs    = Symmetric((H .+ H') ./ 2)
-    ev    = eigvals(Hs)
-    scale = maximum(abs, ev)
-    tol   = scale * sqrt(eps(T)) * n
 
-    vals = falses(n)
+function getinvhes(lmm::LMM{T}) where T
+    if isnothing(lmm.result.h)
+        lmm.result.h = reml_hessian(lmm)
+    end
+    H = lmm.result.h
+    n = thetalength(lmm)
+
     for i = 1:n
         if lmm.covstr.ct[i] == :rho && 1.0 - abs(theta[i]) <= 1E-6
-            theta[i] = theta[i] > 0 ? one(T) : -one(T)   
-        elseif abs(H[i, i]) > tol                       
-            vals[i] = true
-        else
-            theta[i] = zero(T)
-        end
-    end
-    for i = 1:n
-        if !vals[i]
-            H[:, i] .= zero(T)
-            H[i, :] .= zero(T)
+            lmmlog!(lmm, 0, LMMLogMsg(:WARN,
+            "Theta parameter $(i): 1 − |ρ̂| ≤ 1e-6 , results can be unstable."))
         end
     end
 
-    A = zeros(T, n, n)
-    if any(vals)
-        sub = Symmetric(H[vals, vals])
-        ch  = cholesky(sub; check = false)
-        Ai  = issuccess(ch) ? inv(ch) : pinv(Matrix(sub))
-        A[vals, vals] .= Ai .* 2
+    if !all(isfinite, H)
+        lmmlog!(lmm, 0, LMMLogMsg(:ERROR,
+            "Hessian contains non-finite values; Satterthwaite DF not available."))
+        return fill(T(NaN), n, n)
     end
-    return A, theta
+
+    F     = eigen(Symmetric((H .+ H') ./ 2))
+    scale = maximum(abs, F.values)
+    tol   = scale * sqrt(eps(T)) * n
+    keep = findall(x -> x > tol, F.values)
+
+    if length(keep) < n
+        lmmlog!(lmm, 0, LMMLogMsg(:WARN,
+            "Hessian rank deficient or not positive definite: $(length(keep)) of $n directions retained; Satterthwaite DF computed on a reduced set."))
+    end
+    if isempty(keep)
+        lmmlog!(lmm, 0, LMMLogMsg(:ERROR,
+            "Hessian has no usable directions; Satterthwaite DF not available."))
+        return fill(T(NaN), n, n)
+    end
+
+    Q = view(F.vectors, :, keep)
+    return 2 .* (Q * Diagonal(one(T) ./ view(F.values, keep)) * Q')
 end
 """
     dof_satter(lmm::LMM{T}, l) where T
@@ -113,8 +73,8 @@ function dof_satter(lmm::LMM{T}, l::AbstractVector) where T
 end
 
 function dof_satter_(lmm::LMM{T}, l::AbstractVector) where T
-    A, theta = getinvhes(lmm)
-    grad  = gradc(lmm, theta)
+    A     = getinvhes(lmm)
+    grad  = gradc(lmm, lmm.result.theta)
     g  = Vector{T}(undef, length(grad))
     for i = 1:length(grad)
         g[i] = dot(l, grad[i], l)
@@ -122,7 +82,16 @@ function dof_satter_(lmm::LMM{T}, l::AbstractVector) where T
     #d = g' * A * g
     d = dot(g, A, g)
     df = 2*(dot(l, lmm.result.c, l))^2 / d
-    if df < 1.0 return 1.0 elseif df > dof_residual(lmm) return dof_residual(lmm) else return df end
+    if df <= 0
+        lmmlog!(lmm, 0, "DF <= 0, indefinite matrix A")
+        return T(NaN)
+    elseif df < 1.0
+        return one(T) 
+    elseif df > dof_residual(lmm) 
+        return dof_residual(lmm) 
+    else 
+        return df 
+    end
 end
 """
     dof_satter(lmm::LMM{T}, i::Int) where T
@@ -135,7 +104,7 @@ function dof_satter(lmm::LMM{T}, i::Int) where T
         ind = i
     else
         ind = findfirst(x-> x == i, lmm.pivotvec)
-        if isnothing(ind) return NaN end
+        if isnothing(ind) return T(NaN) end
     end
     l = zeros(T, lmm.rankx)
     l[ind] = one(T)
@@ -150,10 +119,10 @@ Return Satterthwaite approximation for the denominator degrees of freedom for al
 function dof_satter(lmm::LMM{T}) where T
     isfitted(lmm) || error("Model not fitted")
     lb       = lmm.rankx
-    A, theta = getinvhes(lmm)
-    grad     = gradc(lmm, theta)
+    A        = getinvhes(lmm)
+    grad     = gradc(lmm, lmm.result.theta)
     dof      = Vector{T}(undef, coefn(lmm))
-    fill!(dof, NaN)
+    fill!(dof, T(NaN))
     l        = Vector{T}(undef, lb)
     for gi = 1:lb
         fill!(l, zero(T))
@@ -164,9 +133,22 @@ function dof_satter(lmm::LMM{T}) where T
         end
         #d = g' * A * g
         d = dot(g, A, g)
+        if !(d > 0)
+            lmmlog!(lmm, 0, LMMLogMsg(:WARN, "Zero or non-finite variance of contrast estimate."))
+            dof[dofn] = T(NaN); continue
+        end
         df = 2*(dot(l, lmm.result.c, l))^2 / d
         dofn = lmm.pivotvec[gi]
-        if df < 1.0 dof[dofn] = 1.0 elseif df > dof_residual(lmm) dof[dofn] = dof_residual(lmm) else dof[dofn] = df end
+        if df <= 0
+            lmmlog!(lmm, 0, "DF <= 0, indefinite matrix A")
+            dof[dofn] = T(NaN)
+        elseif df < 1.0 
+            dof[dofn] = 1.0 
+        elseif df > dof_residual(lmm) 
+            dof[dofn] = dof_residual(lmm) 
+        else 
+            dof[dofn] = df 
+        end
     end
     dof
 end
@@ -195,36 +177,10 @@ function dof_satter(lmm::LMM{T}, l::AbstractMatrix) where T
     if coefn(lmm) != size(l, 2) error("size(l, 2) not equal rank X!") end
     dof_satter_(lmm, ifelse(lmm.rankx == coefn(lmm), l, view(l, :, lmm.pivotvec)))
 end
-#=
-function dof_satter_(lmm::LMM{T}, l::AbstractMatrix) where T
-    A, theta = getinvhes(lmm)
-    grad  = gradc(lmm, theta)
-    g     = Vector{T}(undef, length(grad))
 
-    lcl   = l*lmm.result.c*l'
-    lclr  = rank(lcl)
-    #if lclr != size(l, 1) error() end
-    lcle  = eigen(Symmetric(lcl))
-    pl    = lcle.vectors'*l
-    vm    = Vector{T}(undef, lclr)
-    em    = 0
-    for i = 1:lclr
-        plm = pl[i,:]
-        for i2 = 1:length(grad)
-            g[i2] = dot(plm, grad[i2], plm)
-        end
-        #d = g' * A * g
-        d = dot(g, A, g)
-        vm[i] = 2*lcle.values[i]^2 / d
-        if vm[i] > 2.0 em += vm[i] / (vm[i] - 2.0) end
-    end
-    df = 2em/(em - lclr)
-    if df < 1.0 return 1.0 elseif df > dof_residual(lmm) return dof_residual(lmm) else return df end
-end
-=#
 function dof_satter_(lmm::LMM{T}, l::AbstractMatrix) where T
-    A, theta = getinvhes(lmm)
-    grad  = gradc(lmm, theta)
+    A     = getinvhes(lmm)
+    grad  = gradc(lmm, lmm.result.theta)
     g     = Vector{T}(undef, length(grad))
 
     lcl   = l * lmm.result.c * l'
@@ -253,8 +209,11 @@ function dof_satter_(lmm::LMM{T}, l::AbstractMatrix) where T
     end
 
     df = 2em / (em - lclr)
-    if df < 1.0
-        return one(T)
+    if df <= 0
+        lmmlog!(lmm, 0, "DF <= 0, indefinite matrix A")
+        return T(NaN)
+    elseif df < 1.0
+        return one(T) 
     elseif df > dof_residual(lmm)
         return T(dof_residual(lmm))
     else
