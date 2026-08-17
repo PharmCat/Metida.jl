@@ -111,7 +111,17 @@ function fit!(lmm::LMM{T}; kwargs...) where T
             lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Using previous initial parameters."))
             init = lmm.result.theta
         end
+        if isnothing(lmm.result.grc) 
+            checkgrc = false
+        else
+            checkgrc = true
+        end
+    else
+        # don't check grc if not fitted and drop it
+        checkgrc = false
+        if !isnothing(lmm.result.grc) lmm.result.grc = nothing end
     end
+
     lmm.result.fit = false
     # Use default solver (Optim.jl with Newton)
     solver == :default || return fit_nlopt!(lmm; kwargs...)
@@ -205,7 +215,12 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     end
         # Theta (θ) vector
-    copyto!(lmm.result.theta, Optim.minimizer(lmm.result.optim))
+    newtheta = Optim.minimizer(lmm.result.optim)
+    if checkgrc
+        # if results changed - drop grc
+        if !(lmm.result.theta == newtheta) lmm.result.grc = nothing end
+    end
+    copyto!(lmm.result.theta, newtheta)
     varlinkvecapply!(lmm.result.theta, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf)
     #lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf)
     lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Resulting θ: "*string(lmm.result.theta)*"; $(Optim.iterations(lmm.result.optim)) iterations."))

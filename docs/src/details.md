@@ -168,7 +168,7 @@ of size ``q_i = |B_i|``. The largest block size is `lmm.maxvcbl`.
 
 ---
 
-## 5. Parameterization of ``\theta`` and link functions
+## 5. [Parameterization of ``\theta`` and link functions](@id varlink_header)
 
 Every element of ``\theta`` carries a type (`lmm.covstr.ct`):
 
@@ -375,7 +375,7 @@ In all three, ``R_{mm} = \sigma^{2}``.
 ---
 
 
-## 8. Observation weights
+## 8. [Observation weights](@id weights_header)
 
 When weights are supplied they are applied to the **R side**, before ``ZGZ'`` is
 added.
