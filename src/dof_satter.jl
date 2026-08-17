@@ -24,7 +24,7 @@ function getinvhes(lmm::LMM{T}) where T
     n = thetalength(lmm)
 
     for i = 1:n
-        if lmm.covstr.ct[i] == :rho && 1.0 - abs(theta[i]) <= 1E-6
+        if lmm.covstr.ct[i] == :rho && 1.0 - abs(lmm.result.theta[i]) <= 1E-6
             lmmlog!(lmm, 0, LMMLogMsg(:WARN,
             "Theta parameter $(i): 1 − |ρ̂| ≤ 1e-6 , results can be unstable."))
         end
