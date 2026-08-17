@@ -17,11 +17,15 @@ end
     if covstr.random[1].covtype.z
         for r = 1:covstr.rn
             zblock    = view(covstr.z, block, covstr.zrndur[r])
-            @inbounds for i = 1:subjn(covstr, r, bi)
-                sb = getsubj(covstr, r, bi, i)
-                mulαβαtinc!(view(mx, sb, sb), view(zblock, sb, :), G[r])
-            end
+            _zgz_base_inc!(mx, zblock, covstr, G[r], r, bi)
         end
+    end
+    return mx
+end
+@noinline function _zgz_base_inc!(mx, zblock, covstr, Gr, r, bi)
+    @inbounds for i = 1:subjn(covstr, r, bi)
+        sb = getsubj(covstr, r, bi, i)
+        mulαβαtinc!(view(mx, sb, sb), view(zblock, sb, :), Gr)
     end
     return mx
 end

@@ -18,8 +18,9 @@ function fit(::Type{T}, f::FormulaTerm, data;
     contrasts=Dict{Symbol,Any}(),  
     random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, 
     repeated::Union{Nothing, VarEffect} = nothing,
+    wts::Union{Nothing, AbstractVector, AbstractMatrix, AbstractString, Symbol} = nothing,
     kwargs...) where T <: LMM
-    lmm = LMM(f, data, contrasts = contrasts, random = random, repeated = repeated)
+    lmm = LMM(f, data, contrasts = contrasts, random = random, repeated = repeated, wts = wts)
     fit!(lmm; kwargs...)
 end
 """
@@ -38,6 +39,18 @@ function fit(::Type{T}, f::LMMformula, data;
     fit!(lmm; kwargs...)
 end
 
+
+
+struct REMLOptObjective{L, D, C}
+    lmm::L
+    dv::D
+    ct::C          # lmm.covstr.ct — вектор :var/:rho/:theta
+    vlf::Symbol    # varlinkf
+    rlf::Symbol    # rholinkf
+end
+
+(f::REMLOptObjective)(x) = reml_sweep_β(f.lmm, f.dv,
+        varlinkvecapply(x, f.ct; varlinkf = f.vlf, rholinkf = f.rlf))[1]
 """
     fit!(lmm::LMM{T}; kwargs...
     ) where T
@@ -98,7 +111,17 @@ function fit!(lmm::LMM{T}; kwargs...) where T
             lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Using previous initial parameters."))
             init = lmm.result.theta
         end
+        if isnothing(lmm.result.grc) 
+            checkgrc = false
+        else
+            checkgrc = true
+        end
+    else
+        # don't check grc if not fitted and drop it
+        checkgrc = false
+        if !isnothing(lmm.result.grc) lmm.result.grc = nothing end
     end
+
     lmm.result.fit = false
     # Use default solver (Optim.jl with Newton)
     solver == :default || return fit_nlopt!(lmm; kwargs...)
@@ -150,7 +173,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     # Initial step with modified Newton method
     chunk  = ForwardDiff.Chunk{min(8, length(θ))}()
     if isa(aifirst, Bool)
-        if aifirst aifirst == :ai else aifirst == :default end
+        if aifirst aifirst = :ai else aifirst = :default end
     end
     ############################################################################
     if aifirst == :ai || aifirst == :score
@@ -160,24 +183,29 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     varlinkrvecapply!(θ, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf)
 
     # Twice differentiable object / reml_sweep_β_nlopt
-    vloptf(x)  = reml_sweep_β(lmm, lmm.dv, varlinkvecapply!(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf); maxthreads = maxthreads)[1]
-    vloptfd(x) = reml_sweep_β_nlopt(lmm, lmm.dv, varlinkvecapply!(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf); maxthreads = maxthreads)[1]
+    #vloptf(x)  = reml_sweep_β(lmm, lmm.dv, varlinkvecapply!(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf); maxthreads = maxthreads)[1]
+    #vloptfd(x) = reml_sweep_β(lmm, lmm.dv, varlinkvecapply!(x, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf); maxthreads = maxthreads)[1]
+    #gcfg   = ForwardDiff.GradientConfig(vloptf, θ, chunk)
+    #hcfg   = ForwardDiff.HessianConfig(vloptf, θ, chunk)
 
-    gcfg   = ForwardDiff.GradientConfig(vloptf, θ, chunk)
-    hcfg   = ForwardDiff.HessianConfig(vloptf, θ, chunk)
+
+
+    optf = REMLOptObjective(lmm, lmm.dv, lmm.covstr.ct, varlinkf, rholinkf)
+    gcfg   = ForwardDiff.GradientConfig(optf, θ, chunk)
+    hcfg   = ForwardDiff.HessianConfig(optf, θ, chunk)
 
     gfunc!(g, x) = begin
-         ForwardDiff.gradient!(g, vloptf, x, gcfg)
+         ForwardDiff.gradient!(g, optf, x, gcfg)
     end
     fgfunc!(g, x) = begin
         gres = DiffResults.DiffResult(1.0, g)
-        ForwardDiff.gradient!(gres, vloptf, x, gcfg)
+        ForwardDiff.gradient!(gres, optf, x, gcfg)
         return DiffResults.value(gres)
     end
     hfunc!(h, x) = begin
-        ForwardDiff.hessian!(h, vloptf, x, hcfg)
+        ForwardDiff.hessian!(h, optf, x, hcfg)
     end
-    td = TwiceDifferentiable(vloptfd, gfunc!, fgfunc!, hfunc!, θ)
+    td = TwiceDifferentiable(optf, gfunc!, fgfunc!, hfunc!, θ)
     # Optimization object
     try
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
@@ -187,7 +215,12 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         lmm.result.optim  = Optim.optimize(td, θ, optmethod, optoptions)
     end
         # Theta (θ) vector
-    copyto!(lmm.result.theta, Optim.minimizer(lmm.result.optim))
+    newtheta = Optim.minimizer(lmm.result.optim)
+    if checkgrc
+        # if results changed - drop grc
+        if !(lmm.result.theta == newtheta) lmm.result.grc = nothing end
+    end
+    copyto!(lmm.result.theta, newtheta)
     varlinkvecapply!(lmm.result.theta, lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf)
     #lmm.result.theta  = varlinkvecapply!(deepcopy(Optim.minimizer(lmm.result.optim)), lmm.covstr.ct; varlinkf = varlinkf, rholinkf = rholinkf)
     lmmlog!(io, lmm, verbose, LMMLogMsg(:INFO, "Resulting θ: "*string(lmm.result.theta)*"; $(Optim.iterations(lmm.result.optim)) iterations."))
@@ -235,7 +268,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     # Check Hessian
     if hes && lmm.result.fit
             # Hessian
-        lmm.result.h      = hessian(lmm, lmm.result.theta)
+        lmm.result.h      = reml_hessian(lmm, lmm.result.theta)
             # H positive definite check
         if !isposdef(Symmetric(lmm.result.h))
             lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN, "Hessian is not positive definite."))
@@ -285,7 +318,7 @@ function optstep!(lmm, data, θ; method::Symbol = :ai, maxopt::Int=10)
         θr = θ - θt
         remlc, beta, θs₂, θ₃, rt = reml_sweep_β(lmm, data, θr)
         maxopti -= 1
-        if rt && remlc < reml return copyto!(θ, θr), remlc, maxopt-maxopti, true else θt ./= 2.0 end
+        if rt && remlc < reml return copyto!(θ, θr), remlc, maxopt - maxopti, true else θt ./= 2.0 end
     end
     return θ, remlc, maxopt-maxopti, false
 end

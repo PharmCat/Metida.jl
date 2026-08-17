@@ -58,7 +58,7 @@ L-contrast matrix for `i` fixed effect.
 function lcontrast(lmm::LMM, i::Int)
     n = length(lmm.f.rhs.terms)
     p = size(lmm.data.xv, 2)
-    if i > n || n < 1 error("Factor number out of range 1-$(n)") end
+    if i > n || i < 1 error("Factor number ($(i)) out of range 1-$(n)") end
     inds = findall(x -> x==i, assign(lmm))
     if typeof(lmm.f.rhs.terms[i]) <: CategoricalTerm
         mxc   = zeros(size(lmm.f.rhs.terms[i].contrasts.matrix, 1), p)
@@ -468,21 +468,46 @@ function nblocks(lmm::LMM)
     return length(lmm.covstr.vcovblock)
 end
 
+
+struct REMLObjective{L, D}
+    lmm::L
+    dv::D
+end
+(f::REMLObjective)(x) = reml_sweep_β(f.lmm, f.dv, x)[1]
 """
-    hessian(lmm, theta)
+    reml_hessian(lmm, theta)
 
 Calculate Hessian matrix of REML for theta.
 """
-function hessian(lmm, theta)
+function reml_hessian(lmm, theta; chunk = ForwardDiff.Chunk{min(8, length(theta))}())
+    f    = REMLObjective(lmm, lmm.dv)
+    gcfg = ForwardDiff.GradientConfig(f, theta, chunk)
+    g(x) = ForwardDiff.gradient(f, x, gcfg, Val{false}())
+
+    n = length(theta)
+    H = Matrix{Float64}(undef, n, n)
+    x = copy(theta)
+    for i in 1:n
+        h     = max(abs(theta[i]), one(eltype(theta))) * cbrt(eps())
+        x[i]  = theta[i] + h;  gp = g(x)
+        x[i]  = theta[i] - h;  gm = g(x)
+        x[i]  = theta[i]
+        @views H[:, i] .= (gp .- gm) ./ (2h)
+    end
+    return Symmetric((H .+ H') ./ 2)
+end
+#=
+function reml_hessian(lmm, theta)
     #if !lmm.result.fit error("Model not fitted!") end
-    vloptf(x) = reml_sweep_β(lmm, lmm.dv, x, lmm.result.beta)[1]
+    vloptf(x) = reml_sweep_β(lmm, lmm.dv, x)[1]
     chunk  = ForwardDiff.Chunk{min(8, length(theta))}()
     hcfg   = ForwardDiff.HessianConfig(vloptf, theta, chunk)
     return ForwardDiff.hessian(vloptf, theta, hcfg)
 end
-function hessian(lmm)
+=#
+function reml_hessian(lmm)
     if !lmm.result.fit error("Model not fitted!") end
-    return hessian(lmm, lmm.result.theta)
+    return reml_hessian(lmm, lmm.result.theta)
 end
 ###############################################################################
 ###############################################################################

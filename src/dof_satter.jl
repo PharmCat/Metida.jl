@@ -15,11 +15,11 @@ function gradc(lmm::LMM{T}, theta) where T
     lmm.result.grc = grad
     grad
 end
-
+#=
 function getinvhes(lmm::LMM{T}) where T
     local A
     if isnothing(lmm.result.h)
-        lmm.result.h = hessian(lmm)
+        lmm.result.h = reml_hessian(lmm)
         H = copy(lmm.result.h)
     else
         H = copy(lmm.result.h)
@@ -29,10 +29,10 @@ function getinvhes(lmm::LMM{T}) where T
     vals  = falses(thetalength(lmm))
     for i = 1:thetalength(lmm)
         if lmm.covstr.ct[i] == :rho
-            if 1.0 - abs(lmm.result.theta[i])  > 1E-6
+            if 1.0 - abs(theta[i])  > 1E-6
                 vals[i] = true
             else
-                if lmm.result.theta[i] > 0 lmm.result.theta[i] = 1.0 else lmm.result.theta[i] = -1.0 end
+                if theta[i] > 0 theta[i] = 1.0 else theta[i] = -1.0 end
                 H[:,i] .= zero(T)
                 H[i,:] .= zero(T)
             end
@@ -54,6 +54,45 @@ function getinvhes(lmm::LMM{T}) where T
         A = pinv(H) * 2
     end
     A, theta
+end
+=#
+function getinvhes(lmm::LMM{T}) where T
+    if isnothing(lmm.result.h)
+        lmm.result.h = reml_hessian(lmm)
+    end
+    H     = copy(lmm.result.h)
+    theta = copy(lmm.result.theta)
+    n     = thetalength(lmm)
+    Hs    = Symmetric((H .+ H') ./ 2)
+    ev    = eigvals(Hs)
+    scale = maximum(abs, ev)
+    tol   = scale * sqrt(eps(T)) * n
+
+    vals = falses(n)
+    for i = 1:n
+        if lmm.covstr.ct[i] == :rho && 1.0 - abs(theta[i]) <= 1E-6
+            theta[i] = theta[i] > 0 ? one(T) : -one(T)   
+        elseif abs(H[i, i]) > tol                       
+            vals[i] = true
+        else
+            theta[i] = zero(T)
+        end
+    end
+    for i = 1:n
+        if !vals[i]
+            H[:, i] .= zero(T)
+            H[i, :] .= zero(T)
+        end
+    end
+
+    A = zeros(T, n, n)
+    if any(vals)
+        sub = Symmetric(H[vals, vals])
+        ch  = cholesky(sub; check = false)
+        Ai  = issuccess(ch) ? inv(ch) : pinv(Matrix(sub))
+        A[vals, vals] .= Ai .* 2
+    end
+    return A, theta
 end
 """
     dof_satter(lmm::LMM{T}, l) where T
@@ -156,7 +195,7 @@ function dof_satter(lmm::LMM{T}, l::AbstractMatrix) where T
     if coefn(lmm) != size(l, 2) error("size(l, 2) not equal rank X!") end
     dof_satter_(lmm, ifelse(lmm.rankx == coefn(lmm), l, view(l, :, lmm.pivotvec)))
 end
-
+#=
 function dof_satter_(lmm::LMM{T}, l::AbstractMatrix) where T
     A, theta = getinvhes(lmm)
     grad  = gradc(lmm, theta)
@@ -165,7 +204,7 @@ function dof_satter_(lmm::LMM{T}, l::AbstractMatrix) where T
     lcl   = l*lmm.result.c*l'
     lclr  = rank(lcl)
     #if lclr != size(l, 1) error() end
-    lcle  = eigen(lcl)
+    lcle  = eigen(Symmetric(lcl))
     pl    = lcle.vectors'*l
     vm    = Vector{T}(undef, lclr)
     em    = 0
@@ -181,4 +220,44 @@ function dof_satter_(lmm::LMM{T}, l::AbstractMatrix) where T
     end
     df = 2em/(em - lclr)
     if df < 1.0 return 1.0 elseif df > dof_residual(lmm) return dof_residual(lmm) else return df end
+end
+=#
+function dof_satter_(lmm::LMM{T}, l::AbstractMatrix) where T
+    A, theta = getinvhes(lmm)
+    grad  = gradc(lmm, theta)
+    g     = Vector{T}(undef, length(grad))
+
+    lcl   = l * lmm.result.c * l'
+    lclr  = rank(lcl)
+    lclr == 0 && return T(NaN)              # контраст вырожден полностью
+
+    lcls  = Symmetric((lcl .+ lcl') ./ 2)
+    lcle  = eigen(lcls)                     
+    pl    = lcle.vectors' * l               
+
+    nl    = size(lcls, 1)
+    rng   = (nl - lclr + 1):nl
+
+    vm    = Vector{T}(undef, lclr)
+    em    = zero(T)
+    for (i, k) in enumerate(rng)
+        plm = view(pl, k, :)
+        for i2 = 1:length(grad)
+            g[i2] = dot(plm, grad[i2], plm)
+        end
+        d     = dot(g, A, g)
+        vm[i] = 2 * lcle.values[k]^2 / d
+        if vm[i] > 2.0
+            em += vm[i] / (vm[i] - 2.0)
+        end
+    end
+
+    df = 2em / (em - lclr)
+    if df < 1.0
+        return one(T)
+    elseif df > dof_residual(lmm)
+        return T(dof_residual(lmm))
+    else
+        return df
+    end
 end

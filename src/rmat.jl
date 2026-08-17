@@ -8,10 +8,15 @@
     for j = 1:covstr.rpn
         en        = covstr.rn + j
         zblock    = view(covstr.rz[j], block, :)
-        @simd for i = 1:subjn(covstr, en, bi)
-            sb = getsubj(covstr, en, bi, i)
-            rmat!(view(mx, sb, sb), view(θ, rθ[j]), view(zblock, sb, :), covstr.repeated[j].covtype.s, bi)
-        end
+        _rmat_subj!(mx, view(θ, rθ[j]), zblock, covstr.repeated[j].covtype.s, covstr, en, bi)
+    end
+    return mx
+end
+# барьер функции
+@noinline function _rmat_subj!(mx, θj, zblock, ct::CT, covstr, en, bi) where CT
+    @inbounds for i = 1:subjn(covstr, en, bi)
+        sb = getsubj(covstr, en, bi, i)
+        rmat!(view(mx, sb, sb), θj, view(zblock, sb, :), ct, bi)
     end
     return mx
 end
