@@ -168,7 +168,7 @@ of size ``q_i = |B_i|``. The largest block size is `lmm.maxvcbl`.
 
 ---
 
-## 5. [Parameterization of ``\theta`` and link functions](@id varlink_header)
+## [5. Parameterization of ``\theta`` and link functions](@id varlink_header)
 
 Every element of ``\theta`` carries a type (`lmm.covstr.ct`):
 
@@ -187,6 +187,7 @@ Optimization is carried out in an unconstrained space ``\eta \in \mathbb{R}^{t}`
 The forward transform ``\theta = f(\eta)`` is applied elementwise
 (`varlinkvecapply`); the inverse ``\eta = f^{-1}(\theta)`` is used when preparing
 the starting point (`varlinkrvecapply!`).
+
 
 **Variance parameters** (`varlinkf`):
 
@@ -375,7 +376,7 @@ In all three, ``R_{mm} = \sigma^{2}``.
 ---
 
 
-## 8. [Observation weights](@id weights_header)
+## [8. Observation weights](@id weights_header)
 
 When weights are supplied they are applied to the **R side**, before ``ZGZ'`` is
 added.
