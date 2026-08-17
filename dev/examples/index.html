@@ -6,7 +6,118 @@ rds = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot
 rds2 = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;ftdf3.csv&quot;); types = [String,  Float64, Float64, String, String, String, String, String, Float64]) |&gt; DataFrame
 
 
-devday = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;devday.csv&quot;); types = [Float64, String, String, String ]) |&gt; DataFrame</code></pre><p><img src="../plot1.png" alt/></p><p>Metida result:</p><pre><code class="language-julia hljs">lmm = LMM(@formula(response ~1 + factor*time), rds;
+devday = CSV.File(joinpath(dirname(pathof(Metida)), &quot;..&quot;, &quot;test&quot;, &quot;csv&quot;,  &quot;devday.csv&quot;); types = [Float64, String, String, String ]) |&gt; DataFrame</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌ Warning: Error requiring `Arrow` from `CategoricalArrays`
+│   exception =
+│    LoadError: ArgumentError: Package CategoricalArrays does not have Arrow in its dependencies:
+│    - You may have a partially installed environment. Try `Pkg.instantiate()`
+│      to ensure all packages in the environment are installed.
+│    - Or, if you have CategoricalArrays checked out for development and have
+│      added Arrow as a dependency but haven&#39;t updated your primary
+│      environment&#39;s manifest file, try `Pkg.resolve()`.
+│    - Otherwise you may need to report an issue with CategoricalArrays
+│    Stacktrace:
+│      [1] macro expansion
+│        @ ./loading.jl:1167 [inlined]
+│      [2] macro expansion
+│        @ ./lock.jl:223 [inlined]
+│      [3] require(into::Module, mod::Symbol)
+│        @ Base ./loading.jl:1144
+│      [4] include(mod::Module, _path::String)
+│        @ Base ./Base.jl:419
+│      [5] include(x::String)
+│        @ CategoricalArrays ~/.julia/packages/CategoricalArrays/C1XCP/src/CategoricalArrays.jl:1
+│      [6] top-level scope
+│        @ ~/.julia/packages/Requires/1eCOK/src/Requires.jl:40
+│      [7] eval
+│        @ ./boot.jl:368 [inlined]
+│      [8] eval
+│        @ ~/.julia/packages/CategoricalArrays/C1XCP/src/CategoricalArrays.jl:1 [inlined]
+│      [9] (::CategoricalArrays.var&quot;#106#121&quot;)()
+│        @ CategoricalArrays ~/.julia/packages/Requires/1eCOK/src/require.jl:101
+│     [10] macro expansion
+│        @ timing.jl:382 [inlined]
+│     [11] err(f::Any, listener::Module, modname::String, file::String, line::Any)
+│        @ Requires ~/.julia/packages/Requires/1eCOK/src/require.jl:47
+│     [12] (::CategoricalArrays.var&quot;#105#120&quot;)()
+│        @ CategoricalArrays ~/.julia/packages/Requires/1eCOK/src/require.jl:100
+│     [13] withpath(f::Any, path::String)
+│        @ Requires ~/.julia/packages/Requires/1eCOK/src/require.jl:37
+│     [14] (::CategoricalArrays.var&quot;#104#119&quot;)()
+│        @ CategoricalArrays ~/.julia/packages/Requires/1eCOK/src/require.jl:99
+│     [15] #invokelatest#2
+│        @ ./essentials.jl:729 [inlined]
+│     [16] invokelatest
+│        @ ./essentials.jl:726 [inlined]
+│     [17] foreach(f::typeof(Base.invokelatest), itr::Vector{Function})
+│        @ Base ./abstractarray.jl:2774
+│     [18] loadpkg(pkg::Base.PkgId)
+│        @ Requires ~/.julia/packages/Requires/1eCOK/src/require.jl:27
+│     [19] #invokelatest#2
+│        @ ./essentials.jl:729 [inlined]
+│     [20] invokelatest
+│        @ ./essentials.jl:726 [inlined]
+│     [21] run_package_callbacks(modkey::Base.PkgId)
+│        @ Base ./loading.jl:869
+│     [22] _tryrequire_from_serialized(modkey::Base.PkgId, path::String, sourcepath::String, depmods::Vector{Any})
+│        @ Base ./loading.jl:944
+│     [23] _require_search_from_serialized(pkg::Base.PkgId, sourcepath::String, build_id::UInt64)
+│        @ Base ./loading.jl:1028
+│     [24] _require(pkg::Base.PkgId)
+│        @ Base ./loading.jl:1315
+│     [25] _require_prelocked(uuidkey::Base.PkgId)
+│        @ Base ./loading.jl:1200
+│     [26] macro expansion
+│        @ ./loading.jl:1180 [inlined]
+│     [27] macro expansion
+│        @ ./lock.jl:223 [inlined]
+│     [28] require(into::Module, mod::Symbol)
+│        @ Base ./loading.jl:1144
+│     [29] eval
+│        @ ./boot.jl:368 [inlined]
+│     [30] #59
+│        @ ~/.julia/packages/Documenter/AXNMp/src/expander_pipeline.jl:879 [inlined]
+│     [31] cd(f::Documenter.var&quot;#59#61&quot;{Module, Expr}, dir::String)
+│        @ Base.Filesystem ./file.jl:112
+│     [32] (::Documenter.var&quot;#58#60&quot;{Documenter.Page, Module, Expr})()
+│        @ Documenter ~/.julia/packages/Documenter/AXNMp/src/expander_pipeline.jl:878
+│     [33] (::IOCapture.var&quot;#5#9&quot;{DataType, Documenter.var&quot;#58#60&quot;{Documenter.Page, Module, Expr}, IOContext{Base.PipeEndpoint}, IOContext{Base.PipeEndpoint}, Base.PipeEndpoint, Base.PipeEndpoint})()
+│        @ IOCapture ~/.julia/packages/IOCapture/MR051/src/IOCapture.jl:170
+│     [34] with_logstate(f::Function, logstate::Any)
+│        @ Base.CoreLogging ./logging.jl:511
+│     [35] with_logger
+│        @ ./logging.jl:623 [inlined]
+│     [36] capture(f::Documenter.var&quot;#58#60&quot;{Documenter.Page, Module, Expr}; rethrow::Type, color::Bool, passthrough::Bool, capture_buffer::IOBuffer, io_context::Vector{Any})
+│        @ IOCapture ~/.julia/packages/IOCapture/MR051/src/IOCapture.jl:167
+│     [37] runner(#unused#::Type{Documenter.Expanders.ExampleBlocks}, node::MarkdownAST.Node{Nothing}, page::Documenter.Page, doc::Documenter.Document)
+│        @ Documenter ~/.julia/packages/Documenter/AXNMp/src/expander_pipeline.jl:877
+│     [38] dispatch(::Type{Documenter.Expanders.ExpanderPipeline}, ::MarkdownAST.Node{Nothing}, ::Vararg{Any})
+│        @ Documenter.Selectors ~/.julia/packages/Documenter/AXNMp/src/utilities/Selectors.jl:170
+│     [39] expand(doc::Documenter.Document)
+│        @ Documenter ~/.julia/packages/Documenter/AXNMp/src/expander_pipeline.jl:60
+│     [40] runner(#unused#::Type{Documenter.Builder.ExpandTemplates}, doc::Documenter.Document)
+│        @ Documenter ~/.julia/packages/Documenter/AXNMp/src/builder_pipeline.jl:224
+│     [41] dispatch(#unused#::Type{Documenter.Builder.DocumentPipeline}, x::Documenter.Document)
+│        @ Documenter.Selectors ~/.julia/packages/Documenter/AXNMp/src/utilities/Selectors.jl:170
+│     [42] #90
+│        @ ~/.julia/packages/Documenter/AXNMp/src/makedocs.jl:283 [inlined]
+│     [43] withenv(::Documenter.var&quot;#90#92&quot;{Documenter.Document}, ::Pair{String, Nothing}, ::Vararg{Pair{String, Nothing}})
+│        @ Base ./env.jl:172
+│     [44] #89
+│        @ ~/.julia/packages/Documenter/AXNMp/src/makedocs.jl:282 [inlined]
+│     [45] cd(f::Documenter.var&quot;#89#91&quot;{Documenter.Document}, dir::String)
+│        @ Base.Filesystem ./file.jl:112
+│     [46] #makedocs#88
+│        @ ~/.julia/packages/Documenter/AXNMp/src/makedocs.jl:281 [inlined]
+│     [47] top-level scope
+│        @ ~/work/Metida.jl/Metida.jl/docs/make.jl:4
+│     [48] include(mod::Module, _path::String)
+│        @ Base ./Base.jl:419
+│     [49] exec_options(opts::Base.JLOptions)
+│        @ Base ./client.jl:303
+│     [50] _start()
+│        @ Base ./client.jl:522
+│    in expression starting at /home/runner/.julia/packages/CategoricalArrays/C1XCP/ext/CategoricalArraysArrowExt.jl:1
+└ @ Requires ~/.julia/packages/Requires/1eCOK/src/require.jl:51</code></pre><p><img src="../plot1.png" alt/></p><p>Metida result:</p><pre><code class="language-julia hljs">lmm = LMM(@formula(response ~1 + factor*time), rds;
 random = VarEffect(@covstr(1 + time|subject&amp;factor), CSH),
 )
 fit!(lmm)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Linear Mixed Model: response ~ 1 + factor + time + factor &amp; time
@@ -35,9 +146,9 @@ factor: 1.0 &amp; time   0.404971   0.0373406  10.85    &lt;1e-26
   Random 1   ρ                rho   -0.0427208
   Residual   σ²               var   0.970345
 </code></pre><p>MixedModels result:</p><pre><code class="language-julia hljs">fm = @formula(response ~ 1 + factor*time + (1 + time|subject&amp;factor))
-mm = fit(MixedModel, fm, rds, REML=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Minimizing 2    Time: 0:00:00 ( 0.15  s/it)
+mm = fit(MixedModel, fm, rds, REML=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Minimizing 2    Time: 0:00:00 ( 0.14  s/it)
    objective: 1426.9231858044589
-Minimizing 66    Time: 0:00:00 ( 5.65 ms/it)
+Minimizing 66    Time: 0:00:00 ( 5.19 ms/it)
 Linear mixed model fit by REML
  response ~ 1 + factor + time + factor &amp; time + (1 + time | subject &amp; factor)
  REML criterion at convergence: 1300.18075981887
@@ -90,7 +201,7 @@ Status: <span class="sgr32">converged</span> (No Errors)
 </code></pre><p>MixedModels:</p><pre><code class="language-julia hljs">fm2 = @formula(diameter ~ 1 + (1|plate) + (1|sample))
 mm = fit(MixedModel, fm2, df, REML=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Minimizing 2    Time: 0:00:00 ( 0.30  s/it)
    objective: 366.5302937135882
-Minimizing 46    Time: 0:00:00 (12.87 ms/it)
+Minimizing 46    Time: 0:00:00 (12.96 ms/it)
 Linear mixed model fit by REML
  diameter ~ 1 + (1 | plate) + (1 | sample)
  REML criterion at convergence: 330.86058899096145
@@ -119,7 +230,25 @@ Repeated:
     Model: 1|:(subject &amp; factor)
     Type: ARMA (3)
 Blocks: 24, Maximum block size: 10
-Not fitted.
+Status: <span class="sgr32">converged</span> (No Errors)
+    -2 logREML: 709.14    BIC: 736.459
+
+    Fixed-effects parameters:
+──────────────────────────────────────────────────────────
+                        Coef.  Std. Error      z  Pr(&gt;|z|)
+──────────────────────────────────────────────────────────
+(Intercept)         44.3896     1.35084    32.86    &lt;1e-99
+factor: 1.0          5.40834    1.60921     3.36    0.0008
+time                 0.508736   0.0481765  10.56    &lt;1e-25
+factor: 1.0 &amp; time   0.286837   0.0681318   4.21    &lt;1e-04
+──────────────────────────────────────────────────────────
+    Variance components:
+    θ vector: [4.53791, 2.8059, 1.12292, 0.625323, 0.713154]
+  Random 1   σ² factor: 0.0   var   20.5926
+  Random 1   σ² factor: 1.0   var   7.87307
+  Residual   σ²               var   1.26095
+  Residual   γ                rho   0.625323
+  Residual   ρ                rho   0.713154
 </code></pre><p>AR:</p><pre><code class="language-julia hljs">lmm = Metida.LMM(@formula(response ~ 1 + factor*time), rds;
 random = VarEffect(@covstr(factor|subject&amp;factor), DIAG),
 repeated = VarEffect(@covstr(1|subject&amp;factor), AR),
@@ -288,10 +417,10 @@ Status: <span class="sgr32">converged</span> (No Errors)
 (Intercept)  34.5061    0.961804  35.88    &lt;1e-99
 ─────────────────────────────────────────────────
     Variance components:
-    θ vector: [6.44278, 5.40009, 7.00676, 0.919938]
+    θ vector: [6.44278, 5.40009, 7.00675, 0.919938]
   Residual 1   σ² r1: A   var   41.5094
   Residual 1   σ² r1: B   var   29.161
-  Residual 1   σ² r1: C   var   49.0947
+  Residual 1   σ² r1: C   var   49.0945
   Residual 2   ρ          rho   0.919938
 </code></pre><pre><code class="language-julia hljs">    lmm2 = Metida.LMM(@formula(response ~ 1), rds2;
     repeated = [Metida.VarEffect(Metida.@covstr(r1|subject), Metida.ARH)]
@@ -319,24 +448,24 @@ Status: <span class="sgr32">converged</span> (No Errors)
   Residual   σ² r1: C   var   49.0947
   Residual   ρ          rho   0.919938
 </code></pre><p>R-part of variance-covariance matrix:</p><pre><code class="language-julia hljs">Metida.rmatrix(lmm1, 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">7×7 LinearAlgebra.Symmetric{Float64, Matrix{Float64}}:
- 41.5094  38.1861  35.1289  27.0863  24.9178  29.7429  27.3616
- 38.1861  41.5094  38.1861  29.4437  27.0863  32.3314  29.7429
- 35.1289  38.1861  41.5094  32.0061  29.4437  35.1452  32.3314
- 27.0863  29.4437  32.0061  29.161   26.8263  32.021   29.4574
- 24.9178  27.0863  29.4437  26.8263  29.161   34.8078  32.021
+ 41.5094  38.1861  35.1288  27.0863  24.9177  29.7429  27.3616
+ 38.1861  41.5094  38.1861  29.4436  27.0863  32.3314  29.7429
+ 35.1288  38.1861  41.5094  32.0061  29.4436  35.1452  32.3314
+ 27.0863  29.4436  32.0061  29.161   26.8263  32.021   29.4573
+ 24.9177  27.0863  29.4436  26.8263  29.161   34.8078  32.021
  29.7429  32.3314  35.1452  32.021   34.8078  49.0946  45.164
- 27.3616  29.7429  32.3314  29.4574  32.021   45.164   49.0946</code></pre><p>If nested blocking factor used - covariance modification applyed only within that blocks (R-part of variance-covariance matrix is the same):</p><pre><code class="language-julia hljs">   lmm = Metida.LMM(@formula(response ~ 1), rds2;
+ 27.3616  29.7429  32.3314  29.4573  32.021   45.164   49.0946</code></pre><p>If nested blocking factor used - covariance modification applyed only within that blocks (R-part of variance-covariance matrix is the same):</p><pre><code class="language-julia hljs">   lmm = Metida.LMM(@formula(response ~ 1), rds2;
     repeated = [Metida.VarEffect(Metida.@covstr(r1|subject), Metida.DIAG), Metida.VarEffect(Metida.@covstr(1|subject), Metida.ACOV(Metida.AR))]
     )
 Metida.fit!(lmm)
 Metida.rmatrix(lmm, 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">7×7 LinearAlgebra.Symmetric{Float64, Matrix{Float64}}:
- 41.5094  38.1861  35.1289  27.0863  24.9178  29.7429  27.3616
- 38.1861  41.5094  38.1861  29.4437  27.0863  32.3314  29.7429
- 35.1289  38.1861  41.5094  32.0061  29.4437  35.1452  32.3314
- 27.0863  29.4437  32.0061  29.161   26.8263  32.021   29.4574
- 24.9178  27.0863  29.4437  26.8263  29.161   34.8078  32.021
+ 41.5094  38.1861  35.1288  27.0863  24.9177  29.7429  27.3616
+ 38.1861  41.5094  38.1861  29.4436  27.0863  32.3314  29.7429
+ 35.1288  38.1861  41.5094  32.0061  29.4436  35.1452  32.3314
+ 27.0863  29.4436  32.0061  29.161   26.8263  32.021   29.4573
+ 24.9177  27.0863  29.4436  26.8263  29.161   34.8078  32.021
  29.7429  32.3314  35.1452  32.021   34.8078  49.0946  45.164
- 27.3616  29.7429  32.3314  29.4574  32.021   45.164   49.0946</code></pre><p>For nested models covariance structure can be expanded as follows:</p><ul><li>the first layer describes unstructured the device-device covariance;</li><li>the second layer adds the time covariance for each device</li></ul><pre><code class="language-julia hljs">lmm = Metida.LMM(@formula(resp ~ 0 + device), devday;
+ 27.3616  29.7429  32.3314  29.4573  32.021   45.164   49.0946</code></pre><p>For nested models covariance structure can be expanded as follows:</p><ul><li>the first layer describes unstructured the device-device covariance;</li><li>the second layer adds the time covariance for each device</li></ul><pre><code class="language-julia hljs">lmm = Metida.LMM(@formula(resp ~ 0 + device), devday;
     repeated = [Metida.VarEffect(Metida.@covstr(device|subj&amp;day), Metida.UN),
     Metida.VarEffect(Metida.@covstr(1|subj&amp;device), Metida.ACOV(Metida.AR))]
     )
@@ -350,7 +479,7 @@ Repeated:
     Type: ACOV(AR) (1)
 Blocks: 25, Maximum block size: 8
 Status: <span class="sgr32">converged</span> (No Errors)
-    -2 logREML: 903.058    BIC: 961.284
+    -2 logREML: 903.058    BIC: 961.117
 
     Fixed-effects parameters:
 ───────────────────────────────────────────────
@@ -375,11 +504,11 @@ device: D  0.940181    0.634722  1.48    0.1385
   Residual 1   ρ: device: C × device: D   rho   0.0300272
   Residual 2   ρ                          rho   0.584853
 </code></pre><p>R-matrix:</p><pre><code class="language-julia hljs">Metida.rmatrix(lmm, 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">8×8 LinearAlgebra.Symmetric{Float64, Matrix{Float64}}:
- 12.7101     7.43353    5.95998   …  0.0       -0.228331   0.0
-  7.43353   12.7101     0.0          0.291454   0.0       -0.228331
-  5.95998    0.0       23.1702       0.0        0.746199   0.0
-  0.0        5.95998   13.5512       1.79763    0.0        0.746199
-  0.291454   0.0        1.79763      4.3352     1.45889    0.0
-  0.0        0.291454   0.0       …  7.41246    0.0        1.45889
- -0.228331   0.0        0.746199     0.0        3.2711     1.91311
-  0.0       -0.228331   0.0          1.45889    1.91311    3.2711</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../custom/">Custom structures »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Monday 3 November 2025 00:18">Monday 3 November 2025</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ 23.1702    13.5512     0.746199  …  0.0        5.95999    0.0
+ 13.5512    23.1702     0.0          1.79763    0.0        5.95999
+  0.746199   0.0        3.2711       0.0       -0.228331   0.0
+  0.0        0.746199   1.91311      1.45889    0.0       -0.228331
+  1.79763    0.0        1.45889      4.3352     0.291454   0.0
+  0.0        1.79763    0.0       …  7.41246    0.0        0.291454
+  5.95999    0.0       -0.228331     0.0       12.7101     7.43353
+  0.0        5.95999    0.0          0.291454   7.43353   12.7101</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instanduse/">« First step</a><a class="docs-footer-nextpage" href="../custom/">Custom structures »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Monday 17 August 2026 12:06">Monday 17 August 2026</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
