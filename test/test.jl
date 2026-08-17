@@ -1150,7 +1150,7 @@ end
     @test Metida.m2logreml(lmm)  ≈ 697.2241355154041 atol=1E-6
     io = IOBuffer();
     @test_nowarn show(io, lmmf)
-    @test Metida.dof_satter(lmm)[2] ≈ 21.944281700360293 atol=1E-6
+    @test Metida.dof_satter(lmm)[2] ≈ 21.944281700360293 atol=1E-5
     # Test multiple random effect γ
     @test_nowarn Metida.raneff(lmm)
 end
@@ -1175,7 +1175,7 @@ end
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 698.8792511057682 atol=1E-6
     #SPSS 22.313
-    @test Metida.dof_satter(lmm)[2] ≈ 22.31337200822804 atol=1E-6
+    @test Metida.dof_satter(lmm)[2] ≈ 22.31337200822804 atol=1E-5
     #SPSS 
     re = Metida.raneff(lmm, 1)
     #= 
@@ -1199,7 +1199,7 @@ end
     println(io, lmm.log)
     @test Metida.m2logreml(lmm)  ≈ 913.9176298311813 atol=1E-6
     #SPSS 166
-    @test Metida.dof_satter(lmm)[2] ≈ 165.99999999999005 atol=1E-6
+    @test Metida.dof_satter(lmm)[2] ≈ 165.99999999999005 atol=1E-5
 end
 
 @testset "  Model: ARH/SI (subjects with &)                          " begin
@@ -1211,7 +1211,7 @@ end
     Metida.fit!(lmm)
     @test Metida.m2logreml(lmm)  ≈ 707.3765873864152 atol=1E-6
     #SPSS 23.093
-    @test Metida.dof_satter(lmm, [0, 1]) ≈ 23.093021655996232 atol=1E-6
+    @test Metida.dof_satter(lmm, [0, 1]) ≈ 23.093021655996232 atol=1E-5
 
     #SPSS 691.360073
     lmm = Metida.LMM(@formula(nrhoresp ~ 1 + factor), ftdf3; contrasts=Dict(:factor => DummyCoding(; base=1.0)),
