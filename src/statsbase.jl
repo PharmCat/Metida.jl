@@ -124,7 +124,7 @@ end
 DOF.
 """
 function StatsBase.dof(lmm::LMM)
-    return lmm.nfixed + lmm.covstr.tl
+    return lmm.rankx + lmm.covstr.tl
 end
 
 """
@@ -155,7 +155,8 @@ Bayesian information criterion.
 function StatsBase.bic(lmm::LMM)
     l = loglikelihood(lmm)
     d = lmm.covstr.tl
-    n = nobs(lmm) - lmm.nfixed
+    n = nobs(lmm) - lmm.rankx
+    n <= 0 && return NaN
     return -2l + d * log(n)
 end
 
@@ -167,7 +168,8 @@ Corrected Akaike Information Criterion.
 function StatsBase.aicc(lmm::LMM)
     l = loglikelihood(lmm)
     d = lmm.covstr.tl
-    n = nobs(lmm) - lmm.nfixed
+    n = nobs(lmm) - lmm.rankx
+    n <= 0 && return NaN
     return -2l + (2d * n) / (n - d - 1.0)
 end
 
@@ -179,7 +181,8 @@ Conditional Akaike Information Criterion.
 function caic(lmm::LMM)
     l = loglikelihood(lmm)
     d = lmm.covstr.tl
-    n = nobs(lmm) - lmm.nfixed
+    n = nobs(lmm) - lmm.rankx
+    n <= 0 && return NaN
     return -2l + d * (log(n) + 1.0)
 end
 

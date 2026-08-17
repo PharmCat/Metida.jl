@@ -18,8 +18,9 @@ function fit(::Type{T}, f::FormulaTerm, data;
     contrasts=Dict{Symbol,Any}(),  
     random::Union{Nothing, VarEffect, Vector{VarEffect}} = nothing, 
     repeated::Union{Nothing, VarEffect} = nothing,
+    wts::Union{Nothing, AbstractVector, AbstractMatrix, AbstractString, Symbol} = nothing,
     kwargs...) where T <: LMM
-    lmm = LMM(f, data, contrasts = contrasts, random = random, repeated = repeated)
+    lmm = LMM(f, data, contrasts = contrasts, random = random, repeated = repeated, wts = wts)
     fit!(lmm; kwargs...)
 end
 """

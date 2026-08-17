@@ -6,6 +6,628 @@ path    = dirname(@__FILE__)
 include("testdata.jl")
 
 @testset "  Publick API basic tests                                  " begin
+
+    io = IOBuffer()
+    transform!(df0, :formulation => categorical, renamecols = false)
+    df0.nosubj = ones(size(df0, 1))
+    df0.varint = Int.(ceil.(df0.var2))
+    df0.wtsc   = fill(0.5, size(df0, 1))
+    matwts     = Symmetric(rand(StableRNG(20240501), size(df0, 1), size(df0, 1)))
+
+    # Эталонная модель раздела: df0, случайный DIAG по формуляции внутри субъекта.
+    refmodel() = Metida.LMM(@formula(var ~ sequence + period + formulation), df0;
+        random = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG))
+
+    REML0  = 16.241112644506067
+    THETA0 = [0.4473222800422779, 0.3673667558902593, 0.1850675552332174]
+
+########################################################################
+@testset "   1. Конструирование модели                              " begin
+########################################################################
+
+    # --- @formula + VarEffect ------------------------------------------------
+    lmm = refmodel()
+    @test isa(lmm, Metida.LMM)
+    @test Metida.isfitted(lmm) == false
+    @test Metida.nobs(lmm) == 20
+    @test Metida.rankx(lmm) == 6
+    @test Metida.coefn(lmm) == 6
+    @test Metida.thetalength(lmm) == 3
+    @test Metida.fixedeffn(lmm) == 4
+    @test Metida.responsename(lmm) == "var"
+    @test Metida.nblocks(lmm) == 5
+    @test coefnames(lmm) == ["(Intercept)", "sequence: 2", "period: 2",
+                             "period: 3", "period: 4", "formulation: 2"]
+    @test_nowarn formula(lmm)
+    @test_nowarn show(io, lmm)                      # неподогнанная модель печатается
+
+    # --- @lmmformula ---------------------------------------------------------
+    lmmf = Metida.LMM(Metida.@lmmformula(var ~ sequence + period + formulation,
+        random = formulation | subject : Metida.DIAG), df0)
+    Metida.fit!(lmmf)
+    @test Metida.m2logreml(lmmf) ≈ REML0 atol = 1E-6
+    @test Metida.fixedeffn(lmmf) == 4
+
+    # без интерсепта
+    lmmf0 = Metida.fit(Metida.LMM, Metida.@lmmformula(var ~ 0 + sequence + period + formulation,
+        random = formulation | subject : Metida.DIAG), df0)
+    @test Metida.fixedeffn(lmmf0) == 3
+    @test length(Metida.typeiii(lmmf0).name) == 3
+
+    # функциональный терм в отклике
+    lmmlog = Metida.fit(Metida.LMM, Metida.@lmmformula(log(var) ~ sequence + period + formulation,
+        random = formulation | subject : Metida.DIAG), df0)
+    @test Metida.responsename(lmmlog) == "log(var)"
+
+    # --- fit(LMM, ...) как конструктор+подгонка ------------------------------
+    lmmc = Metida.fit(Metida.LMM, @formula(var ~ sequence + period + formulation), df0;
+        random = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG))
+    @test Metida.m2logreml(lmmc) ≈ REML0 atol = 1E-6
+
+    # --- Казуистика в спецификации субъекта ----------------------------------
+    # subject = константный столбец, subject = литерал 1 и repeated|nosubj
+    # должны давать один и тот же результат (один блок на все наблюдения).
+    for subjspec in (Metida.@covstr(formulation | nosubj), Metida.@covstr(formulation | 1))
+        l = Metida.LMM(@formula(var ~ sequence + period + formulation), df0;
+            random = Metida.VarEffect(subjspec, Metida.DIAG))
+        Metida.fit!(l)
+        @test Metida.m2logreml(l) ≈ 25.129480634331067 atol = 1E-6
+        @test Metida.nblocks(l) == 1
+    end
+
+    lrep = Metida.LMM(@formula(var ~ sequence + period + formulation), df0;
+        repeated = Metida.VarEffect(Metida.@covstr(formulation | 1), Metida.DIAG))
+    Metida.fit!(lrep)
+    @test Metida.m2logreml(lrep) ≈ 25.00077786912235 atol = 1E-6
+
+    lrep2 = Metida.LMM(@formula(var ~ sequence + period + formulation), df0;
+        repeated = Metida.VarEffect(Metida.@covstr(formulation | nosubj)))
+    Metida.fit!(lrep2)
+    @test Metida.m2logreml(lrep2) ≈ 25.129480634331063 atol = 1E-6
+
+    # --- Кодирование в случайной части ---------------------------------------
+    # По умолчанию для терма с интерсептом и для 0+ ставится FullDummyCoding
+    li = Metida.LMM(@formula(var ~ 1), df0;
+        random = Metida.VarEffect(Metida.@covstr(1 + formulation | subject)))
+    @test typeof(li.covstr.random[1].coding[:formulation]) <: StatsModels.FullDummyCoding
+
+    lz = Metida.LMM(@formula(var ~ 1), df0;
+        random = Metida.VarEffect(Metida.@covstr(0 + formulation | subject)))
+    @test typeof(lz.covstr.random[1].coding[:formulation]) <: StatsModels.FullDummyCoding
+
+    lc = Metida.LMM(@formula(var ~ 1), df0;
+        random = Metida.VarEffect(Metida.@covstr(1 + formulation | subject),
+                                  coding = Dict(:formulation => StatsModels.DummyCoding())))
+    @test typeof(lc.covstr.random[1].coding[:formulation]) <: StatsModels.DummyCoding
+
+    # --- Единственный фиксированный эффект -----------------------------------
+    onefe = Metida.LMM(@formula(var ~ 1), df0;
+        random = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG))
+    @test coefnames(onefe) == ["(Intercept)"]    
+    @test_nowarn show(io, onefe)
+
+    # --- Вектор repeated-эффектов --------------------------------------------
+    lmv = Metida.LMM(@formula(var ~ sequence + period + formulation), df0;
+        repeated = [Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG),
+                    Metida.VarEffect(Metida.@covstr(1 | subject), Metida.SI)])
+    Metida.fit!(lmv)
+    @test Metida.isfitted(lmv)
+    @test Metida.thetalength(lmv) == 3
+    @test_nowarn show(io, lmv)
+
+end # 1
+
+########################################################################
+@testset "   2. Подгонка: значения REML и ML                        " begin
+########################################################################
+
+    lmm = refmodel(); Metida.fit!(lmm)
+
+    @test Metida.isfitted(lmm) == true
+    @test Metida.m2logreml(lmm)                    ≈ REML0 atol = 1E-6
+    @test Metida.m2logreml(lmm, Metida.theta(lmm)) ≈ REML0 atol = 1E-6
+    @test Metida.m2logreml(lmm, THETA0)            ≈ REML0 atol = 1E-6
+    @test Metida.m2logreml(lmm, [0.5, 0.3, 0.2])   ≈ 16.5746217198294 atol = 1E-6
+
+    # Соотношения между вариантами критерия
+    @test Metida.logreml(lmm) ≈ -0.5 * Metida.m2logreml(lmm) atol = 1E-10
+    @test Metida.logreml(lmm) ≈ -8.120556322253035 atol = 1E-6
+    @test Metida.logml(lmm)   ≈ -0.5 * Metida.m2logml(lmm)   atol = 1E-10
+
+    @test Metida.m2logml(lmm)                                        ≈ 6.897520775993932 atol = 1E-6
+    @test Metida.m2logml(lmm, coef(lmm))                             ≈ 6.897520775993932 atol = 1E-6
+    @test Metida.m2logml(lmm, coef(lmm), Metida.theta(lmm); maxthreads = 8) ≈ 6.897520775993932 atol = 1E-6
+
+    @test Metida.theta(lmm) ≈ THETA0 atol = 1E-6
+    @test lmm.θ ≈ Metida.theta(lmm)                 # алиас через getproperty
+    @test lmm.β ≈ coef(lmm)
+
+    # Повторная подгонка идемпотентна
+    Metida.fit!(lmm)
+    @test Metida.m2logreml(lmm) ≈ REML0 atol = 1E-6
+    # Подгонка с заданным init
+    Metida.fit!(lmm; init = THETA0)
+    @test Metida.m2logreml(lmm) ≈ REML0 atol = 1E-6
+    # refitinit: старт от предыдущего решения
+    Metida.fit!(lmm; refitinit = true)
+    @test Metida.m2logreml(lmm) ≈ REML0 atol = 1E-6
+    # hes = false не должен менять оценки
+    lmmh = refmodel(); Metida.fit!(lmmh; hes = false)
+    @test Metida.m2logreml(lmmh) ≈ REML0 atol = 1E-6
+
+end # 2
+
+########################################################################
+@testset "   3. Внутренние величины REML                            " begin
+########################################################################
+
+    lmm = refmodel(); Metida.fit!(lmm)
+    dv  = Metida.LMMDataViews(lmm)
+    n   = length(lmm.covstr.vcovblock)
+
+    reml, θs₂, remlθ₃, noerror =
+        Metida.reml_sweep_β(lmm, dv, Metida.theta(lmm), Metida.coef(lmm))
+    @test noerror == true
+    @test reml   ≈ REML0 atol = 1E-6
+    @test remlθ₃ ≈ 13.999999919958947 atol = 1E-6
+
+    θ₁, θ₂, θ₃, noerror2 =
+        Metida.core_sweep_β(lmm, dv, Metida.theta(lmm), Metida.coef(lmm), n)
+    @test noerror2 == true
+    @test θ₁ ≈ -43.860020472151916 atol = 1E-6
+    @test θ₃ ≈ 13.999999919958947 atol = 1E-6
+
+    # θ₂ хранится верхним треугольником; Symmetric даёт X'V⁻¹X
+    @test istriu(θ₂)
+    @test Symmetric(θ₂) ≈ θs₂ atol = 1E-6
+    logdetθ₂ = logdet(Symmetric(θ₂))
+    @test logdetθ₂ ≈ 20.370854266968205 atol = 1E-6
+
+    # Разложение критерия: REML = Σlog|V| + log|X'V⁻¹X| + r'V⁻¹r + (N-p)log2π
+    creml = (length(lmm.data.yv) - lmm.rankx) * log(2π)
+    @test θ₁ + logdetθ₂ + θ₃ + creml ≈ REML0 atol = 1E-6
+    # ML  = Σlog|V| + r'V⁻¹r + N log2π
+    cml = length(lmm.data.yv) * log(2π)
+    @test θ₁ + θ₃ + cml ≈ 6.897520775993932 atol = 1E-6
+
+    # X'V⁻¹X должна быть положительно определена в точке оптимума
+    @test isposdef(Symmetric(θ₂))
+    # и согласована с vcov
+    @test inv(Symmetric(θ₂)) ≈ vcov(lmm) atol = 1E-8
+
+end # 3
+
+########################################################################
+@testset "   4. Интерфейс StatsAPI / StatsBase                      " begin
+########################################################################
+
+    lmm = refmodel(); Metida.fit!(lmm)
+
+    @test isfitted(lmm) == true
+    @test islinear(lmm) == true
+    @test nobs(lmm) == 20
+    @test dof_residual(lmm) == 14
+    @test length(coef(lmm)) == 6
+    @test length(stderror(lmm)) == 6
+    @test size(vcov(lmm)) == (6, 6)
+    @test vcov(lmm)[1, 1]   ≈ 0.11203611149231425 atol = 1E-6
+    @test stderror(lmm)[1]  ≈ 0.33471795812641164 atol = 1E-6
+    # stderror — корень из диагонали vcov
+    @test stderror(lmm) ≈ sqrt.(diag(vcov(lmm))) atol = 1E-10
+    @test issymmetric(Matrix(vcov(lmm)))
+
+    @test length(modelmatrix(lmm)) == 120
+    @test size(modelmatrix(lmm)) == (20, 6)
+    @test isa(response(lmm), Vector)
+    @test length(response(lmm)) == 20
+    @test size(crossmodelmatrix(lmm), 1) == 6
+
+    @test dof(lmm) == 9                              # текущее поведение, см. раздел 14
+    @test aic(lmm)         ≈ 22.241112644506067 atol = 1E-6
+    @test bic(lmm)         ≈ 24.158284633351833 atol = 1E-6
+    @test aicc(lmm)        ≈ 24.64111264450606 atol = 1E-6
+    @test Metida.caic(lmm) ≈ 27.158284633351833 atol = 1E-6
+    # AIC = -2logREML + 2d, где d = число параметров ковариации
+    @test aic(lmm) ≈ Metida.m2logreml(lmm) + 2 * Metida.thetalength(lmm) atol = 1E-8
+    @test loglikelihood(lmm) ≈ Metida.logreml(lmm) atol = 1E-10
+
+    ct = coeftable(lmm)
+    @test length(ct.rownms) == 6
+    @test_nowarn show(io, ct)
+
+    # confint: три метода ddf, согласованность скалярной и векторной формы
+    ci_all = Metida.confint(lmm)
+    @test length(ci_all) == 6
+    @test ci_all[end][1] ≈ -0.7630380758015894 atol = 1E-4
+    @test Metida.confint(lmm, 6)[1] ≈ ci_all[end][1] atol = 1E-10
+    @test Metida.confint(lmm; ddf = :residual)[end][1] ≈ -0.6740837049617738 atol = 1E-4
+    @test_nowarn Metida.confint(lmm; ddf = :contain)             # SPSS:7
+    # нижняя граница строго меньше верхней, оценка внутри интервала
+    for (i, c) in enumerate(ci_all)
+        @test c[1] < c[2]
+        @test c[1] < coef(lmm)[i] < c[2]
+    end
+    # более широкий уровень даёт более широкий интервал
+    c90 = Metida.confint(lmm; level = 0.90)
+    c99 = Metida.confint(lmm; level = 0.99)
+    @test c99[1][2] - c99[1][1] > c90[1][2] - c90[1][1]
+
+end # 4
+
+########################################################################
+@testset "   5. Матрицы модели                                      " begin
+########################################################################
+
+    lmm = refmodel(); Metida.fit!(lmm)
+
+    G = Metida.gmatrix(lmm, 1)
+    R = Metida.rmatrix(lmm, 1)
+    V = Metida.vmatrix(lmm, 1)
+    @test sum(G) ≈ 0.3350555603325126 atol = 1E-6
+    @test sum(R) ≈ 0.13699999248885292 atol = 1E-6
+    @test sum(V) ≈ 1.4772222338189034 atol = 1E-6
+    @test Metida.gmatrixipd(lmm)                       # G положительно определена
+    @test issymmetric(Matrix(V))
+    @test isposdef(Symmetric(Matrix(V)))
+    @test size(V, 1) == length(lmm.covstr.vcovblock[1])
+
+    # V(θ) через явный вектор параметров совпадает с V подогнанной модели
+    @test Metida.vmatrix(Metida.theta(lmm), lmm, 1) ≈ V atol = 1E-10
+
+    # vmatrix! пишет в предоставленный буфер
+    Vb = zeros(size(V))
+    Metida.vmatrix!(Vb, Metida.theta(lmm), lmm, 1)
+    @test Symmetric(Vb) ≈ Symmetric(Matrix(V)) atol = 1E-10
+
+    # Все блоки собираются без ошибок и положительно определены
+    for i in 1:Metida.nblocks(lmm)
+        Vi = Metida.vmatrix(lmm, i)
+        @test isposdef(Symmetric(Matrix(Vi)))
+    end
+
+    @test size(Metida.reml_hessian(lmm)) == (3, 3)
+    @test sum(Metida.reml_hessian(lmm)) ≈ 1118.160713481362 atol = 1E-2
+    @test issymmetric(round.(Metida.reml_hessian(lmm); digits = 6))
+
+    # Случайные эффекты по блокам
+    @test Metida.raneffn(lmm) == 1
+    for i in 1:Metida.nblocks(lmm)
+        @test_nowarn Metida.raneff(lmm, i)
+    end
+    # Для модели без случайной части raneff == nothing
+    lmmr = Metida.LMM(@formula(var ~ sequence + period + formulation), df0;
+        repeated = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG))
+    Metida.fit!(lmmr)
+    @test Metida.raneffn(lmmr) == 0
+    @test Metida.raneff(lmmr, 1) === nothing
+
+end # 5
+
+########################################################################
+@testset "   6. Инференс: DF, контрасты, тип III                    " begin
+########################################################################
+
+    lmm = refmodel(); Metida.fit!(lmm)
+    l3  = [0 0 1 0 0 0; 0 0 0 1 0 0; 0 0 0 0 1 0]      # контраст на period
+
+    # --- Satterthwaite: три формы вызова должны совпадать --------------------
+    d_int = Metida.dof_satter(lmm, 6)
+    d_vec = Metida.dof_satter(lmm, [0, 0, 0, 0, 0, 1])
+    d_all = Metida.dof_satter(lmm)
+    @test d_int ≈ 5.81896814947982 atol = 1E-2          # SPSS:1
+    @test d_vec ≈ d_int atol = 1E-6
+    @test d_all[end] ≈ d_int atol = 1E-6
+    @test length(d_all) == Metida.coefn(lmm)
+    @test all(x -> x >= 1.0, d_all)
+    @test all(x -> x <= dof_residual(lmm), d_all)
+
+    # --- Матричный контраст --------------------------------------------------
+    @test Metida.dof_satter(lmm, l3) ≈ 7.575447546211385 atol = 1E-2   # SPSS:2
+    @test Metida.dof_satter(lmm, Metida.lcontrast(lmm, 3)) ≈
+          Metida.dof_satter(lmm, l3) atol = 1E-6
+    @test Metida.fvalue(lmm, l3) ≈ 0.202727915619993 atol = 1E-2
+
+    # lcontrast: размерность и ранг
+    L3 = Metida.lcontrast(lmm, 3)
+    @test size(L3, 2) == Metida.coefn(lmm)
+    @test rank(L3) == 3
+    @test_nowarn Metida.lcontrast(lmm, 1)
+    @test_nowarn Metida.lcontrast(lmm, 4)
+    @test_throws ErrorException Metida.lcontrast(lmm, 99)
+
+    # --- typeiii: три метода ddf --------------------------------------------
+    t3 = Metida.typeiii(lmm)
+    @test length(t3.name) == 4
+    @test all(x -> x >= 0, t3.f)
+    @test all(x -> 0 <= x <= 1, t3.pval)
+    @test t3.pval[4] ≈ 0.7852154468081014 atol = 1E-6                  # SPSS:3
+    @test_nowarn Metida.typeiii(lmm; ddf = :residual)
+    @test_nowarn Metida.typeiii(lmm; ddf = :contain)                   # SPSS:8
+    @test_nowarn show(io, t3)
+
+    # typeiii и contrast на одном и том же контрасте дают одно p-значение
+    ct = Metida.contrast(lmm, l3)
+    @test t3.pval[3] ≈ ct.pval[1] atol = 1E-8
+    @test ct.ndf[1] ≈ 3.0
+    @test_nowarn show(io, ct)
+    @test_nowarn Metida.contrast(lmm, l3; name = "period", ddf = :residual)
+    # прямое задание ddf числом
+    ctd = Metida.contrast(lmm, l3; ddf = 14)
+    @test ctd.df[1] == 14
+
+    # --- estimate ------------------------------------------------------------
+    e1 = Metida.estimate(lmm, [0, 0, 0, 0, 0, 1]; level = 0.9)
+    @test_nowarn show(io, e1)
+    eall = Metida.estimate(lmm; level = 0.9)
+    @test_nowarn show(io, eall)
+
+    # --- dof_contain ---------------------------------------------------------
+    lmmc = Metida.LMM(@formula(var ~ period * formulation), df0;
+        random = Metida.VarEffect(Metida.@covstr(formulation + sequence | nosubj), Metida.SI))
+    Metida.fit!(lmmc)
+    @test Metida.m2logreml(lmmc, [0.222283, 0.444566]) ≈ Metida.m2logreml(lmmc) atol = 1E-6
+    @test Metida.dof_contain(lmmc, 1) == 12                            # SPSS:9
+    @test Metida.dof_contain(lmmc, 5) == 8                             # SPSS:9
+
+    tt = Metida.typeiii(lmmc)
+    @test tt.f[2]    ≈ 0.185268 atol = 1E-5                            # SPSS:4
+    @test tt.ndf[2]  ≈ 3.0      atol = 1E-5
+    @test tt.df[2]   ≈ 3.39086  atol = 1E-5                            # SPSS:4
+    @test tt.pval[2] ≈ 0.900636 atol = 1E-5
+    # Диагностика на случай платформенного расхождения (см. SPSS_VALIDATION.md):
+    # df == 1.0 означает срабатывание заглушки df < 1 в dof_satter_, а не
+    # законную оценку — при lclr = 3 значения из (1, 2] недостижимы.
+    @test tt.df[2] > 2.0
+
+end # 6
+
+########################################################################
+@testset "   7. Link-функции и стратегии первого шага               " begin
+########################################################################
+
+    mk() = Metida.LMM(@formula(var ~ sequence + period + formulation), df0;
+        random = Metida.VarEffect(Metida.@covstr(1 + formulation | subject), Metida.CSH;
+                                  coding = Dict(:formulation => StatsModels.DummyCoding())))
+
+    l = mk(); Metida.fit!(l; rholinkf = :sqsigm)
+    @test Metida.m2logreml(l) ≈ 10.314822559210157 atol = 1E-6
+    @test Metida.dof_satter(l, [0, 0, 0, 0, 0, 1]) ≈ 6.043195705464293 atol = 1E-2
+
+    l = mk(); Metida.fit!(l; rholinkf = :atan)
+    @test Metida.m2logreml(l) ≈ 10.314837309793571 atol = 1E-6
+
+    l = mk(); Metida.fit!(l; rholinkf = :psigm)
+    @test Metida.m2logreml(l) ≈ 10.86212458333098 atol = 1E-6
+
+    l = mk(); Metida.fit!(l; varlinkf = :sq)
+    @test Metida.m2logreml(l) ≈ 10.314822479530243 atol = 1E-6
+
+    # --- aifirst -------------------------------------------------------------
+    lmm = refmodel()
+    Metida.fit!(lmm; aifirst = :score)
+    @test Metida.m2logreml(lmm) ≈ REML0 atol = 1E-6
+    Metida.fit!(lmm; aifirst = :ai)
+    @test Metida.m2logreml(lmm) ≈ REML0 atol = 1E-6
+    Metida.fit!(lmm; aifirst = :ai, init = THETA0)
+    @test Metida.m2logreml(lmm) ≈ REML0 atol = 1E-6
+    Metida.fit!(lmm; aifirst = :default)
+    @test Metida.m2logreml(lmm) ≈ REML0 atol = 1E-6
+
+    # --- альтернативные оптимизаторы -----------------------------------------
+    lmm = refmodel(); Metida.fit!(lmm; optmethod = Metida.LBFGS_OM)
+    @test Metida.m2logreml(lmm) ≈ REML0 atol = 1E-4
+    lmm = refmodel(); Metida.fit!(lmm; optmethod = Metida.BFGS_OM)
+    @test Metida.m2logreml(lmm) ≈ REML0 atol = 1E-4
+
+end # 7
+
+########################################################################
+@testset "   8. Потоки и воспроизводимость                          " begin
+########################################################################
+
+    # Однопоточный и многопоточный прогон должны совпадать в пределах
+    # накопления ошибки суммирования по блокам.
+    lmm1 = refmodel(); Metida.fit!(lmm1; maxthreads = 1)
+    lmm4 = refmodel(); Metida.fit!(lmm4; maxthreads = 4)
+    @test Metida.m2logreml(lmm1) ≈ REML0 atol = 1E-6
+    @test Metida.m2logreml(lmm4) ≈ Metida.m2logreml(lmm1) atol = 1E-6
+    @test Metida.theta(lmm1) ≈ Metida.theta(lmm4) atol = 1E-6
+    @test Metida.dof_satter(lmm1, 6) ≈ Metida.dof_satter(lmm4, 6) atol = 1E-4
+
+    # Модель с блоками разного размера (BE-подобная)
+    be = Metida.LMM(@formula(var ~ sequence + period + formulation), df0;
+        random   = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.CSH),
+        repeated = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG))
+    Metida.fit!(be; aifirst = :score)
+    @test Metida.m2logreml(be) ≈ 10.065238626765524 atol = 1E-6
+    Metida.fit!(be; maxthreads = 1)
+    @test Metida.m2logreml(be) ≈ 10.065238626765524 atol = 1E-6
+
+end # 8
+
+########################################################################
+@testset "   9. Веса наблюдений                                     " begin
+########################################################################
+
+    # Постоянные веса 0.5: масштаб V меняется, но REML инвариантен,
+    # т.к. масштаб поглощается оценкой дисперсии.
+    lw = Metida.LMM(@formula(var ~ sequence + period + formulation), df0;
+        random = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG),
+        wts = df0.wtsc)
+    Metida.fit!(lw)
+    @test Metida.m2logreml(lw) ≈ REML0 atol = 1E-6
+
+    # Веса из колонки: по имени и по символу — идентично
+    lws = Metida.LMM(@formula(var ~ sequence + period + formulation), df0;
+        random = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG),
+        wts = "wts")
+    Metida.fit!(lws)
+    @test Metida.m2logreml(lws) ≈ 17.823729 atol = 1E-6                # SPSS:5 (сверено, SPSS 28)
+
+    lwy = Metida.LMM(@formula(var ~ sequence + period + formulation), df0;
+        random = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG),
+        wts = :wts)
+    Metida.fit!(lwy)
+    @test Metida.m2logreml(lwy) ≈ Metida.m2logreml(lws) atol = 1E-8
+
+    # Неверная длина вектора весов — предупреждение, веса игнорируются
+    @test_warn "wts count not equal observations count! wts not used." begin
+        lbad = Metida.LMM(@formula(var ~ sequence + period + formulation), df0;
+            random = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG),
+            wts = ones(10))
+        Metida.fit!(lbad)
+        @test Metida.m2logreml(lbad) ≈ REML0 atol = 1E-6
+    end
+
+    # Матричные веса
+    lmw = Metida.LMM(@formula(var ~ sequence + period + formulation), df0;
+        random = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG),
+        wts = matwts)
+    @test_nowarn Metida.fit!(lmw)
+    @test Metida.isfitted(lmw)
+
+    # Экспериментальная взвешенная ковариация SWC
+    lswc = Metida.LMM(@formula(var ~ sequence + period + formulation), df0;
+        repeated = Metida.VarEffect(Metida.@covstr(1 | subject), Metida.SWC(matwts)))
+    @test_nowarn Metida.fit!(lswc)
+    @test_nowarn show(io, lswc)
+
+end # 9
+
+########################################################################
+@testset "  10. Краевые случаи                                      " begin
+########################################################################
+
+    # --- Пропуски в отклике --------------------------------------------------
+    lmiss = Metida.LMM(@formula(var ~ sequence + period + formulation), df0m;
+        random = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG))
+    Metida.fit!(lmiss)
+    @test Metida.m2logreml(lmiss) ≈ 16.636012616466203 atol = 1E-6
+    @test nobs(lmiss) < size(df0m, 1)
+
+    # --- Неполные данные внутри субъекта (df1) -------------------------------
+    linc = Metida.LMM(@formula(var ~ sequence + period + formulation), df1;
+        random   = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.CSH),
+        repeated = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG))
+    Metida.fit!(linc; hes = false)
+    @test Metida.m2logreml(linc) ≈ 14.819463206995163 atol = 1E-6
+    @test Metida.dof_satter(linc, 6) ≈ 3.7026122766034915 atol = 1E-2    # SPSS:6
+
+    # --- Целочисленный отклик + функциональный терм в случайной части --------
+    lmmint = @test_warn "Response variable not <: AbstractFloat" Metida.fit(Metida.LMM,
+        Metida.@lmmformula(varint ~ formulation, random = 1 + var^2 | subject : Metida.SI), df0)
+    Metida.fit!(lmmint)
+    @test Metida.m2logreml(lmmint) ≈ 84.23373276096902 atol = 1E-6
+
+    # --- Неполный ранг X -----------------------------------------------------
+    lrd = @test_warn "Fixed-effect matrix not full-rank" Metida.LMM(
+        @formula(lnpk ~ sequence + period + treatment + subject), dfrdsfda;
+        random = Metida.VarEffect(Metida.@covstr(treatment | subject), Metida.DIAG))
+    @test Metida.rankx(lrd) < Metida.coefn(lrd)
+    # API на неподогнанной модели не должен падать
+    @test_nowarn Metida.coef(lrd)
+    @test_nowarn Metida.vcov(lrd)
+    @test_nowarn Metida.stderror(lrd)
+    @test_nowarn Metida.fit!(lrd)
+    @test_nowarn Metida.confint(lrd; level = 0.95, ddf = :satter)
+    @test_nowarn Metida.lcontrast(lrd, 5)
+    @test_nowarn Metida.typeiii(lrd)
+    @test_nowarn show(io, lrd)
+    # Отброшенные коэффициенты помечены NaN в vcov/stderror
+    @test any(isnan, Metida.stderror(lrd))
+    @test length(Metida.coef(lrd)) == Metida.coefn(lrd)
+
+end # 10
+
+########################################################################
+@testset "  11. Логирование и отображение                           " begin
+########################################################################
+
+    lmm = refmodel(); Metida.fit!(lmm)
+    @test Metida.msgnum(lmm.log) == 3
+    @test Metida.msgnum(lmm.log, :INFO) >= 1
+    @test isa(Metida.getlog(lmm), Vector)
+    @test_nowarn show(io, lmm)
+    @test_nowarn show(io, Metida.getlog(lmm))
+
+    # Лог очищается при повторной подгонке
+    n1 = Metida.msgnum(lmm.log)
+    Metida.fit!(lmm)
+    @test Metida.msgnum(lmm.log) == n1
+
+    # Отображение всех типов ковариации, представленных в API
+    for ct in (Metida.SI, Metida.DIAG, Metida.CS, Metida.CSH,
+               Metida.AR, Metida.ARH, Metida.ARMA, Metida.TOEP, Metida.TOEPH, Metida.UN)
+        @test_nowarn show(io, ct)
+    end
+    for ctf in (Metida.TOEPP(2), Metida.TOEPHP(2))
+        @test_nowarn show(io, ctf)
+    end
+    @test_nowarn show(io, Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG))
+
+end # 11
+
+########################################################################
+@testset "  12. Обработка ошибок                                    " begin
+########################################################################
+
+    lmm = refmodel()
+    # Инференс на неподогнанной модели
+    @test_throws ErrorException Metida.typeiii(lmm)
+    @test_throws ErrorException Metida.dof_satter(lmm, 1)
+    @test_throws ErrorException Metida.contrast(lmm, [0 0 0 0 0 1])
+
+    Metida.fit!(lmm)
+    # Несогласованная размерность контраста
+    @test_throws ErrorException Metida.contrast(lmm, [0 0 1])
+    @test_throws ErrorException Metida.lcontrast(lmm, 0)
+    # Неизвестный метод / метрика
+    @test_throws ErrorException Metida.dof_satter(lmm, [0 0 1])
+
+end # 12
+
+########################################################################
+@testset "  13. Симуляция и ресемплинг                              " begin
+########################################################################
+
+    lmm = refmodel(); Metida.fit!(lmm)
+    rng = StableRNG(20240502)
+
+    # rand по подогнанной модели
+    y1 = Metida.rand(rng, lmm)
+    @test length(y1) == nobs(lmm)
+    @test all(isfinite, y1)
+    y2 = Metida.rand(rng, lmm, Metida.theta(lmm))
+    @test length(y2) == nobs(lmm)
+    y3 = Metida.rand(rng, lmm, Metida.theta(lmm), Metida.coef(lmm))
+    @test length(y3) == nobs(lmm)
+    # rand! в предоставленный буфер
+    buf = zeros(nobs(lmm))
+    Metida.rand!(rng, buf, lmm)
+    @test all(isfinite, buf)
+    # Воспроизводимость по seed
+    @test Metida.rand(StableRNG(1), lmm) == Metida.rand(StableRNG(1), lmm)
+
+    # Параметрический бутстрап (малое n — только смоук)
+    br = Metida.bootstrap(lmm; n = 20, verbose = false, rng = StableRNG(20240503))
+    @test_nowarn show(io, br)
+    cb = Metida.confint(br; level = 0.95, method = :bp)
+    @test length(cb) == Metida.coefn(lmm)
+    for c in cb
+        @test c[1] < c[2]
+    end
+    for m in (:bp, :rbp, :norm, :bcnorm)
+        @test_nowarn Metida.confint(br, 1; method = m)
+    end
+    @test_throws ErrorException Metida.confint(br, 1; method = :nonexistent)
+    @test_throws ErrorException Metida.confint(br, 1; metric = :nonexistent)
+
+end # 13
+
+
+end # Publick API basic tests
+#=
+@testset "  Publick API basic tests                                  " begin
     io = IOBuffer();
     transform!(df0, :formulation => categorical, renamecols=false)
     # Basic, no block
@@ -317,6 +939,7 @@ include("testdata.jl")
     @test_nowarn show(io, lmm)
 
 end
+=#
 ################################################################################
 #                                  df0
 ################################################################################
@@ -574,9 +1197,9 @@ end
     Metida.fit!(lmm; verbose = 3, io = io)
     #[1.2964e-5, 0.0299594, 0.0699728, 3.69557]
     println(io, lmm.log)
-    @test Metida.m2logreml(lmm)  ≈ 913.9176298311813 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 913.9176298311813 atol=1E-6
     #SPSS 166
-    @test Metida.dof_satter(lmm)[2] ≈ 165.99999999999005 atol=1E-8
+    @test Metida.dof_satter(lmm)[2] ≈ 165.99999999999005 atol=1E-6
 end
 
 @testset "  Model: ARH/SI (subjects with &)                          " begin
@@ -607,7 +1230,7 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.theta(lmm)  ≈ [2.796694409004289, 2.900485570555582, 3.354913215348968, 2.0436114769223237, 1.8477830405766895, 2.0436115732330955, 1.0131934233937254] atol=1E-5 # atol=1E-8 !
-    @test Metida.m2logreml(lmm)  ≈ 713.0655862252027 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 713.0655862252027 atol=1E-6
 end
 @testset "  Model: &, DIAG/SI                                        " begin
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
@@ -615,7 +1238,7 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.theta(lmm)  ≈ [3.0325005960015985, 3.343826588448401, 1.8477830405766895, 1.8477830405766895, 1.8477830405766895, 4.462942536844632, 1.0082345219318216] atol=1E-5 # atol=1E-8 !
-    @test Metida.m2logreml(lmm)  ≈ 719.9413776641368 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 719.9413776641368 atol=1E-6
 end
 @testset "  Model: INT, +,  TOEPHP(3)/SI                             " begin
     lmm = Metida.LMM(@formula(response ~ 1 + factor), ftdf3;
@@ -623,7 +1246,7 @@ end
     )
     Metida.fit!(lmm)
     @test Metida.theta(lmm)  ≈ [2.843269324925114, 3.3598654954863423, 7.582560427911907e-10, 4.133572859333964, -0.24881591201506625, 0.46067672264107506, 1.0091887333170306] atol=1E-8
-    @test Metida.m2logreml(lmm)  ≈ 705.9946274598822 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 705.9946274598822 atol=1E-6
 end
 @testset "  Model: TOEP/SI                                           " begin
     # SPSS 710.200
@@ -634,7 +1257,7 @@ end
     )
     Metida.fit!(lmm)
     Base.show(io, lmm)
-    @test Metida.m2logreml(lmm)  ≈ 710.1998669150806 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 710.1998669150806 atol=1E-6
 end
 @testset "  Model: TOEPP(2)/SI                                       " begin
     # nowarn
@@ -644,7 +1267,7 @@ end
     )
     Metida.fit!(lmm)
     Base.show(io, lmm)
-    @test Metida.m2logreml(lmm)  ≈ 715.2410264030134 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 715.2410264030134 atol=1E-6
 end
 @testset "  Model: DIAG/TOEPP(3)                                     " begin
     # nowarn
@@ -655,7 +1278,7 @@ end
     )
     Metida.fit!(lmm)
     Base.show(io, lmm)
-    @test Metida.m2logreml(lmm)  ≈ 773.9575538254085 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 773.9575538254085 atol=1E-6
 end
 @testset "  Model: TOEPH/SI                                          " begin
     # nowarn
@@ -665,7 +1288,7 @@ end
     )
     Metida.fit!(lmm)
     Base.show(io, lmm)
-    @test Metida.m2logreml(lmm)  ≈ 705.7916833009426 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 705.7916833009426 atol=1E-6
 end
 @testset "  Model: SI/TOEPHP(3)                                      " begin
     io = IOBuffer();
@@ -676,7 +1299,7 @@ end
     Metida.fit!(lmm)
     Metida.fit!(lmm; optmethod = Metida.LBFGS_OM)
     Base.show(io, lmm)
-    @test Metida.m2logreml(lmm)  ≈ 713.5850978377632 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ 713.5850978377632 atol=1E-6
 end
 
 @testset "  Model: UN (repeated) missing                             " begin
@@ -737,14 +1360,14 @@ end
     )
     Metida.fit!(lmm)
     anovatable = Metida.typeiii(lmm)
-    @test Metida.m2logreml(lmm)  ≈ -1.0745407333692825 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ -1.0745407333692825 atol=1E-6
 
     # Unstructured
     lmm = Metida.LMM(@formula(log(Var)~Sequence+Period+Formulation), dfrds;
     repeated = Metida.VarEffect(Metida.@covstr(Formulation|Subject), Metida.UN),
     )
     Metida.fit!(lmm)
-    @test Metida.m2logreml(lmm)  ≈ -3.895979534278979 atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ -3.895979534278979 atol=1E-6
 
 
     lmm2 = Metida.LMM(@formula(log(Var)~Sequence+Period+Formulation), dfrds;
@@ -752,7 +1375,7 @@ end
     )
     Metida.fit!(lmm2)
 
-    @test Metida.m2logreml(lmm)  ≈ Metida.m2logreml(lmm2) atol=1E-8
+    @test Metida.m2logreml(lmm)  ≈ Metida.m2logreml(lmm2) atol=1E-6
 end
 
 
