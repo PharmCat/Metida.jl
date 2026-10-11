@@ -42,6 +42,8 @@ function typeiii(lmm::LMM; ddf::Symbol = :satter)
             df[i]  = dof_contain_f(lmm, i)
         elseif ddf == :residual
             df[i]  = dof_residual(lmm)
+        else
+            throw(ArgumentError("unknown ddf type, allowed: :satter, :contain, :residual (got $ddf)"))
         end
         if ndf[i] > 0 && df[i] > 0
             pval[i] = ccdf(FDist(ndf[i], df[i]), F[i])

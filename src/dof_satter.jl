@@ -25,14 +25,12 @@ function getinvhes(lmm::LMM{T}) where T
 
     for i = 1:n
         if lmm.covstr.ct[i] == :rho && 1.0 - abs(lmm.result.theta[i]) <= 1E-6
-            lmmlog!(lmm, 0, LMMLogMsg(:WARN,
-            "Theta parameter $(i): 1 − |ρ̂| ≤ 1e-6 , results can be unstable."))
+            lmmlog!(lmm, 1, LMMLogMsg(:WARN, "Theta parameter $(i): 1 − |ρ̂| ≤ 1e-6 , results can be unstable."))
         end
     end
 
     if !all(isfinite, H)
-        lmmlog!(lmm, 0, LMMLogMsg(:ERROR,
-            "Hessian contains non-finite values; Satterthwaite DF not available."))
+        lmmlog!(lmm, 1, LMMLogMsg(:ERROR, "Hessian contains non-finite values; Satterthwaite DF not available."))
         return fill(T(NaN), n, n)
     end
 
@@ -42,12 +40,10 @@ function getinvhes(lmm::LMM{T}) where T
     keep = findall(x -> x > tol, F.values)
 
     if length(keep) < n
-        lmmlog!(lmm, 0, LMMLogMsg(:WARN,
-            "Hessian rank deficient or not positive definite: $(length(keep)) of $n directions retained; Satterthwaite DF computed on a reduced set."))
+        lmmlog!(lmm, 1, LMMLogMsg(:WARN, "Hessian rank deficient or not positive definite: $(length(keep)) of $n directions retained; Satterthwaite DF computed on a reduced set."))
     end
     if isempty(keep)
-        lmmlog!(lmm, 0, LMMLogMsg(:ERROR,
-            "Hessian has no usable directions; Satterthwaite DF not available."))
+        lmmlog!(lmm, 1, LMMLogMsg(:ERROR, "Hessian has no usable directions; Satterthwaite DF not available."))
         return fill(T(NaN), n, n)
     end
 
@@ -83,7 +79,7 @@ function dof_satter_(lmm::LMM{T}, l::AbstractVector) where T
     d = dot(g, A, g)
     df = 2*(dot(l, lmm.result.c, l))^2 / d
     if df <= 0
-        lmmlog!(lmm, 0, "DF <= 0, indefinite matrix A")
+        lmmlog!(lmm, 1, LMMLogMsg(:ERROR,  "DF <= 0, indefinite matrix A"))
         return T(NaN)
     elseif df < 1.0
         return one(T) 
@@ -133,14 +129,15 @@ function dof_satter(lmm::LMM{T}) where T
         end
         #d = g' * A * g
         d = dot(g, A, g)
+        dofn = lmm.pivotvec[gi]
         if !(d > 0)
-            lmmlog!(lmm, 0, LMMLogMsg(:WARN, "Zero or non-finite variance of contrast estimate."))
+            lmmlog!(lmm, 1, LMMLogMsg(:WARN, "Zero or non-finite variance of contrast estimate."))
             dof[dofn] = T(NaN); continue
         end
         df = 2*(dot(l, lmm.result.c, l))^2 / d
-        dofn = lmm.pivotvec[gi]
+        
         if df <= 0
-            lmmlog!(lmm, 0, "DF <= 0, indefinite matrix A")
+            lmmlog!(lmm, 1, LMMLogMsg(:WARN, "DF <= 0, indefinite matrix A"))
             dof[dofn] = T(NaN)
         elseif df < 1.0 
             dof[dofn] = 1.0 
@@ -210,7 +207,7 @@ function dof_satter_(lmm::LMM{T}, l::AbstractMatrix) where T
 
     df = 2em / (em - lclr)
     if df <= 0
-        lmmlog!(lmm, 0, "DF <= 0, indefinite matrix A")
+        lmmlog!(lmm, 1, LMMLogMsg(:WARN, "DF <= 0, indefinite matrix A"))
         return T(NaN)
     elseif df < 1.0
         return one(T) 

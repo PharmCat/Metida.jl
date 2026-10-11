@@ -659,7 +659,7 @@ function StatsBase.confint(br::BootstrapResult; level::Float64=0.95, method=:bp,
     end
     v = Vector{Tuple}(undef, l)
     for i = 1:l
-        v[i] = confint(br, i; level = level, method = method, delrml = delrml)
+        v[i] = confint(br, i; level = level, method = method, metric = metric, delrml = delrml)
     end
     v
 end

@@ -233,6 +233,8 @@ function lmmlog!(io, lmmlog::Vector{LMMLogMsg}, verbose, vmsg)
     elseif verbose == 3
         if vmsg.type == :ERROR println(io, vmsg) end
         push!(lmmlog, vmsg)
+    else
+        throw(ArgumentError("Allowed verbose levels: 1, 2, 3 (got $verbose)"))
     end
 end
 function lmmlog!(lmmlog::Vector{LMMLogMsg}, verbose, vmsg)

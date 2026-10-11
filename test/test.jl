@@ -553,7 +553,7 @@ end # 10
     # Лог очищается при повторной подгонке
     n1 = Metida.msgnum(lmm.log)
     Metida.fit!(lmm)
-    @test Metida.msgnum(lmm.log) == n1
+    @test Metida.msgnum(lmm.log) == 4 # + refit record
 
     # Отображение всех типов ковариации, представленных в API
     for ct in (Metida.SI, Metida.DIAG, Metida.CS, Metida.CSH,

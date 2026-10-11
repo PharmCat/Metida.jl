@@ -27,6 +27,8 @@ function StatsBase.confint(lmm::LMM{T}; level::Real=0.95, ddf::Symbol = :satter)
         ddfv = dof_contain(lmm)
     elseif ddf == :residual
         ddfv = fill!(Vector{Float64}(undef, coefn(lmm)), dof_residual(lmm))
+    else
+        throw(ArgumentError("unknown ddf type, allowed: :satter, :contain, :residual (got $ddf)"))
     end
     cis = fill((NaN, NaN), coefn(lmm))
     for i = 1:lmm.rankx

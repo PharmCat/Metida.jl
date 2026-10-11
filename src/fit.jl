@@ -102,6 +102,10 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     :singtol ∈ kwkeys ? singtol = kwargs[:singtol] : singtol = 1e-8
     :maxthreads ∈ kwkeys ? maxthreads = kwargs[:maxthreads] : maxthreads = min(num_cores(), Threads.nthreads())
 
+     # Set verbose mode
+    if verbose == :auto
+        verbose = 1
+    end
     # If model was fitted, previous results can be used if `refitinit` == true
     # Before fitting clear log
     if lmm.result.fit
@@ -125,10 +129,6 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     lmm.result.fit = false
     # Use default solver (Optim.jl with Newton)
     solver == :default || return fit_nlopt!(lmm; kwargs...)
-    # Set verbose mode
-    if verbose == :auto
-        verbose = 1
-    end
     # Optimization method
     if optmethod == :default
         optmethod  = NEWTON_OM
