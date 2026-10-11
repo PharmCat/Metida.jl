@@ -47,10 +47,12 @@ struct REMLOptObjective{L, D, C}
     ct::C          # lmm.covstr.ct — вектор :var/:rho/:theta
     vlf::Symbol    # varlinkf
     rlf::Symbol    # rholinkf
+    maxthreads::Int
 end
 
 (f::REMLOptObjective)(x) = reml_sweep_β(f.lmm, f.dv,
-        varlinkvecapply(x, f.ct; varlinkf = f.vlf, rholinkf = f.rlf))[1]
+        varlinkvecapply(x, f.ct; varlinkf = f.vlf, rholinkf = f.rlf);
+        maxthreads = f.maxthreads)[1]
 """
     fit!(lmm::LMM{T}; kwargs...
     ) where T
@@ -102,6 +104,10 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     :singtol ∈ kwkeys ? singtol = kwargs[:singtol] : singtol = 1e-8
     :maxthreads ∈ kwkeys ? maxthreads = kwargs[:maxthreads] : maxthreads = min(num_cores(), Threads.nthreads())
 
+     # Set verbose mode
+    if verbose == :auto
+        verbose = 1
+    end
     # If model was fitted, previous results can be used if `refitinit` == true
     # Before fitting clear log
     if lmm.result.fit
@@ -125,10 +131,6 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     lmm.result.fit = false
     # Use default solver (Optim.jl with Newton)
     solver == :default || return fit_nlopt!(lmm; kwargs...)
-    # Set verbose mode
-    if verbose == :auto
-        verbose = 1
-    end
     # Optimization method
     if optmethod == :default
         optmethod  = NEWTON_OM
@@ -190,7 +192,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
 
 
 
-    optf = REMLOptObjective(lmm, lmm.dv, lmm.covstr.ct, varlinkf, rholinkf)
+    optf = REMLOptObjective(lmm, lmm.dv, lmm.covstr.ct, varlinkf, rholinkf, maxthreads)
     gcfg   = ForwardDiff.GradientConfig(optf, θ, chunk)
     hcfg   = ForwardDiff.HessianConfig(optf, θ, chunk)
 

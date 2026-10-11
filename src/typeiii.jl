@@ -42,6 +42,8 @@ function typeiii(lmm::LMM; ddf::Symbol = :satter)
             df[i]  = dof_contain_f(lmm, i)
         elseif ddf == :residual
             df[i]  = dof_residual(lmm)
+        else
+            throw(ArgumentError("unknown ddf type, allowed: :satter, :contain, :residual (got $ddf)"))
         end
         if ndf[i] > 0 && df[i] > 0
             pval[i] = ccdf(FDist(ndf[i], df[i]), F[i])
@@ -67,7 +69,7 @@ ddf = `:satter` or `:residual` or any number for direct ddf setting.
 """
 function contrast(lmm, l::AbstractMatrix; name::String = "Contrast", ddf = :satter)
     if !isfitted(lmm) error("Model not fitted!") end
-    if lmm.rankx != size(l, 2) error("size(l, 2) not equal rank X!") end
+    if coefn(lmm) != size(l, 2) error("size(l, 2) = $(size(l, 2)) not equal number of fixed effect coefficients = $(coefn(lmm))!") end
     F    = fvalue(lmm, l)
     ndf  = rank(l)
     if isa(ddf, Symbol)

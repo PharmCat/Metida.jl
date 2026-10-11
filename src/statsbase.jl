@@ -27,6 +27,8 @@ function StatsBase.confint(lmm::LMM{T}; level::Real=0.95, ddf::Symbol = :satter)
         ddfv = dof_contain(lmm)
     elseif ddf == :residual
         ddfv = fill!(Vector{Float64}(undef, coefn(lmm)), dof_residual(lmm))
+    else
+        throw(ArgumentError("unknown ddf type, allowed: :satter, :contain, :residual (got $ddf)"))
     end
     cis = fill((NaN, NaN), coefn(lmm))
     for i = 1:lmm.rankx
@@ -78,6 +80,12 @@ ML:, n = total number of observation; d = number of fixed effect parameters + nu
     StatsBase.coef(lmm::LMM) = copy(lmm.result.beta)
 
 Model coefficients (β).
+
+If the fixed-effect matrix is not of full column rank, the vector still has
+`coefn(lmm)` entries, one per column of `X`. Columns dropped by the pivoted QR
+carry `0.0`: the corresponding parameter is redundant and is **set to zero**,
+not estimated. Use [`stderror`](@ref) or [`vcov`](@ref) to tell a redundant
+parameter from a genuine zero estimate: they carry `NaN` in those positions.
 """
 function StatsBase.coef(lmm::LMM{T}) where T
     cn = coefn(lmm)
@@ -196,6 +204,9 @@ end
     StatsBase.vcov(lmm::LMM)
 
 Variance-covariance matrix of β.
+
+Rows and columns of parameters dropped by the rank reduction are filled with
+`NaN`; the remaining block is `(X'V⁻¹X)⁻¹` for the estimable parameters.
 """
 function StatsBase.vcov(lmm::LMM{T}) where T 
     cn = coefn(lmm) 
@@ -211,7 +222,11 @@ end
 """
     StatsBase.stderror(lmm::LMM)
 
-Standard error
+Standard error.
+
+Parameters dropped by the rank reduction carry `NaN`, because a redundant
+parameter has no standard error. The matching entry of [`coef`](@ref) is `0.0`
+by convention.
 """
 function StatsBase.stderror(lmm::LMM{T}) where T
     cn = coefn(lmm) 
