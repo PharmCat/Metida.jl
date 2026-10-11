@@ -69,7 +69,7 @@ ddf = `:satter` or `:residual` or any number for direct ddf setting.
 """
 function contrast(lmm, l::AbstractMatrix; name::String = "Contrast", ddf = :satter)
     if !isfitted(lmm) error("Model not fitted!") end
-    if lmm.rankx != size(l, 2) error("size(l, 2) not equal rank X!") end
+    if coefn(lmm) != size(l, 2) error("size(l, 2) = $(size(l, 2)) not equal number of fixed effect coefficients = $(coefn(lmm))!") end
     F    = fvalue(lmm, l)
     ndf  = rank(l)
     if isa(ddf, Symbol)

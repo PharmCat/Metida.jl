@@ -104,8 +104,11 @@ function dof_satter(lmm::LMM{T}, i::Int) where T
     end
     l = zeros(T, lmm.rankx)
     l[ind] = one(T)
-    return dof_satter(lmm, l)
+    # l is already in the reduced (pivoted) space, so call the inner method
+    # directly: the public method would apply pivotvec a second time.
+    return dof_satter_(lmm, l)
 end
+
 """
     dof_satter(lmm::LMM{T}) where T
 
@@ -171,7 +174,7 @@ where:
 """
 function dof_satter(lmm::LMM{T}, l::AbstractMatrix) where T
     isfitted(lmm) || error("Model not fitted")
-    if coefn(lmm) != size(l, 2) error("size(l, 2) not equal rank X!") end
+    if coefn(lmm) != size(l, 2) error("size(l, 2) = $(size(l, 2)) not equal number of fixed effect coefficients = $(coefn(lmm))!") end
     dof_satter_(lmm, ifelse(lmm.rankx == coefn(lmm), l, view(l, :, lmm.pivotvec)))
 end
 

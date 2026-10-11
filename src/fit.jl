@@ -47,10 +47,12 @@ struct REMLOptObjective{L, D, C}
     ct::C          # lmm.covstr.ct — вектор :var/:rho/:theta
     vlf::Symbol    # varlinkf
     rlf::Symbol    # rholinkf
+    maxthreads::Int
 end
 
 (f::REMLOptObjective)(x) = reml_sweep_β(f.lmm, f.dv,
-        varlinkvecapply(x, f.ct; varlinkf = f.vlf, rholinkf = f.rlf))[1]
+        varlinkvecapply(x, f.ct; varlinkf = f.vlf, rholinkf = f.rlf);
+        maxthreads = f.maxthreads)[1]
 """
     fit!(lmm::LMM{T}; kwargs...
     ) where T
@@ -190,7 +192,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
 
 
 
-    optf = REMLOptObjective(lmm, lmm.dv, lmm.covstr.ct, varlinkf, rholinkf)
+    optf = REMLOptObjective(lmm, lmm.dv, lmm.covstr.ct, varlinkf, rholinkf, maxthreads)
     gcfg   = ForwardDiff.GradientConfig(optf, θ, chunk)
     hcfg   = ForwardDiff.HessianConfig(optf, θ, chunk)
 

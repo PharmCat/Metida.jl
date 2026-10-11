@@ -60,7 +60,17 @@ function rand(rng::AbstractRNG, lmm::LMM{T}, theta::AbstractVector, beta::Abstra
     rand!(rng, v, lmm, theta, beta)
 end
 function rand!(rng::AbstractRNG, v::AbstractVector, lmm::LMM{T}, theta::AbstractVector, beta::AbstractVector) where T
-    if length(beta) != size(lmm.data.xv, 2) error("Wrong beta length!") end
+    # Accept beta either in the reduced space (length rankx, as lmm.result.beta)
+    # or in the full coefficient layout (length coefn, as coef(lmm)); in the
+    # latter case the dropped positions are discarded via pivotvec.
+    nb = length(beta)
+    if nb == lmm.rankx
+        b = beta
+    elseif nb == coefn(lmm)
+        b = view(beta, lmm.pivotvec)
+    else
+        error("Wrong beta length: expected $(lmm.rankx) (reduced) or $(coefn(lmm)) (full), got $nb")
+    end
     if length(theta) != lmm.covstr.tl error("Wrong theta length!") end
     if length(v) != nobs(lmm) error("Wrong v length!") end
     n = length(lmm.covstr.vcovblock)
@@ -74,7 +84,7 @@ function rand!(rng::AbstractRNG, v::AbstractVector, lmm::LMM{T}, theta::Abstract
             resize!(tv, q)
             resize!(m, q)
         end
-        mul!(m, lmm.dv.xv[i], beta)
+        mul!(m, lmm.dv.xv[i], b)
         V    = zeros(q, q)
         vmatrix!(V, gvec, theta, rtheta, lmm, i)
         Distributions.rand!(rng, MvNormal(m, Symmetric(V)), tv)
