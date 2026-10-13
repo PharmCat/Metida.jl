@@ -347,7 +347,7 @@ function rmat!(mx, θ, rz::AbstractMatrix, ::UN_, ::Int)
     mulαβαtinc!(mx, rz, rcov)
     return mx
 end
-
+#=
 # ACOV (AR)
 function rmat!(mx::AbstractMatrix{T}, θ, ::AbstractMatrix, ct::ACOV_{AR_}, ::Int) where T
     s  = size(mx, 1)
@@ -417,6 +417,7 @@ function rmat!(mx::AbstractMatrix{T}, θ, ::AbstractMatrix, ct::ACOV_{CS_}, ::In
     end
     return mx
 end
+=#
 ###############################################################################
 ###############################################################################
 ###############################################################################

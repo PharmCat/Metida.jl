@@ -594,12 +594,26 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
             end
         
         rz_      = Vector{Matrix}(undef, rpn)
+        # A modifier augments (ACOV) or masks (BAND) what the PRECEDING repeated
+        # effects have built, so it cannot come first: at that point the block is
+        # still all zeros and its parameter is unidentifiable.
+        if isa(repeated[1].covtype.s, Union{ACOV_, BAND_})
+            error("$(repeated[1].covtype.s) cannot be the first repeated effect: there is no covariance to modify yet. Place the structure it modifies before it.")
+        end
+        # `action` only takes effect on an already nonzero cell. Report that once
+        # here rather than warning per cell on every optimiser iteration.
+        for i = 2:rpn
+            mct = repeated[i].covtype.s
+            if isa(mct, ACOV_) && mct.a != 0
+                if all(j -> isa(repeated[j].covtype.s, Union{SI_, DIAG_, BAND_}), 1:i-1)
+                    @warn "ACOV(action = $(mct.a)) at position $i: every preceding repeated effect is diagonal, so no covariance cell is nonzero and `action` has no effect."
+                elseif mct.a in (3, 4, 5)
+                    @warn "ACOV(action = $(mct.a)) at position $i: preceding effects produce nonzero covariance cells, which will be modified."
+                end
+            end
+        end
         # REPEATED EFFECTS
         for i = 1:length(repeated)
-
-            if isa(repeated[i].covtype.s, ACOV_) && i == 1
-                @warn "ACOV at first position is meaningless: base covariance is not yet computed."
-            end
 
             if length(repeated[i].coding) == 0
                 fill_coding_dict!(repeated[i].model, repeated[i].coding, data)

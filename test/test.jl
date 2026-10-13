@@ -1777,3 +1777,6 @@ end
     @test Metida.varlinkvecapply([0.1, 0.1], [:var, :rho]; varlinkf = :exp, rholinkf = :sigm) ≈ [1.1051709180756477, 0.004999958333749888] atol=1E-6
 
 end
+
+
+include("test_acov_band_block.jl")
