@@ -634,15 +634,18 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
             else
                 dicts[rn+i]  = Dict(1 => collect(1:rown)) #changed to range
             end
-            # If UN structure used all repeated levels should be unique within one subject, otherwise results can be meaningless!
+            # UN, TOEP and TOEPH build the R block as rz * C * rz', where C is
+            # indexed by the LEVELS of the effect. Two rows sharing a level then
+            # get covariance equal to that level's variance, so R is singular
+            # unless every level occurs at most once within a subject.
             wflag = true
-            if isa(repeated[i].covtype.s, UN_)
+            if isa(repeated[i].covtype.s, Union{UN_, TOEP_, TOEPH_})
                 for (k,v) in dicts[rn+i]
                     sv = view(rz_[i], v, :)
                     for j = 1:size(sv, 2)
                         if sum(view(sv, :, j)) > 1 && wflag
                             wflag = false
-                            @warn "If UN structure used for repeated effect all levels should be unique within one subject, otherwise results can be meaningless!"
+                            @warn "If $(repeated[i].covtype.s) structure used for repeated effect all levels should be unique within one subject, otherwise results can be meaningless!"
                         end
                     end
                 end

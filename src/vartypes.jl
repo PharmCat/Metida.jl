@@ -222,7 +222,7 @@ const ARMA = AutoregressiveMovingAverage()
 """
     Toeplitz()
 
-Toeplitz covariance type. Only for G matrix.
+Toeplitz covariance type.
 
 TOEP = Toeplitz()
 
@@ -233,6 +233,20 @@ TOEP = Toeplitz()
 \\rho_3 & \\rho_2 & \\rho_1 & 1
 \\end{bmatrix}\\sigma^2
 ```
+
+Parameters: one variance and `t - 1` correlations, where `t` is the number of
+levels of the effect.
+
+As a repeated effect the lag is the difference of the effect's **level
+indices**, so every level must occur at most once within a subject (as for
+[`UN`](@ref)); a warning is raised otherwise. [`TOEPP`](@ref) instead takes the
+lag from the **row position** inside the block. The two agree when the block has
+one row per level in level order, and differ as soon as an occasion is missing:
+with levels `A, C, D` present out of `A, B, C, D`, `TOEP` gives the pair
+`(A, C)` the lag-2 correlation and `(A, D)` the lag-3 one, while `TOEPP` sees
+row positions 1, 2, 3 and gives them lag 1 and lag 2. Use `TOEP` when the lag
+should follow the repeated factor, `TOEPP` when it should follow the row order
+or when a level repeats within a subject.
 
 """
 function Toeplitz()
@@ -247,6 +261,11 @@ Toeplitz covariance type with parameter p, (number of bands = p - 1, if p = 1 it
 
 TOEPP(p) = ToeplitzParameterized(p)
 
+As a repeated effect the lag is the **row position** inside the subject block,
+so a missing occasion shifts every lag that spans the gap. Use [`TOEP`](@ref)
+when the lag should follow the levels of the repeated factor instead; the two
+coincide when the block has one row per level in level order.
+
 """
 function ToeplitzParameterized(p::Int)
     CovarianceType(TOEPP_(p))
@@ -256,7 +275,7 @@ TOEPP(p) = ToeplitzParameterized(p)
 """
     HeterogeneousToeplitz()
 
-Heterogeneous toeplitz covariance type. Only for G matrix.
+Heterogeneous toeplitz covariance type.
 
 TOEPH = HeterogeneousToeplitz()
 
@@ -268,6 +287,14 @@ TOEPH = HeterogeneousToeplitz()
 \\rho_3 \\sigma_d \\sigma_a & \\rho_2 \\sigma_d \\sigma_b & \\rho_1 \\sigma_d \\sigma_c & \\sigma_d^2
 \\end{bmatrix}
 ```
+
+
+As a repeated effect, see the note in [`TOEP`](@ref): the lag follows the
+effect's level indices, so every level must occur at most once within a subject,
+and [`TOEPHP`](@ref) is the row-position alternative. Note that `TOEPHP` is a
+hybrid — its variances are indexed by level but its correlations by row
+position — so on incomplete data it shifts the lags while keeping the per-level
+variances.
 
 """
 function HeterogeneousToeplitz()
@@ -281,6 +308,10 @@ const TOEPH = HeterogeneousToeplitz()
 Heterogeneous toeplitz covariance type with parameter p, (number of bands = p - 1, if p = 1 it's equal DIAG structure).
 
 TOEPHP(p) = HeterogeneousToeplitzParameterized(p)
+
+As a repeated effect the variances are indexed by level but the correlations by
+**row position**, so a missing occasion shifts the lags. See [`TOEPH`](@ref) for
+the fully level-indexed alternative.
 
 """
 function HeterogeneousToeplitzParameterized(p::Int)

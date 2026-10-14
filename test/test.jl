@@ -1780,3 +1780,5 @@ end
 
 
 include("test_acov_band_block.jl")
+
+#include("test_rtoe.jl")

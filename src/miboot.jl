@@ -215,22 +215,37 @@ function fit_lmm!(lmmb, init, dist, rng)
 end
 """
 
-Check bootstrap results
+Check bootstrap results: mark a replicate for deletion if its fit did not
+converge.
 """
-function check_lmm!(rml, log, lmmb, tlmm, tv, vi, i, ll, ul)
-    if isfitted(lmmb)
-        for v in vi
-            vvar =  tv[v]^2 / tlmm[v]
-            if !(ll < vvar < ul)
-                push!(rml, i)
-                lmmlog!(log, 1, LMMLogMsg(:WARN, "Itaration $i is suspisious: variance ratio = $vvar ."))
-                break
-            end
-        end
-    else
+function check_lmm!(rml, log, lmmb, i)
+    if !isfitted(lmmb)
         push!(rml, i)
-        lmmlog!(log, 1, LMMLogMsg(:ERROR, "Itaration $i was not successful."))
+        lmmlog!(log, 1, LMMLogMsg(:ERROR, "Iteration $i was not successful."))
     end
+end
+"""
+    Count replicates whose covariance parameters landed on a boundary.
+
+"""
+function boundary_report!(log, lmm, tv, n; vartol = 1e-6, rhotol = 1e-6)
+    nvb = 0
+    nrb = 0
+    for i = 1:lmm.covstr.tl
+        v = tv[i]
+        if lmm.covstr.ct[i] == :var
+            nvb += count(x -> abs(x) < vartol, view(v, 1:min(n, length(v))))
+        elseif lmm.covstr.ct[i] == :rho
+            nrb += count(x -> 1 - abs(x) < rhotol, view(v, 1:min(n, length(v))))
+        end
+    end
+    if nvb > 0
+        lmmlog!(log, 1, LMMLogMsg(:WARN, "$(nvb) variance parameter estimate(s) across replicates are at zero; the bootstrap distribution touches the boundary of the parameter space."))
+    end
+    if nrb > 0
+        lmmlog!(log, 1, LMMLogMsg(:WARN, "$(nrb) correlation parameter estimate(s) across replicates are at |ρ| = 1; the bootstrap distribution touches the boundary of the parameter space."))
+    end
+    return nvb, nrb
 end
 """
     Simple bootstrap.
@@ -239,8 +254,8 @@ function bootstrap_(lmm::LMM{T}; n, verbose, init, rng, del) where T
     bv   = Vector{Vector{Float64}}(undef, coefn(lmm))
     vv   = Vector{Vector{Float64}}(undef, coefn(lmm))
     for i = 1:coefn(lmm)
-        bv[i] = Vector{Float64}(undef, n)
-        vv[i] = Vector{Float64}(undef, n)
+        bv[i] = fill(NaN, n)
+        vv[i] = fill(NaN, n)
     end
     tv   = Vector{Vector{Float64}}(undef, thetalength(lmm))
     for i = 1:thetalength(lmm)
@@ -250,14 +265,15 @@ function bootstrap_(lmm::LMM{T}; n, verbose, init, rng, del) where T
     log  = Vector{LMMLogMsg}(undef, 0)
 
    
-    mres = ModelResult(false, nothing, fill(NaN, thetalength(lmm)), NaN, fill(NaN, coefn(lmm)), nothing, fill(NaN, coefn(lmm), coefn(lmm)), fill(NaN, coefn(lmm)), nothing, false)
+    mres = ModelResult(false, nothing, fill(NaN, thetalength(lmm)), NaN, fill(NaN, lmm.rankx), nothing, fill(NaN, lmm.rankx, lmm.rankx), fill(NaN, lmm.rankx), nothing, false)
+
     lmmb = LMM(lmm.model, lmm.f, lmm.modstr, lmm.covstr, lmm.data, LMMDataViews(lmm.dv.xv, deepcopy(lmm.dv.yv)), lmm.nfixed, lmm.rankx, lmm.pivotvec, mres, lmm.maxvcbl, lmm.wts, Vector{LMMLogMsg}(undef, 0))
 
     vi   = findall(x-> x == :var, lmm.covstr.ct)
     tlmm = theta_(lmm) .^ 2
     # ratio limits to delete theta values for var
-    ll   = quantile(FDist(1, 1), 1/n)
-    ul   = quantile(FDist(1, 1), 1 - 1/n)
+    #ll   = quantile(FDist(1, 1), 1/n)
+    #ul   = quantile(FDist(1, 1), 1 - 1/n)
     dist = Vector{FullNormal}(undef, nblocks(lmm))
     make_dist_vec!(dist, lmm)
 
@@ -273,19 +289,21 @@ function bootstrap_(lmm::LMM{T}; n, verbose, init, rng, del) where T
         s = stderror_(lmmb)
         t = theta_(lmmb)
         for j = 1:coefn(lmm)
-            bv[j][i] = c[j]
-            vv[j][i] = s[j]
+            bv[lmm.pivotvec[j]][i] = c[j]
+            vv[lmm.pivotvec[j]][i] = s[j]
         end
         for j = 1:thetalength(lmm)
             tv[j][i] = t[j]
         end
-        check_lmm!(rml, log, lmmb, tlmm, t, vi, i, ll, ul)
+        check_lmm!(rml, log, lmmb, i)
         lmmb.result.fit = false
         if verbose next!(p) end
     end
     lmmlog!(log, 1, LMMLogMsg(:INFO, "End bootstrap..."))
-    deln = [length(length(rml))]
+    boundary_report!(log, lmm, tv, n)
+    deln = [length(rml)]
     if del && length(rml) > 0
+        lmmlog!(log, 1, LMMLogMsg(:WARN, "Some results ($(length(rml))) was deleted."))
         for j = 1:coefn(lmm)
             deleteat!(bv[j], rml)
             deleteat!(vv[j], rml)
@@ -294,7 +312,6 @@ function bootstrap_(lmm::LMM{T}; n, verbose, init, rng, del) where T
             deleteat!(tv[j], rml)
         end
         resize!(rml, 0)
-        lmmlog!(log, 1, LMMLogMsg(:WARN, "Some results ($(length(rml))) was deleted."))
     end
     BootstrapResult(lmm, coefnames(lmm), coef(lmm), stderror(lmm), theta(lmm), bv, vv, tv, rml, deln, log)
 end
@@ -319,8 +336,8 @@ function dbootstrap_(lmm::LMM{T}; n, verbose, init, rng, del) where T
 
     vi   = findall(x-> x == :var, lmm.covstr.ct)
     tlmm = theta_(lmm) .^ 2
-    ll   = quantile(FDist(1, 1), 1/n)
-    ul   = quantile(FDist(1, 1), 1 - 1/n)
+    #ll   = quantile(FDist(1, 1), 1/n)
+    #ul   = quantile(FDist(1, 1), 1 - 1/n)
     dist = Vector{FullNormal}(undef, nblocks(lmm))
     make_dist_vec!(dist, lmm)
 
@@ -335,7 +352,7 @@ function dbootstrap_(lmm::LMM{T}; n, verbose, init, rng, del) where T
         #Fill vector for step I
         tv[i]  = theta(lmmb)
 
-        check_lmm!(rml, log, lmmb, tlmm, tv[i], vi, i, ll, ul)
+        check_lmm!(rml, log, lmmb, i)
         lmmb.result.fit = false
         if verbose next!(p) end
     end
@@ -361,11 +378,11 @@ function dbootstrap_(lmm::LMM{T}; n, verbose, init, rng, del) where T
     m   = Vector{T}(undef, lmm.maxvcbl)                 # means vector
     Vt  = Matrix{T}(undef, lmm.maxvcbl, lmm.maxvcbl)
     V   = view(Vt, 1:length(m), 1:length(m))
-    ll   = quantile(FDist(1, 1), 1/n)
-    ul   = quantile(FDist(1, 1), 1 - 1/n)
+    #ll   = quantile(FDist(1, 1), 1/n)
+    #ul   = quantile(FDist(1, 1), 1 - 1/n)
 
     # For step II use paren model coefficients
-    beta  = coef(lmm)
+    beta  = lmm.result.beta
     for i = 1:n
         # Use theta from step I
         theta = tv[i]
@@ -383,10 +400,10 @@ function dbootstrap_(lmm::LMM{T}; n, verbose, init, rng, del) where T
         # fit
         fit!(lmmb; init = init, hes = false)
         # Save results for step II
-        bv2[i] = coef(lmmb)
-        vv2[i] = stderror(lmmb)
+        bv2[i] = copy(coef_(lmmb))
+        vv2[i] = copy(stderror_(lmmb))
 
-        check_lmm!(rml, log, lmmb, tlmm, theta_(lmmb), vi, i, ll, ul)
+        check_lmm!(rml, log, lmmb, i)
         lmmb.result.fit = false
         if verbose next!(p) end
     end

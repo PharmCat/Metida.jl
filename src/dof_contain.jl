@@ -1,5 +1,7 @@
 #dof_contain.jl
 function zmatrix(lmm::LMM, i)
+    lmm.covstr.random[i].covtype.z || return Matrix{eltype(lmm.covstr.z)}(undef, nobs(lmm), 0)
+    
     l   = zeros(Int, lmm.covstr.sn[i])'
     rzm = Matrix{eltype(lmm.covstr.z)}(undef, nobs(lmm), length(lmm.covstr.zrndur[i]) * lmm.covstr.sn[i])
     sn = 1

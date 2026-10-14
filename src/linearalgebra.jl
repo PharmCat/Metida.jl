@@ -91,16 +91,17 @@ use only upper triangle of V
 @noinline function mulθ₃(y, X, β, V::AbstractArray{T}) where T # check for optimization
     q = size(V, 1)
     p = size(X, 2)
-    θ = zero(promote_type(T, eltype(β), eltype(y)))
+    R = promote_type(T, eltype(X), eltype(β), eltype(y))
+    θ = zero(R)
 
     if q == 1
-        cs = zero(T)
+        cs = zero(R)
         for m in 1:p
             @inbounds cs += X[1, m] * β[m]
         end
         return -V[1, 1] * (y[1] - cs)^2
     end
-    c = zeros(T, q)
+    c = zeros(R, q)
     for m = 1:p
         @inbounds βm = β[m]
         @simd for n = 1:q
