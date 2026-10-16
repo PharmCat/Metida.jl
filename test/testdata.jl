@@ -19,6 +19,9 @@ spatdf       = CSV.File(path*"/csv/spatialdata.csv"; types = [Int, Int, String, 
 
 devday       = CSV.File(path*"/csv/devday.csv"; types = [ Float64, String, String, String]) |> DataFrame
 
+sleepstudy   = CSV.File(path*"/csv/sleepstudy.csv";
+    types = Dict(:Reaction => Float64, :Days => Float64, :Subject => String)) |> DataFrame
+    
 dfrdsfda        = CSV.File(joinpath(path, "csv", "berds", "rds1.csv"), types = Dict(:PK => Float64, :subject => String, :period => String, :sequence => String, :treatment => String )) |> DataFrame
 dropmissing!(dfrdsfda)
 dfrdsfda.lnpk = log.(dfrdsfda.PK)

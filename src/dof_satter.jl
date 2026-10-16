@@ -53,15 +53,43 @@ end
 """
     dof_satter(lmm::LMM{T}, l) where T
 
-Return Satterthwaite approximation for the denominator degrees of freedom, where `l` is a contrast vector (estimable linear combination
-of fixed effect coefficients vector (`β`).
+Satterthwaite approximation for the denominator degrees of freedom of the
+contrast `l`, a vector or a matrix of estimable linear combinations of the
+fixed-effect coefficients `β`.
 
 ```math
 df = \\frac{2(LCL')^{2}}{g'Ag}
 ```
 
-Where: ``A = 2H^{-1}``, ``g = \\triangledown_{\\theta}(LC^{-1}_{\\theta}L')``
+Where: ``A = 2H^{-1}``, ``g = \\triangledown_{\\theta}(LC^{-1}_{\\theta}L')``,
+``C = (X'V^{-1}X)^{-1}``, and ``H`` is the Hessian of ``-2\\log REML`` at
+``\\hat\\theta``. The gradient is taken by automatic differentiation. The result
+is clamped to ``[1, \\mathrm{dof\\_residual}]``, and is `NaN` when the contrast
+has no estimable variance.
 
+Called with an integer, returns the value for that coefficient; with no
+contrast at all, the vector for every coefficient. Those are the values
+[`coeftable`](@ref) and [`confint`](@ref) use.
+
+A ``ρ`` within 1e-6 of ``\\pm 1`` makes `H` nearly singular. The directions
+that cannot be inverted are dropped, the degrees of freedom are computed on
+the rest, and a warning goes to the model log; for some contrasts the result
+is `NaN`.
+
+See also [`dof_contain`](@ref), [`typeiii`](@ref), [`contrast`](@ref).
+
+# References
+
+Satterthwaite, F. E. (1941) Synthesis of variance. *Psychometrika* 6, 309–316.
+
+Giesbrecht, F. G., Burns, J. C. (1985) Two-stage analysis based on a mixed
+model: large-sample asymptotic theory and small-sample simulation results.
+*Biometrics* 41, 853–862.
+
+Hrong-Tai Fai, A., Cornelius, P. L. (1996) Approximate F-tests of multiple
+degree of freedom hypotheses in generalized least squares analyses of
+unbalanced split-plot experiments. *Journal of Statistical Computation and
+Simulation* 54, 363–378. - the multi-row case.
 """
 function dof_satter(lmm::LMM{T}, l::AbstractVector) where T
     isfitted(lmm) || error("Model not fitted")
@@ -171,6 +199,10 @@ where:
 * ``A = 2H^{-1}``, ``g = \\triangledown_{\\theta}(Lq_i C^{-1}_{\\theta} Lq_i')``
 * ``v_i = \\frac{2*Λ_{i,i}^2}{g' * A * g}``
 * ``E = \\sum_{i=1}^n {\\frac{v_i}(v_i - 2)}`` for ``v_i > 2``
+
+For ``rank(LCL') == 1`` the result is ``v_1``, the single-degree-of-freedom
+Satterthwaite value, which is what the vector method returns for the same
+hypothesis.
 """
 function dof_satter(lmm::LMM{T}, l::AbstractMatrix) where T
     isfitted(lmm) || error("Model not fitted")
@@ -208,7 +240,7 @@ function dof_satter_(lmm::LMM{T}, l::AbstractMatrix) where T
         end
     end
 
-    df = 2em / (em - lclr)
+    df = lclr == 1 ? vm[1] : 2em / (em - lclr)  # df = 2em / (em - lclr)
     if df <= 0
         lmmlog!(lmm, 1, LMMLogMsg(:WARN, "DF <= 0, indefinite matrix A"))
         return T(NaN)

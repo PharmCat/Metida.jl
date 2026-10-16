@@ -51,11 +51,57 @@ end
 
 
 """
-    lcontrast(lmm::LMM, i::Int)
+    lcontrast(lmm::LMM, i::Int; contrasts::Symbol = :terms)
 
-L-contrast matrix for `i` fixed effect.
+Contrast matrix `L` for the `i`-th term of the fixed-effect formula, with one
+column per fixed-effect coefficient. Pass it to [`contrast`](@ref),
+[`fvalue`](@ref) or [`dof_satter`](@ref) to test `L β = 0`.
+
+`contrasts` picks the null hypothesis the rows encode:
+
+  * `:terms` (default) - the coefficients of the term are zero in the
+    parameterization the model was fitted in. A factor gives the differences
+    of its levels from its first level, everything else the indicator rows of
+    its columns.
+  * `:typeiii` - the equally weighted marginal means defined by the term are
+    equal (Searle, Speed & Milliken, 1980). `L` is the Type III estimable
+    function of the term (Goodnight, 1980): the identity on the term's own
+    columns, and on the columns of each term containing it the weights that
+    average over the levels of the CLASS variables absent from this term.
+
+See [`typeiii`](@ref) for when the two coincide.
+
+# Example
+
+```julia
+# response ~ 1 + factor * time
+lcontrast(lmm, 3)                          # time at the reference level of factor
+# 1x4 Matrix{Float64}:
+#  0.0  0.0  1.0  0.0
+
+lcontrast(lmm, 3; contrasts = :typeiii)    # time averaged over factor levels
+# 1x4 Matrix{Float64}:
+#  0.0  0.0  1.0  0.5
+```
+
+# References
+
+Goodnight, J. H. (1980) Tests of hypotheses in fixed effects linear models.
+*Communications in Statistics - Theory and Methods* 9, 167–180.
+
+Searle, S. R., Speed, F. M., Milliken, G. A. (1980) Population marginal means
+in the linear model: an alternative to least squares means. *The American
+Statistician* 34, 216–221.
 """
-function lcontrast(lmm::LMM, i::Int)
+function lcontrast(lmm::LMM, i::Int; contrasts::Symbol = :terms)
+    n = length(lmm.f.rhs.terms)
+    if i > n || i < 1 error("Factor number ($(i)) out of range 1-$(n)") end
+    contrasts === :terms   && return lcontrast_terms(lmm, i)
+    contrasts === :typeiii && return lcontrast3(lmm, i)
+    throw(ArgumentError("unknown contrasts type, allowed: :terms, :typeiii (got $contrasts)"))
+end
+
+function lcontrast_terms(lmm::LMM, i::Int)
     n = length(lmm.f.rhs.terms)
     p = size(lmm.data.xv, 2)
     if i > n || i < 1 error("Factor number ($(i)) out of range 1-$(n)") end
