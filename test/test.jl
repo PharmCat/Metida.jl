@@ -189,7 +189,7 @@ end # 2
     @refcheck "api_refmodel.logdetv" θ₁ "Σlog|V| из core_sweep_β"
     @refcheck "api_refmodel.rvr"     θ₃ "r'V⁻¹r из core_sweep_β: то же, что из reml_sweep_β"
  
-    # θ₂ хранится верхним треугольником; Symmetric даёт X'V⁻¹X
+    # θ₂ хранится верхним треугольником; Symmetric дает X'V⁻¹X
     @refprop "θ₂ хранится верхним треугольником" istriu(θ₂)
     @refrel  "Symmetric(θ₂) - это X'V⁻¹X из reml_sweep_β" Symmetric(θ₂) θs₂ 1E-6
     logdetθ₂ = logdet(Symmetric(θ₂))
@@ -266,7 +266,7 @@ end # 3
         @refprop "нижняя граница меньше верхней, коэффициент $i" c[1] < c[2]
         @refprop "оценка внутри интервала, коэффициент $i" c[1] < coef(lmm)[i] < c[2]
     end
-    # более широкий уровень даёт более широкий интервал
+    # более широкий уровень дает более широкий интервал
     c90 = Metida.confint(lmm; level = 0.90)
     c99 = Metida.confint(lmm; level = 0.99)
     @refprop "интервал уровня 99 % шире, чем 90 %" c99[1][2] - c99[1][1] > c90[1][2] - c90[1][1]
@@ -281,7 +281,7 @@ end # 4
  
     lmm = refmodel(); Metida.fit!(lmm)
  
-    # Матрицы сверяются по сумме элементов - это дешёвый отпечаток; всё
+    # Матрицы сверяются по сумме элементов - это дешевый отпечаток; все
     # остальное о них - свойства и связи, и они тоже идут в журнал.
  
     G = Metida.gmatrix(lmm, 1)
@@ -323,90 +323,188 @@ end # 4
         repeated = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG))
     Metida.fit!(lmmr)
     @refcheck "s5_lmmr.raneffn" Metida.raneffn(lmmr)
-    @refprop  "без случайной части raneff даёт nothing" (Metida.raneff(lmmr, 1) === nothing)
+    @refprop  "без случайной части raneff дает nothing" (Metida.raneff(lmmr, 1) === nothing)
  
 end # 5
 
 
-
+ 
 ########################################################################
 @testset "   6. Инференс: DF, контрасты, тип III                    " begin
 ########################################################################
- 
+
     lmm = refmodel(); Metida.fit!(lmm)
     l3  = [0 0 1 0 0 0; 0 0 0 1 0 0; 0 0 0 0 1 0]      # контраст на period
- 
-    # Числа - из словаря; у четырёх из них источник внешний (SPSS), это видно
-    # в журнале колонкой origin. Формы вызова и границы - @refrel и @refprop.
- 
+
     # --- Satterthwaite: три формы вызова должны совпадать --------------------
     d_int = Metida.dof_satter(lmm, 6)
     d_vec = Metida.dof_satter(lmm, [0, 0, 0, 0, 0, 1])
     d_all = Metida.dof_satter(lmm)
-    @refcheck "api_refmodel.dof_satter.coef6" d_int                    # SPSS:1
-    @refrel   "вектор-контраст даёт то же DF, что номер коэффициента" d_vec d_int 1E-6
+    @refcheck "api_refmodel.dof_satter.coef6" d_int                    # сверено с SPSS
+    @refrel   "вектор-контраст дает то же DF, что номер коэффициента" d_vec d_int 1E-6
     @refrel   "векторная форма согласована с поэлементной" d_all[end] d_int 1E-6
     @refcheck "api_refmodel.coefn" length(d_all) "DF считается по каждому коэффициенту"
     @refprop  "все DF не меньше единицы" all(x -> x >= 1.0, d_all)
     @refprop  "все DF не больше остаточных" all(x -> x <= dof_residual(lmm), d_all)
- 
+
     # --- Матричный контраст --------------------------------------------------
-    @refcheck "api_refmodel.dof_satter.period" Metida.dof_satter(lmm, l3)   # SPSS:2
+    @refcheck "api_refmodel.dof_satter.period" Metida.dof_satter(lmm, l3)   # сверено с SPSS
     @refrel   "lcontrast(lmm, 3) - тот же контраст, что l3" Metida.dof_satter(lmm, Metida.lcontrast(lmm, 3)) Metida.dof_satter(lmm, l3) 1E-6
     @refcheck "api_refmodel.fvalue.period" Metida.fvalue(lmm, l3)
- 
+
     # lcontrast: размерность и ранг
     L3 = Metida.lcontrast(lmm, 3)
     @refcheck "api_refmodel.coefn" size(L3, 2) "ширина L - число коэффициентов"
     @refcheck "api_refmodel.lcontrast_rank.period" rank(L3)
-    @test_nowarn Metida.lcontrast(lmm, 1)
-    @test_nowarn Metida.lcontrast(lmm, 4)
-    @test_throws ErrorException Metida.lcontrast(lmm, 99)
- 
+    @refnowarn "lcontrast первого фактора"   Metida.lcontrast(lmm, 1)
+    @refnowarn "lcontrast последнего фактора" Metida.lcontrast(lmm, 4)
+    @refthrows "lcontrast несуществующего фактора" ErrorException Metida.lcontrast(lmm, 99)
+
     # --- typeiii: три метода ddf --------------------------------------------
     t3 = Metida.typeiii(lmm)
     @refcheck "api_refmodel.typeiii_nterms" length(t3.name)
     @refprop  "все F неотрицательны" all(x -> x >= 0, t3.f)
     @refprop  "все p в [0, 1]" all(x -> 0 <= x <= 1, t3.pval)
-    @refcheck "api_refmodel.typeiii_pval.formulation" t3.pval[4]       # SPSS:3
-    @test_nowarn Metida.typeiii(lmm; ddf = :residual)
-    @test_nowarn Metida.typeiii(lmm; ddf = :contain)                   # SPSS:8
-    @test_nowarn show(io, t3)
- 
+    @refcheck "api_refmodel.typeiii_pval.formulation" t3.pval[4]       # сверено с SPSS
+    @refnowarn "typeiii с остаточными DF"              Metida.typeiii(lmm; ddf = :residual)
+    @refnowarn "typeiii с DF по вложенности"            Metida.typeiii(lmm; ddf = :contain)
+    @refnowarn "таблица типа III печатается"            show(io, t3)
+
     # typeiii и contrast на одном и том же контрасте дают одно p-значение
     ct = Metida.contrast(lmm, l3)
     @refrel   "typeiii и contrast на одном контрасте дают одно p" t3.pval[3] ct.pval[1] 1E-8
     @refcheck "api_refmodel.contrast_ndf.period" ct.ndf[1]
-    @test_nowarn show(io, ct)
-    @test_nowarn Metida.contrast(lmm, l3; name = "period", ddf = :residual)
+    @refnowarn "результат contrast печатается" show(io, ct)
+    @refnowarn "contrast с именем и остаточными DF" Metida.contrast(lmm, l3; name = "period", ddf = :residual)
     # прямое задание ddf числом
     ctd = Metida.contrast(lmm, l3; ddf = 14)
     @refcheck "api_refmodel.contrast_df.given" ctd.df[1]
- 
+
     # --- estimate ------------------------------------------------------------
     e1 = Metida.estimate(lmm, [0, 0, 0, 0, 0, 1]; level = 0.9)
-    @test_nowarn show(io, e1)
+    @refnowarn "оценка одного контраста печатается" show(io, e1)
     eall = Metida.estimate(lmm; level = 0.9)
-    @test_nowarn show(io, eall)
- 
+    @refnowarn "оценки всех коэффициентов печатаются" show(io, eall)
+
     # --- dof_contain ---------------------------------------------------------
     lmmc = Metida.LMM(@formula(var ~ period * formulation), df0;
         random = Metida.VarEffect(Metida.@covstr(formulation + sequence | nosubj), Metida.SI))
     Metida.fit!(lmmc)
-    @refrel "θ, округлённая до печатной точности, даёт то же -2logREML" Metida.m2logreml(lmmc, [0.222283, 0.444566]) Metida.m2logreml(lmmc) 1E-6
-    @refcheck "s6_lmmc.dof_contain.coef1" Metida.dof_contain(lmmc, 1)  # SPSS:9
-    @refcheck "s6_lmmc.dof_contain.coef5" Metida.dof_contain(lmmc, 5)  # SPSS:9
- 
+    @refrel "θ, округленная до печатной точности, дает то же -2logREML" Metida.m2logreml(lmmc, [0.222283, 0.444566]) Metida.m2logreml(lmmc) 1E-6
+    @refcheck "s6_lmmc.dof_contain.coef1" Metida.dof_contain(lmmc, 1)  # ref SPSS
+    @refcheck "s6_lmmc.dof_contain.coef5" Metida.dof_contain(lmmc, 5)  # ref SPSS
+
     tt = Metida.typeiii(lmmc)
-    @refcheck "s6_lmmc.typeiii_f.period"    tt.f[2]                    # SPSS:4
+    @refcheck "s6_lmmc.typeiii_f.period"    tt.f[2]                    # ref SPSS
     @refcheck "s6_lmmc.typeiii_ndf.period"  tt.ndf[2]
-    @refcheck "s6_lmmc.typeiii_df.period"   tt.df[2]                   # SPSS:4
+    @refcheck "s6_lmmc.typeiii_df.period"   tt.df[2]                   # ref SPSS
     @refcheck "s6_lmmc.typeiii_pval.period" tt.pval[2]
-    # Диагностика на случай платформенного расхождения (см. SPSS_VALIDATION.md):
-    # df == 1.0 означает срабатывание заглушки df < 1 в dof_satter_, а не
-    # законную оценку - при lclr = 3 значения из (1, 2] недостижимы.
+    # Диагностика на случай платформенного расхождения 
+    # df == 1.0 означает срабатывание заглушки df < 1 в dof_satter_
     @refprop "DF не схлопнулся в заглушку df < 1" tt.df[2] > 2.0
- 
+
+    # --- DF: формы вызова, методы и границы ----------------------------------
+    lmmbe = Metida.LMM(@formula(var ~ sequence + period + formulation), df0;
+        random   = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.CSH),
+        repeated = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG))
+    Metida.fit!(lmmbe)
+    lmmli = Metida.LMM(@formula(var ~ sequence + period + formulation), df1;
+        random   = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.CSH),
+        repeated = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG))
+    Metida.fit!(lmmli)
+    lmmsl = Metida.LMM(@formula(Reaction ~ 1 + Days), sleepstudy;
+        random = Metida.VarEffect(Metida.@covstr(1 + Days | Subject), Metida.UN))
+    Metida.fit!(lmmsl)
+    dfmodels = ["api_refmodel" => lmm, "s6_lmmc" => lmmc, "s8_be" => lmmbe,
+                "s10_linc" => lmmli, "sleep_un" => lmmsl]
+
+    # 
+    for (nm, md) in dfmodels
+        n    = Metida.coefn(md)
+        dall = Metida.dof_satter(md)
+        ok   = (a, b) -> (isnan(a) && isnan(b)) || isapprox(a, b; atol = 1E-8)
+        shapes = trues(5)
+        for i in 1:n
+            l  = zeros(n); l[i] = 1.0
+            ls = zeros(n); ls[i] = -3.5          # масштаб L не меняет DF
+            di = Metida.dof_satter(md, i)
+            shapes[1] &= ok(di, dall[i])
+            shapes[2] &= ok(Metida.dof_satter(md, l), di)
+            shapes[3] &= ok(Metida.dof_satter(md, reshape(l, 1, n)), di)
+            shapes[4] &= ok(Metida.dof_satter(md, vcat(l', l')), di)
+            shapes[5] &= ok(Metida.dof_satter(md, ls), di)
+        end
+        @refprop "$nm: номер коэффициента и вектор по всем дают одно DF"  shapes[1]
+        @refprop "$nm: вектор-контраст дает то же DF, что номер"          shapes[2]
+        @refprop "$nm: матрица 1×p дает то же DF, что вектор"             shapes[3]
+        @refprop "$nm: матрица ранга 1 из двух строк дает то же DF"       shapes[4]
+        @refprop "$nm: масштаб контраста не меняет DF"                    shapes[5]
+        @refprop "$nm: все DF в [1, dof_residual]" all(d -> isnan(d) || 1.0 <= d <= Metida.dof_residual(md), dall)
+        # Нулевой контраст не имеет дисперсии, и это NaN, а не число и не
+        # исключение - в обеих формах одинаково.
+        z = zeros(n)
+        @refprop "$nm: нулевой контраст дает NaN вектором"      isnan(Metida.dof_satter(md, z))
+        @refprop "$nm: нулевой контраст дает NaN матрицей 1×p"  isnan(Metida.dof_satter(md, reshape(z, 1, n)))
+    end
+
+    # 
+    for (nm, md) in dfmodels
+        ts = Metida.typeiii(md; ddf = :satter)
+        tc = Metida.typeiii(md; ddf = :contain)
+        tr = Metida.typeiii(md; ddf = :residual)
+        @refrel  "$nm: F не зависит от метода DF (satter против contain)"  maximum(abs.(ts.f .- tc.f)) 0.0 1E-10
+        @refrel  "$nm: F не зависит от метода DF (satter против residual)" maximum(abs.(ts.f .- tr.f)) 0.0 1E-10
+        @refprop "$nm: ddf = :residual дает остаточные DF во всех строках" all(==(Metida.dof_residual(md)), tr.df)
+        @refprop "$nm: ndf от метода DF не зависит" ts.ndf == tc.ndf == tr.ndf
+    end
+    @refprop "методы DF дают разные значения, а не один и тот же" (
+        Metida.typeiii(lmm; ddf = :satter).df != Metida.typeiii(lmm; ddf = :contain).df &&
+        Metida.typeiii(lmm; ddf = :contain).df != Metida.typeiii(lmm; ddf = :residual).df)
+
+    # Аналитический случай 
+    @refrel  "sleepstudy UN: DF равен nblocks − 1 для каждого коэффициента" maximum(abs.(Metida.dof_satter(lmmsl) .- (Metida.nblocks(lmmsl) - 1))) 0.0 1E-6
+    @refrel  "sleepstudy UN: то же для гипотезы полного ранга" Metida.dof_satter(lmmsl, Matrix{Float64}(I, 2, 2)) (Metida.nblocks(lmmsl) - 1.0) 1E-6
+    @refprop "s6_lmmc: DF упираются в остаточные" all(==(Metida.dof_residual(lmmc)), Metida.dof_satter(lmmc))
+
+    # Значения всех форм на четырех моделях
+    idm(md) = Matrix{Float64}(I, Metida.coefn(md), Metida.coefn(md))
+
+    @refcheck "api_refmodel.dof_satter.all"      Metida.dof_satter(lmm)
+    @refcheck "api_refmodel.dof_contain.all"     Metida.dof_contain(lmm)
+    @refcheck "api_refmodel.typeiii_df.satter"   Metida.typeiii(lmm; ddf = :satter).df
+    @refcheck "api_refmodel.typeiii_df.contain"  Metida.typeiii(lmm; ddf = :contain).df
+    @refcheck "api_refmodel.dof_satter.identity" Metida.dof_satter(lmm, idm(lmm))
+
+    @refcheck "s6_lmmc.dof_satter.all"      Metida.dof_satter(lmmc)
+    @refcheck "s6_lmmc.dof_contain.all"     Metida.dof_contain(lmmc)
+    @refcheck "s6_lmmc.typeiii_df.satter"   Metida.typeiii(lmmc; ddf = :satter).df
+    @refcheck "s6_lmmc.typeiii_df.contain"  Metida.typeiii(lmmc; ddf = :contain).df
+    @refcheck "s6_lmmc.dof_satter.identity" Metida.dof_satter(lmmc, idm(lmmc))
+
+    @refcheck "s8_be.dof_satter.all"      Metida.dof_satter(lmmbe)
+    @refcheck "s8_be.dof_contain.all"     Metida.dof_contain(lmmbe)
+    @refcheck "s8_be.typeiii_df.satter"   Metida.typeiii(lmmbe; ddf = :satter).df
+    @refcheck "s8_be.typeiii_df.contain"  Metida.typeiii(lmmbe; ddf = :contain).df
+    @refcheck "s8_be.dof_satter.identity" Metida.dof_satter(lmmbe, idm(lmmbe))
+
+    @refcheck "s10_linc.dof_satter.all"      Metida.dof_satter(lmmli)
+    @refcheck "s10_linc.dof_contain.all"     Metida.dof_contain(lmmli)
+    @refcheck "s10_linc.typeiii_df.satter"   Metida.typeiii(lmmli; ddf = :satter).df
+    @refcheck "s10_linc.typeiii_df.contain"  Metida.typeiii(lmmli; ddf = :contain).df
+    @refcheck "s10_linc.dof_satter.identity" Metida.dof_satter(lmmli, idm(lmmli))
+
+    # confint
+    ciS = [c[2] - c[1] for c in Metida.confint(lmm; ddf = :satter)]
+    ciC = [c[2] - c[1] for c in Metida.confint(lmm; ddf = :contain)]
+    ciR = [c[2] - c[1] for c in Metida.confint(lmm; ddf = :residual)]
+    @refprop "confint: сатертвейтовский интервал не уже, чем по вложенности" all(ciS .>= ciC .- 1E-6)
+    @refprop "confint: по вложенности не уже остаточного"                    all(ciC .>= ciR .- 1E-12)
+    @refrel  "у четвертого коэффициента два метода дают один и тот же DF" Metida.dof_satter(lmm, 4) 8.0 1E-6
+    @refprop "confint: методы дают разные интервалы"                          ciS != ciC && ciC != ciR
+    @refnowarn "confint по одному коэффициенту с DF по вложенности" Metida.confint(lmm, 1; ddf = :contain)
+    @refthrows "confint с неизвестным методом DF" ArgumentError Metida.confint(lmm; ddf = :bogus)
+    @refthrows "typeiii с неизвестным методом DF" ArgumentError Metida.typeiii(lmm; ddf = :bogus)
+
 end # 6
 
 
@@ -418,7 +516,7 @@ end # 6
         random = Metida.VarEffect(Metida.@covstr(1 + formulation | subject), Metida.CSH;
                                   coding = Dict(:formulation => StatsModels.DummyCoding())))
  
-    # У каждой link-функции свой эталон: ключ несёт вариант подгонки, поэтому
+    # У каждой link-функции свой эталон: ключ несет вариант подгонки, поэтому
     # в журнале видно, какое отображение проверялось.
  
     l = mk(); Metida.fit!(l; rholinkf = :sqsigm)
@@ -453,7 +551,7 @@ end # 6
     @refcheck "api_refmodel.reml.alt_optimizer" Metida.m2logreml(lmm) "оптимизатор BFGS"
  
     # --- применение link-функций напрямую ------------------------------------
-    # θ хранится в неограниченной шкале, `varlinkvecapply` переводит её в
+    # θ хранится в неограниченной шкале, `varlinkvecapply` переводит ее в
     # шкалу параметров: exp для дисперсий, sigm для корреляций.
     @refcheck "s7_varlink.varlinkvecapply" Metida.varlinkvecapply([0.1, 0.1], [:var, :rho]; varlinkf = :exp, rholinkf = :sigm)
  
@@ -581,7 +679,7 @@ end # 9
     @refnowarn "печать модели неполного ранга"       show(io, lrd)
     # Отброшенные коэффициенты помечены NaN в vcov/stderror
     @refcheck "s10_lrd.stderror_nan" count(isnan, Metida.stderror(lrd))
-    @refrel   "coef отдаёт все коэффициенты, включая отброшенный" length(Metida.coef(lrd)) Metida.coefn(lrd)
+    @refrel   "coef отдает все коэффициенты, включая отброшенный" length(Metida.coef(lrd)) Metida.coefn(lrd)
  
 end # 10
 
@@ -593,7 +691,7 @@ end # 10
     lmm = refmodel(); Metida.fit!(lmm)
     @refcheck "api_refmodel.msgnum"      Metida.msgnum(lmm.log)
     @refcheck "api_refmodel.msgnum.info" Metida.msgnum(lmm.log, :INFO)
-    @refprop  "лог отдаётся вектором" (Metida.getlog(lmm) isa Vector)
+    @refprop  "лог отдается вектором" (Metida.getlog(lmm) isa Vector)
     @refnowarn "печать модели"  show(io, lmm)
     @refnowarn "печать лога"    show(io, Metida.getlog(lmm))
  
@@ -664,7 +762,7 @@ end # 12
     br = Metida.bootstrap(lmm; n = 20, verbose = false, rng = StableRNG(20240503))
     @refnowarn "печать результата бутстрапа" show(io, br)
     cb = Metida.confint(br; level = 0.95, method = :bp)
-    @refcheck "api_refmodel.coefn" length(cb) "бутстрап даёт интервал на каждый коэффициент"
+    @refcheck "api_refmodel.coefn" length(cb) "бутстрап дает интервал на каждый коэффициент"
     @refprop  "у всех бутстрап-интервалов нижняя граница ниже верхней" all(c -> c[1] < c[2], cb)
     for m in (:bp, :rbp, :norm, :bcnorm)
         @refnowarn "бутстрап-интервал методом $m" Metida.confint(br, 1; method = m)
@@ -727,12 +825,12 @@ end # 13
     @refprop "без pairwise пар нет" isnothing(ls.pairs)
     @refnowarn "таблица с попарными сравнениями печатается" show(io, lsp)
 
-    # Ковариата держится в своём выборочном среднем, и это можно переопределить
+    # Ковариата держится в своем выборочном среднем, и это можно переопределить
     lmmv = Metida.LMM(@formula(var ~ formulation * var2), df0;
         random = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG))
     Metida.fit!(lmmv)
-    @refrel  "умолчание ковариаты - её выборочное среднее" Metida.lsmeans(lmmv, :formulation).means.estimate[1] Metida.lsmeans(lmmv, :formulation; at = Dict(:var2 => mean(df0.var2))).means.estimate[1] 1E-12
-    @refprop "другое значение ковариаты даёт другое среднее" Metida.lsmeans(lmmv, :formulation; at = Dict(:var2 => 5.0)).means.estimate[1] != Metida.lsmeans(lmmv, :formulation).means.estimate[1]
+    @refrel  "умолчание ковариаты - ее выборочное среднее" Metida.lsmeans(lmmv, :formulation).means.estimate[1] Metida.lsmeans(lmmv, :formulation; at = Dict(:var2 => mean(df0.var2))).means.estimate[1] 1E-12
+    @refprop "другое значение ковариаты дает другое среднее" Metida.lsmeans(lmmv, :formulation; at = Dict(:var2 => 5.0)).means.estimate[1] != Metida.lsmeans(lmmv, :formulation).means.estimate[1]
 
     @refthrows "фактора нет в фиксированной части"   ArgumentError Metida.lsmeans(lmm, :nosuchfactor)
     @refthrows "фактор назван дважды"                ArgumentError Metida.lsmeans(lmm, [:period, :period])
@@ -775,7 +873,7 @@ end # 13
     ficomp = Metida.lsmcomps(lmmfi.f.rhs.terms[end])
     fimean = mean(log.(df0.var2))
     fil    = try Metida.lsml(lmmfi, Dict(:formulation => "1")) catch e; e end
-    @refprop "взаимодействие раскладывается на фактор и ещё одну компоненту" length(ficomp) == 2 && count(c -> isa(c, CategoricalTerm), ficomp) == 1
+    @refprop "взаимодействие раскладывается на фактор и еще одну компоненту" length(ficomp) == 2 && count(c -> isa(c, CategoricalTerm), ficomp) == 1
     @refprop "функциональный терм внутри взаимодействия: отказ либо mean(log(var2))" fil isa ArgumentError || (fil isa AbstractVector && count(x -> isapprox(x, fimean; rtol = 1E-12), fil) == 1)
 
 end # 14

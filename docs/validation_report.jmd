@@ -1,0 +1,654 @@
+---
+title: Metida validation report
+author: Vladimir Arnautov
+date: `j import Dates; Dates.Date(Dates.now())`
+mainfont: romanuni.ttf
+sansfont: NotoSans-Regular.ttf
+monofont: NotoSansMono-Regular.ttf
+mathfont: texgyredejavu-math.otf
+---
+
+```julia; echo = false
+using Metida, Pkg
+const VALDIR = joinpath(dirname(pathof(Metida)), "..", "test")
+include(joinpath(VALDIR, "acceptance.jl"))
+```
+
+```julia; echo = false
+using Dates, DataFrames, CSV, PrettyTables, Test
+```
+
+```julia; echo = false
+
+val_init = try
+    include(joinpath(VALDIR, "validation_init.jl"))
+    true
+catch err
+    @error "validation_init.jl failed" exception = (err, catch_backtrace())
+    false
+end
+acceptance_mark("VAL-INIT", val_init,
+    "validation_init.jl: datasets and packages for the validation categories")
+```
+
+\pagebreak
+
+# Introduction and package description
+
+Multilevel models (also known as hierarchical linear models, linear mixed-effect models,
+mixed models, nested data models, random coefficient, random-effects models, random
+parameter models, or split-plot designs) are statistical models of parameters that vary at
+more than one level. An example could be a model of student performance that contains
+measures for individual students as well as measures for classrooms within which the
+students are grouped. These models can be seen as generalizations of linear models (in
+particular, linear regression), although they can also extend to non-linear models.
+
+Metida.jl is a Julia package for fitting mixed-effects models with flexible covariance
+structure.
+
+See documentation:
+
+  * Dev: [https://pharmcat.github.io/Metida.jl/dev/](https://pharmcat.github.io/Metida.jl/dev/)
+  * Stable: [https://pharmcat.github.io/Metida.jl/stable/](https://pharmcat.github.io/Metida.jl/stable/)
+
+## Validation purpose
+
+The main validation purpose is confirmation by examination and provision of objective
+evidence that software specifications conform to user needs and intended uses, and that the
+particular requirements implemented through software can be consistently fulfilled.
+
+Fitting a mixed model is a complex task: initial conditions, the random- and repeated-effect
+model and the structure of the data all affect the result. Metida.jl offers many
+combinations of settings and it is not possible to check them all. Within the scope of this
+validation every public method is exercised at least once, and for the critical tasks wide
+data examples are analysed.
+
+## Acceptance criteria
+
+### Kinds of evidence
+
+Checks in this report rest on four kinds of claim, and they are **not interchangeable**. The
+chapter *Operation qualification* reports, for every section of the test suite, how many of
+each it makes.
+
+  * **External** - the corresponding value from an independent implementation: IBM SPSS
+    Statistics 28, MixedModels.jl fitted in the same run, or a published table. This is the
+    evidence of the *Performance qualification* chapter.
+  * **Relation** - an identity between two quantities computed in the same run, such as
+    `aic = -2logml + 2p`, the ordering of two confidence intervals, or two code paths that
+    must reach the same number. No constant is stored, so nothing can go stale, and the
+    claim holds whatever the data.
+  * **Property** - a claim with nothing to compare against: positive definiteness, symmetry,
+    a rank, a row count, a flag for a non-estimable contrast.
+  * **Internal** - a value this package produced and that is carried forward unchanged. It
+    establishes that the behaviour has not changed and **nothing more**; it is not evidence
+    of correctness. The reference dictionary marks every such value with
+    `source = metida`, and the tables below report how many there are.
+
+Behaviour of a call - that it completes quietly, warns with a given text, or throws a given
+exception type - is recorded in the same journal and counted separately.
+
+### The criterion
+
+A single comparison is accepted when
+
+$|x_{Metida} - x_{ref}| \le r_{tol} \times |x_{ref}| + a_{tol}$
+
+The tolerance is **not one number for the whole report**, and that is deliberate. Each
+quantity carries its own, from the same place as its reference:
+
+  * in the dictionary the tolerance sits in the `atol` and `rtol` columns next to the value,
+    so the test source contains neither the number nor the tolerance;
+  * the validation categories state theirs in their own headers: `1e-6` to the SPSS value
+    for `-2logREML`, `1e-4` to MixedModels.jl, half of the last printed digit for the
+    published bioequivalence table;
+  * where a claim is a relation or a property there is no tolerance to state - the identity
+    either holds to machine precision or the claim is false.
+
+A single tolerance over all of it would either demand more than a reference printed to six
+significant digits can support, or allow less than a comparison with a closed form should.
+Where a scenario states no tolerance the defaults $r_{tol}$ = `j ACCEPT_RTOL` and $a_{tol}$
+= `j ACCEPT_ATOL` apply.
+
+The report is accepted only when **all** of the following hold:
+
+  * every record of the API check journal passed;
+  * every record the report made itself passed, which includes the package test suite and
+    the three validation categories;
+  * every required scenario reported its results.
+
+The third condition is not redundant: the document generator renders a failing code chunk
+into the document and carries on, which would otherwise drop a results table without any
+other sign. The same applies to the Conclusion, which marks itself once it has rendered.
+
+### Where the verdict is
+
+This report is produced whatever the outcome of the checks, and it carries its own verdict.
+The verdict draws on three sources and none of them substitutes for another:
+
+| Source | What it holds | Written by |
+|---|---|---|
+| `test/references/testlog.csv` | one row per check of the API test suite | the test suite itself |
+| the acceptance log | the package test run and the three validation categories | this report |
+| the list of required scenarios | that every chapter reported at all | this report |
+
+The Conclusion states the verdict, summarises every scenario and lists **every divergence**.
+The acceptance log is written next to this report as `docs/src/validation_acceptance.tsv`
+and the divergences as `docs/src/validation_divergences.tsv`, so they can be read without
+opening the PDF. An empty divergence file is itself a statement: it is written even when
+nothing diverged.
+
+Independently of the report, `acceptance_verdict()` in `test/acceptance.jl` is called
+outside the document generator, after the report is built, and aborts the documentation
+build on a negative verdict - the generator swallows errors raised inside a code chunk, so a
+verdict computed only inside the report could never fail.
+
+## Requirements
+
+  * Julia 1.8 (or higher) installed for an Operating System / OS Version / Architecture in
+    the Tier 1 list
+  * Julia packages from the dependency list installed (see
+    [Project.toml](https://github.com/PharmCat/Metida.jl/blob/master/Project.toml))
+
+*Tier 1: Julia is guaranteed to build from source and pass all tests on these platforms when
+built with the default options. Official binaries are always available and CI is run on every
+commit to ensure support is actively maintained.*
+
+## Developer software life cycle
+
+  * Development stage
+  * Testing procedures development
+  * Performing testing procedures on local machine
+  * Push to development branch
+  * Make pull request to master branch
+  * Performing testing procedures with GitHub Actions
+  * Make pull request to the official registry of general Julia packages (if necessary)
+  * Make release (if previous completed)
+
+### Versions
+
+  * X.Y.Z - patch release (no breaking changes)
+  * X.Y.0 - minor release (may include breaking changes if X = 0)
+  * X.0.0 - major release (breaking changes, changes in public API)
+  * 0.#.# - no stable public API
+  * 1.#.# or higher - stable public API
+
+## Build support
+
+### Tier 1
+
+  * julia-version: 1.8, 1
+  * julia-arch: x64
+  * os: ubuntu-latest, macOS-latest, windows-latest
+
+\pagebreak
+
+# Installation
+
+## System information
+
+ * Julia version: `j Sys.VERSION`
+ * Current machine: `j Sys.MACHINE`
+
+## Installation method
+
+Metida.jl can be installed by executing the following command in REPL:
+
+```julia; eval = false
+import Pkg; Pkg.add("Metida")
+```
+
+## Version check
+
+The installation process is checked within each testing job via GitHub Actions. Also the
+GitHub Action [check](https://github.com/JuliaRegistries/General/blob/master/.github/workflows/automerge.yml)
+is performed before merging into the JuliaRegistries/General repository (see
+[Automatic merging of pull requests](https://github.com/JuliaRegistries/General#automatic-merging-of-pull-requests)).
+
+```julia; echo = false; results = "hidden"
+pkgversion_(m::Module) = Pkg.TOML.parsefile(joinpath(dirname(string(first(methods(m.eval)).file)), "..", "Project.toml"))["version"]
+ver = pkgversion_(Metida)
+```
+
+Current package version:
+```julia; echo = false; results = "tex"
+ver
+```
+
+\pagebreak
+
+# Operation qualification
+
+This part of validation entails running the software under known conditions with defined
+inputs and documented outcomes that can be compared to their predefined expectations. All
+documented public API is included in the testing procedures, together with part of the
+critical internal methods. Testing procedures can be found in the `test` directory; their
+registry is `test/REGISTRY.md`.
+
+## Coverage
+
+Code coverage report available on
+[Codecov.io](https://app.codecov.io/gh/PharmCat/Metida.jl).
+
+* Coverage goal: ≥ 90.0%
+
+## Data
+
+For the operation checks generated data is used; for any purpose this data is available in
+the repository and included in the package. Model specifications are not written inline in
+the tests either: they are recorded in `test/references/models.csv` and
+`test/references/effects.csv`, from which the SPSS syntax of the validation runs is also
+built.
+
+```julia; echo = false, results = "tex"
+print(acceptance_md(dataset_table()))
+```
+Table: Datasets and the number of model specifications on each
+
+```julia; echo = false, results = "tex"
+print(acceptance_md(structure_table()))
+```
+Table: Covariance structures over the specified effects
+
+## Testing results
+
+The outcome is recorded and enforced: a failing test suite makes `acceptance_verdict()`
+abort the build (see *Acceptance criteria*). The `try`/`catch` exists only because the
+document generator does not propagate errors raised inside a chunk.
+
+This run comes first in the chapter on purpose: the suite writes the check journal that
+every table below reads, so the tables describe the run just made and not a journal left
+over from an earlier one.
+
+```julia; echo = true; wrap = false
+test_passed = try
+    Pkg.test("Metida")
+    true
+catch err
+    @error "Metida test suite failed" exception = (err, catch_backtrace())
+    false
+end
+acceptance_mark("PKG-TEST", test_passed, "Pkg.test(Metida)")
+```
+
+## The check journal
+
+No test holds its expected numbers. They live in `test/references/values.csv`, one row per
+(key, index), and a check refers to one by key:
+
+```julia; eval = false
+@refcheck "api_refmodel.nobs" Metida.nobs(lmm)
+```
+
+The macro takes the expected value and the tolerance from the dictionary, compares, expands
+into an ordinary `@test` - the run sees it like any other - and appends a row to the
+journal. When the run ends the journal holds one row per check: the section it stands in,
+the function, the key, the expected and the obtained value, the difference, the tolerance,
+the source of the reference, the kind of claim and the outcome. It is written to
+`test/references/testlog.csv` whatever the outcome, so an empty failure list is a statement
+rather than an absence of data.
+
+```julia; echo = false, results = "tex"
+acceptance_mark("API-JOURNAL", nrow(journal()) > 0,
+                "journal present: $(nrow(journal())) records")
+acceptance_mark("API-JOURNAL", nrow(journal_failures()) == 0,
+                "all $(nrow(journal())) journal records passed")
+print(acceptance_md(journal_origin_table()))
+```
+Table: The check journal by kind of claim
+
+Two readings of that table matter for what this chapter establishes. The rows marked
+`metida` are internal baselines: they fix behaviour and are not evidence of correctness, and
+they are the largest single group. The `relation` rows carry no stored constant at all - the
+expected value is computed in the same run from other quantities of the same model - and the
+`property` rows carry none either. External evidence inside this chapter amounts to the
+`spss` rows alone; the external case is made in the *Performance qualification* chapter,
+which is why the two chapters are kept apart.
+
+## Sections of the public API suite
+
+Fourteen sections, one per area of the public interface.
+
+```julia; echo = false, results = "tex"
+print(acceptance_md(journal_section_table(prefix = "Publick API basic tests")))
+```
+Table: Records of the public API suite, by section
+
+## Sections over model variants
+
+The remaining sections of the journal fit one model each and check the quantities that model
+is there for: a covariance structure, a parameterisation, a dataset with a gap.
+
+```julia; echo = false, results = "tex"
+jt  = journal_section_table()
+api = Set(journal_section_table(prefix = "Publick API basic tests")[!, "Section"])
+print(acceptance_md(jt[[!(s in api) for s in jt[!, "Section"]], :]))
+```
+Table: Records over model variants, by section
+
+## The reference dictionary
+
+```julia; echo = false, results = "tex"
+print(acceptance_md(dictionary_source_table()))
+```
+Table: The reference dictionary by source of the reference
+
+## Public names exercised
+
+Every public name of the module, and the number of journal records in which the check is
+named after it. A name with no records of its own is either an alias of a type that is
+checked under that type's name, a macro that appears inside the checked expression, or a
+method covered by another file; the last column says which.
+
+```julia; echo = false, results = "tex"
+print(acceptance_md(api_name_table(Metida)))
+```
+Table: Public names of Metida against the records of the check journal
+
+The traceability matrix in the *Performance qualification* chapter answers the same question
+from the other side: for every public name, which files and sections check it and against
+what reference.
+
+\pagebreak
+
+# Performance qualification
+
+The purpose of these procedures is to demonstrate performance on the critical tasks. The
+goal is not to demonstrate every capability of the software, but to establish that the
+analysis of specific narrow tasks is correct on wide data examples. Public datasets are used
+as reference data, and the output is compared with results in publications and with results
+from other statistical software: MixedModels.jl and IBM SPSS.
+
+## Validation programme
+
+Validation answers one question: do the numbers agree with an outside reference. This is
+distinct from the operation qualification above, which checks that each public method
+behaves as documented and whose references are in the main the package's own values. The
+registry of both sets of procedures is in `test/REGISTRY.md`.
+
+The programme has three categories, chosen by the kind of reference available and by the
+kind of task:
+
+| # | Procedure | Reference | Scope | Acceptance |
+|---|---|---|---|---|
+| 1 | `validation_mm.jl` | MixedModels.jl (same run) and IBM SPSS | 11 models on 5 public datasets | `-2logREML` to 1e-6 against SPSS, 1e-4 against MixedModels.jl |
+| 2 | `validation_be.jl` | IBM SPSS; Schütz et al. 2020 for the intervals | 30 bioequivalence datasets, models B and C | `-2logREML` to the SPSS value, and the 90 % confidence interval of the treatment contrast to the published table |
+| 3 | `validation_spss.jl` | IBM SPSS | covariance-parameter inference, 8 models | every printed element of `W = 2H^{-1}`, standard errors, Type III, Satterthwaite DF |
+
+### Rationale for the three categories
+
+**Category 1** fixes the objective function and the point estimates on data that are public
+and widely used, so a third party can reproduce them. Where the covariance structure can be
+written in MixedModels.jl, both packages fit the same model in the same run and the values
+are compared directly; there is no stored constant that can go stale, and the two
+implementations share no code. Where the structure cannot be written in MixedModels.jl
+(`CS`, `CSH`, `ARH`, `ARMA`, `AR`), the reference is IBM SPSS, quoted together with the
+syntax that produced it.
+
+**Category 2** covers the task the package is used for in practice. A bioequivalence
+decision is made on a confidence interval, not on the objective function, so the interval is
+part of the acceptance criteria: it is taken from `confint`, the path a user takes, and
+compared with the published table (Schütz et al., AAPS J 2020;22(2):44, Table II, method B)
+to half of its last digit. All sixty bounds agree exactly at that precision. Thirty
+reference datasets are used rather than one, which exposes the convergence behaviour: eight
+of them carry an SPSS warning about a non-positive-definite Hessian and six about
+non-convergence, and those are listed in the procedure with wider tolerances.
+
+**Category 3** goes one level deeper than the first two. Agreement on `-2logREML` and on the
+point estimates does not establish that the standard errors and the degrees of freedom are
+right, because those come from the asymptotic covariance of the covariance parameters,
+`W = 2H^{-1}`. SPSS prints that matrix under `/PRINT=COVB`, which makes it checkable: 36
+diagonal and 100 off-diagonal elements across 8 models, plus the Type III table row by row,
+a parameter on the boundary of its space, and a rank-deficient model. Known disagreements
+are recorded as defect markers rather than hidden behind loose tolerances; the evidence that
+each belongs to the reference and not to Metida is in the header of that file.
+
+## Traceability matrix
+
+The matrix below is generated from the test sources by `test/traceability.jl`. For every
+public name, covariance structure and reported quantity it gives the files and sections that
+check it, and the reference those sections compare against. The same page ships with the
+documentation.
+
+```julia; echo = false; results = "raw"
+println(replace(read(joinpath(VALDIR, "..", "docs", "src", "traceability.md"), String),
+                r"^#"m => "##"))
+```
+
+\pagebreak
+
+## Bioequivalence
+
+Bioequivalence reference datasets were used to validate performance for this task. Model B
+and model C are in validation scope.
+
+#### Model B Metida example
+
+```
+lmm =  LMM(@formula(lnpk~sequence+period+treatment), dfrds;
+random =  VarEffect(Metida.@covstr(1|subject),  SI),
+)
+fit!(lmm)
+```
+
+##### Model B SPSS example
+
+```
+MIXED lnpk BY period sequence treatment subject
+  /CRITERIA=DFMETHOD(SATTERTHWAITE) CIN(95) MXITER(100) MXSTEP(10) SCORING(1)
+    SINGULAR(0.000000000001) HCONVERGE(0, ABSOLUTE) LCONVERGE(0, ABSOLUTE)
+    PCONVERGE(0.000001, ABSOLUTE)
+  /FIXED=period sequence treatment | SSTYPE(3)
+  /METHOD=REML
+  /RANDOM= subject(sequence) | COVTYPE(ID)
+  /EMMEANS=TABLES(treatment) COMPARE REFCAT(FIRST) ADJ(LSD).
+```
+
+#### Model C Metida example
+
+```
+lmm =  LMM(@formula(lnpk~sequence+period+treatment), dfrds;
+    random =  VarEffect(Metida.@covstr(treatment|subject),  CSH),
+    repeated =  VarEffect(Metida.@covstr(treatment|subject),  DIAG),
+    )
+     fit!(lmm)
+```
+
+#### Model C SPSS example
+
+```
+MIXED lnpk BY period treatment sequence subject
+  /CRITERIA=CIN(90) MXITER(200) MXSTEP(20) SCORING(2) SINGULAR(0.000000000001)
+  HCONVERGE(0, RELATIVE) LCONVERGE(0.0000000000001, RELATIVE)
+  PCONVERGE(0, RELATIVE)
+  /FIXED=period treatment sequence | SSTYPE(3)
+  /METHOD=REML
+  /RANDOM=treatment | SUBJECT(subject) COVTYPE(CSH)
+  /REPEATED=treatment | SUBJECT(subject*period) COVTYPE(DIAG)
+  /EMMEANS=TABLES(treatment) COMPARE REFCAT(FIRST) ADJ(LSD).
+```
+
+The following quantities are compared:
+
+  * the `-2logREML` value
+  * the upper bound of the 90 % confidence interval
+  * the lower bound of the 90 % confidence interval
+
+\pagebreak
+
+#### Results
+
+```julia; echo = false
+acceptance_run("VAL-BE", "Bioequivalence, 30 reference datasets") do
+    include(joinpath(VALDIR, "validation_be.jl"))
+end
+```
+
+```julia; echo = false, results = "tex"
+print(acceptance_note("VAL-BE"))
+```
+
+\pagebreak
+
+## Public datasets
+
+Datasets from the MixedModels.jl documentation. Models 1, 5 and 7 are fitted by both
+packages in this run and compared directly; the rest use structures that MixedModels.jl
+cannot express and are compared with IBM SPSS.
+
+```julia; echo = false
+acceptance_run("VAL-MM", "Public datasets, MixedModels.jl and SPSS") do
+    include(joinpath(VALDIR, "validation_mm.jl"))
+end
+```
+
+```julia; echo = false, results = "tex"
+print(acceptance_note("VAL-MM"))
+```
+
+\pagebreak
+
+## Covariance parameter inference
+
+`W = 2H^{-1}` is the asymptotic covariance of the covariance parameter estimates and the
+basis of every Satterthwaite degree of freedom in the package. IBM SPSS prints it under
+`/PRINT=COVB`, which makes the comparison possible element by element. Eight models, 136
+elements of `W`, the Type III table, a parameter on the boundary and a rank-deficient model.
+
+```julia; echo = false
+acceptance_run("VAL-SPSS", "Covariance parameter inference against SPSS") do
+    include(joinpath(VALDIR, "validation_spss.jl"))
+end
+```
+
+```julia; echo = false, results = "tex"
+print(acceptance_note("VAL-SPSS"))
+```
+
+\pagebreak
+
+# Validation coverage
+
+What this report establishes, and what it does not.
+
+| Kind | What it establishes | Where it comes from |
+|---|---|---|
+| external | agreement with an independent implementation or a published table | IBM SPSS 28, MixedModels.jl, Schütz et al. 2020 |
+| relation | an identity between quantities of the same run, with no stored constant | the API check journal, `relation` rows |
+| property | a structural claim: definiteness, symmetry, rank, estimability | the API check journal, `property` rows |
+| internal | that the behaviour has not changed | the dictionary, `source = metida` |
+
+An internal baseline is **not** evidence of correctness. The operation qualification rests
+largely on internal baselines and on relations and properties, and it is reported as such;
+the external case is made by the three validation categories.
+
+Three things this report does not establish, stated so that they are not read into it:
+
+  * **It does not cover every combination of settings.** Initial values, link functions,
+    optimiser and covariance structure form a space that cannot be enumerated; the suite
+    exercises each public method and each structure, not their product.
+  * **It does not establish the asymptotics.** Standard errors and Satterthwaite degrees of
+    freedom are compared with SPSS to the printed precision; both implementations rest on
+    the same asymptotic argument, and agreement between them is not evidence about that
+    argument.
+  * **It is not a statement about data it has not seen.** The convergence behaviour reported
+    for the thirty bioequivalence datasets is a property of those datasets.
+
+\pagebreak
+
+# Conclusion
+
+## Verdict
+
+```julia; echo = false, results = "tex"
+print(acceptance_conclusion_text())
+```
+
+## Summary by scenario
+
+Every scenario of this report, the number of comparisons it made against reference values
+and the number of recorded outcomes that failed.
+
+  * `API-JOURNAL` makes no comparison of its own: its outcomes state that the journal is
+    present and that every one of its records passed. The records themselves are in
+    `test/references/testlog.csv`.
+  * `PKG-TEST` makes no numeric comparison either: its single outcome is the result of the
+    package test suite, so a failure there means the suite failed.
+  * `VAL-MM`, `VAL-BE` and `VAL-SPSS` report the count of checks their procedures ran,
+    followed by one outcome per failure.
+  * A required scenario whose code chunk errored out produces no rows at all and is listed
+    as NOT REPORTED; its results table is then missing from the chapter above as well.
+
+```julia; echo = false, results = "tex"
+print(acceptance_md(acceptance_summary_table()))
+```
+Table: Comparisons and verdict by scenario
+
+## Divergence journal
+
+Everything that failed acceptance, from both sources: the rows of the API check journal that
+did not pass, and the records the report made itself. A comparison row carries the computed
+value, the reference value, their difference and the limit it was judged against.
+
+```julia; echo = false, results = "tex"
+print(acceptance_journal_block())
+```
+
+```julia; echo = false, results = "tex"
+# The Conclusion marks itself once its tables are rendered. A chunk that errored out records
+# nothing, so a report that lost its verdict is caught by the required-scenario check outside
+# the document generator. The mark is made before the log is written, so that the files
+# written here already carry it.
+acceptance_mark("CONCLUSION", true, "conclusion rendered")
+acc, div = acceptance_write_journal()
+print("Full acceptance log: `docs/src/validation_acceptance.tsv`. " *
+      "Divergence journal: `docs/src/validation_divergences.tsv`. " *
+      "Per-check journal of the API suite: `test/references/testlog.csv`.")
+```
+
+\pagebreak
+
+# Glossary
+
+  * Installation qualification (IQ) - Establishing confidence that process equipment and ancillary systems are compliant with appropriate codes and approved design intentions, and that manufacturer's recommendations are suitably considered.
+  * Operational qualification (OQ) - Establishing confidence that process equipment and sub-systems are capable of consistently operating within established limits and tolerances.
+  * Product performance qualification (PQ) - Establishing confidence through appropriate testing that the finished product produced by a specified process meets all release requirements for functionality and safety.
+  * Repository - GitHub repository: https://github.com/PharmCat/Metida.jl
+  * Master branch - main branch on GitHub ([link](https://github.com/PharmCat/Metida.jl/tree/master)).
+  * Current machine - the computer used for generating this validation report.
+
+# Reference
+
+* [General Principles of Software Validation; Final Guidance for Industry and FDA Staff](https://www.fda.gov/media/73141/download)
+* [Guidance for Industry Process Validation: General Principles and Practices](https://www.fda.gov/files/drugs/published/Process-Validation--General-Principles-and-Practices.pdf)
+* [Glossary of Computer System Software Development Terminology](https://www.fda.gov/inspections-compliance-enforcement-and-criminal-investigations/inspection-guides/glossary-computer-system-software-development-terminology-895)
+* Schütz H, Labes D, Tomashevskiy M, et al. Reference Datasets for Studies in a Replicate Design Intended for Average Bioequivalence with Expanding Limits. AAPS J. 2020;22(2):44.
+
+\pagebreak
+
+# Appendix 1
+
+### Model specifications
+
+Every model of the test suite, with the dataset it is fitted on and the call that builds it.
+Generated from `test/references/models.csv`.
+
+```julia; echo = false
+let m = models_csv()
+    pretty_table(m[:, [:model_id, :dataset, :formula, :testset]];
+                 tf = tf_ascii_rounded,
+                 header = ["model_id", "dataset", "formula", "testset"])
+end
+```
+
+\pagebreak
+
+### Random and repeated effects
+
+Generated from `test/references/effects.csv`.
+
+```julia; echo = false
+let e = effects_csv()
+    pretty_table(e; tf = tf_ascii_rounded, header = names(e))
+end
+```
