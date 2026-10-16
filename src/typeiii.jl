@@ -1,12 +1,3 @@
-
-struct ContrastTable
-    name::Vector{String}
-    f::Vector{Float64}
-    ndf::Vector{Float64}
-    df::Vector{Float64}
-    pval::Vector{Float64}
-end
-
 ################################################################################
 #                      Type III estimable functions
 #
@@ -26,18 +17,28 @@ end
 # out in, first component varying fastest. `nothing` if the term has a
 # multi-column component that is not categorical, where that layout does not
 # hold.
-function termlayout(t)
+
+struct ContrastTable
+    name::Vector{String}
+    f::Vector{Float64}
+    ndf::Vector{Float64}
+    df::Vector{Float64}
+    pval::Vector{Float64}
+end
+
+function termlayout(t, ncol::Int)
     comps = isa(t, InteractionTerm) ? collect(t.terms) : Any[t]
     syms  = Union{Symbol, Nothing}[]
     wid   = Int[]
     cmean = Vector{Float64}[]
+    cls   = Set{Symbol}()
     cont  = Set{String}()
     for c in comps
         w = StatsModels.width(c)
         w == 0 && continue                                  # InterceptTerm{false}
         if isa(c, CategoricalTerm)
             m = c.contrasts.matrix
-            push!(syms, c.sym)
+            push!(syms, c.sym); push!(cls, c.sym)
             push!(cmean, [sum(view(m, :, j)) / size(m, 1) for j in axes(m, 2)])
         else
             w == 1 || return nothing
@@ -47,24 +48,17 @@ function termlayout(t)
         end
         push!(wid, w)
     end
-    return (syms = syms, wid = wid, cmean = cmean, cont = cont)
+    prod(wid) == ncol || return nothing
+    return (syms = syms, wid = wid, cmean = cmean, cls = cls, cont = cont)
 end
-
-classset(l) = Set{Symbol}(s for s in l.syms if s !== nothing)
 
 # F contains E
-function t3contains(F, E)
-    F.cont == E.cont || return false
-    se, sf = classset(E), classset(F)
-    return length(se) < length(sf) && issubset(se, sf)
-end
-
-# stride[k] = prod(wid[1:k-1]) - first component varies fastest
-t3strides(wid) = isempty(wid) ? Int[] : [1; cumprod(wid)[1:end-1]]
+t3contains(F, E) = F.cont == E.cont &&
+                   length(E.cls) < length(F.cls) && issubset(E.cls, F.cls)
 
 # Block of L on the columns of a containing term F, one row per column of E
 function t3block(F, E)
-    stE, stF = t3strides(E.wid), t3strides(F.wid)
+    stE, stF = termstrides(E.wid), termstrides(F.wid)
     A  = zeros(prod(E.wid), prod(F.wid))
     jE = ones(Int, length(E.wid))
     for ci in CartesianIndices(Tuple(F.wid))
@@ -76,8 +70,7 @@ function t3block(F, E)
             kE = findfirst(==(s), E.syms)
             kE === nothing ? (w *= F.cmean[k][ci[k]]) : (jE[kE] = ci[k])
         end
-        iszero(w) && continue
-        A[1 + sum((jE .- 1) .* stE), 1 + sum((Tuple(ci) .- 1) .* stF)] = w
+        iszero(w) || (A[termcolumn(jE, stE), termcolumn(ci, stF)] = w)
     end
     return A
 end
@@ -85,12 +78,11 @@ end
 function lcontrast3(lmm::LMM, i::Int)
     trms = lmm.f.rhs.terms
     asg  = assign(lmm)
-    p    = size(lmm.data.xv, 2)
     ci   = findall(==(i), asg)
-    isempty(ci) && return zeros(0, p)
-    E = termlayout(trms[i])
-    (isnothing(E) || prod(E.wid) != length(ci)) && return lcontrast_terms(lmm, i)
-    L = zeros(length(ci), p)
+    isempty(ci) && return zeros(0, size(lmm.data.xv, 2))
+    E = termlayout(trms[i], length(ci))
+    isnothing(E) && return lcontrast_terms(lmm, i)
+    L = zeros(length(ci), size(lmm.data.xv, 2))
     for (r, c) in enumerate(ci)
         L[r, c] = 1.0
     end
@@ -98,8 +90,8 @@ function lcontrast3(lmm::LMM, i::Int)
         k == i && continue
         ck = findall(==(k), asg)
         isempty(ck) && continue
-        F = termlayout(trms[k])
-        (isnothing(F) || prod(F.wid) != length(ck)) && return lcontrast_terms(lmm, i)
+        F = termlayout(trms[k], length(ck))
+        isnothing(F) && return lcontrast_terms(lmm, i)
         t3contains(F, E) && (L[:, ck] .= t3block(F, E))
     end
     return L

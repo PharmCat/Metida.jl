@@ -478,6 +478,31 @@ macro refwarn(desc, msg, expr)
 end
 
 """
+    @refwarnthrows "описание" сообщение ТипИсключения выражение
+
+Вызов должен ВЫДАТЬ предупреждение И бросить исключение заданного типа - обе
+вещи на одном вызове.
+"""
+macro refwarnthrows(desc, msg, extype, expr)
+    src  = string(expr)
+    fn   = _reffunc(src)
+    file = string(__source__.file)
+    line = __source__.line
+    quote
+        local _m = $(esc(msg))
+        local _T = $(esc(extype))
+        local _v, _err, _ex = _refcapture(() -> $(esc(expr)))
+        local _warned = occursin(_m isa Regex ? _m : string(_m), _err)
+        local _threw  = _ex !== nothing && _ex isa _T
+        local _got = string(_warned ? "предупреждение есть" : "предупреждения нет", ", ",
+                            _ex === nothing ? "исключения не было" : string(typeof(_ex)))
+        Test.@test _refbehave($(esc(desc)), _warned && _threw,
+                              "предупреждение «" * _reftrunc(_m, 80) * "» и " * string(_T),
+                              _got, "warn", $src, $fn, $file, $line)
+    end
+end
+
+"""
     @refthrows "описание" ТипИсключения выражение
 
 Вызов должен бросить исключение заданного типа. Для раздела «Обработка ошибок»

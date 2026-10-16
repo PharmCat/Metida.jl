@@ -674,6 +674,112 @@ end # 12
  
 end # 13
 
+########################################################################
+@testset "  14. Предельные средние: lsmeans и emmeans               " begin
+########################################################################
+
+    lmm  = refmodel(); Metida.fit!(lmm)
+    lmmc = Metida.LMM(@formula(var ~ period * formulation), df0;
+        random = Metida.VarEffect(Metida.@covstr(formulation + sequence | nosubj), Metida.SI))
+    Metida.fit!(lmmc)
+
+    ls = Metida.lsmeans(lmm, :formulation)
+    @refcheck "api_refmodel.lsmean.formulation_1"    ls.means.estimate[1]    # ref SPSS
+    @refcheck "api_refmodel.lsmean_se.formulation_1" ls.means.se[1]          # ref SPSS
+    @refcheck "api_refmodel.lsmean_df.formulation_1" ls.means.df[1]          # ref SPSS
+    @refprop  "строк столько, сколько уровней фактора" length(ls.means.name) == 2
+    @refprop  "имя строки называет фактор и уровень" ls.means.name == ["formulation: 1", "formulation: 2"]
+    @refnowarn "таблица предельных средних печатается" show(io, ls)
+
+    # То же через estimate по L: lsmeans не добавляет численности, только L
+    @refrel "lsmeans совпадает с estimate по тому же L" Metida.estimate(lmm, Metida.lsml(lmm, Dict(:formulation => "1"))).estimate[1] ls.means.estimate[1] 1E-12
+
+    # Единственный смысл равных весов: среднее принадлежит модели, а не
+    # частотам ячеек, и потому не зависит от кодировки контрастов.
+    lmmh = Metida.LMM(@formula(var ~ sequence + period + formulation), df0;
+        random = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG),
+        contrasts = Dict(:sequence    => StatsModels.HelmertCoding(),
+                         :period      => StatsModels.HelmertCoding(),
+                         :formulation => StatsModels.HelmertCoding()))
+    Metida.fit!(lmmh)
+    lsh = Metida.lsmeans(lmmh, :period)
+    lsd = Metida.lsmeans(lmm,  :period)
+    @refrel  "предельные средние не зависят от кодировки" maximum(abs.(lsh.means.estimate .- lsd.means.estimate)) 0.0 1E-10
+    @refrel  "их стандартные ошибки тоже" maximum(abs.(lsh.means.se .- lsd.means.se)) 0.0 1E-10
+    @refrel  "и их DF" maximum(abs.(lsh.means.df .- lsd.means.df)) 0.0 1E-6
+    @refprop "emmeans - то же самое" Metida.emmeans(lmm, :period).means.estimate == lsd.means.estimate
+
+    # Комбинация уровней: последний названный фактор меняется быстрее
+    lsc = Metida.lsmeans(lmm, [:sequence, :period, :formulation])
+    @refprop "строк столько, сколько комбинаций уровней" length(lsc.means.name) == 16
+    @refprop "последний названный фактор меняется быстрее" lsc.levels[1] == ["1", "1", "1"] && lsc.levels[2] == ["1", "1", "2"]
+
+
+    @refprop "все ячейки плана оценимы" all(lsc.estimable)
+    @refprop "у восьми ячеек нет наблюдений" count(iszero, lsc.n) == 8
+    @refprop "у оценимых ячеек есть конечное среднее" all(isfinite, lsc.means.estimate)
+    @refprop "число наблюдений в сумме равно размеру выборки" sum(lsc.n) == nrow(df0)
+
+    # Попарные сравнения
+    lsp = Metida.lsmeans(lmm, :formulation; pairwise = true)
+    @refprop "пар столько, сколько сочетаний по две" length(lsp.pairs.name) == 1
+    @refrel  "разность средних равна разности оценок" lsp.pairs.estimate[1] (lsp.means.estimate[1] - lsp.means.estimate[2]) 1E-12
+    @refprop "без pairwise пар нет" isnothing(ls.pairs)
+    @refnowarn "таблица с попарными сравнениями печатается" show(io, lsp)
+
+    # Ковариата держится в своём выборочном среднем, и это можно переопределить
+    lmmv = Metida.LMM(@formula(var ~ formulation * var2), df0;
+        random = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG))
+    Metida.fit!(lmmv)
+    @refrel  "умолчание ковариаты - её выборочное среднее" Metida.lsmeans(lmmv, :formulation).means.estimate[1] Metida.lsmeans(lmmv, :formulation; at = Dict(:var2 => mean(df0.var2))).means.estimate[1] 1E-12
+    @refprop "другое значение ковариаты даёт другое среднее" Metida.lsmeans(lmmv, :formulation; at = Dict(:var2 => 5.0)).means.estimate[1] != Metida.lsmeans(lmmv, :formulation).means.estimate[1]
+
+    @refthrows "фактора нет в фиксированной части"   ArgumentError Metida.lsmeans(lmm, :nosuchfactor)
+    @refthrows "фактор назван дважды"                ArgumentError Metida.lsmeans(lmm, [:period, :period])
+    @refthrows "список факторов пуст"                ArgumentError Metida.lsmeans(lmm, Symbol[])
+    @refthrows "ковариата названа фактором"          ArgumentError Metida.lsmeans(lmmv, :var2)
+    @refthrows "at назван не для ковариаты"          ArgumentError Metida.lsmeans(lmmv, :formulation; at = Dict(:formulation => 1.0))
+    @refthrows "взвешивание, кроме равного, не реализовано" ArgumentError Metida.lsmeans(lmm, :period; weights = :proportional)
+
+    lmmi = Metida.LMM(@formula(var ~ 0 + period & formulation), df0;
+        random = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG))
+    Metida.fit!(lmmi)
+    lsi = Metida.lsmeans(lmmi, :formulation)
+    @refprop "фактор только внутри взаимодействия: число наблюдений неизвестно" all(==(-1), lsi.n)
+    @refprop "при этом строки оценимы и среднее конечно" all(lsi.estimable) && all(isfinite, lsi.means.estimate)
+    @refrel  "а среднее то же, что у модели с главными эффектами" lsi.means.estimate[1] Metida.lsmeans(lmmc, :formulation).means.estimate[1] 1E-10
+
+
+    lmmr = Metida.LMM(@formula(var ~ 1 + period & formulation), df0;
+        random = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG))
+    Metida.fit!(lmmr)
+    Lr = Metida.lsml(lmmr, Dict(:formulation => "1"))
+    Xr = Metida.modelmatrix(lmmr)
+    @refprop "ранг 8 из 9: один столбец выброшен" Metida.rankx(lmmr) == 8 && Metida.coefn(lmmr) == 9
+    @refprop "L лежит в строчном пространстве X" norm(Lr' .- Lr' * (pinv(Xr) * Xr)) < 1E-8
+    @refprop "но нагружен на выброшенный столбец" any(i -> abs(Lr[i]) > 1E-10, setdiff(1:Metida.coefn(lmmr), view(lmmr.pivotvec, 1:Metida.rankx(lmmr))))
+    @refprop "и потому неоценим" !Metida.lsmestimable(lmmr, Lr, pinv(Xr) * Xr)
+
+
+    lsr = Metida.lsmeans(lmmr, :formulation)
+    i1  = findfirst(==(["1"]), lsr.levels)
+    i2  = findfirst(==(["2"]), lsr.levels)
+    @refprop "неоценима ровно одна строка из двух" count(lsr.estimable) == 1
+    @refprop "у неоценимой строки NaN" !lsr.estimable[i1] && isnan(lsr.means.estimate[i1])
+    @refprop "у оценимой есть и среднее, и ошибка" lsr.estimable[i2] && isfinite(lsr.means.estimate[i2]) && isfinite(lsr.means.se[i2])
+
+
+    lmmfi = Metida.LMM(@formula(var ~ formulation & log(var2)), df0;
+        random = Metida.VarEffect(Metida.@covstr(formulation | subject), Metida.DIAG))
+    Metida.fit!(lmmfi)
+    ficomp = Metida.lsmcomps(lmmfi.f.rhs.terms[end])
+    fimean = mean(log.(df0.var2))
+    fil    = try Metida.lsml(lmmfi, Dict(:formulation => "1")) catch e; e end
+    @refprop "взаимодействие раскладывается на фактор и ещё одну компоненту" length(ficomp) == 2 && count(c -> isa(c, CategoricalTerm), ficomp) == 1
+    @refprop "функциональный терм внутри взаимодействия: отказ либо mean(log(var2))" fil isa ArgumentError || (fil isa AbstractVector && count(x -> isapprox(x, fimean; rtol = 1E-12), fil) == 1)
+
+end # 14
+
 end # Publick API basic tests
 
 ################################################################################
