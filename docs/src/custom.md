@@ -171,3 +171,231 @@ lmm = Metida.LMM(@formula(r2 ~ f), spatdf;
     )
 Metida.fit!(lmm)
 ```
+
+### Example: Circular autoregressive structure
+
+Some factors are cyclic: day of week, hour of day, month, angular sector. The last level of such a factor is the neighbour of the first one, so the covariance between levels 1 and 2 should be equal to the covariance between levels 1 and ``s`` (``s`` - number of levels). `AR` gives ``\rho^{s-1}`` for the last pair instead.
+
+The stationary correlation of the closed AR(1) process ``e_t = \rho e_{t-1} + u_t``, ``e_0 \equiv e_s``, is:
+
+```math
+r_k = \frac{\rho^k + \rho^{s-k}}{1 + \rho^s}, \qquad k = |i - j|
+```
+
+``r_k = r_{s-k}``, so levels 1 and ``s`` are neighbours. The matrix is positive definite for any ``s`` and ``|\rho| < 1``. ``\rho`` is the parameter of the process, not the correlation of neighbouring levels: ``r_1 = (\rho + \rho^{s-1}) / (1 + \rho^s)``.
+
+The structure has two parameters, ``\sigma`` and ``\rho``, as `AR`. `gmat!` fills the upper triangle, one superdiagonal at a time:
+
+```@example lmmexample
+struct CircularAR <: Metida.AbstractCovarianceType end
+
+function Metida.covstrparam(ct::CircularAR, t::Int)::Tuple{Int, Int}
+    return (1, 1)
+end
+
+function Metida.gmat!(mx, θ, ::CircularAR)
+    de = θ[1] ^ 2
+    s  = size(mx, 1)
+    @inbounds @simd for i = 1:s
+        mx[i, i] = de
+    end
+    if s > 1
+        ρ   = θ[2]
+        den = de / (1 + ρ ^ s)
+        for k = 1:s - 1                     # k-th superdiagonal: |i - j| = k
+            v = den * (ρ ^ k + ρ ^ (s - k))
+            @inbounds @simd for m = 1:s - k
+                mx[m, m + k] = v
+            end
+        end
+    end
+    return mx
+end
+
+function Metida.rcoefnames(s, t, ct::CircularAR)
+    return ["σ² ", "ρ "]
+end
+
+function Base.show(io::IO, ct::CircularAR)
+    print(io, "CircularAR")
+end
+nothing # hide
+```
+
+Simulated data: each subject has its own profile over a 7-day cycle (random effect with circular correlation, ``\rho = 0.6``), observed during 3 cycles:
+
+```@example lmmexample
+using Random, LinearAlgebra
+
+rng = MersenneTwister(1)
+s, ns, nc = 7, 60, 3                         # levels (days), subjects, cycles per subject
+ρ   = 0.6
+R   = [(ρ^abs(i - j) + ρ^(s - abs(i - j))) / (1 + ρ^s) for i in 1:s, j in 1:s]
+L   = cholesky(Symmetric(R)).L
+cdf = DataFrame(subject = String[], day = Int[], response = Float64[])
+for i in 1:ns
+    b = L * randn(rng, s)                    # subject profile over the cycle
+    for c in 1:nc, d in 1:s
+        push!(cdf, ("S$i", d, 10 + sin(2π * (d - 1) / s) + b[d] + 0.5 * randn(rng)))
+    end
+end
+cdf.day = categorical(cdf.day)               # levels 1, 2, ..., 7 in cycle order
+nothing # hide
+```
+
+Fit the model with circular random effect:
+
+```@example lmmexample
+lmm = Metida.LMM(@formula(response ~ day), cdf;
+    random = Metida.VarEffect(Metida.@covstr(day|subject), CircularAR()),
+    )
+Metida.fit!(lmm)
+```
+
+Estimated G matrix: the first row is symmetric, ``G_{1,2} = G_{1,7}``:
+
+```@example lmmexample
+round.(Metida.gmatrix(lmm, 1), digits = 3)
+```
+
+`AR` has the same number of parameters, so AIC compares the two structures directly:
+
+```@example lmmexample
+lmm_ar = Metida.LMM(@formula(response ~ day), cdf;
+    random = Metida.VarEffect(Metida.@covstr(day|subject), Metida.AR),
+    )
+Metida.fit!(lmm_ar)
+Metida.aic(lmm), Metida.aic(lmm_ar)
+```
+
+Notes:
+
+* Choose between `AR` and `CircularAR` by the data, not by default. If the data have no wrap-around, `CircularAR` underestimates the variance of contrasts between the first and the last levels; if they have, `AR` overestimates it. A free `TOEP` fit gives the same hint: its last bands grow back.
+* Columns of the random effect matrix follow the order of factor levels, so the levels must be in cycle order. String labels `"1"`, ..., `"12"` are sorted as `"1"`, `"10"`, `"11"`, `"12"`, `"2"`, ... and break the cycle; use a categorical variable with explicit levels: `categorical(x; levels = ...)`.
+* Heterogeneous version is made in the same way as `ARH` from `AR`: keep ``\sigma_i`` on the diagonal, multiply ``r_k`` by ``\sigma_i \sigma_j`` and return `(t, 1)` from `covstrparam`.
+* Only `gmat!` is defined: the structure is meant for a random effect of the cycle phase. Serial correlation of residuals in time is not circular (the last day of a week is followed by the first day of the next week), use a repeated structure on the whole time axis there. For simultaneous measurements arranged on a circle (angular sectors) no custom code is needed: put the levels on a circle and use a spatial structure, the Euclidean (chord) distance depends only on the circular lag:
+
+```
+df.cx = cos.(2π .* df.sector ./ s)
+df.cy = sin.(2π .* df.sector ./ s)
+repeated = Metida.VarEffect(Metida.@covstr(cx + cy|subject), Metida.SPEXP)
+```
+
+### Example: Non-Euclidean distance: shortest path around an obstacle
+
+`edistance` is dispatched on the element type of the repeated-effect matrix, so the
+distance does not have to be Euclidean and several geometries can live in the same
+session. Here the distance between two points is the length of the shortest path
+that does not cross a barrier, which is what you want when the process spreads
+along a road network, a river system, or around a coastline rather than through
+straight line of sight (Davis & Curriero, 2019).
+
+Use a point type of your own, so that the Euclidean method defined above stays
+in place:
+
+```@example lmmexample
+using LinearAlgebra
+
+struct MazePoint
+    id::Int
+    x::Float64
+    y::Float64
+end
+
+const WALL = ((50.0, 0.0), (50.0, 70.0))      # barrier: a wall with a gap above y = 70
+nothing # hide
+```
+
+Two points see each other when the segment between them does not cross the wall.
+Those segments form a visibility graph; the shortest path through it is the
+distance. With 200 points one Floyd-Warshall pass fills the whole matrix:
+
+```@example lmmexample
+_turn(o, a, b) = (a[1] - o[1]) * (b[2] - o[2]) - (a[2] - o[2]) * (b[1] - o[1])
+_crosses(p1, p2, q1, q2) =
+    ((_turn(q1, q2, p1) > 0) != (_turn(q1, q2, p2) > 0)) &&
+    ((_turn(p1, p2, q1) > 0) != (_turn(p1, p2, q2) > 0))
+
+function pathdistance(pts)
+    n = length(pts)
+    D = fill(Inf, n, n)
+    for i in 1:n
+        D[i, i] = 0.0
+        for j in i+1:n
+            a = (pts[i].x, pts[i].y); b = (pts[j].x, pts[j].y)
+            if !_crosses(a, b, WALL[1], WALL[2])
+                D[i, j] = D[j, i] = hypot(a[1] - b[1], a[2] - b[2])
+            end
+        end
+    end
+    for k in 1:n, i in 1:n
+        D[i, k] == Inf && continue
+        for j in 1:n
+            s = D[i, k] + D[k, j]
+            s < D[i, j] && (D[i, j] = s)
+        end
+    end
+    return D
+end
+nothing # hide
+```
+
+Precompute the matrix once and let `edistance` read it:
+
+```@example lmmexample
+spatdf.mp = [MazePoint(i, spatdf.x[i], spatdf.y[i]) for i in 1:size(spatdf, 1)]
+const PATHDIST = pathdistance(spatdf.mp)
+
+Metida.edistance(mx::AbstractMatrix{MazePoint}, i::Int, j::Int) =
+    PATHDIST[mx[i, 1].id, mx[j, 1].id]
+nothing # hide
+```
+
+Fit the model with the new geometry:
+
+```@example lmmexample
+lmm_path = Metida.LMM(@formula(r2 ~ f), spatdf;
+    repeated = Metida.VarEffect(Metida.@covstr(mp|1), Metida.SPEXP;
+                                coding = Dict(:mp => Metida.RawCoding())),
+    )
+Metida.fit!(lmm_path)
+```
+
+Both models have the same number of parameters, so AIC compares the two
+geometries directly. Refit the Euclidean one under its own name so the
+comparison does not depend on what `lmm` holds at this point in the page:
+
+```@example lmmexample
+lmm_eucl = Metida.LMM(@formula(r2 ~ f), spatdf;
+    repeated = Metida.VarEffect(Metida.@covstr(ci|1), Metida.SPEXP;
+                                coding = Dict(:ci => Metida.RawCoding())),
+    )
+Metida.fit!(lmm_eucl)
+Metida.aic(lmm_eucl), Metida.aic(lmm_path)
+```
+
+Here the Euclidean geometry wins: these data were simulated without a barrier,
+so adding one only distorts the covariance. On data where the barrier is real
+the comparison goes the other way, and that is the decision AIC is answering.
+
+Check that the covariance matrix came out positive definite. `exp(-d/θ)` is
+guaranteed to be positive definite for Euclidean `d`; for an arbitrary metric it
+is not, and a shortest-path distance is one of the cases where it can fail:
+
+```@example lmmexample
+isposdef(Metida.rmatrix(lmm_path, 1))
+```
+
+Notes:
+
+* Keep a distinct element type per geometry. Redefining `edistance` for a type
+  already in use silently changes every model that uses it.
+* The barrier changes about a third of the 19900 pairwise distances here, and up
+  to 27-fold for points that face each other across the wall. Pairs on the same
+  side keep their Euclidean distance, so the two fits are directly comparable.
+* `RawCoding` passes the column through untouched, which is what lets a column of
+  non-numeric values reach `edistance`. Any type works as long as the method you
+  define returns a distance for a pair of its values.
+* For a grid or a network with explicit links, replace the visibility graph with
+  the graph you already have and run a shortest-path algorithm on it; only
+  `pathdistance` changes.

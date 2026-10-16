@@ -1,3 +1,22 @@
+################################################################################
+#                      Type III estimable functions
+#
+# The Type III L for a term is the term's own coefficients averaged with equal
+# weights over the levels of the CLASS variables that appear only in the terms
+# containing it (Goodnight 1980). The weights are the column means of each
+# such variable's contrast matrix, so the hypothesis does not depend on the
+# cell frequencies.
+#
+# Containment: F contains E when F and E have the same continuous part and the
+# CLASS variables of E are a proper subset of those of F.
+################################################################################
+
+# Layout of one term: per component, the CLASS variable (or `nothing`), its
+# width and the column means of its contrast matrix; plus the names of the
+# continuous components. Components keep the order StatsModels lays the columns
+# out in, first component varying fastest. `nothing` if the term has a
+# multi-column component that is not categorical, where that layout does not
+# hold.
 
 struct ContrastTable
     name::Vector{String}
@@ -6,16 +25,139 @@ struct ContrastTable
     df::Vector{Float64}
     pval::Vector{Float64}
 end
-"""
-    typeiii(lmm::LMM{T}; ddf::Symbol = :satter) where T
 
-!!! warning
-    Experimental
+function termlayout(t, ncol::Int)
+    comps = isa(t, InteractionTerm) ? collect(t.terms) : Any[t]
+    syms  = Union{Symbol, Nothing}[]
+    wid   = Int[]
+    cmean = Vector{Float64}[]
+    cls   = Set{Symbol}()
+    cont  = Set{String}()
+    for c in comps
+        w = StatsModels.width(c)
+        w == 0 && continue                                  # InterceptTerm{false}
+        if isa(c, CategoricalTerm)
+            m = c.contrasts.matrix
+            push!(syms, c.sym); push!(cls, c.sym)
+            push!(cmean, [sum(view(m, :, j)) / size(m, 1) for j in axes(m, 2)])
+        else
+            w == 1 || return nothing
+            push!(syms, nothing)
+            push!(cmean, [1.0])
+            isa(c, InterceptTerm) || push!(cont, string(c))
+        end
+        push!(wid, w)
+    end
+    prod(wid) == ncol || return nothing
+    return (syms = syms, wid = wid, cmean = cmean, cls = cls, cont = cont)
+end
 
-Type III table.
+# F contains E
+t3contains(F, E) = F.cont == E.cont &&
+                   length(E.cls) < length(F.cls) && issubset(E.cls, F.cls)
+
+# Block of L on the columns of a containing term F, one row per column of E
+function t3block(F, E)
+    stE, stF = termstrides(E.wid), termstrides(F.wid)
+    A  = zeros(prod(E.wid), prod(F.wid))
+    jE = ones(Int, length(E.wid))
+    for ci in CartesianIndices(Tuple(F.wid))
+        w = 1.0
+        fill!(jE, 1)
+        for k in eachindex(F.wid)
+            s = F.syms[k]
+            s === nothing && continue               # continuous: same factor in E
+            kE = findfirst(==(s), E.syms)
+            kE === nothing ? (w *= F.cmean[k][ci[k]]) : (jE[kE] = ci[k])
+        end
+        iszero(w) || (A[termcolumn(jE, stE), termcolumn(ci, stF)] = w)
+    end
+    return A
+end
+
+function lcontrast3(lmm::LMM, i::Int)
+    trms = lmm.f.rhs.terms
+    asg  = assign(lmm)
+    ci   = findall(==(i), asg)
+    isempty(ci) && return zeros(0, size(lmm.data.xv, 2))
+    E = termlayout(trms[i], length(ci))
+    isnothing(E) && return lcontrast_terms(lmm, i)
+    L = zeros(length(ci), size(lmm.data.xv, 2))
+    for (r, c) in enumerate(ci)
+        L[r, c] = 1.0
+    end
+    for k in eachindex(trms)
+        k == i && continue
+        ck = findall(==(k), asg)
+        isempty(ck) && continue
+        F = termlayout(trms[k], length(ck))
+        isnothing(F) && return lcontrast_terms(lmm, i)
+        t3contains(F, E) && (L[:, ck] .= t3block(F, E))
+    end
+    return L
+end
 """
-function typeiii(lmm::LMM; ddf::Symbol = :satter)
+    typeiii(lmm::LMM; ddf::Symbol = :satter, contrasts::Symbol = :terms)
+
+One Wald F test per term of the fixed-effect formula.
+
+Returns a table with, for each term, the numerator degrees of freedom `ndf`,
+the F statistic `f`, the denominator degrees of freedom `df` and the p-value
+`pval`.
+
+`ddf` picks the denominator degrees of freedom: `:satter` (default,
+[`dof_satter`](@ref)), `:contain` ([`dof_contain`](@ref)) or `:residual`.
+
+`contrasts` picks the null hypothesis tested for each term:
+
+  * `:terms` (default) - the coefficients of the term are zero in the
+    parameterization the model was fitted in. For a factor coded as
+    differences from its first level this is equality of its levels taken at
+    the reference level of every other factor, so the hypothesis is
+    conditional on those reference levels. For a single-column term it is the
+    hypothesis [`coeftable`](@ref) tests for that coefficient.
+  * `:typeiii` - the equally weighted marginal means defined by the term are
+    equal (Searle, Speed & Milliken, 1980). `L` is the Type III estimable
+    function of the term (Goodnight, 1980): the coefficients of the term
+    averaged with equal weights over the levels of the CLASS variables that
+    appear only in the terms containing it, so the hypothesis is free of the
+    cell frequencies and of the choice of reference level.
+
+The two hypotheses coincide when no other term contains the term being tested.
+They differ for the intercept, for a main effect that also appears inside an
+interaction, and for a model fitted without an intercept.
+
+!!! note
+    `contrasts = :typeiii` will become the default in the next breaking
+    release.
+
+Use [`contrast`](@ref) to test a hypothesis of your own, and
+[`lcontrast`](@ref) to see the `L` used for a term.
+
+# Example
+
+```julia
+lmm = Metida.LMM(@formula(response ~ 1 + factor * time), ftdf;
+    random = Metida.VarEffect(Metida.@covstr(factor|subject&factor), Metida.DIAG))
+Metida.fit!(lmm)
+Metida.typeiii(lmm)
+Metida.typeiii(lmm; contrasts = :typeiii)
+Metida.typeiii(lmm; ddf = :residual)
+```
+
+# References
+
+Goodnight, J. H. (1980) Tests of hypotheses in fixed effects linear models.
+*Communications in Statistics - Theory and Methods* 9, 167–180.
+
+Searle, S. R., Speed, F. M., Milliken, G. A. (1980) Population marginal means
+in the linear model: an alternative to least squares means. *The American
+Statistician* 34, 216–221.
+"""
+function typeiii(lmm::LMM; ddf::Symbol = :satter, contrasts::Symbol = :terms)
     if !isfitted(lmm) error("Model not fitted!") end
+    contrasts in (:terms, :typeiii) ||
+        throw(ArgumentError("unknown contrasts type, allowed: :terms, :typeiii (got $contrasts)"))
     c           = length(lmm.f.rhs.terms)
     d           = Vector{Int}(undef, 0)
     fac         = Vector{String}(undef, c)
@@ -32,8 +174,8 @@ function typeiii(lmm::LMM; ddf::Symbol = :satter)
             continue
         end
         
-        fac[i]  = tname(iterm) 
-        L       = lcontrast(lmm, i)
+        fac[i]  = tname(iterm)
+        L       = lcontrast(lmm, i; contrasts = contrasts)
         F[i]    = fvalue(lmm, L)
         ndf[i]  = rank(L)
         if ddf == :satter
@@ -64,8 +206,25 @@ end
 """
     contrast(lmm, l::AbstractMatrix; name::String = "Contrast", ddf = :satter)
 
-User contrast table.
-ddf = `:satter` or `:residual` or any number for direct ddf setting.
+Wald F test of `L β = 0` for a contrast matrix `l` you supply, with
+`size(l, 2) == coefn(lmm)`.
+
+`ddf` = `:satter` ([`dof_satter`](@ref)) or `:residual`, or any number to set
+the denominator degrees of freedom directly.
+
+Use it for a hypothesis that is not one of the terms of the formula;
+[`typeiii`](@ref) covers the terms, and [`lcontrast`](@ref) returns the `L` it
+uses for each of them.
+
+# Example
+
+```julia
+# resp ~ 0 + device: are the four device means all zero?
+contrast(lmm, Matrix{Float64}(I, 4, 4); name = "device = 0")
+
+# is the mean of A and B equal to the mean of C and D?
+contrast(lmm, [0.5 0.5 -0.5 -0.5]; name = "AB vs CD")
+```
 """
 function contrast(lmm, l::AbstractMatrix; name::String = "Contrast", ddf = :satter)
     if !isfitted(lmm) error("Model not fitted!") end

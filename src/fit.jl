@@ -77,6 +77,7 @@ Fit LMM model.
 * `iterations` - maximum iterations = 300
 * `refitinit` - true/false - if `true` - use last values for initial condition  (`false` by default)
 * `optmethod` - Optimization method. Look at Optim.jl documentation. (Newton by default)
+* `rhotol` - boundary tolerance for correlation parameters = 1e-8; a warning is logged when `1 - |ρ̂| < rhotol`
 * `singtol` - singular tolerance = 1e-8
 * `maxthreads` - maximum threads = min(num_cores(), Threads.nthreads())
 
@@ -101,6 +102,7 @@ function fit!(lmm::LMM{T}; kwargs...) where T
     :iterations ∈ kwkeys ? iterations = kwargs[:iterations] : iterations = 300
     :refitinit ∈ kwkeys ? refitinit = kwargs[:refitinit] : refitinit = false
     :optmethod ∈ kwkeys ? optmethod = kwargs[:optmethod] : optmethod = :default
+    :rhotol ∈ kwkeys ? rhotol = kwargs[:rhotol] : rhotol = 1e-8
     :singtol ∈ kwkeys ? singtol = kwargs[:singtol] : singtol = 1e-8
     :maxthreads ∈ kwkeys ? maxthreads = kwargs[:maxthreads] : maxthreads = min(num_cores(), Threads.nthreads())
 
@@ -255,6 +257,21 @@ function fit!(lmm::LMM{T}; kwargs...) where T
         end
     else
         lmmlog!(io, lmm, verbose, LMMLogMsg(:ERROR, "REML not estimated or final iteration completed with errors."))
+    end
+
+    # Check correlation parameters for boundary estimates. The link functions map
+    # R onto the OPEN interval, so |ρ̂| == 1 is never reached exactly, but an
+    # estimate this close to it means the likelihood is still rising at the edge
+    # of the parameter space: the covariance matrix is (numerically) singular in
+    # that direction, the Hessian is ill conditioned there, and Satterthwaite DF
+    # for any contrast loading on it are not trustworthy.
+    if lmm.result.fit
+        for i = 1:lmm.covstr.tl
+            if lmm.covstr.ct[i] == :rho && 1.0 - abs(lmm.result.theta[i]) < rhotol
+                lmmlog!(io, lmm, verbose, LMMLogMsg(:WARN,
+                    "Correlation parameter $(i) ($(strip(lmm.covstr.rcnames[i]))) is on the boundary: ρ = $(lmm.result.theta[i]), 1 - |ρ| < $(rhotol). Variance-covariance matrix is nearly singular in this direction; DF and SE can be unreliable."))
+            end
+        end
     end
     # Check G
     lmm.result.ipd = true

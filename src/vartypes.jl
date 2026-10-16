@@ -32,11 +32,6 @@ struct SPGAUD_ <: AbstractCovarianceType end
 struct UN_ <: AbstractCovarianceType end
 struct ZERO <: AbstractCovarianceType end
 
-struct ACOV_{C <: AbstractCovarianceType} <: AbstractCovarianceType
-    c::C
-    a::Int
-end
-
 ################################################################################
 #                          COVARIANCE TYPE
 ################################################################################
@@ -227,7 +222,7 @@ const ARMA = AutoregressiveMovingAverage()
 """
     Toeplitz()
 
-Toeplitz covariance type. Only for G matrix.
+Toeplitz covariance type.
 
 TOEP = Toeplitz()
 
@@ -238,6 +233,20 @@ TOEP = Toeplitz()
 \\rho_3 & \\rho_2 & \\rho_1 & 1
 \\end{bmatrix}\\sigma^2
 ```
+
+Parameters: one variance and `t - 1` correlations, where `t` is the number of
+levels of the effect.
+
+As a repeated effect the lag is the difference of the effect's **level
+indices**, so every level must occur at most once within a subject (as for
+[`UN`](@ref)); a warning is raised otherwise. [`TOEPP`](@ref) instead takes the
+lag from the **row position** inside the block. The two agree when the block has
+one row per level in level order, and differ as soon as an occasion is missing:
+with levels `A, C, D` present out of `A, B, C, D`, `TOEP` gives the pair
+`(A, C)` the lag-2 correlation and `(A, D)` the lag-3 one, while `TOEPP` sees
+row positions 1, 2, 3 and gives them lag 1 and lag 2. Use `TOEP` when the lag
+should follow the repeated factor, `TOEPP` when it should follow the row order
+or when a level repeats within a subject.
 
 """
 function Toeplitz()
@@ -252,6 +261,11 @@ Toeplitz covariance type with parameter p, (number of bands = p - 1, if p = 1 it
 
 TOEPP(p) = ToeplitzParameterized(p)
 
+As a repeated effect the lag is the **row position** inside the subject block,
+so a missing occasion shifts every lag that spans the gap. Use [`TOEP`](@ref)
+when the lag should follow the levels of the repeated factor instead; the two
+coincide when the block has one row per level in level order.
+
 """
 function ToeplitzParameterized(p::Int)
     CovarianceType(TOEPP_(p))
@@ -261,7 +275,7 @@ TOEPP(p) = ToeplitzParameterized(p)
 """
     HeterogeneousToeplitz()
 
-Heterogeneous toeplitz covariance type. Only for G matrix.
+Heterogeneous toeplitz covariance type.
 
 TOEPH = HeterogeneousToeplitz()
 
@@ -273,6 +287,14 @@ TOEPH = HeterogeneousToeplitz()
 \\rho_3 \\sigma_d \\sigma_a & \\rho_2 \\sigma_d \\sigma_b & \\rho_1 \\sigma_d \\sigma_c & \\sigma_d^2
 \\end{bmatrix}
 ```
+
+
+As a repeated effect, see the note in [`TOEP`](@ref): the lag follows the
+effect's level indices, so every level must occur at most once within a subject,
+and [`TOEPHP`](@ref) is the row-position alternative. Note that `TOEPHP` is a
+hybrid — its variances are indexed by level but its correlations by row
+position — so on incomplete data it shifts the lags while keeping the per-level
+variances.
 
 """
 function HeterogeneousToeplitz()
@@ -286,6 +308,10 @@ const TOEPH = HeterogeneousToeplitz()
 Heterogeneous toeplitz covariance type with parameter p, (number of bands = p - 1, if p = 1 it's equal DIAG structure).
 
 TOEPHP(p) = HeterogeneousToeplitzParameterized(p)
+
+As a repeated effect the variances are indexed by level but the correlations by
+**row position**, so a missing occasion shifts the lags. See [`TOEPH`](@ref) for
+the fully level-indexed alternative.
 
 """
 function HeterogeneousToeplitzParameterized(p::Int)
@@ -405,29 +431,6 @@ end
 const UN = Unstructured()
 
 
-"""
-    ACOV(c, action = 0)
-
-!!! warning
-    Experimental
-    
-Augmented (adjusted) covariance. Add additional correlations to existed R-part of variance covariance matrix.
-Can be used with `AR` or `CS` types. 
-
-`action` if existed covariance not equal sero:
-
-* 0 - add
-* 1 - replace
-* 2 - do nothing (use existed value)
-* 3 - warning and add
-* 4 - warning and replace
-* 5 - warning and use existed value
-* other - error
-
-"""
-function ACOV(c; action = 0)
-    CovarianceType(ACOV_(c.s, action))
-end
 
 function RZero()
     CovarianceType(ZERO(), false)
@@ -477,11 +480,6 @@ end
 function covstrparam(ct::SPPOWD_, ::Int)::Tuple{Int, Int}
     return (2, 1)
 end
-
-function covstrparam(ct::ACOV_{<:Union{CS_, AR_, SPPOW_}}, ::Int)::Tuple{Int, Int}
-    return (0, 1)
-end
-
 function covstrparam(ct::ZERO, ::Int)::Tuple{Int, Int}
     return (0, 0)
 end
@@ -591,10 +589,6 @@ function rcoefnames(s, t, ct::UN_)
     return v
 end
 
-function rcoefnames(s, t, ct::ACOV_{<: Union{CS_, AR_}})
-    return ["ρ "]
-end
-
 function rcoefnames(s, t, ct::AbstractCovarianceType)
     v = Vector{String}(undef, t)
     v .= "Val "
@@ -682,9 +676,6 @@ function Base.show(io::IO, ct::SPGAUD_)
 end
 function Base.show(io::IO, ct::UN_)
     print(io, "UN")
-end
-function Base.show(io::IO, ct::ACOV_)
-    print(io, "ACOV(", ct.c, ")")
 end
 function Base.show(io::IO, ct::ZERO)
     print(io, "No effect")

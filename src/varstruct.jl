@@ -205,7 +205,7 @@ end
 Выделяет компоненты связности из готовой DSU-структуры.
  
 Ключевые свойства результата:
-  * ключи — плотный диапазон `1:nb`;
+  * ключи - плотный диапазон `1:nb`;
   * блоки нумеруются по возрастанию минимального номера наблюдения;
   * внутри блока наблюдения идут в порядке возрастания номера строки.
 """
@@ -267,7 +267,7 @@ end
 блока результата, и блоков при этом максимально много.
  
 Эквивалентно поиску компонент связности графа, в котором наблюдения соединены
-рёбрами внутри каждой группы `d1` и внутри каждой группы `d2`.
+ребрами внутри каждой группы `d1` и внутри каждой группы `d2`.
  
 Возвращает `Dict{Int, Vector{Int}}` с ключами `1:nb`.
 """
@@ -289,7 +289,7 @@ function subjcrossdicts(d1, d2, n::Int = _maxobsindex(d1, d2))
             isempty(v) && continue
             r0 = first(v)                     # «якорь» группы
             @inbounds for r in v
-                dsu_union!(parent, sz, r0, r) # первое объединение — no-op
+                dsu_union!(parent, sz, r0, r) # первое объединение - no-op
             end
         end
     end
@@ -353,7 +353,7 @@ end
     make_effect_subject_block(dicts, blocks, alleffl, rown)
  
 Строит `EffectSubjectBlock`: для каждой пары (блок ковариационной матрицы,
-эффект) — список субъектов этого эффекта, попавших в блок, в виде
+эффект) - список субъектов этого эффекта, попавших в блок, в виде
 `(позиции внутри блока, сквозной номер субъекта)`.
  
 Идея оптимизации: вместо того чтобы для каждой пары (блок, группа) искать
@@ -361,15 +361,15 @@ end
 один раз строятся обратные индексы `строка -> (блок, позиция в блоке)`, после
 чего позиции любой группы получаются за O(|v|) прямым обращением.
  
-Сложность: O(alleffl · rown + Σ G·log G) по времени (G — число субъектов
-эффекта; логарифм даёт только детерминированная сортировка групп),
-O(rown) дополнительной памяти. Было — O(alleffl · rown²).
+Сложность: O(alleffl · rown + Σ G·log G) по времени (G - число субъектов
+эффекта; логарифм дает только детерминированная сортировка групп),
+O(rown) дополнительной памяти. Было - O(alleffl · rown²).
  
 Дополнительно исправлено:
   * порядок субъектов детерминирован (по минимальному номеру наблюдения),
-    а не задаётся хеш-порядком `Dict` — раньше имена в `esb.snames` и нумерация
+    а не задается хеш-порядком `Dict` - раньше имена в `esb.snames` и нумерация
     в `raneff` могли меняться от запуска к запуску / версии Julia;
-  * позиции внутри субъекта гарантированно возрастают (как давал `findall`) —
+  * позиции внутри субъекта гарантированно возрастают (как давал `findall`) -
     от этого зависит порядок лагов в AR/TOEP и порядок точек в SP*-структурах;
   * `snames` типизирован явно (`Vector{Any}`) вместо `nblock = []`.
 """
@@ -452,7 +452,7 @@ function make_effect_subject_block(dicts, blocks::Vector{Vector{Int}},
                     @inbounds while j2 < m && blockof[v[ord[j2 + 1]]] == b
                         j2 += 1
                     end
-                    if b != 0                 # b == 0 — строки вне блоков
+                    if b != 0                 # b == 0 - строки вне блоков
                         fa = Vector{Int}(undef, j2 - i + 1)
                         @inbounds for t in i:j2
                             fa[t - i + 1] = posof[v[ord[t]]]
@@ -594,12 +594,26 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
             end
         
         rz_      = Vector{Matrix}(undef, rpn)
+        # A modifier augments (ACOV) or masks (BAND) what the PRECEDING repeated
+        # effects have built, so it cannot come first: at that point the block is
+        # still all zeros and its parameter is unidentifiable.
+        if isa(repeated[1].covtype.s, Union{ACOV_, BAND_})
+            error("$(repeated[1].covtype.s) cannot be the first repeated effect: there is no covariance to modify yet. Place the structure it modifies before it.")
+        end
+        # `action` only takes effect on an already nonzero cell. Report that once
+        # here rather than warning per cell on every optimiser iteration.
+        for i = 2:rpn
+            mct = repeated[i].covtype.s
+            if isa(mct, ACOV_) && mct.a != 0
+                if all(j -> isa(repeated[j].covtype.s, Union{SI_, DIAG_, BAND_}), 1:i-1)
+                    @warn "ACOV(action = $(mct.a)) at position $i: every preceding repeated effect is diagonal, so no covariance cell is nonzero and `action` has no effect."
+                elseif mct.a in (3, 4, 5)
+                    @warn "ACOV(action = $(mct.a)) at position $i: preceding effects produce nonzero covariance cells, which will be modified."
+                end
+            end
+        end
         # REPEATED EFFECTS
         for i = 1:length(repeated)
-
-            if isa(repeated[i].covtype.s, ACOV_) && i == 1
-                @warn "ACOV at first position is meaningless: base covariance is not yet computed."
-            end
 
             if length(repeated[i].coding) == 0
                 fill_coding_dict!(repeated[i].model, repeated[i].coding, data)
@@ -620,15 +634,18 @@ struct CovStructure{T, T2} <: AbstractCovarianceStructure
             else
                 dicts[rn+i]  = Dict(1 => collect(1:rown)) #changed to range
             end
-            # If UN structure used all repeated levels should be unique within one subject, otherwise results can be meaningless!
+            # UN, TOEP and TOEPH build the R block as rz * C * rz', where C is
+            # indexed by the LEVELS of the effect. Two rows sharing a level then
+            # get covariance equal to that level's variance, so R is singular
+            # unless every level occurs at most once within a subject.
             wflag = true
-            if isa(repeated[i].covtype.s, UN_)
+            if isa(repeated[i].covtype.s, Union{UN_, TOEP_, TOEPH_})
                 for (k,v) in dicts[rn+i]
                     sv = view(rz_[i], v, :)
                     for j = 1:size(sv, 2)
                         if sum(view(sv, :, j)) > 1 && wflag
                             wflag = false
-                            @warn "If UN structure used for repeated effect all levels should be unique within one subject, otherwise results can be meaningless!"
+                            @warn "If $(repeated[i].covtype.s) structure used for repeated effect all levels should be unique within one subject, otherwise results can be meaningless!"
                         end
                     end
                 end

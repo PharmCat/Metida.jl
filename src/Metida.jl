@@ -15,7 +15,7 @@ import MetidaBase.PrettyTables: TextFormat, pretty_table, tf_borderless, ft_prin
 
 import Distributions: Normal, TDist, FDist, Chisq, MvNormal, FullNormal, ccdf, cdf, quantile
 import LinearAlgebra: checksquare, BlasFloat
-import StatsModels: @formula, termvars, ModelFrame, FunctionTerm, AbstractTerm, CategoricalTerm, AbstractContrasts, ConstantTerm, InterceptTerm, Term, InteractionTerm, FormulaTerm, ModelMatrix, schema, apply_schema, MatrixTerm, modelcols
+import StatsModels: @formula, termvars, ModelFrame, FunctionTerm, AbstractTerm, CategoricalTerm, AbstractContrasts, ConstantTerm, ContinuousTerm, InterceptTerm, Term, InteractionTerm, FormulaTerm, ModelMatrix, schema, apply_schema, MatrixTerm, modelcols
 import StatsBase: fit, fit!, coef, coefnames, confint, nobs, dof_residual, dof, loglikelihood, aic, bic, aicc, isfitted, islinear, vcov, mean, var, stderror, modelmatrix, response, responsename, CoefTable, coeftable, crossmodelmatrix
 import Base: show, rand, ht_keyindex, getproperty
 import Random: default_rng, AbstractRNG, rand!
@@ -39,7 +39,7 @@ SPPOW, SpatialPower,
 SPGAU, SpatialGaussian, RawCoding,
 UN, Unstructured,
 CovarianceType,
-ACOV,
+ACOV, BAND,
 fit, fit!, LMM, VarEffect, theta, logreml, m2logreml, m2logml, logml, thetalength, dof_satter, dof_contain, rankx, caic, lcontrast, typeiii, estimate, contrast,
 gmatrix, rmatrix, vmatrix!, responsename, nblocks, raneff,
 AbstractCovarianceType, AbstractCovmatMethod, MetidaModel,
@@ -63,6 +63,7 @@ const NM_OM     = Optim.NelderMead()
 include("exceptions.jl")
 include("sweep.jl")
 include("vartypes.jl")
+include("vartypes_acov.jl")
 include("varstruct.jl")
 include("gmat.jl")
 include("rmat.jl")
@@ -83,6 +84,7 @@ include("dof_contain.jl")
 include("fvalue.jl")
 include("typeiii.jl")
 include("estimate.jl")
+include("lsmeans.jl")
 include("random.jl")
 include("miboot.jl")
 include("statsbase.jl")

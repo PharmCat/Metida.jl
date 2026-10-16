@@ -1,0 +1,124 @@
+model_id,side,effect,subject,structure
+api_refmodel,G,formulation,subject,DIAG
+s1_lmmf,G,formulation,subject,DIAG
+s1_l,G,subjspec,,DIAG
+s1_lrep,R,formulation,1,DIAG
+s1_lrep2,R,formulation,nosubj,SI
+s1_li,G,1 + formulation,subject,SI
+s1_lz,G,0 + formulation,subject,SI
+s1_lc,G,1 + formulation,subject,SI
+s1_onefe,G,formulation,subject,DIAG
+s1_lmv,R,formulation,subject,DIAG
+s1_lmv,R,1,subject,SI
+s5_lmmr,R,formulation,subject,DIAG
+s6_lmmc,G,formulation + sequence,nosubj,SI
+s7_mk,G,1 + formulation,subject,CSH
+s8_be,G,formulation,subject,CSH
+s8_be,R,formulation,subject,DIAG
+s9_lw,G,formulation,subject,DIAG
+s9_lws,G,formulation,subject,DIAG
+s9_lwy,G,formulation,subject,DIAG
+s9_lbad,G,formulation,subject,DIAG
+s9_lmw,G,formulation,subject,DIAG
+s9_lswc,R,1,subject,SWC
+s10_lmiss,G,formulation,subject,DIAG
+s10_linc,G,formulation,subject,CSH
+s10_linc,R,formulation,subject,DIAG
+s10_lrd,G,treatment,subject,DIAG
+m_only_repeated_0_diag_lmm,R,formulation,subject,DIAG
+m_only_repeated_0_diag_lmm_2,R,formulation,subject,DIAG
+m_only_repeated_0_csh_lmm,R,period,subject,CSH
+m_only_random_si_si_lmm,G,subject,nosubj,SI
+m_only_random_int_si_si_lmm,G,1,subject,SI
+m_noblock_equal_csh_cs_lmm,G,formulation,subject,CSH
+m_noblock_equal_csh_cs_lmm,R,formulation,subject,CS
+m_noblock_equal_csh_cs_lmm_un,G,formulation,subject,UN
+m_noblock_equal_csh_cs_lmm_un,R,formulation,subject,CS
+m_different_int_csh_diag_lmm,G,1 + formulation,subject,CSH
+m_different_int_csh_diag_lmm,R,formulation,subject&period,DIAG
+m_rholinkf_psigm_csh_diag_lmm,G,formulation,subject,CSH
+m_rholinkf_psigm_csh_diag_lmm,R,formulation,subject,DIAG
+m_rholinkf_psigm_csh_diag_lmm_2,G,formulation,subject,CSH
+m_rholinkf_psigm_csh_diag_lmm_2,R,formulation,subject,DIAG
+m_categorical_continuous_csh_si_lmm,G,1 + time,subject&factor,CSH
+m_function_csh_si_lmm,G,1 + log(exptime),subject&factor,CSH
+m_categorical_continuous_0_arma_lmm,R,time,subject&factor,ARMA
+m_categorical_continuous_diag_ar_lmm,G,factor,subject&factor,DIAG
+m_categorical_continuous_diag_ar_lmm,R,1,subject&factor,AR
+m_categorical_continuous_0_arh_lmm,R,factor,subject&factor,ARH
+m_cs_cs_si_lmm,G,r1,subject,CS
+m_cs_cs_si_lmm,G,r2,subject,CS
+m_si_si_csh_lmm,G,1,subject,SI
+m_si_si_csh_lmm,G,1,r1&subject,SI
+m_si_si_csh_lmm,R,p,subject,CSH
+m_ar_si_lmm,G,r1,subject,AR
+m_ar_si_lmm,R,p,subject,DIAG
+m_arma_si_lmm,G,p,r1&r2,ARMA
+m_arh_si_lmm,G,r1,s2&factor,ARH
+m_arh_si_lmm_2,G,r1,s2&factor,ARH
+m_int_diag_si_lmm,G,1 + r2 * r1,subject,DIAG
+m_diag_si_lmm,G,r1&r2,subject,DIAG
+m_int_toephp_lmm,G,1 + r1 + r2,subject,TOEPHP
+m_toep_si_lmm,G,r1,subject,TOEP
+m_toepp_2_lmm,G,r1,subject,TOEPP
+m_diag_toepp_3_lmm,G,r2,subject,DIAG
+m_diag_toepp_3_lmm,R,p,subject,TOEPP
+m_toeph_si_lmm,G,r1,subject,TOEPH
+m_si_toephp_3_lmm,G,r1,subject,SI
+m_si_toephp_3_lmm,R,r1&r2,subject,TOEPHP
+m_un_repeated_lmm,R,group,id,UN
+m_un_repeated_mlmm,R,group,id,UN
+m_be_rds_lmm,G,treatment,subject,CSH
+m_be_rds_lmm,R,treatment,subject,DIAG
+m_be_rds_lmm_2,G,treatment,subject,CSH
+m_be_rds_lmm_2,R,treatment,subject,DIAG
+m_be_rds_lmm_3,G,1,Subject,SI
+m_be_rds_lmm_4,R,Formulation,Subject,UN
+m_be_rds_lmm2,R,Formulation,Subject,CSH
+m_custom_covariance_lmm,G,1 + time,subject&factor,CustomCovarianceStructure
+m_custom_covariance_lmm_2,G,1 + time,subject&factor,CSH
+m_custom_covariance_lmm_3,R,period,subject,CustomCovarianceStructure
+m_spatial_exponential_lmm,R,response+time,subject,SPEXP
+m_augmented_covariance_lmm1,R,r1,subject,DIAG
+m_augmented_covariance_lmm1,R,1,subject,AR
+m_augmented_covariance_lmm2,R,r1,subject,ARH
+m_augmented_covariance_lmm1_2,R,r1,subject,DIAG
+m_augmented_covariance_lmm1_2,R,1,subject,CS
+m_augmented_covariance_lmm2_2,R,r1,subject,CSH
+m_augmented_covariance_lmm,R,r1,subject,DIAG
+m_augmented_covariance_lmm,R,1,subject&r2,AR
+m_augmented_covariance_lmm1_3,R,device,subj&day,UN
+m_augmented_covariance_lmm1_3,R,1,subj&device,CS
+m_augmented_covariance_lmm2_3,R,device,subj&day,UN
+m_augmented_covariance_lmm2_3,R,1,subj&device,AR
+rand_lmm,G,factor,subject&factor,DIAG
+rand_lmm,R,1,subject&factor,AR
+show_lmm,G,formulation,subject,CSH
+show_lmm,R,formulation,subject,DIAG
+show_lmm_2,R,1,subject,CSH
+errors_lmm,G,formulation,nosubj,DIAG
+errors_anon_2,G,formulation,nosubj,DIAG
+errors_anon_2,G,formulation,nosubj,SI
+errors_anon_3,G,factor,subject*factor,DIAG
+errors_anon_3,R,1,subject,ARMA
+errors_anon_4,G,factor,subject,DIAG
+errors_anon_4,R,1,subject+factor,ARMA
+errors_lmm_2,R,1 + time,subject&factor,SI
+errors_lmm_3,G,factor,subject&factor,DIAG
+errors_lmm_3,R,1,subject&factor,ARMA
+errors_anon_6,R,treatment,subject,UN
+errors_lmm_4,G,formulation,nosubj,DIAG
+errors_anon_7,G,formulation,nosubj,DIAG
+errors_anon_8,G,formulation,nosubj,DIAG
+spexp_lmm,R,x + y,1,SPEXP
+sppow_lmm,R,x + y,1,SPPOW
+spgau_lmm,R,x + y,1,SPGAU
+spexpd_lmm,R,x + y,1,SPEXPD
+sppowd_lmm,R,x + y,1,SPPOWD
+spgaud_lmm,R,x + y,1,SPGAUD
+rawcoding_edistance_lmm,R,ci,1,SPEXP
+spatial_sub8_lmm,R,x + y,1,SPEXP
+missing_lmm,G,formulation,subject,DIAG
+swc_lmm,R,1,subject,SWC
+swc_lsi,R,1,subject,SI
+aliases_lmm,G,formulation,subject,DIAG

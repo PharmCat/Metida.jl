@@ -141,6 +141,56 @@ function rmat!(mx, θ, ::AbstractMatrix,  ::ARMA_, ::Int)
     end
     return mx
 end
+
+# Toeplitz covariance over the levels, homogeneous variance.
+# θ = [σ, ρ₁, …, ρ_{t-1}]; cf. gmat!(mx, θ, ::TOEP_)
+function toeprmat(θ::AbstractVector{T}, rz) where T
+    rm = size(rz, 2)
+    de = θ[1] ^ 2
+    mx = zeros(T, rm, rm)
+    @inbounds @simd for i = 1:rm
+        mx[i, i] = de
+    end
+    if rm > 1
+        for n = 2:rm
+            @inbounds @simd for m = 1:n-1
+                mx[m, n] = de * θ[n - m + 1]
+            end
+        end
+    end
+    return Symmetric(mx)
+end
+function rmat!(mx, θ, rz::AbstractMatrix, ::TOEP_, ::Int)
+    mulαβαtinc!(mx, rz, toeprmat(θ, rz))
+    return mx
+end
+
+# Toeplitz covariance over the levels, heterogeneous variances.
+# θ = [σ₁, …, σ_t, ρ₁, …, ρ_{t-1}]; cf. gmat!(mx, θ, ::TOEPH_)
+function toephrmat(θ::AbstractVector{T}, rz) where T
+    rm = size(rz, 2)
+    mx = zeros(T, rm, rm)
+    @inbounds @simd for i = 1:rm
+        mx[i, i] = θ[i]
+    end
+    if rm > 1
+        for n = 2:rm
+            @inbounds mxnn = mx[n, n]
+            @inbounds @simd for m = 1:n-1
+                mx[m, n] = mx[m, m] * mxnn * θ[n - m + rm]
+            end
+        end
+    end
+    @inbounds @simd for m = 1:rm
+        mx[m, m] *= mx[m, m]
+    end
+    return Symmetric(mx)
+end
+function rmat!(mx, θ, rz::AbstractMatrix, ::TOEPH_, ::Int)
+    mulαβαtinc!(mx, rz, toephrmat(θ, rz))
+    return mx
+end
+
 ################################################################################
 #TOEPP
 function rmat!(mx, θ, ::AbstractMatrix, ct::TOEPP_, ::Int)
@@ -348,6 +398,11 @@ function rmat!(mx, θ, rz::AbstractMatrix, ::UN_, ::Int)
     return mx
 end
 
+
+
+
+
+#=
 # ACOV (AR)
 function rmat!(mx::AbstractMatrix{T}, θ, ::AbstractMatrix, ct::ACOV_{AR_}, ::Int) where T
     s  = size(mx, 1)
@@ -417,6 +472,7 @@ function rmat!(mx::AbstractMatrix{T}, θ, ::AbstractMatrix, ct::ACOV_{CS_}, ::In
     end
     return mx
 end
+=#
 ###############################################################################
 ###############################################################################
 ###############################################################################
